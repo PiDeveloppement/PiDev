@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="61db2463-e3d3-4d2e-959c-d6fd677d7173" name="Changes" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+        <option value="Class" />
+        <option value="FxmlFile" />
+      </list>
+    </option>
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectId" id="38dFLv93n1OeBnvsyboB4A7dfC1" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "last_opened_file_path": "D:/LearningJava/PiDev/src/main/resources/com/example/pidev/fxml/role",
+    "project.structure.last.edited": "SDKs",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.10846812",
+    "settings.editor.selected.configurable": "preferences.lookFeel"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\role" />
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\user" />
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\auth" />
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\dashboard" />
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\event" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\Sponsor" />
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev" />
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\event" />
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\auth" />
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml" />
+    </key>
+    <key name="ExtractSuperBase.RECENT_KEYS">
+      <recent name="com.example.pidev.controller.role" />
+    </key>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="61db2463-e3d3-4d2e-959c-d6fd677d7173" name="Changes" comment="" />
+      <created>1769121489549</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1769121489549</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.lang.RuntimeException" package="java.lang" />
+          <option name="timeStamp" value="1" />
+        </breakpoint>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.lang.NullPointerException" package="java.lang" />
+          <option name="timeStamp" value="2" />
+        </breakpoint>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.sql.SQLSyntaxErrorException" package="java.sql" />
+          <option name="timeStamp" value="3" />
+        </breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>
