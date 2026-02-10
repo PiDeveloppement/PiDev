@@ -1,7 +1,6 @@
 package com.example.pidev.controller.role;
 
-import com.example.pidev.model.user.Role;
-import com.example.pidev.model.user.UserModel;
+import com.example.pidev.model.role.Role;
 import com.example.pidev.service.role.RoleService;
 import com.example.pidev.service.user.UserService;
 import javafx.beans.binding.Bindings;
@@ -29,19 +28,18 @@ public class RoleController implements Initializable {
 
     /* ================= FIELDS ================= */
 
-    @FXML
-    private TextField firstnameField, lastnameField, emailField, faculteField, passwordField;
-    @FXML private ComboBox<String> roleComboBox;
-
-    @FXML private TableView<UserModel> userTable;
-    @FXML private TableColumn<UserModel,Integer> id_column;
-    @FXML private TableColumn<UserModel,String> firstname_column, lastname_column,
-            email_column, faculte_column, role_id_column, password_column;
-    @FXML private TableColumn<UserModel,Void> actions_column;
+    
+@FXML private TextField rolenameField;
+    @FXML private TableView<Role> roleTable;
+    @FXML private TableColumn<Role,Integer> id_column;
+    @FXML private TableColumn<Role,String> roleName_column;
+    @FXML private TableColumn<Role,Void> actions_column;
+    @FXML private   Button resetButton ;
+    @FXML private   Button modifyButton ;
 
     private UserService userService;
     private RoleService roleService;
-    private ObservableList<UserModel> usersList;
+    private ObservableList<Role> rolesList;
 
 
     /* ================= INITIALIZE ================= */
@@ -51,21 +49,21 @@ public class RoleController implements Initializable {
         try {
             userService = new UserService();
             roleService = new RoleService();
-            usersList = FXCollections.observableArrayList();
+            rolesList = FXCollections.observableArrayList();
 
-            roleComboBox.setItems(roleService.getAllRoleNames());
+           
 
             initializeTableColumns();
-            loadUsers();
+            loadRoles();
             setupActionsColumn();
 
-            userTable.getSelectionModel().selectedItemProperty()
+            roleTable.getSelectionModel().selectedItemProperty()
                     .addListener((obs,o,n) -> { if(n!=null) fillForm(n); });
 
-            userTable.setFixedCellSize(40);
-            userTable.prefHeightProperty().bind(
-                    Bindings.size(userTable.getItems())
-                            .multiply(userTable.getFixedCellSize())
+            roleTable.setFixedCellSize(40);
+            roleTable.prefHeightProperty().bind(
+                    Bindings.size(roleTable.getItems())
+                            .multiply(roleTable.getFixedCellSize())
                             .add(40)
             );
 
@@ -79,25 +77,16 @@ public class RoleController implements Initializable {
 
     private void initializeTableColumns() {
 
-        id_column.setCellValueFactory(new PropertyValueFactory<>("id_User"));
-        firstname_column.setCellValueFactory(new PropertyValueFactory<>("first_Name"));
-        lastname_column.setCellValueFactory(new PropertyValueFactory<>("last_Name"));
-        email_column.setCellValueFactory(new PropertyValueFactory<>("email"));
-        faculte_column.setCellValueFactory(new PropertyValueFactory<>("faculte"));
-        password_column.setCellValueFactory(new PropertyValueFactory<>("password"));
+        id_column.setCellValueFactory(new PropertyValueFactory<>("id_Role"));
+        roleName_column.setCellValueFactory(new PropertyValueFactory<>("roleName"));
 
-        role_id_column.setCellValueFactory(cell -> {
-            Role r = cell.getValue().getRole();
-            return new SimpleStringProperty(r != null ? r.getRoleName() : "");
-
-        });
 
     }
 
 
-    private void loadUsers() {
-        usersList.setAll(userService.getAllUsers());
-        userTable.setItems(usersList);
+    private void loadRoles() {
+        rolesList.setAll(roleService.getAllRoles());
+        roleTable.setItems(rolesList);
 
     }
 
@@ -105,26 +94,21 @@ public class RoleController implements Initializable {
     /* ================= CREATE ================= */
 
     @FXML
-    private void registerButtonOnAction(ActionEvent e) {
-        createUser();
+    private void addRoleButtonOnAction(ActionEvent e) {
+        createRole();
     }
 
-    private void createUser() {
+    private void createRole() {
 
         if (!validateFields()) return;
 
-        UserModel user = new UserModel(
-                firstnameField.getText(),
-                lastnameField.getText(),
-                emailField.getText(),
-                faculteField.getText(),
-                passwordField.getText(),
-                1
+        Role role = new Role(
+                rolenameField.getText()
         );
 
-        if (userService.registerUser(user)) {
-            showAlert("Succès", "Utilisateur créé avec succès");
-            loadUsers();
+        if (roleService.addRole(role)) {
+            showAlert("Succès", "Role créé avec succès");
+            loadRoles();
             resetForm();
         }
     }
@@ -135,35 +119,29 @@ public class RoleController implements Initializable {
     @FXML
     private void modifyButtonOnAction(ActionEvent e) throws SQLException {
 
-        UserModel selected = userTable.getSelectionModel().getSelectedItem();
+        Role selected = roleTable.getSelectionModel().getSelectedItem();
 
         System.out.println(selected); // debug
 
         if (selected == null) {
-            showAlert("Erreur", "Sélectionnez un utilisateur");
+            showAlert("Erreur", "Sélectionnez un role");
             return;
         }
 
-        updateUser(selected);
+        updateRole(selected);
     }
 
 
-    private void updateUser(UserModel userModel) throws SQLException {
+    private void updateRole(Role role) throws SQLException {
 
         if (!validateFields()) return;
 
-        userModel.setFirst_Name(firstnameField.getText());
-        userModel.setLast_Name(lastnameField.getText());
-        userModel.setEmail(emailField.getText());
-        userModel.setFaculte(faculteField.getText());
-        userModel.setPassword(passwordField.getText());
+        role.setRoleName(rolenameField.getText());
 
-        String roleName = roleComboBox.getValue();
-        userModel.setRole_Id(roleService.getRoleIdByName(roleName));
 
-        if (userService.updateUser(userModel)) {
+        if (roleService.updateRole(role)) {
             showAlert("Succès", "Utilisateur modifié");
-            loadUsers();
+            loadRoles();
             resetForm();
         }
     }
@@ -173,27 +151,29 @@ public class RoleController implements Initializable {
 
     /* ================= DELETE ================= */
 
-    private void deleteUser(UserModel user) {
+    private void deleteRole(Role role) {
 
         boolean confirmed = showConfirmation(
                 "Confirmer",
-                "Supprimer " + user.getFirst_Name() + " ?"
+                "Supprimer " + role.getRoleName() + " ?"
         );
 
         if (!confirmed) return;
 
-        if (userService.deleteUser(user.getId_User())) {
-            showAlert("Succès", "Utilisateur supprimé");
-            loadUsers();
+        if (roleService.deleteRole(role.getId_Role())) {
+            showAlert("Succès", "Role supprimé");
+            loadRoles();
         }
     }
+
+
 
 
     /* ================= ACTION COLUMN ================= */
 
     private void setupActionsColumn() {
 
-        actions_column.setCellFactory(param -> new TableCell<UserModel, Void>() {
+        actions_column.setCellFactory(param -> new TableCell<Role, Void>() {
 
 
             private final Button deleteBtn = new Button("🗑");
@@ -212,8 +192,8 @@ public class RoleController implements Initializable {
                 );
 
                 deleteBtn.setOnAction(e -> {
-                    UserModel user = getTableView().getItems().get(getIndex());
-                    deleteUser(user);
+                    Role role = getTableView().getItems().get(getIndex());
+                    deleteRole(role);
                 });
             }
 
@@ -229,27 +209,21 @@ public class RoleController implements Initializable {
 
     /* ================= FORM ================= */
 
-    private void fillForm(UserModel u) {
-        firstnameField.setText(u.getFirst_Name());
-        lastnameField.setText(u.getLast_Name());
-        emailField.setText(u.getEmail());
-        faculteField.setText(u.getFaculte());
-        passwordField.setText(u.getPassword());
-    }
+    private void fillForm(Role u) {
+        rolenameField.setText(u.getRoleName());
 
+    }
+    @FXML
+    private void resetButton(ActionEvent e){
+    resetForm();
+}
     private void resetForm() {
-        firstnameField.clear();
-        lastnameField.clear();
-        emailField.clear();
-        faculteField.clear();
-        passwordField.clear();
-        roleComboBox.getSelectionModel().clearSelection();
+        rolenameField.clear();
+
     }
 
     private boolean validateFields() {
-        if (firstnameField.getText().isEmpty()
-                || lastnameField.getText().isEmpty()
-                || emailField.getText().isEmpty()) {
+        if (rolenameField.getText().isEmpty()) {
             showAlert("Champs manquants", "Veuillez remplir tous les champs");
             return false;
         }
@@ -276,6 +250,37 @@ public class RoleController implements Initializable {
         try {
             Parent root = FXMLLoader.load(
                     getClass().getResource("/com/example/pidev/fxml/auth/login.fxml")
+            );
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception ignored) {}
+    }
+
+    public void goToProfil(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/user/profil.fxml")
+            );
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception ignored) {}
+    }
+    public void goToDashboard(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/dashboard/dashboard.fxml")
+            );
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception ignored) {}
+    }
+    public void goToGestionUser(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/user/user.fxml")
             );
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(new Scene(root));

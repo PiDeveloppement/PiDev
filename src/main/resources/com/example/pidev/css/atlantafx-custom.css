@@ -289,4 +289,87 @@
     -fx-border-radius: 8px;
     -fx-padding: 15px;
 }
+/* profile-styles.css */
 
+/* Style général */
+.root {
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* Style des TextField */
+.text-field {
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.text-field:focused {
+    -fx-border-color: #2196F3;
+    -fx-border-width: 2;
+}
+
+/* Style des ComboBox */
+.combo-box {
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.combo-box:focused {
+    -fx-border-color: #2196F3;
+    -fx-border-width: 2;
+}
+
+/* Style des boutons */
+.button {
+    -fx-cursor: hand;
+    -fx-transition: all 0.3s;
+}
+
+.button:hover {
+    -fx-opacity: 0.9;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);
+}
+
+/* Style du TextArea */
+.text-area {
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.text-area .content {
+    -fx-background-radius: 8;
+}
+
+/* Style du PasswordField */
+.password-field {
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.password-field:focused {
+    -fx-border-color: #2196F3;
+    -fx-border-width: 2;
+}
+
+/* Style du ToggleButton */
+.toggle-button {
+    -fx-cursor: hand;
+}
+
+/* Style des alertes */
+.dialog-pane {
+    -fx-background-color: white;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: #f8fafc;
+}
+
+.dialog-pane .button {
+    -fx-background-color: #2196F3;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+}
+
+.dialog-pane .button:hover {
+    -fx-background-color: #0D47A1;
+}

@@ -16,7 +16,7 @@ public class HelloApplication extends Application {
 
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
 
-        Parent root = FXMLLoader.load(getClass().getResource("/com/example/pidev/fxml/user/user.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("/com/example/pidev/fxml/auth/login.fxml"));
 
         stage.initStyle(StageStyle.DECORATED);
 

@@ -4,7 +4,7 @@
     <persistence-unit name="myPU">
 
         <class>com.example.pidev.model.user.UserModel</class>
-        <class>com.example.pidev.model.user.Role</class>
+        <class>com.example.pidev.model.role.Role</class>
 
         <properties>
             <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/pidev"/>

@@ -34,92 +34,63 @@
                     </VBox>
                 </VBox>
 
-                <!-- Menu navigation avec boutons de gestion -->
-                <ScrollPane fitToWidth="true" vbarPolicy="NEVER"
-                            style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 0;">
-                    <VBox spacing="6" alignment="CENTER" style="-fx-padding: 25 15;">
-
-                        <!-- Boutons de gestion RESTAURÉS -->
-                        <VBox spacing="8" alignment="CENTER" prefWidth="190">
-                            <!-- Dashboard (actif) -->
-                            <Button text="Dashboard"
-                                    style="-fx-background-color: white; -fx-text-fill: #0D47A1; -fx-font-weight: bold; -fx-font-size: 14px;
-                                           -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8;
-                                           -fx-background-radius: 8; -fx-min-width: 180;
-                                           -fx-border-color: #64b5f6; -fx-border-width: 2;
-                                           -fx-effect: dropshadow(gaussian, rgba(33,150,243,0.15), 5, 0, 0, 2);">
-                                <graphic>
-                                    <Text text="📊" style="-fx-font-size: 16px;"/>
-                                </graphic>
-                            </Button>
-
-                            <!-- Événements -->
-                            <Button text="Événements"
-                                    style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px; -fx-font-weight: bold;
-                                           -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8;
-                                           -fx-background-radius: 8; -fx-min-width: 180;
-                                           -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);">
-                                <graphic>
-                                    <Text text="📅" style="-fx-font-size: 16px;"/>
-                                </graphic>
-                            </Button>
-
-                            <!-- Participants -->
-                            <Button text="Participants"
-                                    onAction="#goToGestionUser"
-                                    style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px;
-                                           -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8;
-                                           -fx-background-radius: 8; -fx-min-width: 180;">
-                                <graphic>
-                                    <Text text="👥" style="-fx-font-size: 16px;"/>
-                                </graphic>
-                            </Button>
-
-                            <!-- Sponsors -->
-                            <Button text="Sponsors"
-                                    style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px;
-                                           -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8;
-                                           -fx-background-radius: 8; -fx-min-width: 180;">
-                                <graphic>
-                                    <Text text="💼" style="-fx-font-size: 16px;"/>
-                                </graphic>
-                            </Button>
-
-                            <!-- Budget -->
-                            <Button text="Budget"
-                                    style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px;
-                                           -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8;
-                                           -fx-background-radius: 8; -fx-min-width: 180;">
-                                <graphic>
-                                    <Text text="💰" style="-fx-font-size: 16px;"/>
-                                </graphic>
-                            </Button>
-
-                            <!-- Paramètres -->
-                            <Button text="Paramètres"
-                                    style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px;
-                                           -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8;
-                                           -fx-background-radius: 8; -fx-min-width: 180;">
-                                <graphic>
-                                    <Text text="⚙️" style="-fx-font-size: 16px;"/>
-                                </graphic>
-                            </Button>
+                <!-- Menu navigation -->
+                <StackPane VBox.vgrow="ALWAYS">
+                    <ScrollPane fitToWidth="true" hbarPolicy="AS_NEEDED" vbarPolicy="AS_NEEDED"
+                                style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 0;">
+                        <VBox spacing="6" alignment="CENTER" style="-fx-padding: 25 15;"
+                              VBox.vgrow="ALWAYS">
+                            <VBox spacing="8" alignment="CENTER" prefWidth="190">
+                                <Button text="Dashboard"
+                                        onAction="#goToDashboard"
+                                        style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px; -fx-font-weight: bold;
+                                                           -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;
+                                                           -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);">
+                                    <graphic><Text text="📊" style="-fx-font-size: 16px;"/></graphic>
+                                </Button>
+                                <Button text="Événements" style="-fx-background-color: white; -fx-text-fill: #0D47A1; -fx-font-weight: bold; -fx-font-size: 14px;
+                                                           -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;
+                                                           -fx-border-color: #64b5f6; -fx-border-width: 2;
+                                                           -fx-effect: dropshadow(gaussian, rgba(33,150,243,0.15), 5, 0, 0, 2);">
+                                    <graphic><Text text="📅" style="-fx-font-size: 16px;"/></graphic>
+                                </Button>
+                                <Button text="Participants"
+                                        onAction="#goToGestionUser"
+                                        style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px;
+                                                           -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;">
+                                    <graphic><Text text="👥" style="-fx-font-size: 16px;"/></graphic>
+                                </Button>
+                                <Button text="Sponsors" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px;
+                                                           -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;">
+                                    <graphic><Text text="💼" style="-fx-font-size: 16px;"/></graphic>
+                                </Button>
+                                <Button text="Budget" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px;
+                                                           -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;">
+                                    <graphic><Text text="💰" style="-fx-font-size: 16px;"/></graphic>
+                                </Button>
+                                <Button text="Paramètres" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px;
+                                                           -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;">
+                                    <graphic><Text text="⚙️" style="-fx-font-size: 16px;"/></graphic>
+                                </Button>
+                            </VBox>
                         </VBox>
-                    </VBox>
-                </ScrollPane>
+                    </ScrollPane>
+                </StackPane>
 
-                <!-- Bouton déconnexion en bas -->
-                <VBox style="-fx-padding: 0 15 25 15; -fx-background-color: transparent;"
-                      VBox.vgrow="ALWAYS" alignment="BOTTOM_CENTER">
-                    <Button text="Déconnexion"
-                            onAction="#goToLogin"
-                            style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #d32f2f; -fx-font-weight: bold; -fx-font-size: 14px;
-                                   -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8;
-                                   -fx-background-radius: 8; -fx-min-width: 180;
+                <!-- Bouton déconnexion -->
+                <VBox style="-fx-padding: 0 15 25 15; -fx-background-color: transparent;" VBox.vgrow="ALWAYS" alignment="BOTTOM_CENTER">
+                    <Button onAction="#goToProfil"
+                            text="Compte" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #d32f2f; -fx-font-weight: bold; -fx-font-size: 14px;
+                                   -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;
                                    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 3, 0, 0, 1);">
-                        <graphic>
-                            <Text text="🚪" style="-fx-font-size: 16px;"/>
-                        </graphic>
+                        <graphic><Text text="🚪" style="-fx-font-size: 16px;"/></graphic>
+                    </Button>
+                    <Region prefHeight="6"/>
+                    <Button onAction="#goToLogin"
+                            text="Déconnexion" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #d32f2f; -fx-font-weight: bold; -fx-font-size: 14px;
+                                   -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;
+                                   -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 3, 0, 0, 1);">
+                        <graphic><Text text="🚪" style="-fx-font-size: 16px;"/></graphic>
                     </Button>
                 </VBox>
             </VBox>

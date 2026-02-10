@@ -1,4 +1,5 @@
-package com.example.pidev.model.user;
+package com.example.pidev.model.role;
+import com.example.pidev.model.user.UserModel;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.*;
@@ -20,6 +21,10 @@ public class Role {
 
     public Role(int idRole, String roleName) {
         this.Id_Role = idRole;
+        this.RoleName = roleName;
+    }
+    public Role( String roleName) {
+
         this.RoleName = roleName;
     }
 

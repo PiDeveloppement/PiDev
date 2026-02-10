@@ -1,5 +1,6 @@
 package com.example.pidev.model.user;
 
+import com.example.pidev.model.role.Role;
 import jakarta.persistence.*;
 
 public class UserModel {

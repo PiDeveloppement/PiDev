@@ -1,6 +1,6 @@
 package com.example.pidev.controller.user;
 
-import com.example.pidev.model.user.Role;
+import com.example.pidev.model.role.Role;
 import com.example.pidev.model.user.UserModel;
 import com.example.pidev.service.role.RoleService;
 import com.example.pidev.service.user.UserService;
@@ -273,6 +273,50 @@ public class UserController implements Initializable {
         try {
             Parent root = FXMLLoader.load(
                     getClass().getResource("/com/example/pidev/fxml/auth/login.fxml")
+            );
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception ignored) {}
+    }
+    @FXML
+    private void goToRole(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/role/role.fxml")
+            );
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception ignored) {}
+    }
+    @FXML
+    private void goToGestionUser(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/user/user.fxml")
+            );
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception ignored) {}
+    }
+    @FXML
+    private void goToDashboard(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/dashboard/dashboard.fxml")
+            );
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception ignored) {}
+    }
+    @FXML
+    private void goToProfil(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/")
             );
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(new Scene(root));

@@ -1,14 +1,12 @@
 package com.example.pidev.service.user;
 
-import com.example.pidev.model.user.Role;
+import com.example.pidev.model.role.Role;
 import com.example.pidev.model.user.UserModel;
 import com.example.pidev.utils.DBConnection;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class UserService {
 

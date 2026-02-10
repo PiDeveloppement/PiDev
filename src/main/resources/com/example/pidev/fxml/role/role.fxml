@@ -32,13 +32,16 @@
                 </VBox>
 
                 <!-- Menu navigation -->
+                <!-- Menu navigation -->
                 <StackPane VBox.vgrow="ALWAYS">
                     <ScrollPane fitToWidth="true" hbarPolicy="AS_NEEDED" vbarPolicy="AS_NEEDED"
                                 style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 0;">
                         <VBox spacing="6" alignment="CENTER" style="-fx-padding: 25 15;"
                               VBox.vgrow="ALWAYS">
                             <VBox spacing="8" alignment="CENTER" prefWidth="190">
-                                <Button text="Dashboard" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px; -fx-font-weight: bold;
+                                <Button text="Dashboard"
+                                        onAction="#goToDashboard"
+                                        style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px; -fx-font-weight: bold;
                                                            -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;
                                                            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);">
                                     <graphic><Text text="📊" style="-fx-font-size: 16px;"/></graphic>
@@ -49,7 +52,9 @@
                                                            -fx-effect: dropshadow(gaussian, rgba(33,150,243,0.15), 5, 0, 0, 2);">
                                     <graphic><Text text="📅" style="-fx-font-size: 16px;"/></graphic>
                                 </Button>
-                                <Button text="Participants" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px;
+                                <Button text="Participants"
+                                        onAction="#goToGestionUser"
+                                        style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px;
                                                            -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;">
                                     <graphic><Text text="👥" style="-fx-font-size: 16px;"/></graphic>
                                 </Button>
@@ -72,6 +77,13 @@
 
                 <!-- Bouton déconnexion -->
                 <VBox style="-fx-padding: 0 15 25 15; -fx-background-color: transparent;" VBox.vgrow="ALWAYS" alignment="BOTTOM_CENTER">
+                    <Button onAction="#goToProfil"
+                            text="Compte" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #d32f2f; -fx-font-weight: bold; -fx-font-size: 14px;
+                                   -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;
+                                   -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 3, 0, 0, 1);">
+                        <graphic><Text text="👤" style="-fx-font-size: 16px;"/></graphic>
+                    </Button>
+                    <Region prefHeight="6"/>
                     <Button onAction="#goToLogin"
                             text="Déconnexion" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #d32f2f; -fx-font-weight: bold; -fx-font-size: 14px;
                                    -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;
@@ -111,7 +123,7 @@
                     <ComboBox promptText="📂 Catégorie" prefWidth="160" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
                     <ComboBox promptText="📊 Statut" prefWidth="160" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Button text="➕ Nouvel utilisateur" onAction="#registerButtonOnAction" style="-fx-background-color: linear-gradient(to right, #10b981, #059669); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 8; -fx-padding: 10 22;"/>
+                    <Button text="➕ Nouvel utilisateur" onAction="#addRoleButtonOnAction" style="-fx-background-color: linear-gradient(to right, #10b981, #059669); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 8; -fx-padding: 10 22;"/>
                 </HBox>
 
                 <!-- Section scrollable (contenu principal) -->
@@ -127,16 +139,11 @@
                             <Label text="📋 Liste des Utilisateurs" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #334155;"/>
                             <!-- StackPane pour gérer la hauteur de la table -->
                             <StackPane VBox.vgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 8, 0, 0, 2);">
-                                <TableView fx:id="userTable" VBox.vgrow="ALWAYS"
+                                <TableView fx:id="roleTable" VBox.vgrow="ALWAYS"
                                            style="-fx-background-color: transparent;">
                                     <columns>
                                         <TableColumn fx:id="id_column" text="🔢 ID" prefWidth="80" style="-fx-alignment: CENTER;"/>
-                                        <TableColumn fx:id="firstname_column" text="📝 First Name" prefWidth="200"/>
-                                        <TableColumn fx:id="lastname_column" text="📝 Last Name" prefWidth="150" style="-fx-alignment: CENTER;"/>
-                                        <TableColumn fx:id="email_column" text="📧 Email" prefWidth="220" style="-fx-alignment: CENTER;"/>
-                                        <TableColumn fx:id="faculte_column" text="🏫 Faculté" prefWidth="150" style="-fx-alignment: CENTER;"/>
-                                        <TableColumn fx:id="password_column" text="🔐 Password" prefWidth="120" style="-fx-alignement: CENTER;"/>
-                                        <TableColumn fx:id="role_id_column" text="👤 Role ID" prefWidth="80"/>
+                                        <TableColumn fx:id="roleName_column" text="📝 First Name" prefWidth="200"/>
                                         <TableColumn fx:id="actions_column" text="⚡ Actions" prefWidth="180" style="-fx-alignment: CENTER;"/>
                                     </columns>
                                     <!-- Supprime l'espace vide sous les lignes -->
@@ -159,7 +166,7 @@
                                     <Button text="Suivant »" style="-fx-background-color: white; -fx-text-fill: #475569; -fx-font-size: 13px; -fx-background-radius: 8; -fx-padding: 8 16; -fx-border-color: #e2e8f0; -fx-border-width: 1;"/>
                                 </HBox>
                                 <Region HBox.hgrow="ALWAYS"/>
-                                <Label text="📊 10 utilisateurs trouvés • 🔄 Dernière mise à jour: 10:15" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                                <Label text="📊 10 Roles trouvés • 🔄 Dernière mise à jour: 10:15" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
                             </HBox>
                         </VBox>
 
@@ -180,57 +187,29 @@
                                        style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
                             </HBox>
 
-                            <Separator style="-fx-background-color: #e2e8f0;"/>
 
                             <!-- Contenu du formulaire -->
                             <HBox spacing="25" alignment="TOP_CENTER">
                                 <!-- Colonne gauche - Champs de saisie -->
                                 <VBox spacing="15" prefWidth="500">
-                                    <!-- First Name / Last Name -->
+                                    <!-- Role Name -->
                                     <HBox spacing="15" alignment="CENTER_LEFT">
                                         <VBox spacing="5" prefWidth="245">
-                                            <Label text="First Name *" style="-fx-text-fill: #475569; -fx-font-size: 13px; -fx-font-weight: bold;"/>
-                                            <TextField fx:id="firstnameField" promptText="Entrez le prénom" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-pref-height: 40; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
+                                            <Label text="Role Name *" style="-fx-text-fill: #475569; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                                            <TextField fx:id="rolenameField" promptText="Entrez le role" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-pref-height: 40; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
                                         </VBox>
-                                        <VBox spacing="5" prefWidth="245">
-                                            <Label text="Last Name *" style="-fx-text-fill: #475569; -fx-font-size: 13px; -fx-font-weight: bold;"/>
-                                            <TextField fx:id="lastnameField" promptText="Entrez le nom" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-pref-height: 40; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
-                                        </VBox>
-                                    </HBox>
 
-                                    <!-- Email / Faculté -->
-                                    <HBox spacing="15" alignment="CENTER_LEFT">
-                                        <VBox spacing="5" prefWidth="245">
-                                            <Label text="Email *" style="-fx-text-fill: #475569; -fx-font-size: 13px; -fx-font-weight: bold;"/>
-                                            <TextField fx:id="emailField" promptText="exemple@universite.edu" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-pref-height: 40; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
-                                        </VBox>
-                                        <VBox spacing="5" prefWidth="245">
-                                            <Label text="Faculté" style="-fx-text-fill: #475569; -fx-font-size: 13px; -fx-font-weight: bold;"/>
-                                            <TextField fx:id="faculteField" promptText="Faculté d'appartenance" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-pref-height: 40; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
-                                        </VBox>
                                     </HBox>
-
-                                    <!-- Password / Role -->
-                                    <HBox spacing="15" alignment="CENTER_LEFT">
-                                        <VBox spacing="5" prefWidth="245">
-                                            <Label text="Password" style="-fx-text-fill: #94a3b8; -fx-font-size: 13px; -fx-font-weight: bold;"/>
-                                            <TextField fx:id="passwordField" promptText="Géré automatiquement" editable="false" disable="true" style="-fx-background-color: #f1f5f9; -fx-background-radius: 8; -fx-padding: 10 15; -fx-pref-height: 40; -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-text-fill: #94a3b8;"/>
-                                        </VBox>
-                                        <VBox spacing="5" prefWidth="245">
-                                            <Label text="Rôle *" style="-fx-text-fill: #475569; -fx-font-size: 13px; -fx-font-weight: bold;"/>
-                                            <ComboBox
-                                                    fx:id="roleComboBox" promptText="Sélectionnez un rôle" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-pref-height: 40; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
-                                        </VBox>
-                                    </HBox>
-                                    <TextField fx:id="roleIdField" visible="false" managed="false"/>
                                 </VBox>
+
+
 
                                 <!-- Colonne droite - Boutons -->
                                 <VBox spacing="15" alignment="CENTER" prefWidth="200">
                                     <VBox spacing="10" alignment="CENTER">
                                         <Button text="✏️ Modifier" fx:id="modifyButton" onAction="#modifyButtonOnAction" style="-fx-background-color: linear-gradient(to right, #3b82f6, #1d4ed8); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 8; -fx-padding: 12 24; -fx-pref-width: 180;"/>
 
-                                        <Button text="🔄 Réinitialiser" fx:id="resetButton" onAction="#registerButtonOnAction" style="-fx-background-color: white; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 8; -fx-padding: 12 24; -fx-pref-width: 180; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
+                                        <Button text="🔄 Réinitialiser" fx:id="resetButton" onAction="#resetButton" style="-fx-background-color: white; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 8; -fx-padding: 12 24; -fx-pref-width: 180; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
                                     </VBox>
                                     <VBox spacing="5" style="-fx-padding: 15 0 0 0;" alignment="CENTER">
                                         <Label text="ℹ️ Les champs marqués d'un * sont obligatoires" style="-fx-text-fill: #64748b; -fx-font-size: 11px;"/>

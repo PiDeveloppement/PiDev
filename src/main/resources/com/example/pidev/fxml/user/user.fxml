@@ -38,7 +38,9 @@
                         <VBox spacing="6" alignment="CENTER" style="-fx-padding: 25 15;"
                               VBox.vgrow="ALWAYS">
                             <VBox spacing="8" alignment="CENTER" prefWidth="190">
-                                <Button text="Dashboard" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px; -fx-font-weight: bold;
+                                <Button text="Dashboard"
+                                        onAction="#goToDashboard"
+                                        style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px; -fx-font-weight: bold;
                                                            -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;
                                                            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);">
                                     <graphic><Text text="📊" style="-fx-font-size: 16px;"/></graphic>
@@ -49,7 +51,9 @@
                                                            -fx-effect: dropshadow(gaussian, rgba(33,150,243,0.15), 5, 0, 0, 2);">
                                     <graphic><Text text="📅" style="-fx-font-size: 16px;"/></graphic>
                                 </Button>
-                                <Button text="Participants" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px;
+                                <Button text="Participants"
+                                        onAction="#goToGestionUser"
+                                        style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1; -fx-font-size: 14px;
                                                            -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;">
                                     <graphic><Text text="👥" style="-fx-font-size: 16px;"/></graphic>
                                 </Button>
@@ -72,6 +76,13 @@
 
                 <!-- Bouton déconnexion -->
                 <VBox style="-fx-padding: 0 15 25 15; -fx-background-color: transparent;" VBox.vgrow="ALWAYS" alignment="BOTTOM_CENTER">
+                    <Button onAction="#goToProfil"
+                            text="Compte" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #d32f2f; -fx-font-weight: bold; -fx-font-size: 14px;
+                                   -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;
+                                   -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 3, 0, 0, 1);">
+                        <graphic><Text text="👤" style="-fx-font-size: 16px;"/></graphic>
+                    </Button>
+                    <Region prefHeight="6"/>
                     <Button onAction="#goToLogin"
                             text="Déconnexion" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #d32f2f; -fx-font-weight: bold; -fx-font-size: 14px;
                                    -fx-padding: 14 20; -fx-alignment: CENTER_LEFT; -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;
@@ -111,7 +122,7 @@
                     <ComboBox promptText="📂 Catégorie" prefWidth="160" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
                     <ComboBox promptText="📊 Statut" prefWidth="160" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Button text="➕ Nouvel utilisateur" onAction="#registerButtonOnAction" style="-fx-background-color: linear-gradient(to right, #10b981, #059669); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 8; -fx-padding: 10 22;"/>
+                    <Button text="➕ ajouter role" onAction="#goToRole" style="-fx-background-color: linear-gradient(to right, #10b981, #059669); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 8; -fx-padding: 10 22;"/>
                 </HBox>
 
                 <!-- Section scrollable (contenu principal) -->
@@ -180,7 +191,6 @@
                                        style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
                             </HBox>
 
-                            <Separator style="-fx-background-color: #e2e8f0;"/>
 
                             <!-- Contenu du formulaire -->
                             <HBox spacing="25" alignment="TOP_CENTER">
