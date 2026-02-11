@@ -82,7 +82,7 @@ public class UserController implements Initializable {
 
     private void initializeTableColumns() {
 
-        id_column.setCellValueFactory(new PropertyValueFactory<>("id_User"));
+
         firstname_column.setCellValueFactory(new PropertyValueFactory<>("first_Name"));
         lastname_column.setCellValueFactory(new PropertyValueFactory<>("last_Name"));
         email_column.setCellValueFactory(new PropertyValueFactory<>("email"));
