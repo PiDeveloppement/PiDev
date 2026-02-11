@@ -9,6 +9,8 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.*;
 import javafx.scene.Node;
@@ -35,7 +37,8 @@ public class UserController implements Initializable {
     @FXML private TableColumn<UserModel,String> firstname_column, lastname_column,
             email_column, faculte_column, role_id_column, password_column;
     @FXML private TableColumn<UserModel,Void> actions_column;
-
+    @FXML
+    private TextField searchField;
     private UserService userService;
     private RoleService roleService;
     private ObservableList<UserModel> usersList;
@@ -65,6 +68,9 @@ public class UserController implements Initializable {
                             .multiply(userTable.getFixedCellSize())
                             .add(40)
             );
+            usersList.addAll(userService.getAllUsers()); // ta méthode de récupération
+
+            setupSearch();
 
         } catch (SQLException e) {
             showAlert("Erreur", e.getMessage());
@@ -323,4 +329,30 @@ public class UserController implements Initializable {
             stage.show();
         } catch (Exception ignored) {}
     }
+    private void setupSearch() {
+
+        FilteredList<UserModel> filteredData = new FilteredList<>(usersList, b -> true);
+
+        searchField.textProperty().addListener((obs, oldValue, newValue) -> {
+
+            filteredData.setPredicate(user -> {
+
+                if (newValue == null || newValue.isEmpty()) {
+                    return true;
+                }
+
+                String keyword = newValue.toLowerCase();
+
+                return user.getFirst_Name().toLowerCase().contains(keyword)
+                        || user.getLast_Name().contains(keyword);
+            });
+        });
+
+        SortedList<UserModel> sortedData = new SortedList<>(filteredData);
+
+        sortedData.comparatorProperty().bind(userTable.comparatorProperty());
+
+        userTable.setItems(sortedData);
+    }
+
 }
