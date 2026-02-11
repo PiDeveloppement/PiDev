@@ -1,0 +1,203 @@
+/* =============================================================================
+   STYLE GÉNÉRAL & DASHBOARD
+   ============================================================================= */
+
+.root {
+    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+/* Arrière-plan des conteneurs (Tableaux, Cartes) */
+.table-container {
+    -fx-background-color: white;
+    -fx-background-radius: 15px;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 15px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 10, 0, 0, 4);
+}
+
+/* Headers */
+.header-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b;
+}
+
+.header-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #64748b;
+}
+
+/* =============================================================================
+   SIDEBAR (BARRE LATÉRALE)
+   ============================================================================= */
+
+.sidebar-button {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-padding: 12 20;
+    -fx-background-radius: 8;
+    -fx-alignment: CENTER_LEFT;
+    -fx-cursor: hand;
+    -fx-min-width: 210;
+}
+
+.sidebar-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar-button-active {
+    -fx-background-color: white;
+    -fx-text-fill: #0D47A1;
+    -fx-font-weight: bold;
+}
+
+.logout-button {
+    -fx-text-fill: #ffcfcf;
+}
+
+.logout-button:hover {
+    -fx-background-color: #ef4444;
+    -fx-text-fill: white;
+}
+
+/* =============================================================================
+   TABLEVIEW (STYLE SPONSOR)
+   ============================================================================= */
+
+.sponsor-table {
+    -fx-background-color: transparent;
+}
+
+/* En-tête du tableau */
+.sponsor-table .column-header-background {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 15 15 0 0;
+    -fx-padding: 5;
+}
+
+.sponsor-table .column-header {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #475569;
+}
+
+/* Lignes et Cellules */
+.sponsor-table .table-row-cell {
+    -fx-cell-size: 55px; /* Hauteur pour éviter le texte coupé */
+    -fx-background-color: transparent;
+    -fx-border-color: #f1f5f9;
+    -fx-border-width: 0 0 1 0;
+}
+
+.sponsor-table .table-row-cell:hover {
+    -fx-background-color: #f1f5f9;
+}
+
+.sponsor-table .table-row-cell:selected {
+    -fx-background-color: #dbeafe;
+}
+
+.sponsor-table .table-cell {
+    -fx-alignment: CENTER;
+    -fx-text-fill: #334155;
+    -fx-font-size: 13px;
+}
+
+/* =============================================================================
+   CARTES DE STATISTIQUES (CARDS)
+   ============================================================================= */
+
+.stat-card {
+    -fx-padding: 12 20;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-border-width: 1px;
+    -fx-min-width: 120;
+}
+
+.stat-card-blue {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: #bfdbfe;
+    -fx-text-fill: #1e40af;
+}
+
+.stat-card-green {
+    -fx-background-color: #f0fdf4;
+    -fx-border-color: #bbf7d0;
+    -fx-text-fill: #166534;
+}
+
+.status-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #64748b;
+}
+
+/* =============================================================================
+   FORMULAIRES & BOUTONS
+   ============================================================================= */
+
+.search-field {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8 12;
+}
+
+.search-field:focused {
+    -fx-border-color: #3b82f6;
+    -fx-background-color: white;
+}
+
+.combo-box-sponsor {
+    -fx-background-color: white;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.new-sponsor-button {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10 20;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.new-sponsor-button:hover {
+    -fx-background-color: #1d4ed8;
+}
+
+/* Boutons d'action dans le tableau (Crayon / Poubelle) */
+.action-button-edit {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #e2e8f0;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+.action-button-delete {
+    -fx-background-color: #fef2f2;
+    -fx-border-color: #fee2e2;
+    -fx-text-fill: #ef4444;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+/* =============================================================================
+   SCROLLBAR MODERNE
+   ============================================================================= */
+
+.scroll-bar .thumb {
+    -fx-background-color: #cbd5e1;
+    -fx-background-radius: 10;
+}
+
+.scroll-bar .track {
+    -fx-background-color: transparent;
+}

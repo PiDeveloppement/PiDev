@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pidev.controller.resource.MainController"
+            prefHeight="900" prefWidth="1400"
+            stylesheets="@style.css"
+            style="-fx-background-color: #f8fafc;">
+
+    <left>
+        <VBox prefWidth="240" spacing="0"
+              style="-fx-background-color: linear-gradient(to bottom, #2196F3, #0D47A1);
+                     -fx-border-color: #0D47A1; -fx-border-width: 0 2 0 0;">
+
+            <VBox style="-fx-background-color: #0D47A1; -fx-padding: 25 15;" alignment="CENTER" spacing="8">
+                <ImageView fitHeight="80" fitWidth="80" preserveRatio="true">
+                    <image>
+                        <Image url="@images/logo.png" />
+                    </image>
+                </ImageView>
+                <Label text="ADMINISTRATION" style="-fx-text-fill: rgba(255,255,255,0.95); -fx-font-size: 12px; -fx-font-weight: bold;"/>
+            </VBox>
+
+            <VBox spacing="8" style="-fx-padding: 25 15;">
+                <Button fx:id="btnReservation" onAction="#showReservation" text="Réservations" styleClass="sidebar-button">
+                    <graphic>
+                        <Text text="📅" style="-fx-font-size: 16px;"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="btnSalles" onAction="#showSalles" text="Gestion Salles" styleClass="sidebar-button">
+                    <graphic>
+                        <Text text="🏢" style="-fx-font-size: 16px;"/>
+                    </graphic>
+                </Button>
+
+                <Button fx:id="btnEquipements" onAction="#showEquipements" text="Équipements" styleClass="sidebar-button">
+                    <graphic>
+                        <Text text="🛠" style="-fx-font-size: 16px;"/>
+                    </graphic>
+                </Button>
+
+                <Region VBox.vgrow="ALWAYS" />
+
+                <Button text="Déconnexion" styleClass="sidebar-button, logout-button">
+                    <graphic>
+                        <Text text="🚪" style="-fx-font-size: 16px;"/>
+                    </graphic>
+                </Button>
+            </VBox>
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="0">
+            <HBox style="-fx-background-color: white; -fx-padding: 25 30; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;" alignment="CENTER_LEFT">
+                <VBox spacing="5">
+                    <Label text="Système de Gestion" styleClass="header-title"/>
+                    <Label text="Bienvenue sur votre tableau de bord universitaire" styleClass="header-subtitle"/>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <HBox spacing="10">
+                    <VBox styleClass="stat-card, stat-card-blue" alignment="CENTER">
+                        <Label text="24" style="-fx-font-weight: bold; -fx-font-size: 18px;"/>
+                        <Label text="Salles" style="-fx-font-size: 10px;"/>
+                    </VBox>
+                </HBox>
+            </HBox>
+
+            <StackPane fx:id="contentArea" VBox.vgrow="ALWAYS" style="-fx-padding: 20;" />
+        </VBox>
+    </center>
+</BorderPane>
