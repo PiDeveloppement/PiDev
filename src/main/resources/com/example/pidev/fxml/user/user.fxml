@@ -120,8 +120,8 @@
                       spacing="15" alignment="CENTER_LEFT" prefHeight="80">
                     <TextField fx:id="searchField"
                             promptText="🔍 Rechercher un utilisateur..." style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-pref-width: 300; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
-                    <ComboBox promptText="📂 Catégorie" prefWidth="160" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
-                    <ComboBox promptText="📊 Statut" prefWidth="160" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
+                    <ComboBox fx:id="faculteFilterCombo" onAction="#filterByFaculte" promptText="📂 Faculté" prefWidth="160" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
+                    <ComboBox fx:id="roleFilterCombo" onAction="#filterByRole" promptText="📊 Role" prefWidth="160" style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 10 15; -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Button text="➕ ajouter role" onAction="#goToRole" style="-fx-background-color: linear-gradient(to right, #10b981, #059669); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 8; -fx-padding: 10 22;"/>
                 </HBox>
@@ -142,7 +142,7 @@
                                 <TableView fx:id="userTable" VBox.vgrow="ALWAYS"
                                            style="-fx-background-color: transparent;">
                                     <columns>
-
+                                        <TableColumn fx:id="id_column" text="🔢 ID" prefWidth="80" style="-fx-alignment: CENTER;"/>
                                         <TableColumn fx:id="firstname_column" text="📝 First Name" prefWidth="200"/>
                                         <TableColumn fx:id="lastname_column" text="📝 Last Name" prefWidth="150" style="-fx-alignment: CENTER;"/>
                                         <TableColumn fx:id="email_column" text="📧 Email" prefWidth="220" style="-fx-alignment: CENTER;"/>

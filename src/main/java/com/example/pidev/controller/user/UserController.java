@@ -29,7 +29,7 @@ public class UserController implements Initializable {
 
     /* ================= FIELDS ================= */
 
-    @FXML private TextField firstnameField, lastnameField, emailField, faculteField, passwordField;
+    @FXML private TextField searchField,firstnameField, lastnameField, emailField, faculteField, passwordField;
     @FXML private ComboBox<String> roleComboBox;
 
     @FXML private TableView<UserModel> userTable;
@@ -37,11 +37,15 @@ public class UserController implements Initializable {
     @FXML private TableColumn<UserModel,String> firstname_column, lastname_column,
             email_column, faculte_column, role_id_column, password_column;
     @FXML private TableColumn<UserModel,Void> actions_column;
-    @FXML
-    private TextField searchField;
+    @FXML private ComboBox<String> faculteFilterCombo;
+    @FXML private ComboBox<String> roleFilterCombo;
+
+
     private UserService userService;
     private RoleService roleService;
     private ObservableList<UserModel> usersList;
+    private FilteredList<UserModel> filteredData;      // filtrée
+    private SortedList<UserModel> sortedData;
 
 
     /* ================= INITIALIZE ================= */
@@ -53,10 +57,25 @@ public class UserController implements Initializable {
             roleService = new RoleService();
             usersList = FXCollections.observableArrayList();
 
+            initializeTableColumns();
+
+            // Setup filtered et sorted data
+            filteredData = new FilteredList<>(usersList, b -> true);
+            sortedData = new SortedList<>(filteredData);
+            sortedData.comparatorProperty().bind(userTable.comparatorProperty());
+            userTable.setItems(sortedData);
+
+            // Charger les données
+            loadUsers();
+
+            // === CHARGER LES LISTES POUR LES FILTRES ===
+            loadFaculteFilterList();
+            loadRoleFilterList();
+
+            // Configurer le ComboBox des rôles pour le formulaire
             roleComboBox.setItems(roleService.getAllRoleNames());
 
-            initializeTableColumns();
-            loadUsers();
+            setupSearch();
             setupActionsColumn();
 
             userTable.getSelectionModel().selectedItemProperty()
@@ -68,21 +87,14 @@ public class UserController implements Initializable {
                             .multiply(userTable.getFixedCellSize())
                             .add(40)
             );
-            usersList.addAll(userService.getAllUsers()); // ta méthode de récupération
-
-            setupSearch();
 
         } catch (SQLException e) {
             showAlert("Erreur", e.getMessage());
         }
     }
-
-
-    /* ================= TABLE ================= */
-
     private void initializeTableColumns() {
 
-
+        id_column.setCellValueFactory(new PropertyValueFactory<>("id_User"));
         firstname_column.setCellValueFactory(new PropertyValueFactory<>("first_Name"));
         lastname_column.setCellValueFactory(new PropertyValueFactory<>("last_Name"));
         email_column.setCellValueFactory(new PropertyValueFactory<>("email"));
@@ -100,7 +112,7 @@ public class UserController implements Initializable {
 
     private void loadUsers() {
         usersList.setAll(userService.getAllUsers());
-        userTable.setItems(usersList);
+        loadFaculteFilterList();
 
     }
 
@@ -128,6 +140,7 @@ public class UserController implements Initializable {
         if (userService.registerUser(user)) {
             showAlert("Succès", "Utilisateur créé avec succès");
             loadUsers();
+            loadFaculteFilterList();
             resetForm();
         }
     }
@@ -136,23 +149,26 @@ public class UserController implements Initializable {
     /* ================= UPDATE ================= */
 
     @FXML
-    private void modifyButtonOnAction(ActionEvent e) throws SQLException {
 
-        UserModel selected = userTable.getSelectionModel().getSelectedItem();
+    private void modifyButtonOnAction(ActionEvent e) {
+        try {
+            UserModel selected = userTable.getSelectionModel().getSelectedItem();
 
-        System.out.println(selected); // debug
+            if (selected == null) {
+                showAlert("Erreur", "Sélectionnez un utilisateur");
+                return;
+            }
 
-        if (selected == null) {
-            showAlert("Erreur", "Sélectionnez un utilisateur");
-            return;
+            updateUser(selected);
+
+        } catch (SQLException ex) {
+            showAlert("Erreur BD", ex.getMessage());
         }
-
-        updateUser(selected);
     }
 
 
-    private void updateUser(UserModel userModel) throws SQLException {
 
+    private void updateUser(UserModel userModel) throws SQLException {
         if (!validateFields()) return;
 
         userModel.setFirst_Name(firstnameField.getText());
@@ -161,8 +177,25 @@ public class UserController implements Initializable {
         userModel.setFaculte(faculteField.getText());
         userModel.setPassword(passwordField.getText());
 
+        // Get selected role name from ComboBox
         String roleName = roleComboBox.getValue();
-        userModel.setRole_Id(roleService.getRoleIdByName(roleName));
+
+        // VALIDATION: Check if a role is selected
+        if (roleName == null || roleName.isEmpty()) {
+            showAlert("Erreur", "Veuillez sélectionner un rôle");
+            return;
+        }
+
+        // Get role ID by name
+        int roleId = roleService.getRoleIdByName(roleName);
+
+        // VALIDATION: Check if role ID is valid
+        if (roleId <= 0) {
+            showAlert("Erreur", "Rôle invalide ou inexistant");
+            return;
+        }
+
+        userModel.setRole_Id(roleId);
 
         if (userService.updateUser(userModel)) {
             showAlert("Succès", "Utilisateur modifié");
@@ -188,6 +221,7 @@ public class UserController implements Initializable {
         if (userService.deleteUser(user.getId_User())) {
             showAlert("Succès", "Utilisateur supprimé");
             loadUsers();
+
         }
     }
 
@@ -238,6 +272,9 @@ public class UserController implements Initializable {
         emailField.setText(u.getEmail());
         faculteField.setText(u.getFaculte());
         passwordField.setText(u.getPassword());
+        if (u.getRole() != null && u.getRole().getRoleName() != null) {
+            roleComboBox.setValue(u.getRole().getRoleName());
+        }
     }
 
     private void resetForm() {
@@ -322,7 +359,7 @@ public class UserController implements Initializable {
     private void goToProfil(ActionEvent event) {
         try {
             Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/")
+                    getClass().getResource("/com/example/pidev/fxml/user/profil.fxml")
             );
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(new Scene(root));
@@ -330,29 +367,122 @@ public class UserController implements Initializable {
         } catch (Exception ignored) {}
     }
     private void setupSearch() {
-
-        FilteredList<UserModel> filteredData = new FilteredList<>(usersList, b -> true);
+        // Remove this line: filteredData.setPredicate(user -> true);
+        // Remove this line: userTable.setItems(sortedData);
 
         searchField.textProperty().addListener((obs, oldValue, newValue) -> {
+            String keyword = newValue.toLowerCase().trim();
 
             filteredData.setPredicate(user -> {
+                if (keyword.isEmpty()) return true;
 
-                if (newValue == null || newValue.isEmpty()) {
-                    return true;
-                }
+                boolean matchesFirstName = user.getFirst_Name().toLowerCase().contains(keyword);
+                boolean matchesLastName = user.getLast_Name().toLowerCase().contains(keyword);
+                boolean matchesEmail = user.getEmail().toLowerCase().contains(keyword);
+                boolean matchesFaculte = user.getFaculte().toLowerCase().contains(keyword);
 
-                String keyword = newValue.toLowerCase();
+                // Also search by role name if available
+                boolean matchesRole = user.getRole() != null &&
+                        user.getRole().getRoleName().toLowerCase().contains(keyword);
 
-                return user.getFirst_Name().toLowerCase().contains(keyword)
-                        || user.getLast_Name().contains(keyword);
+                return matchesFirstName || matchesLastName || matchesEmail || matchesFaculte || matchesRole;
             });
         });
-
-        SortedList<UserModel> sortedData = new SortedList<>(filteredData);
-
-        sortedData.comparatorProperty().bind(userTable.comparatorProperty());
-
-        userTable.setItems(sortedData);
     }
+    /**
+     * Charge la liste unique des facultés depuis la base de données
+     */
+    private void loadFaculteFilterList() {
+        try {
+            ObservableList<String> faculteList = FXCollections.observableArrayList();
+            faculteList.addAll(userService.getAllFacultes());
+            faculteFilterCombo.setItems(faculteList);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Charge la liste unique des rôles depuis la base de données
+     */
+    private void loadRoleFilterList() {
+        try {
+            ObservableList<String> roleList = FXCollections.observableArrayList();
+            roleList.addAll(roleService.getAllRoleNames());
+            roleFilterCombo.setItems(roleList);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void filterByFaculte(ActionEvent event) {
+        String selectedFaculte = faculteFilterCombo.getValue();
+        String currentSearch = searchField.getText().toLowerCase().trim();
+        String selectedRole = roleFilterCombo.getValue(); // Récupère le filtre rôle actuel
+
+        filteredData.setPredicate(user -> {
+            // 1. Filtre par faculté
+            boolean matchesFaculte = (selectedFaculte == null || selectedFaculte.isEmpty()) ||
+                    user.getFaculte().equalsIgnoreCase(selectedFaculte);
+
+            // 2. Filtre par rôle (indépendant)
+            boolean matchesRole = (selectedRole == null || selectedRole.isEmpty()) ||
+                    (user.getRole() != null &&
+                            user.getRole().getRoleName().equalsIgnoreCase(selectedRole));
+
+            // 3. Filtre par recherche
+            boolean matchesSearch = currentSearch.isEmpty() ||
+                    user.getFirst_Name().toLowerCase().contains(currentSearch) ||
+                    user.getLast_Name().toLowerCase().contains(currentSearch) ||
+                    user.getEmail().toLowerCase().contains(currentSearch) ||
+                    user.getFaculte().toLowerCase().contains(currentSearch) ||
+                    (user.getRole() != null && user.getRole().getRoleName().toLowerCase().contains(currentSearch));
+
+            return matchesFaculte && matchesRole && matchesSearch;
+        });
+    }
+
+    @FXML
+    private void filterByRole(ActionEvent event) {
+        String selectedRole = roleFilterCombo.getValue();
+        String currentSearch = searchField.getText().toLowerCase().trim();
+        String selectedFaculte = faculteFilterCombo.getValue(); // Récupère le filtre faculté actuel
+
+        filteredData.setPredicate(user -> {
+            // 1. Filtre par rôle
+            boolean matchesRole = (selectedRole == null || selectedRole.isEmpty()) ||
+                    (user.getRole() != null &&
+                            user.getRole().getRoleName().equalsIgnoreCase(selectedRole));
+
+            // 2. Filtre par faculté (indépendant)
+            boolean matchesFaculte = (selectedFaculte == null || selectedFaculte.isEmpty()) ||
+                    user.getFaculte().equalsIgnoreCase(selectedFaculte);
+
+            // 3. Filtre par recherche
+            boolean matchesSearch = currentSearch.isEmpty() ||
+                    user.getFirst_Name().toLowerCase().contains(currentSearch) ||
+                    user.getLast_Name().toLowerCase().contains(currentSearch) ||
+                    user.getEmail().toLowerCase().contains(currentSearch) ||
+                    user.getFaculte().toLowerCase().contains(currentSearch) ||
+                    (user.getRole() != null && user.getRole().getRoleName().toLowerCase().contains(currentSearch));
+
+            return matchesRole && matchesFaculte && matchesSearch;
+        });
+    }
+
+    @FXML
+    private void resetFilters(ActionEvent event) {
+        // Réinitialiser les sélections
+        faculteFilterCombo.getSelectionModel().clearSelection();
+        roleFilterCombo.getSelectionModel().clearSelection();
+
+        // Réinitialiser la recherche
+        searchField.clear();
+
+        // Afficher tous les utilisateurs
+        filteredData.setPredicate(user -> true);
+    }
+
 
 }

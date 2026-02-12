@@ -148,7 +148,7 @@ public class DashboardController implements Initializable {
     }
     public void goToDashboard(ActionEvent event ) {
         try {
-            Parent root = FXMLLoader.load(getClass().getResource("/com/example/pidev/fxml/user/profil.fxml"));
+            Parent root = FXMLLoader.load(getClass().getResource("/com/example/pidev/fxml/dashboard/dashboard.fxml"));
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.setTitle("Login");

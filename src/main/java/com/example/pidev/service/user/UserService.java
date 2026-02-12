@@ -118,6 +118,37 @@ public class UserService {
         usersList.setAll(getAllUsers());
     }
 
+    /**
+     * Récupère toutes les facultés uniques
+     */
+    public ObservableList<String> getAllFacultes() {
+        ObservableList<String> faculteList = FXCollections.observableArrayList();
+        String query = "SELECT DISTINCT faculte FROM user_model WHERE faculte IS NOT NULL AND faculte != '' ORDER BY faculte";
+
+        try (Statement st = connection.createStatement();
+             ResultSet rs = st.executeQuery(query)) {
+
+            while (rs.next()) {
+                faculteList.add(rs.getString("faculte"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return faculteList;
+    }
+    public boolean isEmailExists(String email) {
+        String query = "SELECT COUNT(*) FROM user_model WHERE Email = ?";
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 
 }
 

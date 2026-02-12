@@ -1,12 +1,15 @@
 package com.example.pidev.controller.role;
 
 import com.example.pidev.model.role.Role;
+import com.example.pidev.model.user.UserModel;
 import com.example.pidev.service.role.RoleService;
 import com.example.pidev.service.user.UserService;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -29,7 +32,7 @@ public class RoleController implements Initializable {
     /* ================= FIELDS ================= */
 
     
-@FXML private TextField rolenameField;
+@FXML private TextField rolenameField,searchField;
     @FXML private TableView<Role> roleTable;
     @FXML private TableColumn<Role,Integer> id_column;
     @FXML private TableColumn<Role,String> roleName_column;
@@ -41,6 +44,9 @@ public class RoleController implements Initializable {
     private RoleService roleService;
     private ObservableList<Role> rolesList;
 
+    private FilteredList<Role> filteredData;      // filtrée
+    private SortedList<Role> sortedData;
+
 
     /* ================= INITIALIZE ================= */
 
@@ -51,10 +57,20 @@ public class RoleController implements Initializable {
             roleService = new RoleService();
             rolesList = FXCollections.observableArrayList();
 
-           
-
             initializeTableColumns();
+
+            // IMPORTANT: Setup filtered and sorted data BEFORE loading roles
+            filteredData = new FilteredList<>(rolesList, b -> true);
+            sortedData = new SortedList<>(filteredData);
+            sortedData.comparatorProperty().bind(roleTable.comparatorProperty());
+            roleTable.setItems(sortedData);  // Set the sortedData, NOT rolesList
+
+            // Setup search BEFORE loading roles
+            setupSearch();
+
+            // Now load roles
             loadRoles();
+
             setupActionsColumn();
 
             roleTable.getSelectionModel().selectedItemProperty()
@@ -86,7 +102,7 @@ public class RoleController implements Initializable {
 
     private void loadRoles() {
         rolesList.setAll(roleService.getAllRoles());
-        roleTable.setItems(rolesList);
+
 
     }
 
@@ -144,6 +160,8 @@ public class RoleController implements Initializable {
             loadRoles();
             resetForm();
         }
+        searchField.clear();
+
     }
 
 
@@ -286,5 +304,15 @@ public class RoleController implements Initializable {
             stage.setScene(new Scene(root));
             stage.show();
         } catch (Exception ignored) {}
+    }
+    private void setupSearch() {
+        searchField.textProperty().addListener((obs, oldValue, newValue) -> {
+            String keyword = newValue.toLowerCase().trim();
+
+            filteredData.setPredicate(role -> {
+                if (keyword.isEmpty()) return true;
+                return role.getRoleName().toLowerCase().contains(keyword);
+            });
+        });
     }
 }

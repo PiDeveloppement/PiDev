@@ -71,14 +71,12 @@ public ObservableList<Role> getAllRoles() {
     // 🔹 Modifier un role
     public boolean updateRole(Role role) {
 
-        String query = "UPDATE role SET " +
-                "RoleName=?" +
-                "WHERE Id_Role=?";
+        String query = "UPDATE role SET RoleName = ? WHERE Id_Role = ?";
 
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
 
             stmt.setString(1, role.getRoleName());
-
+            stmt.setLong(2, role.getId_Role());
 
             return stmt.executeUpdate() > 0;
 
