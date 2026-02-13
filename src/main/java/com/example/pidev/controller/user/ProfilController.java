@@ -1,7 +1,9 @@
 package com.example.pidev.controller.user;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -368,34 +370,49 @@ public class ProfilController implements Initializable {
     }
 
     // Méthodes de navigation (similaires à votre contrôleur original)
-    @FXML
-    private void goToDashboard() throws IOException {
-        loadFXML("/com/example/pidev/view/dashboard.fxml");
+    public void goToDashboard(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/dashboard/dashboard.fxml")
+            );
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception ignored) {}
+    }
+
+    public void goToGestionUser(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/user/user.fxml")
+            );
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception ignored) {}
+    }
+
+    public void goToProfil(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/user/profil.fxml")
+            );
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception ignored) {}
     }
 
     @FXML
-    private void goToGestionUser() throws IOException {
-        loadFXML("/com/example/pidev/view/user/user_management.fxml");
-    }
-
-    @FXML
-    private void goToProfil() throws IOException {
-        // Déjà sur la page de profil
-        // Peut-être recharger la page
-        loadFXML("/com/example/pidev/view/user/profile.fxml");
-    }
-
-    @FXML
-    private void goToLogin() throws IOException {
-        loadFXML("/com/example/pidev/view/auth/login.fxml");
-    }
-
-    private void loadFXML(String fxmlPath) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource(fxmlPath));
-        Stage stage = (Stage) profileImageView.getScene().getWindow();
-        Scene scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
+    private void goToLogin(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/auth/login.fxml")
+            );
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception ignored) {}
     }
 
     private void showAlert(String title, String message) {
