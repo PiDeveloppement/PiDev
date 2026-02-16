@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.image.*?>
+
+<BorderPane prefHeight="850.0" prefWidth="1300.0" style="-fx-background-color: #f8fafc;"
+            stylesheets="@../css/style.css"
+            xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.melocode.pigestion.controller.DashboardController">
+
+    <left>
+        <VBox prefWidth="240" spacing="0" style="-fx-background-color: linear-gradient(to bottom, #2196F3, #0D47A1);">
+            <children>
+                <VBox alignment="CENTER" spacing="10" style="-fx-background-color: #0D47A1; -fx-padding: 30 15;">
+                    <children>
+                        <ImageView fitHeight="70" fitWidth="70" preserveRatio="true">
+                            <Image url="@../images/logo.png" />
+                        </ImageView>
+                        <Label text="PI-GESTION" textFill="WHITE" style="-fx-font-weight: bold; -fx-font-size: 20px;" />
+                    </children>
+                </VBox>
+
+                <VBox spacing="10" style="-fx-padding: 25 15;">
+                    <children>
+                        <Button maxWidth="Infinity" onAction="#showQuestionEditor" styleClass="menu-button" text="⚙ Editeur de Questions" />
+                        <Button maxWidth="Infinity" onAction="#showParticipantQuiz" styleClass="menu-button" text="📝 Passer le Quiz" />
+                        <Button maxWidth="Infinity" onAction="#showResultats" styleClass="menu-button" text="📊 Résultats &amp; Stats" />
+                    </children>
+                </VBox>
+                <Region VBox.vgrow="ALWAYS" />
+                <Button maxWidth="Infinity" onAction="#handleExit" text="🚪 DÉCONNEXION" style="-fx-background-color: #f87171; -fx-text-fill: white; -fx-margin: 20;"/>
+            </children>
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="0">
+            <children>
+                <HBox alignment="CENTER_LEFT" prefHeight="80.0" style="-fx-background-color: white; -fx-padding: 0 30; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+                    <children>
+                        <Label fx:id="lblPageTitle" text="Tableau de Bord" style="-fx-font-size: 24px; -fx-font-weight: bold;" />
+                    </children>
+                </HBox>
+                <StackPane fx:id="contentArea" VBox.vgrow="ALWAYS" />
+            </children>
+        </VBox>
+    </center>
+</BorderPane>
