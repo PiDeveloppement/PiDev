@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane prefHeight="900" prefWidth="1600"
+            style="-fx-background-color: #f8fafc;"
+            xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pidev.controller.budget.BudgetListController">
+
+    <center>
+        <ScrollPane fitToHeight="true" fitToWidth="true"
+                    style="-fx-background-color: transparent; -fx-border-color: transparent;">
+            <VBox spacing="0" style="-fx-padding: 0 35 20 35;">
+
+                <!-- HEADER + KPI -->
+                <HBox alignment="CENTER_LEFT"
+                      style="-fx-background-color: white; -fx-padding: 20 40;
+                             -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+
+                    <VBox spacing="6" HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308">
+                        <Label text="Gestion des Budgets"
+                               wrapText="true"
+                               style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+                        <Label text="Suivi financier par événement (Sponsors + Dépenses)"
+                               wrapText="true"
+                               style="-fx-text-fill: #64748b; -fx-font-size: 14px;" />
+                    </VBox>
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <HBox alignment="CENTER" spacing="12">
+
+                        <VBox alignment="CENTER" spacing="2"
+                              style="-fx-padding: 12 18; -fx-background-color: #f0fdf4; -fx-background-radius: 10;
+                                     -fx-border-color: #bbf7d0; -fx-border-width: 1; -fx-border-radius: 10;">
+                            <Label fx:id="kpiCountLabel" text="0"
+                                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #16a34a;"/>
+                            <Label text="Budgets" style="-fx-text-fill: #22c55e; -fx-font-size: 12px;"/>
+                        </VBox>
+
+                        <VBox alignment="CENTER" spacing="2"
+                              style="-fx-padding: 12 18; -fx-background-color: #eff6ff; -fx-background-radius: 10;
+                                     -fx-border-color: #bfdbfe; -fx-border-width: 1; -fx-border-radius: 10;">
+                            <Label fx:id="kpiInitialLabel" text="0,00 DT"
+                                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2563eb;"/>
+                            <Label text="Total budget initial" style="-fx-text-fill: #3b82f6; -fx-font-size: 12px;"/>
+                        </VBox>
+
+                        <VBox alignment="CENTER" spacing="2"
+                              style="-fx-padding: 12 18; -fx-background-color: #fef3c7; -fx-background-radius: 10;
+                                     -fx-border-color: #fcd34d; -fx-border-width: 1; -fx-border-radius: 10;">
+                            <Label fx:id="kpiRentLabel" text="0,00 DT"
+                                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #d97706;"/>
+                            <Label text="Rentabilité globale" style="-fx-text-fill: #f59e0b; -fx-font-size: 12px;"/>
+                        </VBox>
+
+                        <VBox alignment="CENTER" spacing="2"
+                              style="-fx-padding: 12 18; -fx-background-color: #fee2e2; -fx-background-radius: 10;
+                                     -fx-border-color: #fecaca; -fx-border-width: 1; -fx-border-radius: 10;">
+                            <Label fx:id="kpiDeficitLabel" text="0"
+                                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #dc2626;"/>
+                            <Label text="Budgets en déficit" style="-fx-text-fill: #ef4444; -fx-font-size: 12px;"/>
+                        </VBox>
+
+                    </HBox>
+                </HBox>
+
+                <!-- ACTIONS -->
+                <HBox alignment="CENTER_LEFT" spacing="16"
+                      style="-fx-background-color: #f1f5f9; -fx-padding: 22 40;
+                             -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+
+                    <TextField fx:id="searchField"
+                               promptText="🔍 Rechercher (ID / ID événement)"
+                               style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 12 18;
+                                      -fx-pref-width: 340; -fx-border-color: #cbd5e1; -fx-border-width: 1;
+                                      -fx-border-radius: 10; -fx-font-size: 14px;" />
+
+                    <ComboBox fx:id="eventFilter"
+                              promptText="📅 ID Événement"
+                              prefWidth="220"
+                              style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 12 18;
+                                     -fx-border-color: #cbd5e1; -fx-border-width: 1; -fx-border-radius: 10;
+                                     -fx-font-size: 14px;" />
+
+                    <ComboBox fx:id="statusFilter"
+                              promptText="📌 État"
+                              prefWidth="220"
+                              style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 12 18;
+                                     -fx-border-color: #cbd5e1; -fx-border-width: 1; -fx-border-radius: 10;
+                                     -fx-font-size: 14px;" />
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <Button fx:id="addBtn"
+                            text="➕ Nouveau Budget"
+                            style="-fx-background-color: linear-gradient(to right, #2563eb, #1d4ed8);
+                                   -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 15px;
+                                   -fx-background-radius: 10; -fx-padding: 12 26;" />
+                </HBox>
+
+                <!-- LIST (CARDS) -->
+                <VBox spacing="15" style="-fx-padding: 30 40;" VBox.vgrow="ALWAYS">
+
+                    <Label text="📋 Liste des Budgets"
+                           style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #334155;" />
+
+                    <ScrollPane fx:id="cardsScroll" fitToWidth="true"
+                                style="-fx-background-color: transparent; -fx-border-color: transparent;">
+                        <content>
+                            <TilePane fx:id="cardsPane" prefColumns="3"/>
+                        </content>
+                    </ScrollPane>
+
+                    <Label fx:id="statusLabel"
+                           text="..."
+                           style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                </VBox>
+
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

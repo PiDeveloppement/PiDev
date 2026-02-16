@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane style="-fx-background-color: #f8fafc;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.pidev.controller.sponsor.SponsorPortalController">
+
+    <center>
+        <ScrollPane fx:id="rootScroll" fitToHeight="true" fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;">
+            <VBox prefWidth="637.0" spacing="16" style="-fx-padding: 22;">
+
+                <!-- HEADER + KPI (tu peux remettre ton header complet ici) -->
+                <HBox alignment="CENTER_LEFT" spacing="14" style="-fx-background-color: white; -fx-padding: 18; -fx-background-radius: 14; -fx-border-radius: 14; -fx-border-color: #e2e8f0;">
+                    <VBox spacing="4">
+                        <Label style="-fx-font-size: 22px; -fx-font-weight: 800;" text="Espace Sponsor" />
+                        <Label style="-fx-text-fill: #64748b;" text="Mes données uniquement (confidentialité respectée)" />
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS" />
+
+                    <HBox spacing="10">
+                        <VBox alignment="CENTER" style="-fx-padding: 10 18; -fx-background-color: #f0fdf4; -fx-background-radius: 10; -fx-border-color:#bbf7d0; -fx-border-radius:10;">
+                            <Label fx:id="mySponsorsLabel" style="-fx-font-size: 18px; -fx-font-weight: 800;" text="0" />
+                            <Label style="-fx-font-size: 11px; -fx-text-fill:#16a34a;" text="Mes Sponsors" />
+                        </VBox>
+
+                        <VBox alignment="CENTER" style="-fx-padding: 10 18; -fx-background-color: #eff6ff; -fx-background-radius: 10; -fx-border-color:#bfdbfe; -fx-border-radius:10;">
+                            <Label fx:id="myContributionLabel" style="-fx-font-size: 18px; -fx-font-weight: 800;" text="0,00 DT" />
+                            <Label style="-fx-font-size: 11px; -fx-text-fill:#2563eb;" text="Mes Contributions" />
+                        </VBox>
+
+                        <VBox alignment="CENTER" style="-fx-padding: 10 18; -fx-background-color: #fef3c7; -fx-background-radius: 10; -fx-border-color:#fcd34d; -fx-border-radius:10;">
+                            <Label fx:id="myEventsLabel" style="-fx-font-size: 18px; -fx-font-weight: 800;" text="0" />
+                            <Label style="-fx-font-size: 11px; -fx-text-fill:#d97706;" text="Mes événements sponsorisés" />
+                        </VBox>
+                    </HBox>
+                </HBox>
+
+                <!-- ACTION BAR -->
+                <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-background-color: white; -fx-padding: 14; -fx-background-radius: 14; -fx-border-radius: 14; -fx-border-color: #e2e8f0;">
+                    <ComboBox fx:id="emailAccount" prefWidth="300" promptText="👤 Choisir mon compte (email)" />
+                    <TextField fx:id="searchField" prefWidth="220" promptText="🔍 Rechercher..." />
+                    <ComboBox fx:id="companyFilter" prefWidth="200" promptText="🏢 Entreprise" />
+                    <ComboBox fx:id="eventFilter" prefWidth="200" promptText="📅 Événement" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Button fx:id="addSponsorBtn" style="-fx-background-color:#10b981; -fx-text-fill:white; -fx-font-weight:800; -fx-background-radius:10; -fx-padding:10 18;" text="➕ Nouveau" />
+                </HBox>
+
+                <!-- LIST TITLE -->
+                <Label style="-fx-font-size: 18px; -fx-font-weight: 800; -fx-text-fill:#0f172a;" text="📋 Mes Sponsors" />
+
+                <!-- ✅ CARDS GRID -->
+                <ScrollPane fx:id="cardsScroll" fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;">
+                    <content>
+                        <TilePane fx:id="cardsPane" prefColumns="2" style="-fx-background-color: transparent;" tileAlignment="TOP_LEFT" />
+                    </content>
+                </ScrollPane>
+
+                <Label fx:id="statusLabel" style="-fx-text-fill: #64748b; -fx-font-size: 13px;" text="Sélectionnez un compte pour afficher vos sponsors." />
+
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

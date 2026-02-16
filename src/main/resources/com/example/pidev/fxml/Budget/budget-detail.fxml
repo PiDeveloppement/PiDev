@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pidev.controller.budget.BudgetDetailsController"
+            style="-fx-background-color:white; -fx-padding:20;">
+
+    <VBox spacing="14" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0">
+
+        <Label text="Détails du Budget"
+               style="-fx-font-size:22px; -fx-font-weight:900; -fx-text-fill:#0f172a;"/>
+
+        <VBox spacing="10"
+              style="-fx-background-color:#f8fafc; -fx-background-radius:16; -fx-padding:16; -fx-border-color:#e2e8f0; -fx-border-radius:16;">
+
+            <GridPane hgap="12" vgap="10">
+                <Label text="ID :" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
+                <Label fx:id="idLabel" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                <Label text="Event ID :" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
+                <Label fx:id="eventIdLabel" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                <Label text="Budget initial :" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
+                <Label fx:id="initialLabel" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                <Label text="Dépenses :" GridPane.rowIndex="3" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
+                <Label fx:id="expensesLabel" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                <Label text="Revenus :" GridPane.rowIndex="4" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
+                <Label fx:id="revenueLabel" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+                <Label text="Rentabilité :" GridPane.rowIndex="5" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
+                <Label fx:id="rentLabel" GridPane.rowIndex="5" GridPane.columnIndex="1" style="-fx-font-weight:900;"/>
+            </GridPane>
+        </VBox>
+
+        <HBox alignment="CENTER_RIGHT">
+            <Button text="OK"
+                    style="-fx-background-color:#2563eb; -fx-text-fill:white; -fx-font-weight:900; -fx-background-radius:12; -fx-padding:10 18;"/>
+        </HBox>
+
+    </VBox>
+</AnchorPane>

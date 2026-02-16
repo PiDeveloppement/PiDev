@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane prefHeight="900" prefWidth="1600" style="-fx-background-color: #f8fafc;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.pidev.MainLayoutController">
+
+    <!-- SIDEBAR -->
+    <left>
+        <VBox prefWidth="220" style="-fx-background-color: linear-gradient(to bottom, #2196F3, #0D47A1);                      -fx-border-color: #0D47A1; -fx-border-width: 0 2 0 0;                      -fx-min-width: 220; -fx-max-width: 220;">
+
+            <VBox alignment="CENTER" spacing="8" style="-fx-background-color: #0D47A1; -fx-padding: 25 15;">
+                <ImageView fitHeight="99" fitWidth="99" preserveRatio="true">
+                    <Image url="@/com/example/pidev/icons/logo.png" />
+
+                </ImageView>
+                <Label style="-fx-text-fill: rgba(255,255,255,0.95); -fx-font-size: 11px;" text="Gestion Événements" />
+            </VBox>
+
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 0;" vbarPolicy="NEVER">
+                <VBox alignment="CENTER" spacing="6" style="-fx-padding: 25 15;">
+
+                    <Button fx:id="btnDashboard" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1;                                    -fx-font-size: 14px; -fx-padding: 14 20; -fx-alignment: CENTER_LEFT;                                    -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;" text="Dashboard">
+                        <graphic><Text style="-fx-font-size: 16px;" text="📊" /></graphic>
+                    </Button>
+
+                    <Button fx:id="btnEvents" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1;                                    -fx-font-size: 14px; -fx-padding: 14 20; -fx-alignment: CENTER_LEFT;                                    -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;" text="Événements">
+                        <graphic><Text style="-fx-font-size: 16px;" text="📅" /></graphic>
+                    </Button>
+
+                    <Button fx:id="btnParticipants" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1;                                    -fx-font-size: 14px; -fx-padding: 14 20; -fx-alignment: CENTER_LEFT;                                    -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;" text="Participants">
+                        <graphic><Text style="-fx-font-size: 16px;" text="👥" /></graphic>
+                    </Button>
+
+                    <!-- Sponsors -->
+                    <Button fx:id="btnSponsors" onAction="#showSponsors" style="-fx-background-color: white; -fx-text-fill: #0D47A1; -fx-font-weight: bold;                                    -fx-font-size: 14px; -fx-padding: 14 20; -fx-alignment: CENTER_LEFT;                                    -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;                                    -fx-border-color: #64b5f6; -fx-border-width: 2;" text="Sponsors">
+                        <graphic><Text style="-fx-font-size: 16px;" text="💼" /></graphic>
+                    </Button>
+
+                    <!-- Budget -->
+                    <Button fx:id="btnBudget" onAction="#showBudget" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1;                                    -fx-font-size: 14px; -fx-padding: 14 20; -fx-alignment: CENTER_LEFT;                                    -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;" text="Budget">
+                        <graphic><Text style="-fx-font-size: 16px;" text="💰" /></graphic>
+                    </Button>
+
+                    <!-- Dépenses -->
+                    <Button fx:id="btnDepenses" onAction="#showDepenses" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1;                                    -fx-font-size: 14px; -fx-padding: 14 20; -fx-alignment: CENTER_LEFT;                                    -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;" text="Dépenses">
+                        <graphic><Text style="-fx-font-size: 16px;" text="💸" /></graphic>
+                    </Button>
+
+                    <Button fx:id="btnSettings" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #0D47A1;                                    -fx-font-size: 14px; -fx-padding: 14 20; -fx-alignment: CENTER_LEFT;                                    -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;" text="Paramètres">
+                        <graphic><Text style="-fx-font-size: 16px;" text="⚙" /></graphic>
+                    </Button>
+
+                </VBox>
+            </ScrollPane>
+
+            <VBox alignment="BOTTOM_CENTER" style="-fx-padding: 0 15 25 15;" VBox.vgrow="ALWAYS">
+                <Button fx:id="btnLogout" style="-fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #d32f2f;                                -fx-font-weight: bold; -fx-font-size: 14px;                                -fx-padding: 14 20; -fx-alignment: CENTER_LEFT;                                -fx-border-radius: 8; -fx-background-radius: 8; -fx-min-width: 180;" text="Déconnexion">
+                    <graphic><Text style="-fx-font-size: 16px;" text="🚪" /></graphic>
+                </Button>
+            </VBox>
+        </VBox>
+    </left>
+
+    <!-- CONTENU CENTRAL (on change ici sans changer de path dans HelloApplication) -->
+    <center>
+        <StackPane fx:id="contentPane" style="-fx-padding: 20;" />
+    </center>
+
+</BorderPane>
