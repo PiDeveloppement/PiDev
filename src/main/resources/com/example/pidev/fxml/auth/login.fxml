@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.shape.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            prefHeight="800" prefWidth="1200"
+            style="-fx-background-color: linear-gradient(to bottom right, #f0f8ff, #e6f2ff);">
+
+    <center>
+        <GridPane alignment="CENTER" hgap="60">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="45"/>
+                <ColumnConstraints percentWidth="55"/>
+            </columnConstraints>
+
+            <!-- Partie gauche : Présentation avec logo -->
+            <VBox alignment="CENTER" spacing="40" GridPane.columnIndex="0"
+                  style="-fx-padding: 40 60 40 40;">
+
+                <!-- Logo EventFlow -->
+                <ImageView fitHeight="222" fitWidth="222" preserveRatio="true">
+                    <Image url="@images/logo.png" />
+                </ImageView>
+
+
+                <VBox alignment="CENTER" spacing="10">
+
+
+                </VBox>
+
+                <!-- Points forts -->
+                <VBox spacing="25" prefWidth="380">
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <StackPane>
+                            <Circle radius="22" fill="rgba(33, 150, 243, 0.1)"/>
+                            <Label text="📅" style="-fx-font-size: 18px; -fx-text-fill: #2196F3;"/>
+                        </StackPane>
+                        <VBox spacing="3">
+                            <Label text="Créez des événements"
+                                   style="-fx-text-fill: #333333; -fx-font-weight: bold; -fx-font-size: 16px;"/>
+                            <Label text="Organisez et planifiez facilement"
+                                   style="-fx-text-fill: #666666; -fx-font-size: 13px;"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <StackPane>
+                            <Circle radius="22" fill="rgba(33, 150, 243, 0.1)"/>
+                            <Label text="👥" style="-fx-font-size: 18px; -fx-text-fill: #2196F3;"/>
+                        </StackPane>
+                        <VBox spacing="3">
+                            <Label text="Gérez les participants"
+                                   style="-fx-text-fill: #333333; -fx-font-weight: bold; -fx-font-size: 16px;"/>
+                            <Label text="Suivi en temps réel des inscriptions"
+                                   style="-fx-text-fill: #666666; -fx-font-size: 13px;"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <StackPane>
+                            <Circle radius="22" fill="rgba(33, 150, 243, 0.1)"/>
+                            <Label text="💰" style="-fx-font-size: 18px; -fx-text-fill: #2196F3;"/>
+                        </StackPane>
+                        <VBox spacing="3">
+                            <Label text="Suivez votre budget"
+                                   style="-fx-text-fill: #333333; -fx-font-weight: bold; -fx-font-size: 16px;"/>
+                            <Label text="Contrôlez les dépenses et recettes"
+                                   style="-fx-text-fill: #666666; -fx-font-size: 13px;"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+            </VBox>
+
+            <!-- Partie droite : Carte de connexion centrée et réduite -->
+            <VBox alignment="CENTER" spacing="0" GridPane.columnIndex="1"
+                  style="-fx-padding: 60;">
+
+                <!-- Carte blanche centrée avec taille réduite -->
+                <VBox alignment="TOP_CENTER" spacing="25"
+                      style="-fx-padding: 35 40; -fx-background-color: white;
+                             -fx-background-radius: 15;
+                             -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 8, 0, 0, 2);
+                             -fx-max-width: 420;">
+
+                    <!-- En-tête centré -->
+                    <VBox alignment="CENTER" spacing="6">
+                        <Label text="Connexion"
+                               style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #2196F3;"/>
+                        <Label text="Accédez à votre espace de gestion"
+                               style="-fx-text-fill: #666666; -fx-font-size: 13px;"/>
+                    </VBox>
+
+                    <!-- Formulaire compact -->
+                    <VBox spacing="18" prefWidth="350">
+                        <TextField fx:id="emailField" promptText="Email universitaire"
+                                   style="-fx-background-radius: 8; -fx-border-radius: 8; -fx-padding: 10 14;"/>
+
+                        <PasswordField fx:id="passwordField" promptText="Mot de passe"
+                                       style="-fx-background-radius: 8; -fx-border-radius: 8; -fx-padding: 10 14;"/>
+                    </VBox>
+
+                    <!-- Options et bouton -->
+                    <VBox spacing="18" alignment="CENTER" prefWidth="350">
+                        <CheckBox fx:id="rememberCheckbox"
+                                  text="Se souvenir de moi"
+                                  style="-fx-text-fill: #555555; -fx-font-size: 13px;"/>
+
+                        <Button fx:id="loginButton" text="Se connecter"
+                                style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;
+                                       -fx-background-radius: 8; -fx-padding: 10 35; -fx-font-size: 13px;"
+                                prefWidth="280"/>
+
+                        <HBox alignment="CENTER" spacing="5">
+                            <Label text="Nouveau sur EventFlow?" style="-fx-text-fill: #666666; -fx-font-size: 12px;"/>
+                            <Hyperlink text="Créer un compte"
+                                       style="-fx-text-fill: #2196F3; -fx-font-weight: bold; -fx-font-size: 12px;"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </VBox>
+        </GridPane>
+    </center>
+</BorderPane>
+
+

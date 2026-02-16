@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pidev.controller.event.CategoryListController"
+      spacing="0"
+      styleClass="page-background"
+      stylesheets="@../../css/atlantafx-custom.css">
+
+    <!-- ===================== NAVBAR EN HAUT (FIXE) ===================== -->
+    <HBox style="-fx-background-color: linear-gradient(to right, #1e88e5, #0d47a1);
+                 -fx-padding: 15 30; -fx-spacing: 20;"
+          alignment="CENTER_LEFT">
+
+        <!-- Barre de recherche globale -->
+        <HBox spacing="8" alignment="CENTER_LEFT"
+              style="-fx-background-color: rgba(255,255,255,0.15);
+                     -fx-background-radius: 20; -fx-padding: 8 15;"
+              prefWidth="350">
+            <Label text="🔍" style="-fx-text-fill: white; -fx-font-size: 16px;"/>
+            <TextField promptText="Recherche globale..."
+                       style="-fx-background-color: transparent;
+                              -fx-text-fill: white;
+                              -fx-prompt-text-fill: rgba(255,255,255,0.6);
+                              -fx-border-width: 0;"
+                       HBox.hgrow="ALWAYS"/>
+        </HBox>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <!-- Date et Heure -->
+        <VBox spacing="2" alignment="CENTER_RIGHT">
+            <Label fx:id="dateLabel" text="Vendredi 14 Février 2026"
+                   style="-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: 600;"/>
+            <Label fx:id="timeLabel" text="14:30"
+                   style="-fx-text-fill: rgba(255,255,255,0.8); -fx-font-size: 12px;"/>
+        </VBox>
+
+        <!-- Séparateur -->
+        <Separator orientation="VERTICAL"
+                   style="-fx-background-color: rgba(0,0,0,0); -fx-pref-height: 40;"/>
+
+        <!-- Profil utilisateur -->
+        <HBox spacing="10" alignment="CENTER"
+              style="-fx-background-color: rgba(255,255,255,0.1);
+                     -fx-background-radius: 20; -fx-padding: 8 15;">
+            <Label text="👤" style="-fx-text-fill: white; -fx-font-size: 18px;"/>
+            <VBox spacing="1">
+                <Label text="Ons Abdesslem"
+                       style="-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: 600;"/>
+                <Label text="Administrateur"
+                       style="-fx-text-fill: rgba(255,255,255,0.7); -fx-font-size: 11px;"/>
+            </VBox>
+        </HBox>
+    </HBox>
+
+    <!-- ===================== ZONE SCROLLABLE (TOUTE LA PAGE) ===================== -->
+    <ScrollPane fitToWidth="true"
+                VBox.vgrow="ALWAYS"
+                style="-fx-background-color: transparent; -fx-border-color: transparent;">
+
+        <VBox spacing="0">
+
+            <!-- ===================== HEADER GESTION CATÉGORIES (DANS LE SCROLL) ===================== -->
+            <HBox style="-fx-background-color: white;
+                         -fx-padding: 15 30;
+                         -fx-border-color: #e9ecef;
+                         -fx-border-width: 0 0 1 0;"
+                  alignment="CENTER_LEFT">
+
+                <VBox spacing="3">
+                    <Label text="Gestion des Catégories"
+                           style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #212529;"/>
+                    <Label text="Gérez les catégories d'événements"
+                           style="-fx-font-size: 13px; -fx-text-fill: #6c757d;"/>
+                </VBox>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <!-- KPI Cards -->
+                <HBox spacing="15" alignment="CENTER">
+                    <VBox alignment="CENTER" spacing="4"
+                          style="-fx-padding: 15 28; -fx-background-color: #d1f4e0;
+                                 -fx-background-radius: 10; -fx-border-color: #95d5b2;
+                                 -fx-border-width: 1.5; -fx-border-radius: 10; -fx-min-width: 130;">
+                        <Label fx:id="totalLabel" text="0"
+                               style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1b5e20;"/>
+                        <Label text="Catégories"
+                               style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #2d6a4f;"/>
+                    </VBox>
+
+                    <VBox alignment="CENTER" spacing="4"
+                          style="-fx-padding: 15 28; -fx-background-color: #cfe2ff;
+                                 -fx-background-radius: 10; -fx-border-color: #9ec5fe;
+                                 -fx-border-width: 1.5; -fx-border-radius: 10; -fx-min-width: 130;">
+                        <Label fx:id="eventsLabel" text="0"
+                               style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #004085;"/>
+                        <Label text="Événements"
+                               style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #0056b3;"/>
+                    </VBox>
+                </HBox>
+            </HBox>
+
+            <!-- ===================== CONTENU PRINCIPAL ===================== -->
+            <VBox styleClass="page-content" style="-fx-padding: 25 30;">
+
+                <!-- CARD BLANCHE -->
+                <VBox styleClass="content-card">
+
+                    <!-- En-tête -->
+                    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="section-header">
+                        <Label text="📋" style="-fx-font-size: 18px;"/>
+                        <Label text="Liste des Catégories" styleClass="section-title"/>
+                    </HBox>
+
+                    <!-- TOOLBAR LIGNE 1 -->
+                    <HBox spacing="15" alignment="CENTER_LEFT" styleClass="toolbar">
+
+                        <!-- Recherche -->
+                        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-pref-width: 400px;">
+                            <Label text="🔍" style="-fx-font-size: 16px;"/>
+                            <TextField fx:id="searchField"
+                                       promptText="Recherche"
+                                       HBox.hgrow="ALWAYS"
+                                       styleClass="filter-input"/>
+                        </HBox>
+
+                        <!-- Statut -->
+                        <ComboBox fx:id="statusFilter"
+                                  prefWidth="200"
+                                  styleClass="filter-input"/>
+
+                        <!-- Couleur -->
+                        <ComboBox fx:id="colorFilter"
+                                  prefWidth="220"
+                                  styleClass="filter-input"/>
+
+                        <Region HBox.hgrow="ALWAYS"/>
+
+                        <!-- Boutons Actions -->
+                        <Button text="📄 Exporter PDF"
+                                styleClass="btn-export"
+                                minWidth="160"/>
+
+                        <Button fx:id="addBtn"
+                                text="➕ Créer une nouvelle catégorie"
+                                onAction="#handleAdd"
+                                styleClass="btn-primary"
+                                minWidth="260"/>
+                    </HBox>
+
+                    <!-- TOOLBAR LIGNE 2 -->
+                    <HBox spacing="15" alignment="CENTER_LEFT" styleClass="toolbar-secondary">
+
+                        <!-- Ordre (Tri) -->
+                        <ComboBox fx:id="sortOrder"
+                                  prefWidth="200"
+                                  styleClass="filter-input"/>
+
+                        <!-- Bouton Filtrer -->
+                        <Button onAction="#handleFilter" styleClass="btn-filter">
+                            <graphic>
+                                <HBox spacing="8" alignment="CENTER">
+                                    <Label text="⏷" style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;"/>
+                                    <Label text="Filtrer" style="-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: 600;"/>
+                                </HBox>
+                            </graphic>
+                        </Button>
+
+                        <!-- Bouton Refresh -->
+                        <Button onAction="#handleRefresh" styleClass="btn-refresh-icon">
+                            <graphic>
+                                <Label text="🔄" style="-fx-font-size: 16px;"/>
+                            </graphic>
+                        </Button>
+
+                        <Region HBox.hgrow="ALWAYS"/>
+
+                        <Label fx:id="resultLabel"
+                               text="0 resultat(s) trouvé(s)"
+                               styleClass="result-label"/>
+                    </HBox>
+
+                    <!-- TABLEAU -->
+                    <TableView fx:id="categoryTable"
+                               prefHeight="500"
+                               styleClass="data-table">
+
+                        <columns>
+                            <!-- Catégorie -->
+                            <TableColumn fx:id="categoryCol"
+                                         text="Catégorie"
+                                         prefWidth="180"
+                                         minWidth="150"
+                                         maxWidth="200"/>
+
+                            <!-- Description -->
+                            <TableColumn fx:id="descriptionCol"
+                                         text="Description"
+                                         prefWidth="480"
+                                         minWidth="350"/>
+
+                            <!-- Couleur -->
+                            <TableColumn fx:id="colorCol"
+                                         text="Couleur"
+                                         prefWidth="140"
+                                         minWidth="120"
+                                         style="-fx-alignment: CENTER;"/>
+
+                            <!-- Statut -->
+                            <TableColumn fx:id="statusCol"
+                                         text="Statut"
+                                         prefWidth="120"
+                                         minWidth="100"
+                                         style="-fx-alignment: CENTER;"/>
+
+                            <!-- Actions -->
+                            <TableColumn fx:id="actionsCol"
+                                         text="Actions"
+                                         prefWidth="200"
+                                         minWidth="180"
+                                         style="-fx-alignment: CENTER;"/>
+                        </columns>
+
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                    </TableView>
+
+                    <!-- FOOTER PAGINATION -->
+                    <HBox spacing="20" alignment="CENTER" styleClass="table-footer">
+                        <Region HBox.hgrow="ALWAYS"/>
+
+                        <HBox spacing="8" alignment="CENTER">
+                            <Button text="« Précédent" styleClass="btn-pagination" disable="true"/>
+                            <Button text="1" styleClass="btn-page-active"/>
+                            <Button text="2" styleClass="btn-page"/>
+                            <Button text="3" styleClass="btn-page"/>
+                            <Label text="..." style="-fx-text-fill: #6c757d;"/>
+                            <Button text="10" styleClass="btn-page"/>
+                            <Button text="Suivant »" styleClass="btn-pagination"/>
+                        </HBox>
+
+                        <Region HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                </VBox>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+
+</VBox>
