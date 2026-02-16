@@ -1,23 +1,29 @@
 package com.example.pidev.controller.user;
 
-import javafx.event.ActionEvent;
+import com.example.pidev.MainController;
+import com.example.pidev.model.role.Role;
+import com.example.pidev.model.user.UserModel;
+import com.example.pidev.service.role.RoleService;
+import com.example.pidev.service.user.UserService;
+import com.example.pidev.utils.UserSession;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
+import javafx.scene.shape.Circle;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
-import javafx.scene.Scene;
-import javafx.scene.Parent;
-import javafx.fxml.FXMLLoader;
+
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 
 public class ProfilController implements Initializable {
 
@@ -26,393 +32,425 @@ public class ProfilController implements Initializable {
     @FXML private TextField lastNameField;
     @FXML private TextField emailField;
     @FXML private TextField phoneField;
-    @FXML private ComboBox<String> facultyComboBox;
-    @FXML private TextField departmentField;
-    @FXML private ComboBox<String> roleComboBox;
+    @FXML private ComboBox<String> facultyComboBox;  // Pour les facultés
+    @FXML private ComboBox<String> roleComboBox;      // Pour les rôles (disabled)
     @FXML private TextField registrationDateField;
     @FXML private TextArea bioTextArea;
+    @FXML private Label bioCharCountLabel;
 
-    // Photo de profil
+    // Photo de profil - NOUVEAUX CHAMPS
+    @FXML private StackPane avatarContainer;
     @FXML private ImageView profileImageView;
+    @FXML private StackPane initialsContainer;
+    @FXML private Text userInitialsText;
     @FXML private Button uploadImageButton;
 
     // Sécurité
-    @FXML private PasswordField passwordField;
+    @FXML private TextField currentPasswordField;
     @FXML private PasswordField newPasswordField;
-    @FXML private ToggleButton emailNotificationsToggle;
+    @FXML private PasswordField confirmPasswordField;
 
-    // Données utilisateur (à remplacer par vos propres données)
-    private User currentUser;
-    private String originalProfileImagePath;
-    private File selectedImageFile;
+    // Statistiques
+    @FXML private Label eventCountLabel;
+    @FXML private Label participationCountLabel;
+    @FXML private Label roleCountLabel;
+    @FXML private Label verificationStatusLabel;
+    @FXML private Label lastLoginLabel;
+    @FXML private Label userRoleDisplayLabel;
+    @FXML private Label userLevelLabel;
+
+    private UserModel currentUser;
+    private UserService userService;
+    private RoleService roleService;
+    private MainController mainController;
+
+    public void setMainController(MainController mainController) {
+        this.mainController = mainController;
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        loadUserData();
-        setupComboBoxes();
-        setupEventHandlers();
-        loadProfileImage();
-    }
+        try {
+            System.out.println("✅ ProfilController initialisé");
+            userService = new UserService();
+            roleService = new RoleService();
 
-    private void loadUserData() {
-        // Simuler le chargement des données utilisateur
-        // À remplacer par votre logique de chargement réelle
-        currentUser = new User();
-        currentUser.setFirstName("Jean");
-        currentUser.setLastName("Dupont");
-        currentUser.setEmail("jean.dupont@universite.edu");
-        currentUser.setPhone("+33 1 23 45 67 89");
-        currentUser.setFaculty("Informatique");
-        currentUser.setDepartment("Département Informatique");
-        currentUser.setRole("Administrateur");
-        currentUser.setRegistrationDate("15/03/2024");
-        currentUser.setBio("Enseignant-chercheur en informatique spécialisé en systèmes distribués.");
-        currentUser.setNotificationsEnabled(true);
+            // Récupérer l'utilisateur connecté depuis la session
+            currentUser = UserSession.getInstance().getCurrentUser();
 
-        // Mettre à jour les champs avec les données utilisateur
-        updateFieldsFromUser();
-    }
+            if (currentUser != null) {
+                // Afficher les infos dans la console
+                System.out.println("📌 Faculté de l'utilisateur: " + currentUser.getFaculte());
+                System.out.println("📌 Rôle de l'utilisateur: " +
+                        (currentUser.getRole() != null ? currentUser.getRole().getRoleName() : "Non défini"));
 
-    private void updateFieldsFromUser() {
-        firstNameField.setText(currentUser.getFirstName());
-        lastNameField.setText(currentUser.getLastName());
-        emailField.setText(currentUser.getEmail());
-        phoneField.setText(currentUser.getPhone());
-        departmentField.setText(currentUser.getDepartment());
-        bioTextArea.setText(currentUser.getBio());
-        registrationDateField.setText(currentUser.getRegistrationDate());
+                // Charger les données
+                loadUserDataFromModel();
+                loadFacultiesFromDatabase();  // Charger les facultés depuis user_model
+                loadRolesFromDatabase();       // Charger les rôles depuis role
+                loadProfileImage();             // Charger l'image avec le style circulaire
+                updateStatistics();
+                setupBioCounter();
+                disableReadOnlyFields();
 
-        // Sélectionner les valeurs dans les ComboBox
-        facultyComboBox.getSelectionModel().select(currentUser.getFaculty());
-        roleComboBox.getSelectionModel().select(currentUser.getRole());
+            } else {
+                System.err.println("❌ Aucun utilisateur connecté");
+                showAlert("Erreur", "Aucun utilisateur connecté");
+            }
 
-        // Configurer le toggle des notifications
-        emailNotificationsToggle.setSelected(currentUser.isNotificationsEnabled());
-        updateToggleButtonText();
-    }
-
-    private void setupComboBoxes() {
-        // Initialiser la ComboBox des facultés
-        facultyComboBox.getItems().addAll(
-                "Informatique",
-                "Médecine",
-                "Droit",
-                "Sciences Économiques",
-                "Lettres et Sciences Humaines",
-                "Sciences",
-                "Pharmacie",
-                "Polytechnique"
-        );
-
-        // Initialiser la ComboBox des rôles
-        roleComboBox.getItems().addAll(
-                "Administrateur",
-                "Organisateur",
-                "Participant",
-                "Modérateur",
-                "Invité"
-        );
-
-        // Ajouter des écouteurs pour les changements
-        facultyComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-            currentUser.setFaculty(newVal);
-        });
-
-        roleComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-            currentUser.setRole(newVal);
-        });
-    }
-
-    private void setupEventHandlers() {
-        // Écouteur pour le toggle des notifications
-        emailNotificationsToggle.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            currentUser.setNotificationsEnabled(newVal);
-            updateToggleButtonText();
-        });
-
-        // Écouteurs pour la validation des champs
-        setupFieldValidators();
-    }
-
-    private void updateToggleButtonText() {
-        if (emailNotificationsToggle.isSelected()) {
-            emailNotificationsToggle.setText("Activé");
-            emailNotificationsToggle.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-padding: 5 15;");
-        } else {
-            emailNotificationsToggle.setText("Désactivé");
-            emailNotificationsToggle.setStyle("-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-padding: 5 15;");
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert("Erreur", "Erreur lors de l'initialisation: " + e.getMessage());
         }
     }
 
-    private void setupFieldValidators() {
-        // Validation de l'email
-        emailField.focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (!newVal) { // Quand le champ perd le focus
-                validateEmail();
-            }
-        });
+    /**
+     * Charge les facultés depuis la table user_model
+     */
+    private void loadFacultiesFromDatabase() {
+        try {
+            // Récupérer toutes les facultés uniques depuis user_model
+            ObservableList<String> faculties = userService.getAllFacultes();
 
-        // Validation du téléphone
-        phoneField.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (!newVal.matches("\\+?[0-9\\s\\-]*")) {
-                phoneField.setText(oldVal);
+            if (faculties.isEmpty()) {
+                System.out.println("⚠️ Aucune faculté trouvée dans la base de données");
+                // Optionnel: Ajouter une valeur par défaut
+                faculties.add("Non définie");
+            } else {
+                System.out.println("✅ " + faculties.size() + " facultés chargées depuis la base");
+            }
+
+            facultyComboBox.setItems(faculties);
+
+            // Sélectionner la faculté de l'utilisateur
+            String userFaculty = currentUser.getFaculte();
+            if (userFaculty != null && !userFaculty.isEmpty()) {
+                if (faculties.contains(userFaculty)) {
+                    facultyComboBox.setValue(userFaculty);
+                    System.out.println("✅ Faculté sélectionnée: " + userFaculty);
+                } else {
+                    // Ajouter la faculté si elle n'existe pas dans la liste
+                    facultyComboBox.getItems().add(userFaculty);
+                    facultyComboBox.setValue(userFaculty);
+                    System.out.println("➕ Faculté ajoutée: " + userFaculty);
+                }
+            }
+
+            // Écouter les changements
+            facultyComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null && !newVal.equals(oldVal)) {
+                    System.out.println("Faculté changée: " + oldVal + " -> " + newVal);
+                    currentUser.setFaculte(newVal);
+                }
+            });
+
+        } catch (Exception e) {
+            System.err.println("❌ Erreur chargement facultés: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Charge les rôles depuis la table role
+     */
+    private void loadRolesFromDatabase() {
+        try {
+            // Récupérer tous les noms de rôles depuis role
+            ObservableList<String> roles = roleService.getAllRoleNames();
+
+            if (roles.isEmpty()) {
+                System.out.println("⚠️ Aucun rôle trouvé dans la base de données");
+                roles.add("Non défini");
+            } else {
+                System.out.println("✅ " + roles.size() + " rôles chargés depuis la base");
+            }
+
+            roleComboBox.setItems(roles);
+
+            // Sélectionner le rôle de l'utilisateur
+            if (currentUser.getRole() != null) {
+                String userRole = currentUser.getRole().getRoleName();
+                if (userRole != null && !userRole.isEmpty()) {
+                    if (roles.contains(userRole)) {
+                        roleComboBox.setValue(userRole);
+                        System.out.println("✅ Rôle sélectionné: " + userRole);
+                    }
+                }
+            }
+
+            // Le champ rôle est désactivé (lecture seule)
+            roleComboBox.setDisable(true);
+
+        } catch (Exception e) {
+            System.err.println("❌ Erreur chargement rôles: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Charge les données depuis UserModel
+     */
+    private void loadUserDataFromModel() {
+        if (currentUser != null) {
+            firstNameField.setText(currentUser.getFirst_Name());
+            lastNameField.setText(currentUser.getLast_Name());
+            emailField.setText(currentUser.getEmail());
+            phoneField.setText(currentUser.getPhone() != null ? currentUser.getPhone() : "");
+
+            // Date d'inscription
+            if (currentUser.getRegistrationDate() != null) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+                registrationDateField.setText(currentUser.getRegistrationDate().format(formatter));
+            } else {
+                registrationDateField.setText("Non disponible");
+            }
+
+            // Biographie
+            bioTextArea.setText(currentUser.getBio() != null ? currentUser.getBio() : "");
+            if (bioCharCountLabel != null) {
+                bioCharCountLabel.setText((currentUser.getBio() != null ? currentUser.getBio().length() : 0) + "/500");
+            }
+
+            // Mot de passe actuel
+            if (currentPasswordField != null && currentUser.getPassword() != null) {
+                currentPasswordField.setText(currentUser.getPassword());
+            }
+
+            // Mettre à jour les labels d'affichage
+            if (userRoleDisplayLabel != null && currentUser.getRole() != null) {
+                userRoleDisplayLabel.setText(currentUser.getRole().getRoleName());
+            }
+        }
+    }
+
+    /**
+     * Désactive les champs en lecture seule
+     */
+    private void disableReadOnlyFields() {
+        if (roleComboBox != null) {
+            roleComboBox.setDisable(true);
+            roleComboBox.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #64748b;");
+        }
+
+        if (registrationDateField != null) {
+            registrationDateField.setDisable(true);
+            registrationDateField.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #64748b;");
+        }
+    }
+
+    private void updateStatistics() {
+        if (currentUser != null) {
+            eventCountLabel.setText("0");
+            participationCountLabel.setText("0");
+            roleCountLabel.setText(currentUser.getRole() != null ? "1" : "0");
+
+            if (userLevelLabel != null && currentUser.getRole() != null) {
+                userLevelLabel.setText(currentUser.getRole().getRoleName());
+            }
+
+            verificationStatusLabel.setText("🟢 Compte vérifié");
+            lastLoginLabel.setText("Dernière connexion: " +
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+        }
+    }
+
+    private void setupBioCounter() {
+        bioTextArea.textProperty().addListener((obs, oldVal, newVal) -> {
+            int length = newVal.length();
+            bioCharCountLabel.setText(length + "/500");
+
+            if (length > 500) {
+                bioTextArea.setText(oldVal);
+                bioCharCountLabel.setText("500/500 (maximum atteint)");
             }
         });
     }
 
-    private boolean validateEmail() {
-        String email = emailField.getText();
-        if (email != null && !email.isEmpty() && !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-            showAlert("Email invalide", "Veuillez entrer une adresse email valide.");
-            emailField.requestFocus();
-            return false;
+    /**
+     * Charge l'image de profil avec le style circulaire (initiales par défaut)
+     */
+    private void loadProfileImage() {
+        UserSession session = UserSession.getInstance();
+
+        if (currentUser != null) {
+            // Afficher les initiales par défaut (comme dans la top bar)
+            if (userInitialsText != null) {
+                userInitialsText.setText(session.getInitials());
+            }
+
+            // Charger la photo si elle existe
+            String photoUrl = currentUser.getProfilePictureUrl();
+            if (photoUrl != null && !photoUrl.isEmpty()) {
+                try {
+                    Image image = new Image(photoUrl, 132, 132, true, true);
+                    profileImageView.setImage(image);
+                    profileImageView.setVisible(true);
+
+                    // Cacher les initiales
+                    if (initialsContainer != null) {
+                        initialsContainer.setVisible(false);
+                    }
+
+                    // Appliquer le clip circulaire à l'image
+                    applyCircularClip(profileImageView, 66);
+
+                    System.out.println("✅ Photo de profil chargée depuis: " + photoUrl);
+
+                } catch (Exception e) {
+                    System.err.println("❌ Erreur chargement photo: " + e.getMessage());
+                    // En cas d'erreur, afficher les initiales
+                    profileImageView.setVisible(false);
+                    if (initialsContainer != null) {
+                        initialsContainer.setVisible(true);
+                    }
+                }
+            } else {
+                // Pas de photo, afficher les initiales
+                System.out.println("ℹ️ Aucune photo de profil, affichage des initiales: " + session.getInitials());
+                profileImageView.setVisible(false);
+                if (initialsContainer != null) {
+                    initialsContainer.setVisible(true);
+                }
+            }
         }
-        return true;
+    }
+
+    /**
+     * Applique un clip circulaire à l'image
+     */
+    private void applyCircularClip(ImageView imageView, double radius) {
+        if (imageView != null && imageView.getImage() != null) {
+            Circle clip = new Circle(radius, radius, radius);
+            imageView.setClip(clip);
+            imageView.setPreserveRatio(true);
+            System.out.println("✅ Clip circulaire appliqué (rayon: " + radius + ")");
+        }
     }
 
     @FXML
     private void uploadProfileImage() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Sélectionner une photo de profil");
-
-        // Filtrer les types de fichiers
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.gif"),
-                new FileChooser.ExtensionFilter("Tous les fichiers", "*.*")
+                new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.gif")
         );
 
-        selectedImageFile = fileChooser.showOpenDialog(uploadImageButton.getScene().getWindow());
+        File selectedImageFile = fileChooser.showOpenDialog(uploadImageButton.getScene().getWindow());
 
         if (selectedImageFile != null) {
-            // Vérifier la taille du fichier (max 5MB)
-            long fileSize = selectedImageFile.length();
-            if (fileSize > 5 * 1024 * 1024) {
+            // Vérifier la taille (max 5MB)
+            if (selectedImageFile.length() > 5 * 1024 * 1024) {
                 showAlert("Fichier trop volumineux", "La taille maximale est de 5MB.");
                 return;
             }
 
-            // Charger l'image dans l'ImageView
-            Image image = new Image(selectedImageFile.toURI().toString());
-            profileImageView.setImage(image);
+            try {
+                // Charger l'image
+                Image image = new Image(selectedImageFile.toURI().toString(), 132, 132, true, true);
 
-            // Sauvegarder temporairement le chemin de l'image
-            originalProfileImagePath = selectedImageFile.getAbsolutePath();
+                // Afficher l'image et cacher les initiales
+                profileImageView.setImage(image);
+                profileImageView.setVisible(true);
+                if (initialsContainer != null) {
+                    initialsContainer.setVisible(false);
+                }
 
-            System.out.println("Image sélectionnée: " + selectedImageFile.getAbsolutePath());
-        }
-    }
+                // Appliquer le clip circulaire
+                applyCircularClip(profileImageView, 66);
 
-    private void loadProfileImage() {
-        try {
-            // Charger l'image par défaut ou l'image sauvegardée
-            String imagePath = (originalProfileImagePath != null) ?
-                    "file:" + originalProfileImagePath :
-                    getClass().getResource("/com/example/pidev/fxml/user/images/avatar.png").toString();
+                // Sauvegarder le chemin
+                currentUser.setProfilePictureUrl(selectedImageFile.toURI().toString());
 
-            Image image = new Image(imagePath);
-            profileImageView.setImage(image);
-        } catch (Exception e) {
-            System.err.println("Erreur lors du chargement de l'image: " + e.getMessage());
-            // Charger une image par défaut en cas d'erreur
-            profileImageView.setImage(new Image(getClass().getResourceAsStream("/images/default-avatar.png")));
+                System.out.println("✅ Image chargée: " + selectedImageFile.getName());
+
+            } catch (Exception e) {
+                showAlert("Erreur", "Impossible de charger l'image: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
     }
 
     @FXML
     private void saveProfile() {
-        // Valider les champs obligatoires
-        if (!validateRequiredFields()) {
-            return;
-        }
-
-        if (!validateEmail()) {
-            return;
-        }
-
-        // Mettre à jour l'objet utilisateur
-        updateUserFromFields();
-
-        // Sauvegarder l'image si une nouvelle a été sélectionnée
-        if (selectedImageFile != null) {
-            saveProfileImage();
-        }
-
-        // Ici, vous devriez appeler votre service pour sauvegarder dans la base de données
-        try {
-            // Exemple: userService.updateUser(currentUser);
-            System.out.println("Sauvegarde du profil...");
-            System.out.println("Nom: " + currentUser.getFirstName() + " " + currentUser.getLastName());
-            System.out.println("Email: " + currentUser.getEmail());
-            System.out.println("Faculté: " + currentUser.getFaculty());
-            System.out.println("Rôle: " + currentUser.getRole());
-
-            showSuccessAlert("Profil sauvegardé", "Vos modifications ont été enregistrées avec succès.");
-
-        } catch (Exception e) {
-            showAlert("Erreur", "Une erreur est survenue lors de la sauvegarde: " + e.getMessage());
-        }
-    }
-
-    private boolean validateRequiredFields() {
-        StringBuilder errors = new StringBuilder();
-
-        if (firstNameField.getText().trim().isEmpty()) {
-            errors.append("• Le prénom est obligatoire\n");
-        }
-
-        if (lastNameField.getText().trim().isEmpty()) {
-            errors.append("• Le nom est obligatoire\n");
-        }
-
-        if (emailField.getText().trim().isEmpty()) {
-            errors.append("• L'email est obligatoire\n");
-        }
-
-        if (facultyComboBox.getValue() == null) {
-            errors.append("• La faculté est obligatoire\n");
-        }
-
-        if (roleComboBox.getValue() == null) {
-            errors.append("• Le rôle est obligatoire\n");
-        }
-
-        if (errors.length() > 0) {
-            showAlert("Champs obligatoires", "Veuillez remplir les champs suivants:\n\n" + errors.toString());
-            return false;
-        }
-
-        return true;
-    }
-
-    private void updateUserFromFields() {
-        currentUser.setFirstName(firstNameField.getText().trim());
-        currentUser.setLastName(lastNameField.getText().trim());
+        // Mettre à jour UserModel
+        currentUser.setFirst_Name(firstNameField.getText().trim());
+        currentUser.setLast_Name(lastNameField.getText().trim());
         currentUser.setEmail(emailField.getText().trim());
         currentUser.setPhone(phoneField.getText().trim());
-        currentUser.setDepartment(departmentField.getText().trim());
+        currentUser.setFaculte(facultyComboBox.getValue());
         currentUser.setBio(bioTextArea.getText().trim());
-        currentUser.setNotificationsEnabled(emailNotificationsToggle.isSelected());
-    }
 
-    private void saveProfileImage() {
         try {
-            // Créer un dossier pour les images de profil si nécessaire
-            File profileDir = new File("user-profiles");
-            if (!profileDir.exists()) {
-                profileDir.mkdir();
+            if (userService.updateUser(currentUser)) {
+                // Mettre à jour la session
+                UserSession.getInstance().updateUserInfo(currentUser);
+
+                // ✅ RAFRAÎCHIR LE HEADER - Appel au MainController
+                if (mainController != null) {
+                    mainController.refreshHeaderProfile();
+                    System.out.println("🔄 Header rafraîchi après modification du profil");
+                } else {
+                    System.err.println("⚠️ mainController est null, impossible de rafraîchir le header");
+                }
+
+                showSuccessAlert("Succès", "Profil mis à jour avec succès");
+            } else {
+                showAlert("Erreur", "Échec de la mise à jour");
             }
-
-            // Générer un nom de fichier unique
-            String fileName = "profile_" + currentUser.getEmail().hashCode() +
-                    selectedImageFile.getName().substring(selectedImageFile.getName().lastIndexOf("."));
-            File destination = new File(profileDir, fileName);
-
-            // Copier le fichier
-            Files.copy(selectedImageFile.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
-
-            // Mettre à jour le chemin de l'image
-            currentUser.setProfileImagePath(destination.getAbsolutePath());
-            originalProfileImagePath = destination.getAbsolutePath();
-
-            System.out.println("Image sauvegardée: " + destination.getAbsolutePath());
-
-        } catch (IOException e) {
-            showAlert("Erreur", "Impossible de sauvegarder l'image: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert("Erreur", "Erreur lors de la sauvegarde: " + e.getMessage());
         }
     }
 
     @FXML
     private void cancelChanges() {
-        // Recharger les données originales
-        updateFieldsFromUser();
-
-        // Recharger l'image originale
-        loadProfileImage();
-
-        showAlert("Modifications annulées", "Toutes les modifications ont été annulées.");
+        loadUserDataFromModel();
+        loadProfileImage(); // Recharger l'image (revient aux initiales si pas de photo)
+        // Re-sélectionner la faculté
+        if (currentUser.getFaculte() != null) {
+            facultyComboBox.setValue(currentUser.getFaculte());
+        }
+        showAlert("Annulé", "Modifications annulées");
     }
 
     @FXML
     private void changePassword() {
-        String currentPassword = passwordField.getText();
-        String newPassword = newPasswordField.getText();
+        String current = currentPasswordField.getText();
+        String newPass = newPasswordField.getText();
+        String confirm = confirmPasswordField.getText();
 
-        // Validation basique
-        if (currentPassword.isEmpty()) {
-            showAlert("Mot de passe actuel requis", "Veuillez entrer votre mot de passe actuel.");
-            passwordField.requestFocus();
+        if (current.isEmpty() || newPass.isEmpty() || confirm.isEmpty()) {
+            showAlert("Champs requis", "Tous les champs sont obligatoires");
             return;
         }
 
-        if (newPassword.isEmpty() || newPassword.length() < 6) {
-            showAlert("Nouveau mot de passe invalide", "Le nouveau mot de passe doit contenir au moins 6 caractères.");
-            newPasswordField.requestFocus();
+        if (!newPass.equals(confirm)) {
+            showAlert("Erreur", "Les nouveaux mots de passe ne correspondent pas");
             return;
         }
 
-        // Ici, vous devriez vérifier le mot de passe actuel avec votre service
-        // Exemple: if (!userService.verifyPassword(currentUser.getId(), currentPassword)) { ... }
+        if (newPass.length() < 6) {
+            showAlert("Erreur", "Le mot de passe doit contenir au moins 6 caractères");
+            return;
+        }
+
+        if (!current.equals(currentUser.getPassword())) {
+            showAlert("Erreur", "Mot de passe actuel incorrect");
+            return;
+        }
 
         try {
-            // Simuler le changement de mot de passe
-            System.out.println("Changement de mot de passe...");
-            System.out.println("Nouveau mot de passe: " + newPassword);
-
-            // Réinitialiser les champs
-            passwordField.clear();
-            newPasswordField.clear();
-
-            showSuccessAlert("Mot de passe changé", "Votre mot de passe a été changé avec succès.");
-
+            currentUser.setPassword(newPass);
+            if (userService.updateUser(currentUser)) {
+                showSuccessAlert("Succès", "Mot de passe changé avec succès");
+                newPasswordField.clear();
+                confirmPasswordField.clear();
+                currentPasswordField.setText(newPass);
+            }
         } catch (Exception e) {
-            showAlert("Erreur", "Impossible de changer le mot de passe: " + e.getMessage());
+            showAlert("Erreur", "Erreur lors du changement: " + e.getMessage());
         }
-    }
-
-    // Méthodes de navigation (similaires à votre contrôleur original)
-    public void goToDashboard(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/dashboard/dashboard.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
-    }
-
-    public void goToGestionUser(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/user/user.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
-    }
-
-    public void goToProfil(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/user/profil.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
-    }
-
-    @FXML
-    private void goToLogin(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/auth/login.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
     }
 
     private void showAlert(String title, String message) {
@@ -429,54 +467,5 @@ public class ProfilController implements Initializable {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
-    }
-
-    // Classe interne pour représenter l'utilisateur (à remplacer par votre entité)
-    public static class User {
-        private String firstName;
-        private String lastName;
-        private String email;
-        private String phone;
-        private String faculty;
-        private String department;
-        private String role;
-        private String registrationDate;
-        private String bio;
-        private String profileImagePath;
-        private boolean notificationsEnabled;
-
-        // Getters et setters
-        public String getFirstName() { return firstName; }
-        public void setFirstName(String firstName) { this.firstName = firstName; }
-
-        public String getLastName() { return lastName; }
-        public void setLastName(String lastName) { this.lastName = lastName; }
-
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
-
-        public String getPhone() { return phone; }
-        public void setPhone(String phone) { this.phone = phone; }
-
-        public String getFaculty() { return faculty; }
-        public void setFaculty(String faculty) { this.faculty = faculty; }
-
-        public String getDepartment() { return department; }
-        public void setDepartment(String department) { this.department = department; }
-
-        public String getRole() { return role; }
-        public void setRole(String role) { this.role = role; }
-
-        public String getRegistrationDate() { return registrationDate; }
-        public void setRegistrationDate(String registrationDate) { this.registrationDate = registrationDate; }
-
-        public String getBio() { return bio; }
-        public void setBio(String bio) { this.bio = bio; }
-
-        public String getProfileImagePath() { return profileImagePath; }
-        public void setProfileImagePath(String profileImagePath) { this.profileImagePath = profileImagePath; }
-
-        public boolean isNotificationsEnabled() { return notificationsEnabled; }
-        public void setNotificationsEnabled(boolean notificationsEnabled) { this.notificationsEnabled = notificationsEnabled; }
     }
 }

@@ -6,6 +6,7 @@ module com.example.pidev {
     requires java.sql;
     requires mysql.connector.j;
     requires jakarta.persistence;
+    requires java.prefs;
 
 
     // Exportez tous les packages nécessaires

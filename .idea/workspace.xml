@@ -4,7 +4,48 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="61db2463-e3d3-4d2e-959c-d6fd677d7173" name="Changes" comment="" />
+    <list default="true" id="61db2463-e3d3-4d2e-959c-d6fd677d7173" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/MainController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/user/EditUserController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/utils/UserSession.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/utils/searchNavigation.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/Sponsor/budget.fxml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/event/categorie.fxml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/event/images/avatar.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/event/ticket.fxml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/images/avatar.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/images/logo.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/images/logo1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/main_layout.fxml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/reservationRessources/equipement.fxml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/reservationRessources/reservation.fxml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/reservationRessources/salle.fxml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/settings/settings.fxml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/user/editUser.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/HelloApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/HelloApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/HelloController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/auth/LoginController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/auth/LoginController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/event/EventListController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/event/EventListController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/role/RoleController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/role/RoleController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/sponsor/SponsorListController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/sponsor/SponsorListController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/user/ProfilController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/user/ProfilController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/user/UserController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/user/UserController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/model/user/UserModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/model/user/UserModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/service/user/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/service/user/UserService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/module-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/module-info.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/css/atlantafx-custom.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/css/atlantafx-custom.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/Sponsor/sponsor.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/Sponsor/sponsor.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/auth/login.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/auth/login.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/dashboard/dashboard.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/dashboard/dashboard.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/event/Event.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/event/Event.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/role/role.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/role/role.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/user/profil.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/user/profil.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/user/user.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/user/user.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/hello-view.fxml" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -14,8 +55,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Python Script" />
-        <option value="Class" />
         <option value="FxmlFile" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -35,27 +76,27 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;user&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/LearningJava/PiDev/src/main/resources/com/example/pidev/fxml/role&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/LearningJava/PiDev/src/main/resources/com/example/pidev/fxml/images&quot;,
     &quot;project.structure.last.edited&quot;: &quot;SDKs&quot;,
     &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
     &quot;project.structure.side.proportion&quot;: &quot;0.10846812&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.externalResources&quot;
   }
 }</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\images" />
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml" />
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\event\images" />
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\side-navbar" />
       <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\role" />
-      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\user" />
-      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\auth" />
-      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\dashboard" />
-      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\event" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml" />
       <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\Sponsor" />
       <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev" />
       <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\event" />
       <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml\auth" />
-      <recent name="D:\LearningJava\PiDev\src\main\resources\com\example\pidev\fxml" />
     </key>
     <key name="ExtractSuperBase.RECENT_KEYS">
       <recent name="com.example.pidev.controller.role" />
@@ -87,6 +128,11 @@
           <properties class="java.sql.SQLSyntaxErrorException" package="java.sql" />
           <option name="timeStamp" value="3" />
         </breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/example/pidev/HelloApplication.java</url>
+          <line>61</line>
+          <option name="timeStamp" value="6" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>

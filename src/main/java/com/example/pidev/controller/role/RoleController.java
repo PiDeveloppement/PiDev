@@ -1,26 +1,19 @@
 package com.example.pidev.controller.role;
 
 import com.example.pidev.model.role.Role;
-import com.example.pidev.model.user.UserModel;
 import com.example.pidev.service.role.RoleService;
-import com.example.pidev.service.user.UserService;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
-import javafx.stage.Stage;
+import javafx.scene.layout.VBox;
 
 import java.net.URL;
 import java.sql.SQLException;
@@ -28,54 +21,79 @@ import java.util.ResourceBundle;
 
 public class RoleController implements Initializable {
 
-
     /* ================= FIELDS ================= */
 
-    
-@FXML private TextField rolenameField,searchField;
-    @FXML private TableView<Role> roleTable;
-    @FXML private TableColumn<Role,Integer> id_column;
-    @FXML private TableColumn<Role,String> roleName_column;
-    @FXML private TableColumn<Role,Void> actions_column;
-    @FXML private   Button resetButton ;
-    @FXML private   Button modifyButton ;
+    @FXML private TextField roleNameField;  // Renommé pour correspondre au FXML
+    @FXML private TextField searchField;
 
-    private UserService userService;
+    @FXML private TableView<Role> roleTable;
+    @FXML private TableColumn<Role, Integer> idColumn;        // Renommé
+    @FXML private TableColumn<Role, String> roleNameColumn;   // Renommé
+    @FXML private TableColumn<Role, Void> actionsColumn;      // Renommé
+
+    @FXML private Button resetButton;
+    @FXML private Button modifyButton;
+    @FXML private Button saveButton;
+    @FXML private Button cancelButton;
+
+    @FXML private Label statsLabel;          // Nouveau
+    @FXML private Label paginationLabel;     // Nouveau
+    @FXML private Label formTitle;           // Nouveau
+    @FXML private Label formHint;            // Nouveau
+    @FXML private VBox formCard;              // Nouveau
+
+    // Boutons de pagination
+    @FXML private Button prevPageBtn;
+    @FXML private Button nextPageBtn;
+    @FXML private Button page1Btn;
+    @FXML private Button page2Btn;
+    @FXML private Button page3Btn;
+    @FXML private Button page10Btn;
+
     private RoleService roleService;
     private ObservableList<Role> rolesList;
-
-    private FilteredList<Role> filteredData;      // filtrée
+    private FilteredList<Role> filteredData;
     private SortedList<Role> sortedData;
 
+    private int currentPage = 1;
+    private final int rowsPerPage = 10;
 
     /* ================= INITIALIZE ================= */
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         try {
-            userService = new UserService();
+            System.out.println("✅ RoleController initialisé");
+
             roleService = new RoleService();
             rolesList = FXCollections.observableArrayList();
 
             initializeTableColumns();
+            setupActionsColumn();
+            setupSearch();
+            setupPagination();
 
-            // IMPORTANT: Setup filtered and sorted data BEFORE loading roles
+            // Setup filtered and sorted data
             filteredData = new FilteredList<>(rolesList, b -> true);
             sortedData = new SortedList<>(filteredData);
             sortedData.comparatorProperty().bind(roleTable.comparatorProperty());
-            roleTable.setItems(sortedData);  // Set the sortedData, NOT rolesList
+            roleTable.setItems(sortedData);
 
-            // Setup search BEFORE loading roles
-            setupSearch();
-
-            // Now load roles
+            // Load roles
             loadRoles();
 
-            setupActionsColumn();
-
+            // Setup selection listener
             roleTable.getSelectionModel().selectedItemProperty()
-                    .addListener((obs,o,n) -> { if(n!=null) fillForm(n); });
+                    .addListener((obs, oldVal, newVal) -> {
+                        if (newVal != null) {
+                            fillForm(newVal);
+                            showForm(true);
+                            formTitle.setText("✏️ Modifier un rôle");
+                            formHint.setText("Modifiez les informations du rôle");
+                        }
+                    });
 
+            // Adjust table height
             roleTable.setFixedCellSize(40);
             roleTable.prefHeightProperty().bind(
                     Bindings.size(roleTable.getItems())
@@ -83,131 +101,148 @@ public class RoleController implements Initializable {
                             .add(40)
             );
 
+            // Initially hide form
+            showForm(false);
+
         } catch (SQLException e) {
             showAlert("Erreur", e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            showAlert("Erreur", "Erreur lors de l'initialisation: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-
-    /* ================= TABLE ================= */
-
     private void initializeTableColumns() {
-
-        id_column.setCellValueFactory(new PropertyValueFactory<>("id_Role"));
-        roleName_column.setCellValueFactory(new PropertyValueFactory<>("roleName"));
-
-
+        idColumn.setCellValueFactory(new PropertyValueFactory<>("id_Role"));
+        roleNameColumn.setCellValueFactory(new PropertyValueFactory<>("roleName"));
     }
-
 
     private void loadRoles() {
         rolesList.setAll(roleService.getAllRoles());
-
-
+        updateStats();
+        updatePagination();
     }
 
+    private void updateStats() {
+        if (statsLabel != null) {
+            statsLabel.setText(rolesList.size() + " rôles");
+        }
+    }
 
     /* ================= CREATE ================= */
 
     @FXML
     private void addRoleButtonOnAction(ActionEvent e) {
-        createRole();
+        resetForm();
+        showForm(true);
+        formTitle.setText("✏️ Nouveau rôle");
+        formHint.setText("Ajoutez un nouveau rôle");
+        roleNameField.requestFocus();
     }
 
-    private void createRole() {
-
+    @FXML
+    private void saveRole(ActionEvent e) {
         if (!validateFields()) return;
 
-        Role role = new Role(
-                rolenameField.getText()
-        );
+        Role selected = roleTable.getSelectionModel().getSelectedItem();
 
-        if (roleService.addRole(role)) {
-            showAlert("Succès", "Role créé avec succès");
-            loadRoles();
-            resetForm();
+        if (selected == null) {
+            // Create new role
+            Role role = new Role(roleNameField.getText());
+            if (roleService.addRole(role)) {
+                showAlert("Succès", "Rôle créé avec succès");
+                loadRoles();
+                resetForm();
+                showForm(false);
+            }
+        } else {
+            // Update existing role
+            try {
+                updateRole(selected);
+            } catch (SQLException ex) {
+                showAlert("Erreur", ex.getMessage());
+            }
         }
     }
-
 
     /* ================= UPDATE ================= */
 
     @FXML
     private void modifyButtonOnAction(ActionEvent e) throws SQLException {
-
         Role selected = roleTable.getSelectionModel().getSelectedItem();
 
-        System.out.println(selected); // debug
-
         if (selected == null) {
-            showAlert("Erreur", "Sélectionnez un role");
+            showAlert("Erreur", "Sélectionnez un rôle");
             return;
         }
 
         updateRole(selected);
     }
 
-
     private void updateRole(Role role) throws SQLException {
-
         if (!validateFields()) return;
 
-        role.setRoleName(rolenameField.getText());
-
+        role.setRoleName(roleNameField.getText());
 
         if (roleService.updateRole(role)) {
-            showAlert("Succès", "Utilisateur modifié");
+            showAlert("Succès", "Rôle modifié");
             loadRoles();
             resetForm();
+            showForm(false);
         }
         searchField.clear();
-
     }
-
-
-
 
     /* ================= DELETE ================= */
 
     private void deleteRole(Role role) {
-
         boolean confirmed = showConfirmation(
                 "Confirmer",
-                "Supprimer " + role.getRoleName() + " ?"
+                "Supprimer le rôle " + role.getRoleName() + " ?"
         );
 
         if (!confirmed) return;
 
         if (roleService.deleteRole(role.getId_Role())) {
-            showAlert("Succès", "Role supprimé");
+            showAlert("Succès", "Rôle supprimé");
             loadRoles();
+            resetForm();
+            showForm(false);
         }
     }
-
-
-
 
     /* ================= ACTION COLUMN ================= */
 
     private void setupActionsColumn() {
-
-        actions_column.setCellFactory(param -> new TableCell<Role, Void>() {
-
-
+        actionsColumn.setCellFactory(param -> new TableCell<Role, Void>() {
             private final Button deleteBtn = new Button("🗑");
-            private final HBox container = new HBox(10,  deleteBtn);
+            private final Button editBtn = new Button("✏️");
+            private final HBox container = new HBox(10, editBtn, deleteBtn);
 
             {
-
-
-
-                // Bouton Supprimer
+                // Style des boutons
                 deleteBtn.setStyle(
                         "-fx-background-color: #ef4444;" +
                                 "-fx-text-fill: white;" +
                                 "-fx-background-radius: 8;" +
                                 "-fx-cursor: hand;"
                 );
+
+                editBtn.setStyle(
+                        "-fx-background-color: #3b82f6;" +
+                                "-fx-text-fill: white;" +
+                                "-fx-background-radius: 8;" +
+                                "-fx-cursor: hand;"
+                );
+
+                editBtn.setOnAction(e -> {
+                    Role role = getTableView().getItems().get(getIndex());
+                    fillForm(role);
+                    showForm(true);
+                    formTitle.setText("✏️ Modifier un rôle");
+                    formHint.setText("Modifiez les informations du rôle");
+                });
 
                 deleteBtn.setOnAction(e -> {
                     Role role = getTableView().getItems().get(getIndex());
@@ -223,89 +258,48 @@ public class RoleController implements Initializable {
         });
     }
 
-
-
     /* ================= FORM ================= */
 
-    private void fillForm(Role u) {
-        rolenameField.setText(u.getRoleName());
-
+    private void fillForm(Role role) {
+        roleNameField.setText(role.getRoleName());
     }
-    @FXML
-    private void resetButton(ActionEvent e){
-    resetForm();
-}
-    private void resetForm() {
-        rolenameField.clear();
 
+    @FXML
+    private void resetButton(ActionEvent e) {
+        resetForm();
+    }
+
+    @FXML
+    private void cancelEdit(ActionEvent e) {
+        resetForm();
+        showForm(false);
+        roleTable.getSelectionModel().clearSelection();
+    }
+
+    private void resetForm() {
+        roleNameField.clear();
     }
 
     private boolean validateFields() {
-        if (rolenameField.getText().isEmpty()) {
+        if (roleNameField.getText().isEmpty()) {
             showAlert("Champs manquants", "Veuillez remplir tous les champs");
             return false;
         }
         return true;
     }
 
-
-    /* ================= UTILS ================= */
-
-    private void showAlert(String title, String msg) {
-        new Alert(Alert.AlertType.INFORMATION, msg).showAndWait();
+    private void showForm(boolean show) {
+        if (formCard != null) {
+            formCard.setVisible(show);
+            formCard.setManaged(show);
+        }
     }
 
-    private boolean showConfirmation(String title, String msg) {
-        return new Alert(Alert.AlertType.CONFIRMATION, msg)
-                .showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
-    }
+    /* ================= SEARCH ================= */
 
-
-    /* ================= NAVIGATION ================= */
-
-    @FXML
-    private void goToLogin(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/auth/login.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
-    }
-
-    public void goToProfil(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/user/profil.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
-    }
-    public void goToDashboard(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/dashboard/dashboard.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
-    }
-    public void goToGestionUser(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/user/user.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
-    }
     private void setupSearch() {
+        if (searchField == null) return;
+
         searchField.textProperty().addListener((obs, oldValue, newValue) -> {
             String keyword = newValue.toLowerCase().trim();
 
@@ -313,6 +307,99 @@ public class RoleController implements Initializable {
                 if (keyword.isEmpty()) return true;
                 return role.getRoleName().toLowerCase().contains(keyword);
             });
+
+            updatePagination();
         });
     }
+
+    /* ================= PAGINATION ================= */
+
+    private void setupPagination() {
+        if (prevPageBtn != null) {
+            prevPageBtn.setOnAction(e -> {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updatePagination();
+                }
+            });
+        }
+
+        if (nextPageBtn != null) {
+            nextPageBtn.setOnAction(e -> {
+                int totalPages = (int) Math.ceil((double) filteredData.size() / rowsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updatePagination();
+                }
+            });
+        }
+
+        // Page buttons
+        if (page1Btn != null) {
+            page1Btn.setOnAction(e -> {
+                currentPage = 1;
+                updatePagination();
+            });
+        }
+
+        if (page2Btn != null) {
+            page2Btn.setOnAction(e -> {
+                currentPage = 2;
+                updatePagination();
+            });
+        }
+
+        if (page3Btn != null) {
+            page3Btn.setOnAction(e -> {
+                currentPage = 3;
+                updatePagination();
+            });
+        }
+
+        if (page10Btn != null) {
+            page10Btn.setOnAction(e -> {
+                int totalPages = (int) Math.ceil((double) filteredData.size() / rowsPerPage);
+                currentPage = totalPages;
+                updatePagination();
+            });
+        }
+    }
+
+    private void updatePagination() {
+        if (paginationLabel == null) return;
+
+        int totalItems = filteredData.size();
+        int totalPages = (int) Math.ceil((double) totalItems / rowsPerPage);
+
+        if (totalPages == 0) totalPages = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        paginationLabel.setText("Page " + currentPage + " sur " + totalPages);
+
+        // Update page buttons
+        if (page1Btn != null) {
+            page1Btn.setText(String.valueOf(currentPage));
+            page2Btn.setText(String.valueOf(Math.min(currentPage + 1, totalPages)));
+            page3Btn.setText(String.valueOf(Math.min(currentPage + 2, totalPages)));
+            page10Btn.setText(String.valueOf(totalPages));
+        }
+    }
+
+    /* ================= UTILS ================= */
+
+    private void showAlert(String title, String msg) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, msg);
+        alert.setTitle(title);
+        alert.showAndWait();
+    }
+
+    private boolean showConfirmation(String title, String msg) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, msg);
+        alert.setTitle(title);
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
+    }
+
+    /* ================= NAVIGATION SUPPRIMÉE ================= */
+    /* Les méthodes de navigation ont été supprimées car
+       la navigation est maintenant gérée par MainController */
 }

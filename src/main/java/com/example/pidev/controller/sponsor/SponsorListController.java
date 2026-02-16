@@ -30,7 +30,7 @@ public class SponsorListController implements Initializable {
     @FXML private TableColumn<Sponsor, Void> actionsCol;
 
     @FXML private Button addSponsorBtn;
-    @FXML private Label statusLabel;
+    @FXML private Label statsLabel;
 
     @FXML private Label totalSponsorsLabel;
     @FXML private Label totalContributionLabel;
@@ -159,7 +159,7 @@ public class SponsorListController implements Initializable {
     private void loadSponsors() {
         sponsorsList.setAll(sponsorService.getAllSponsors());
         sponsorsTable.setItems(sponsorsList);
-        statusLabel.setText("📊 " + sponsorsList.size() + " sponsors trouvés • 🔄 Dernière mise à jour: Maintenant");
+        statsLabel.setText("📊 " + sponsorsList.size() + " sponsors trouvés • 🔄 Dernière mise à jour: Maintenant");
     }
 
     private void updateStats() {
@@ -204,7 +204,7 @@ public class SponsorListController implements Initializable {
             if (response == ButtonType.OK) {
                 sponsorsList.remove(sponsor);
                 updateStats();
-                statusLabel.setText("✅ Sponsor supprimé avec succès • 📊 " +
+                statsLabel.setText("✅ Sponsor supprimé avec succès • 📊 " +
                         sponsorsList.size() + " sponsors restants");
 
                 Alert success = new Alert(Alert.AlertType.INFORMATION);

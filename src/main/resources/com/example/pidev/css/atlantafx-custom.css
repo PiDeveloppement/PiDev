@@ -1,5 +1,7 @@
 /* Styles pour la gestion des sponsors - COMPATIBLE JAVAFX */
 
+/* Garder le thème AtlantaFX mais ajouter vos styles personnalisés */
+
 /* Table container avec bordures arrondies */
 .table-container {
     -fx-background-color: white;
@@ -208,10 +210,53 @@
     -fx-font-size: 14px;
 }
 
-/* Sidebar buttons */
+/* SIDEBAR STYLES - Dégradé harmonieux avec la top bar (#1565C0) */
+
+/* Style pour le conteneur de la sidebar */
+.sidebar-container {
+    -fx-background-color: linear-gradient(to bottom, #2196F3, #0D47A1);
+    -fx-border-color: #0D47A1;
+    -fx-border-width: 0 2 0 0;
+}
+
+/* Variante plus claire qui s'harmonise avec la top bar (#1565C0) */
+.sidebar-container-harmonieux {
+    -fx-background-color: linear-gradient(to bottom, #42A5F5, #1565C0);
+    -fx-border-color: #0D47A1;
+    -fx-border-width: 0 2 0 0;
+}
+
+/* Variante avec dégradé qui commence par la couleur de la top bar */
+.sidebar-container-topbar {
+    -fx-background-color: linear-gradient(to bottom, #64B5F6, #1565C0, #0D47A1);
+    -fx-border-color: #0D47A1;
+    -fx-border-width: 0 2 0 0;
+}
+
+/* Variante avec dégradé subtil */
+.sidebar-container-subtil {
+    -fx-background-color: linear-gradient(to bottom, #1E88E5, #1565C0);
+    -fx-border-color: #0D47A1;
+    -fx-border-width: 0 2 0 0;
+}
+
+/* Variante avec dégradé radial pour un effet plus moderne */
+.sidebar-container-radial {
+    -fx-background-color: radial-gradient(center 50% 0%, radius 100%, #42A5F5, #1565C0);
+    -fx-border-color: #0D47A1;
+    -fx-border-width: 0 2 0 0;
+}
+
+/* Style pour le logo dans la sidebar */
+.sidebar-logo-container {
+    -fx-background-color: #0D47A1;
+    -fx-padding: 25 15;
+}
+
+/* Sidebar buttons - avec fond semi-transparent pour laisser voir le dégradé */
 .sidebar-button {
-    -fx-background-color: rgba(255, 255, 255, 0.95);
-    -fx-text-fill: #0D47A1;
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-text-fill: white;
     -fx-font-size: 14px;
     -fx-padding: 14px 20px;
     -fx-alignment: center-left;
@@ -220,20 +265,65 @@
     -fx-min-width: 180px;
 }
 
-.sidebar-button-active {
-    -fx-background-color: white;
-    -fx-text-fill: #0D47A1;
-    -fx-font-weight: bold;
-    -fx-border-color: #64b5f6;
-    -fx-border-width: 2px;
-    -fx-effect: dropshadow(gaussian, rgba(33, 150, 243, 0.15), 5, 0, 0, 2px);
+.sidebar-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.25);
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.1), 5, 0, 0, 2px);
 }
 
-.logout-button {
-    -fx-background-color: rgba(255, 255, 255, 0.95);
-    -fx-text-fill: #d32f2f;
+.sidebar-button-active {
+    -fx-background-color: rgba(255, 255, 255, 0.3);
+    -fx-text-fill: white;
     -fx-font-weight: bold;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 3, 0, 0, 1px);
+    -fx-border-color: rgba(255, 255, 255, 0.5);
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.2), 5, 0, 0, 2px);
+}
+
+/* Main menu buttons in sidebar */
+.main-menu-button {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-padding: 14px 20px;
+    -fx-alignment: center-left;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-min-width: 180px;
+    -fx-cursor: hand;
+}
+
+.main-menu-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.25);
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.1), 5, 0, 0, 2px);
+}
+
+/* Submenu buttons */
+.submenu-button {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-padding: 8px 20px 8px 40px;
+    -fx-alignment: center-left;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-min-width: 170px;
+    -fx-cursor: hand;
+}
+
+.submenu-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Logout button */
+.logout-button {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-text-fill: #ffcdd2;
+    -fx-font-weight: bold;
+}
+
+.logout-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.25);
+    -fx-text-fill: white;
 }
 
 /* Header styles */
@@ -289,12 +379,8 @@
     -fx-border-radius: 8px;
     -fx-padding: 15px;
 }
-/* profile-styles.css */
 
-/* Style général */
-.root {
-    -fx-font-family: "Segoe UI", Arial, sans-serif;
-}
+/* profile-styles.css */
 
 /* Style des TextField */
 .text-field {

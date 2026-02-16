@@ -1,5 +1,6 @@
 package com.example.pidev.controller.user;
 
+import com.example.pidev.MainController;
 import com.example.pidev.model.role.Role;
 import com.example.pidev.model.user.UserModel;
 import com.example.pidev.service.role.RoleService;
@@ -20,6 +21,11 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TableCell;
+import javafx.scene.layout.HBox;
 
 import java.net.URL;
 import java.sql.SQLException;
@@ -29,24 +35,36 @@ public class UserController implements Initializable {
 
     /* ================= FIELDS ================= */
 
-    @FXML private TextField searchField,firstnameField, lastnameField, emailField, faculteField, passwordField;
-    @FXML private ComboBox<String> roleComboBox;
+    @FXML private TextField searchField;
 
+    private MainController mainController;
     @FXML private TableView<UserModel> userTable;
-    @FXML private TableColumn<UserModel,Integer> id_column;
-    @FXML private TableColumn<UserModel,String> firstname_column, lastname_column,
-            email_column, faculte_column, role_id_column, password_column;
-    @FXML private TableColumn<UserModel,Void> actions_column;
+    @FXML private TableColumn<UserModel, String> firstname_column;
+    @FXML private TableColumn<UserModel, String> lastname_column;
+    @FXML private TableColumn<UserModel, String> email_column;
+    @FXML private TableColumn<UserModel, String> faculte_column;
+    @FXML private TableColumn<UserModel, String> password_column;
+    @FXML private TableColumn<UserModel, String> role_column;
+    @FXML private TableColumn<UserModel, Void> actions_column;
+
     @FXML private ComboBox<String> faculteFilterCombo;
     @FXML private ComboBox<String> roleFilterCombo;
-
 
     private UserService userService;
     private RoleService roleService;
     private ObservableList<UserModel> usersList;
-    private FilteredList<UserModel> filteredData;      // filtrée
+    private FilteredList<UserModel> filteredData;
     private SortedList<UserModel> sortedData;
+    @FXML private Button prevPageBtn;
+    @FXML private Button nextPageBtn;
+    @FXML private Button page1Btn;
+    @FXML private Button page2Btn;
+    @FXML private Button page3Btn;
+    @FXML private Button page10Btn;
+    @FXML private Label paginationLabel;
 
+    private int currentPage = 1;
+    private final int rowsPerPage = 10;
 
     /* ================= INITIALIZE ================= */
 
@@ -72,14 +90,8 @@ public class UserController implements Initializable {
             loadFaculteFilterList();
             loadRoleFilterList();
 
-            // Configurer le ComboBox des rôles pour le formulaire
-            roleComboBox.setItems(roleService.getAllRoleNames());
-
             setupSearch();
             setupActionsColumn();
-
-            userTable.getSelectionModel().selectedItemProperty()
-                    .addListener((obs,o,n) -> { if(n!=null) fillForm(n); });
 
             userTable.setFixedCellSize(40);
             userTable.prefHeightProperty().bind(
@@ -92,125 +104,33 @@ public class UserController implements Initializable {
             showAlert("Erreur", e.getMessage());
         }
     }
-    private void initializeTableColumns() {
 
-        id_column.setCellValueFactory(new PropertyValueFactory<>("id_User"));
+    private void initializeTableColumns() {
         firstname_column.setCellValueFactory(new PropertyValueFactory<>("first_Name"));
         lastname_column.setCellValueFactory(new PropertyValueFactory<>("last_Name"));
         email_column.setCellValueFactory(new PropertyValueFactory<>("email"));
         faculte_column.setCellValueFactory(new PropertyValueFactory<>("faculte"));
         password_column.setCellValueFactory(new PropertyValueFactory<>("password"));
 
-        role_id_column.setCellValueFactory(cell -> {
+        role_column.setCellValueFactory(cell -> {
             Role r = cell.getValue().getRole();
             return new SimpleStringProperty(r != null ? r.getRoleName() : "");
-
         });
-
     }
-
 
     private void loadUsers() {
-        usersList.setAll(userService.getAllUsers());
-        loadFaculteFilterList();
-
-    }
-
-
-    /* ================= CREATE ================= */
-
-    @FXML
-    private void registerButtonOnAction(ActionEvent e) {
-        createUser();
-    }
-
-    private void createUser() {
-
-        if (!validateFields()) return;
-
-        UserModel user = new UserModel(
-                firstnameField.getText(),
-                lastnameField.getText(),
-                emailField.getText(),
-                faculteField.getText(),
-                passwordField.getText(),
-                1
-        );
-
-        if (userService.registerUser(user)) {
-            showAlert("Succès", "Utilisateur créé avec succès");
-            loadUsers();
-            loadFaculteFilterList();
-            resetForm();
-        }
-    }
-
-
-    /* ================= UPDATE ================= */
-
-    @FXML
-
-    private void modifyButtonOnAction(ActionEvent e) {
         try {
-            UserModel selected = userTable.getSelectionModel().getSelectedItem();
-
-            if (selected == null) {
-                showAlert("Erreur", "Sélectionnez un utilisateur");
-                return;
-            }
-
-            updateUser(selected);
-
-        } catch (SQLException ex) {
-            showAlert("Erreur BD", ex.getMessage());
+            usersList.setAll(userService.getAllUsers());
+            loadFaculteFilterList();
+        } catch (Exception e) {
+            showAlert("Erreur", "Impossible de charger les utilisateurs: " + e.getMessage());
+            e.printStackTrace();
         }
     }
-
-
-
-    private void updateUser(UserModel userModel) throws SQLException {
-        if (!validateFields()) return;
-
-        userModel.setFirst_Name(firstnameField.getText());
-        userModel.setLast_Name(lastnameField.getText());
-        userModel.setEmail(emailField.getText());
-        userModel.setFaculte(faculteField.getText());
-        userModel.setPassword(passwordField.getText());
-
-        // Get selected role name from ComboBox
-        String roleName = roleComboBox.getValue();
-
-        // VALIDATION: Check if a role is selected
-        if (roleName == null || roleName.isEmpty()) {
-            showAlert("Erreur", "Veuillez sélectionner un rôle");
-            return;
-        }
-
-        // Get role ID by name
-        int roleId = roleService.getRoleIdByName(roleName);
-
-        // VALIDATION: Check if role ID is valid
-        if (roleId <= 0) {
-            showAlert("Erreur", "Rôle invalide ou inexistant");
-            return;
-        }
-
-        userModel.setRole_Id(roleId);
-
-        if (userService.updateUser(userModel)) {
-            showAlert("Succès", "Utilisateur modifié");
-            loadUsers();
-            resetForm();
-        }
-    }
-
-
-
 
     /* ================= DELETE ================= */
 
     private void deleteUser(UserModel user) {
-
         boolean confirmed = showConfirmation(
                 "Confirmer",
                 "Supprimer " + user.getFirst_Name() + " ?"
@@ -221,81 +141,143 @@ public class UserController implements Initializable {
         if (userService.deleteUser(user.getId_User())) {
             showAlert("Succès", "Utilisateur supprimé");
             loadUsers();
-
         }
     }
 
-
     /* ================= ACTION COLUMN ================= */
-
     private void setupActionsColumn() {
-
         actions_column.setCellFactory(param -> new TableCell<UserModel, Void>() {
-
-
-            private final Button deleteBtn = new Button("🗑");
-            private final HBox container = new HBox(10,  deleteBtn);
+            private final Button editBtn = new Button();
+            private final Button deleteBtn = new Button();
+            private final HBox container = new HBox(10, editBtn, deleteBtn);
 
             {
+                // Bouton Modifier
+                Label editIcon = new Label("✏️");
+                editIcon.setStyle("-fx-font-size: 16px; -fx-text-fill: white;");
+                editBtn.setGraphic(editIcon);
+                editBtn.setStyle(
+                        "-fx-background-color: #3b82f6;" +        // Bleu
+                                "-fx-background-radius: 8;" +
+                                "-fx-text-fill: white;" +
+                                "-fx-font-size: 13px;" +
+                                "-fx-font-weight: bold;" +
+                                "-fx-padding: 8 12 8 12;" +
+                                "-fx-cursor: hand;" +
+                                "-fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.3), 4, 0, 0, 2);" +
+                                "-fx-border: none;"
+                );
+                editBtn.setOnMouseEntered(e ->
+                        editBtn.setStyle(
+                                "-fx-background-color: #2563eb;" +
+                                        "-fx-background-radius: 8;" +
+                                        "-fx-text-fill: white;" +
+                                        "-fx-font-size: 13px;" +
+                                        "-fx-font-weight: bold;" +
+                                        "-fx-padding: 8 12 8 12;" +
+                                        "-fx-cursor: hand;" +
+                                        "-fx-effect: dropshadow(gaussian, rgba(37, 99, 235, 0.4), 6, 0, 0, 3);" +
+                                        "-fx-border: none;"
+                        )
+                );
+                editBtn.setOnMouseExited(e ->
+                        editBtn.setStyle(
+                                "-fx-background-color: #3b82f6;" +
+                                        "-fx-background-radius: 8;" +
+                                        "-fx-text-fill: white;" +
+                                        "-fx-font-size: 13px;" +
+                                        "-fx-font-weight: bold;" +
+                                        "-fx-padding: 8 12 8 12;" +
+                                        "-fx-cursor: hand;" +
+                                        "-fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.3), 4, 0, 0, 2);" +
+                                        "-fx-border: none;"
+                        )
+                );
+                Tooltip editTooltip = new Tooltip("Modifier");
+                editTooltip.setStyle("-fx-background-color: #1f2937; -fx-text-fill: white; -fx-font-size: 12px;");
+                editBtn.setTooltip(editTooltip);
 
-
+                editBtn.setOnAction(e -> {
+                    UserModel user = getTableView().getItems().get(getIndex());
+                    openEditPage(user); // MODIFIÉ : Appelle openEditPage au lieu de openEditWindow
+                });
 
                 // Bouton Supprimer
+                Label deleteIcon = new Label("🗑");
+                deleteIcon.setStyle("-fx-font-size: 16px; -fx-text-fill: white;");
+                deleteBtn.setGraphic(deleteIcon);
                 deleteBtn.setStyle(
                         "-fx-background-color: #ef4444;" +
-                                "-fx-text-fill: white;" +
                                 "-fx-background-radius: 8;" +
-                                "-fx-cursor: hand;"
+                                "-fx-text-fill: white;" +
+                                "-fx-font-size: 13px;" +
+                                "-fx-font-weight: bold;" +
+                                "-fx-padding: 8 12 8 12;" +
+                                "-fx-cursor: hand;" +
+                                "-fx-effect: dropshadow(gaussian, rgba(239, 68, 68, 0.3), 4, 0, 0, 2);" +
+                                "-fx-border: none;"
                 );
+
+                // Effet au survol pour le bouton Supprimer
+                deleteBtn.setOnMouseEntered(e ->
+                        deleteBtn.setStyle(
+                                "-fx-background-color: #dc2626;" +
+                                        "-fx-background-radius: 8;" +
+                                        "-fx-text-fill: white;" +
+                                        "-fx-font-size: 13px;" +
+                                        "-fx-font-weight: bold;" +
+                                        "-fx-padding: 8 12 8 12;" +
+                                        "-fx-cursor: hand;" +
+                                        "-fx-effect: dropshadow(gaussian, rgba(220, 38, 38, 0.4), 6, 0, 0, 3);" +
+                                        "-fx-border: none;"
+                        )
+                );
+
+                deleteBtn.setOnMouseExited(e ->
+                        deleteBtn.setStyle(
+                                "-fx-background-color: #ef4444;" +
+                                        "-fx-background-radius: 8;" +
+                                        "-fx-text-fill: white;" +
+                                        "-fx-font-size: 13px;" +
+                                        "-fx-font-weight: bold;" +
+                                        "-fx-padding: 8 12 8 12;" +
+                                        "-fx-cursor: hand;" +
+                                        "-fx-effect: dropshadow(gaussian, rgba(239, 68, 68, 0.3), 4, 0, 0, 2);" +
+                                        "-fx-border: none;"
+                        )
+                );
+
+                Tooltip deleteTooltip = new Tooltip("Supprimer");
+                deleteTooltip.setStyle("-fx-background-color: #1f2937; -fx-text-fill: white; -fx-font-size: 12px;");
+                deleteBtn.setTooltip(deleteTooltip);
 
                 deleteBtn.setOnAction(e -> {
                     UserModel user = getTableView().getItems().get(getIndex());
-                    deleteUser(user);
+                    confirmAndDelete(user);
                 });
             }
 
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                setGraphic(empty ? null : container);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    container.setAlignment(javafx.geometry.Pos.CENTER);
+                    setGraphic(container);
+                }
             }
         });
     }
 
-
-
-    /* ================= FORM ================= */
-
-    private void fillForm(UserModel u) {
-        firstnameField.setText(u.getFirst_Name());
-        lastnameField.setText(u.getLast_Name());
-        emailField.setText(u.getEmail());
-        faculteField.setText(u.getFaculte());
-        passwordField.setText(u.getPassword());
-        if (u.getRole() != null && u.getRole().getRoleName() != null) {
-            roleComboBox.setValue(u.getRole().getRoleName());
+    /* ================= NOUVELLE MÉTHODE : openEditPage ================= */
+    private void openEditPage(UserModel user) {
+        if (mainController != null) {
+            mainController.loadEditUserPage(user);
+        } else {
+            showAlert("Erreur", "Impossible d'ouvrir la page de modification");
         }
     }
-
-    private void resetForm() {
-        firstnameField.clear();
-        lastnameField.clear();
-        emailField.clear();
-        faculteField.clear();
-        passwordField.clear();
-        roleComboBox.getSelectionModel().clearSelection();
-    }
-
-    private boolean validateFields() {
-        if (firstnameField.getText().isEmpty()
-                || lastnameField.getText().isEmpty()
-                || emailField.getText().isEmpty()) {
-            showAlert("Champs manquants", "Veuillez remplir tous les champs");
-            return false;
-        }
-        return true;
-    }
-
 
     /* ================= UTILS ================= */
 
@@ -308,20 +290,8 @@ public class UserController implements Initializable {
                 .showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
     }
 
-
     /* ================= NAVIGATION ================= */
 
-    @FXML
-    private void goToLogin(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/auth/login.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
-    }
     @FXML
     private void goToRole(ActionEvent event) {
         try {
@@ -333,43 +303,8 @@ public class UserController implements Initializable {
             stage.show();
         } catch (Exception ignored) {}
     }
-    @FXML
-    private void goToGestionUser(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/user/user.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
-    }
-    @FXML
-    private void goToDashboard(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/dashboard/dashboard.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
-    }
-    @FXML
-    private void goToProfil(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/user/profil.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
-    }
-    private void setupSearch() {
-        // Remove this line: filteredData.setPredicate(user -> true);
-        // Remove this line: userTable.setItems(sortedData);
 
+    private void setupSearch() {
         searchField.textProperty().addListener((obs, oldValue, newValue) -> {
             String keyword = newValue.toLowerCase().trim();
 
@@ -381,7 +316,6 @@ public class UserController implements Initializable {
                 boolean matchesEmail = user.getEmail().toLowerCase().contains(keyword);
                 boolean matchesFaculte = user.getFaculte().toLowerCase().contains(keyword);
 
-                // Also search by role name if available
                 boolean matchesRole = user.getRole() != null &&
                         user.getRole().getRoleName().toLowerCase().contains(keyword);
 
@@ -389,6 +323,7 @@ public class UserController implements Initializable {
             });
         });
     }
+
     /**
      * Charge la liste unique des facultés depuis la base de données
      */
@@ -398,6 +333,7 @@ public class UserController implements Initializable {
             faculteList.addAll(userService.getAllFacultes());
             faculteFilterCombo.setItems(faculteList);
         } catch (Exception e) {
+            System.err.println("Erreur lors du chargement des facultés: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -411,6 +347,7 @@ public class UserController implements Initializable {
             roleList.addAll(roleService.getAllRoleNames());
             roleFilterCombo.setItems(roleList);
         } catch (Exception e) {
+            System.err.println("Erreur lors du chargement des rôles: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -419,19 +356,16 @@ public class UserController implements Initializable {
     private void filterByFaculte(ActionEvent event) {
         String selectedFaculte = faculteFilterCombo.getValue();
         String currentSearch = searchField.getText().toLowerCase().trim();
-        String selectedRole = roleFilterCombo.getValue(); // Récupère le filtre rôle actuel
+        String selectedRole = roleFilterCombo.getValue();
 
         filteredData.setPredicate(user -> {
-            // 1. Filtre par faculté
             boolean matchesFaculte = (selectedFaculte == null || selectedFaculte.isEmpty()) ||
                     user.getFaculte().equalsIgnoreCase(selectedFaculte);
 
-            // 2. Filtre par rôle (indépendant)
             boolean matchesRole = (selectedRole == null || selectedRole.isEmpty()) ||
                     (user.getRole() != null &&
                             user.getRole().getRoleName().equalsIgnoreCase(selectedRole));
 
-            // 3. Filtre par recherche
             boolean matchesSearch = currentSearch.isEmpty() ||
                     user.getFirst_Name().toLowerCase().contains(currentSearch) ||
                     user.getLast_Name().toLowerCase().contains(currentSearch) ||
@@ -447,19 +381,16 @@ public class UserController implements Initializable {
     private void filterByRole(ActionEvent event) {
         String selectedRole = roleFilterCombo.getValue();
         String currentSearch = searchField.getText().toLowerCase().trim();
-        String selectedFaculte = faculteFilterCombo.getValue(); // Récupère le filtre faculté actuel
+        String selectedFaculte = faculteFilterCombo.getValue();
 
         filteredData.setPredicate(user -> {
-            // 1. Filtre par rôle
             boolean matchesRole = (selectedRole == null || selectedRole.isEmpty()) ||
                     (user.getRole() != null &&
                             user.getRole().getRoleName().equalsIgnoreCase(selectedRole));
 
-            // 2. Filtre par faculté (indépendant)
             boolean matchesFaculte = (selectedFaculte == null || selectedFaculte.isEmpty()) ||
                     user.getFaculte().equalsIgnoreCase(selectedFaculte);
 
-            // 3. Filtre par recherche
             boolean matchesSearch = currentSearch.isEmpty() ||
                     user.getFirst_Name().toLowerCase().contains(currentSearch) ||
                     user.getLast_Name().toLowerCase().contains(currentSearch) ||
@@ -473,16 +404,53 @@ public class UserController implements Initializable {
 
     @FXML
     private void resetFilters(ActionEvent event) {
-        // Réinitialiser les sélections
         faculteFilterCombo.getSelectionModel().clearSelection();
         roleFilterCombo.getSelectionModel().clearSelection();
-
-        // Réinitialiser la recherche
         searchField.clear();
-
-        // Afficher tous les utilisateurs
         filteredData.setPredicate(user -> true);
     }
 
+    private void setupPagination() {
+        int totalItems = filteredData.size();
+        int totalPages = (int) Math.ceil((double) totalItems / rowsPerPage);
+        paginationLabel.setText("Page " + currentPage + " sur " + totalPages);
 
+        int fromIndex = (currentPage - 1) * rowsPerPage;
+        int toIndex = Math.min(fromIndex + rowsPerPage, totalItems);
+
+        if (fromIndex <= toIndex) {
+            userTable.setItems(FXCollections.observableArrayList(
+                    filteredData.subList(fromIndex, toIndex)
+            ));
+        }
+    }
+
+    /* ================= ANCIENNE MÉTHODE SUPPRIMÉE ================= */
+    // La méthode openEditWindow a été supprimée car nous utilisons maintenant openEditPage
+
+    private void confirmAndDelete(UserModel user) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirmation de suppression");
+        alert.setHeaderText("Supprimer l'utilisateur");
+        alert.setContentText("Êtes-vous sûr de vouloir supprimer " + user.getFirst_Name() + " ?");
+
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.setStyle("-fx-background-color: white; -fx-font-size: 14px;");
+
+        Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+        okButton.setStyle("-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 6;");
+
+        Button cancelButton = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
+        cancelButton.setStyle("-fx-background-color: #e5e7eb; -fx-text-fill: #374151; -fx-padding: 8 16; -fx-background-radius: 6;");
+
+        alert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                deleteUser(user);
+            }
+        });
+    }
+
+    public void setMainController(MainController mainController) {
+        this.mainController = mainController;
+    }
 }

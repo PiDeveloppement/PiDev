@@ -8,10 +8,10 @@
 
 <BorderPane
         fx:controller="com.example.pidev.controller.auth.LoginController"
-            xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            prefHeight="800" prefWidth="1200"
-            style="-fx-background-color: linear-gradient(to bottom right, #f0f8ff, #e6f2ff);">
+        xmlns="http://javafx.com/javafx"
+        xmlns:fx="http://javafx.com/fxml"
+        prefHeight="800" prefWidth="1200"
+        style="-fx-background-color: linear-gradient(to bottom right, #f0f8ff, #e6f2ff);">
 
     <center>
         <GridPane alignment="CENTER" hgap="60">

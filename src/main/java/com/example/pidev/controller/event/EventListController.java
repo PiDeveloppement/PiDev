@@ -4,12 +4,18 @@ import com.example.pidev.model.event.Event;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -50,7 +56,7 @@ public class EventListController implements Initializable {
     private Button addEventBtn;
 
     @FXML
-    private Label statusLabel;
+    private Label statsLabel;
 
     private ObservableList<Event> eventsList = FXCollections.observableArrayList();
 
@@ -153,7 +159,7 @@ public class EventListController implements Initializable {
                 "En cours", 500, 12000.0));
 
         eventsTable.setItems(eventsList);
-        statusLabel.setText("📊 " + eventsList.size() + " événements trouvés • 🔄 Dernière mise à jour: Maintenant");
+        statsLabel.setText("📊 " + eventsList.size() + " événements trouvés • 🔄 Dernière mise à jour: Maintenant");
     }
 
     private void handleAddEvent() {
@@ -190,7 +196,7 @@ public class EventListController implements Initializable {
         confirm.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
                 eventsList.remove(event);
-                statusLabel.setText("✅ Événement supprimé avec succès • 📊 " +
+                statsLabel.setText("✅ Événement supprimé avec succès • 📊 " +
                         eventsList.size() + " événements restants");
 
                 // Notification de succès
@@ -201,6 +207,30 @@ public class EventListController implements Initializable {
                 success.showAndWait();
             }
         });
+    }
+    @FXML
+    private void goToProfil(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(getClass().getResource("/com/example/pidev/fxml/user/profil.fxml"));
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle("Sign Up");
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    @FXML
+    private void goToLogin(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(getClass().getResource("/com/example/pidev/fxml/auth/login.fxml"));
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle("Sign Up");
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
 
