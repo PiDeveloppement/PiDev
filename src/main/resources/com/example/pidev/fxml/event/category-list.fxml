@@ -187,10 +187,15 @@
                                styleClass="result-label"/>
                     </HBox>
 
-                    <!-- TABLEAU -->
+                    <!-- TABLEAU (hauteur fixe pour 10 lignes exactement, pas de scroll interne) -->
                     <TableView fx:id="categoryTable"
-                               prefHeight="500"
-                               styleClass="data-table">
+                               fixedCellSize="60"
+                               prefHeight="660"
+                               minHeight="660"
+                               maxHeight="660"
+                               styleClass="data-table"
+                               style="-fx-background-color: white;"
+                               VBox.vgrow="NEVER">
 
                         <columns>
                             <!-- Catégorie -->
@@ -237,17 +242,16 @@
                     <HBox spacing="20" alignment="CENTER" styleClass="table-footer">
                         <Region HBox.hgrow="ALWAYS"/>
 
-                        <HBox spacing="8" alignment="CENTER">
-                            <Button text="« Précédent" styleClass="btn-pagination" disable="true"/>
-                            <Button text="1" styleClass="btn-page-active"/>
-                            <Button text="2" styleClass="btn-page"/>
-                            <Button text="3" styleClass="btn-page"/>
-                            <Label text="..." style="-fx-text-fill: #6c757d;"/>
-                            <Button text="10" styleClass="btn-page"/>
-                            <Button text="Suivant »" styleClass="btn-pagination"/>
+                        <HBox fx:id="paginationContainer" spacing="8" alignment="CENTER">
+                            <Button fx:id="prevBtn" text="« Précédent" styleClass="btn-pagination" onAction="#handlePrevPage"/>
+                            <!-- Les boutons de page seront générés dynamiquement -->
                         </HBox>
 
                         <Region HBox.hgrow="ALWAYS"/>
+
+                        <!-- Info pagination -->
+                        <Label fx:id="pageInfoLabel" text="Page 1 sur 1"
+                               style="-fx-text-fill: #6c757d; -fx-font-size: 12px;"/>
                     </HBox>
 
                 </VBox>

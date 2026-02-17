@@ -22,7 +22,7 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
- * Controller pour la liste des catégories - Version simplifiée
+ * Controller pour la liste des catégories - Version simplifiée avec diagnostic
  * @author Ons Abdesslem
  */
 public class CategoryListController {
@@ -53,9 +53,20 @@ public class CategoryListController {
     // ========== BOUTONS ==========
     @FXML private Button addBtn;
 
+    // ========== PAGINATION ==========
+    @FXML private HBox paginationContainer;
+    @FXML private Button prevBtn;
+    @FXML private Label pageInfoLabel;
+
     private EventCategoryService categoryService;
     private HelloController helloController;
     private List<EventCategory> allCategories;
+    private List<EventCategory> filteredCategories; // Liste filtrée pour la pagination
+
+    // Variables de pagination
+    private int currentPage = 1;
+    private int itemsPerPage = 10; // 10 catégories par page
+    private int totalPages = 1;
 
 
     @FXML
@@ -97,48 +108,100 @@ public class CategoryListController {
     }
 
     /**
-     * Configuration simplifiée des filtres - PLUS DE ButtonCell
+     * Configuration des filtres avec placeholders intégrés comme premier item
      */
     private void setupFilters() {
         // ============ RECHERCHE ============
-        searchField.setPromptText("Recherche");
+        searchField.setPromptText("🔍 Rechercher une catégorie...");
         searchField.textProperty().addListener((obs, old, newVal) -> applyFilters());
 
         // ============ FILTRE STATUT ============
-        statusFilter.getItems().addAll("Tous les statuts", "Actif", "Inactif");
-        statusFilter.setButtonCell(createPlaceholderCell("▼ Statut"));
+        statusFilter.getItems().addAll("-- Tous les statuts --", "Actif", "Inactif");
+        statusFilter.setValue("-- Tous les statuts --"); // Sélectionner le placeholder par défaut
         statusFilter.valueProperty().addListener((obs, old, newVal) -> applyFilters());
 
-        // ============ FILTRE COULEUR ============
-        colorFilter.getItems().add("Toutes les couleurs");
-        colorFilter.setButtonCell(createPlaceholderCell("▼ Couleur"));
-        colorFilter.valueProperty().addListener((obs, old, newVal) -> applyFilters());
-
-        // ============ TRI (ORDRE) ============
-        sortOrder.getItems().addAll("A → Z", "Z → A", "Plus récents", "Plus anciens");
-        sortOrder.setButtonCell(createPlaceholderCell("▼ Ordre"));
-        sortOrder.valueProperty().addListener((obs, old, newVal) -> applyFilters());
-
-        System.out.println("✅ Filtres configurés avec placeholders");
-    }
-
-    /**
-     * Crée une cellule qui affiche le placeholder quand aucune valeur n'est sélectionnée
-     */
-    private ListCell<String> createPlaceholderCell(String placeholder) {
-        return new ListCell<>() {
+        // Style pour le dropdown
+        statusFilter.setCellFactory(param -> new ListCell<String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
-                    setText(placeholder);
-                    setStyle("-fx-text-fill: #adb5bd;");
+                    setText(null);
                 } else {
                     setText(item);
-                    setStyle("-fx-text-fill: #495057;");
+                    if (item.startsWith("--")) {
+                        setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
+                    } else {
+                        setStyle("-fx-text-fill: #495057;");
+                    }
                 }
             }
-        };
+        });
+
+        // Style pour le bouton (ce qui s'affiche quand fermé)
+        statusFilter.setButtonCell(new ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item);
+                    if (item.startsWith("--")) {
+                        setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
+                    } else {
+                        setStyle("-fx-text-fill: #495057;");
+                    }
+                }
+            }
+        });
+
+        // ============ FILTRE COULEUR ============
+        colorFilter.getItems().add("-- Toutes les couleurs --");
+        colorFilter.setValue("-- Toutes les couleurs --");
+        colorFilter.valueProperty().addListener((obs, old, newVal) -> applyFilters());
+
+        // ============ TRI (ORDRE) ============
+        sortOrder.getItems().addAll("-- Ordre --", "A → Z", "Z → A", "Plus récents", "Plus anciens");
+        sortOrder.setValue("-- Ordre --");
+        sortOrder.valueProperty().addListener((obs, old, newVal) -> applyFilters());
+
+        // Style pour l'ordre
+        sortOrder.setCellFactory(param -> new ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item);
+                    if (item.startsWith("--")) {
+                        setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
+                    } else {
+                        setStyle("-fx-text-fill: #495057;");
+                    }
+                }
+            }
+        });
+
+        sortOrder.setButtonCell(new ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item);
+                    if (item.startsWith("--")) {
+                        setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
+                    } else {
+                        setStyle("-fx-text-fill: #495057;");
+                    }
+                }
+            }
+        });
+
+        System.out.println("✅ Filtres configurés avec placeholders intégrés");
     }
 
     private void setupTableColumns() {
@@ -304,20 +367,19 @@ public class CategoryListController {
 
         String currentValue = colorFilter.getValue();
         colorFilter.getItems().clear();
-        colorFilter.getItems().add("Toutes les couleurs");
+        colorFilter.getItems().add("-- Toutes les couleurs --");
         for (String colorHex : colors) {
             colorFilter.getItems().add(getColorName(colorHex));
         }
 
-        // Reconfigurer le ButtonCell pour le placeholder
-        colorFilter.setButtonCell(createPlaceholderCell("▼ Couleur"));
-
-        // Restaurer la valeur si elle existait
+        // Restaurer la valeur ou mettre le placeholder par défaut
         if (currentValue != null && colorFilter.getItems().contains(currentValue)) {
             colorFilter.setValue(currentValue);
+        } else {
+            colorFilter.setValue("-- Toutes les couleurs --");
         }
 
-        // Configuration de l'affichage des items avec cercles (pour le dropdown seulement)
+        // Configuration du CellFactory pour le dropdown avec cercles de couleur
         colorFilter.setCellFactory(param -> new ListCell<String>() {
             private final Circle colorCircle = new Circle(8);
             @Override
@@ -326,10 +388,13 @@ public class CategoryListController {
                 if (empty || item == null) {
                     setGraphic(null);
                     setText(null);
-                } else if (item.equals("Toutes les couleurs")) {
+                } else if (item.startsWith("--")) {
+                    // Placeholder en gris italique
                     setGraphic(null);
                     setText(item);
+                    setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
                 } else {
+                    // Couleur normale avec cercle
                     String colorHex = extractColorHex(item);
                     if (colorHex != null) {
                         try {
@@ -347,9 +412,29 @@ public class CategoryListController {
                         setGraphic(null);
                         setText(item);
                     }
+                    setStyle("-fx-text-fill: #495057;");
                 }
             }
         });
+
+        // Configuration du ButtonCell pour l'affichage dans le ComboBox fermé
+        colorFilter.setButtonCell(new ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item);
+                    if (item.startsWith("--")) {
+                        setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
+                    } else {
+                        setStyle("-fx-text-fill: #495057;");
+                    }
+                }
+            }
+        });
+
         System.out.println("✅ Filtre couleur mis à jour avec " + (colors.size() + 1) + " options");
     }
 
@@ -402,16 +487,22 @@ public class CategoryListController {
         List<EventCategory> filtered = allCategories.stream()
                 .filter(cat -> {
                     boolean matchSearch = searchText.isEmpty() || cat.getName().toLowerCase().contains(searchText);
-                    boolean matchStatus = status == null || status.equals("Tous les statuts") ||
+
+                    // Filtre statut : ignorer si c'est le placeholder
+                    boolean matchStatus = status == null || status.startsWith("--") ||
                             (status.equals("Actif") && cat.isActive()) ||
                             (status.equals("Inactif") && !cat.isActive());
-                    boolean matchColor = color == null || color.equals("Toutes les couleurs") ||
+
+                    // Filtre couleur : ignorer si c'est le placeholder
+                    boolean matchColor = color == null || color.startsWith("--") ||
                             (cat.getColor() != null && color.contains(cat.getColor()));
+
                     return matchSearch && matchStatus && matchColor;
                 })
                 .collect(Collectors.toList());
 
-        if (sort != null) {
+        // Tri : ignorer si c'est le placeholder
+        if (sort != null && !sort.startsWith("--")) {
             switch (sort) {
                 case "A → Z": filtered.sort(Comparator.comparing(EventCategory::getName)); break;
                 case "Z → A": filtered.sort(Comparator.comparing(EventCategory::getName).reversed()); break;
@@ -422,9 +513,17 @@ public class CategoryListController {
             filtered.sort(Comparator.comparing(EventCategory::getName));
         }
 
-        categoryTable.getItems().clear();
-        categoryTable.getItems().addAll(filtered);
+        // Stocker les résultats filtrés pour la pagination
+        filteredCategories = filtered;
+
+        // Réinitialiser à la page 1 après un nouveau filtrage
+        currentPage = 1;
+
+        // Mettre à jour le label de résultats
         resultLabel.setText(filtered.size() + " résultat(s) trouvé(s)");
+
+        // Configurer et afficher la pagination
+        setupPagination();
     }
 
     @FXML
@@ -493,5 +592,147 @@ public class CategoryListController {
         alert.setTitle(title);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    // ===================== PAGINATION =====================
+
+    /**
+     * Configure la pagination dynamique
+     */
+    private void setupPagination() {
+        if (filteredCategories == null || filteredCategories.isEmpty()) {
+            totalPages = 1;
+            currentPage = 1;
+            updatePaginationUI();
+            return;
+        }
+
+        totalPages = (int) Math.ceil((double) filteredCategories.size() / itemsPerPage);
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+        updatePaginationUI();
+        displayCurrentPage();
+    }
+
+    /**
+     * Affiche les items de la page actuelle
+     */
+    private void displayCurrentPage() {
+        if (filteredCategories == null || filteredCategories.isEmpty()) {
+            categoryTable.getItems().clear();
+            return;
+        }
+
+        int fromIndex = (currentPage - 1) * itemsPerPage;
+        int toIndex = Math.min(fromIndex + itemsPerPage, filteredCategories.size());
+
+        List<EventCategory> pageItems = filteredCategories.subList(fromIndex, toIndex);
+        categoryTable.getItems().clear();
+        categoryTable.getItems().addAll(pageItems);
+    }
+
+    /**
+     * Met à jour l'interface de pagination (boutons + label)
+     */
+    private void updatePaginationUI() {
+        // Mettre à jour le label d'info
+        pageInfoLabel.setText("Page " + currentPage + " sur " + totalPages);
+
+        // Nettoyer les boutons existants (sauf "Précédent")
+        paginationContainer.getChildren().clear();
+
+        // Bouton Précédent
+        prevBtn.setDisable(currentPage == 1);
+        paginationContainer.getChildren().add(prevBtn);
+
+        // Générer les boutons de page
+        int maxButtons = 5; // Nombre max de boutons de page à afficher
+        int startPage, endPage;
+
+        if (totalPages <= maxButtons) {
+            startPage = 1;
+            endPage = totalPages;
+        } else {
+            int halfButtons = maxButtons / 2;
+            if (currentPage <= halfButtons + 1) {
+                startPage = 1;
+                endPage = maxButtons;
+            } else if (currentPage >= totalPages - halfButtons) {
+                startPage = totalPages - maxButtons + 1;
+                endPage = totalPages;
+            } else {
+                startPage = currentPage - halfButtons;
+                endPage = currentPage + halfButtons;
+            }
+        }
+
+        // Ajouter les boutons de page
+        for (int i = startPage; i <= endPage; i++) {
+            final int pageNum = i;
+            Button pageBtn = new Button(String.valueOf(i));
+
+            if (i == currentPage) {
+                pageBtn.getStyleClass().add("btn-page-active");
+            } else {
+                pageBtn.getStyleClass().add("btn-page");
+            }
+
+            pageBtn.setOnAction(e -> goToPage(pageNum));
+            paginationContainer.getChildren().add(pageBtn);
+        }
+
+        // Points de suspension si nécessaire
+        if (endPage < totalPages) {
+            Label dots = new Label("...");
+            dots.setStyle("-fx-text-fill: #6c757d; -fx-padding: 5 10;");
+            paginationContainer.getChildren().add(dots);
+
+            Button lastPageBtn = new Button(String.valueOf(totalPages));
+            lastPageBtn.getStyleClass().add("btn-page");
+            lastPageBtn.setOnAction(e -> goToPage(totalPages));
+            paginationContainer.getChildren().add(lastPageBtn);
+        }
+
+        // Bouton Suivant
+        Button nextBtn = new Button("Suivant »");
+        nextBtn.getStyleClass().add("btn-pagination");
+        nextBtn.setDisable(currentPage == totalPages);
+        nextBtn.setOnAction(e -> handleNextPage());
+        paginationContainer.getChildren().add(nextBtn);
+    }
+
+    /**
+     * Aller à une page spécifique
+     */
+    private void goToPage(int pageNum) {
+        if (pageNum >= 1 && pageNum <= totalPages) {
+            currentPage = pageNum;
+            displayCurrentPage();
+            updatePaginationUI();
+        }
+    }
+
+    /**
+     * Page précédente
+     */
+    @FXML
+    private void handlePrevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            displayCurrentPage();
+            updatePaginationUI();
+        }
+    }
+
+    /**
+     * Page suivante
+     */
+    private void handleNextPage() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            displayCurrentPage();
+            updatePaginationUI();
+        }
     }
 }

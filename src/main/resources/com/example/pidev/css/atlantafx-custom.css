@@ -310,6 +310,35 @@
     -fx-border-color: transparent;
 }
 
+/* Masquer la barre de scroll verticale du tableau */
+.data-table .scroll-bar:vertical {
+    -fx-opacity: 0;
+    -fx-pref-width: 0;
+    -fx-min-width: 0;
+    -fx-max-width: 0;
+}
+
+.data-table .scroll-bar:vertical .thumb {
+    -fx-background-color: transparent;
+}
+
+.data-table .scroll-bar:vertical .track {
+    -fx-background-color: transparent;
+}
+
+.data-table .scroll-bar:vertical .increment-button,
+.data-table .scroll-bar:vertical .decrement-button {
+    -fx-opacity: 0;
+    -fx-pref-height: 0;
+    -fx-min-height: 0;
+    -fx-max-height: 0;
+}
+
+/* Garder le scroll horizontal si nécessaire */
+.data-table .scroll-bar:horizontal {
+    -fx-background-color: #f8f9fa;
+}
+
 .data-table .column-header-background {
     -fx-background-color: #f8f9fa;
     -fx-border-color: #dee2e6;
