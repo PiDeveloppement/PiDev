@@ -129,14 +129,12 @@
                         </HBox>
 
                         <!-- Statut -->
-                        <ComboBox fx:id="statusFilter"
-                                  promptText="▼ Statut"
+                        <ChoiceBox fx:id="statusFilter"
                                   prefWidth="200"
                                   styleClass="filter-input"/>
 
                         <!-- Couleur -->
-                        <ComboBox fx:id="colorFilter"
-                                  promptText="▼ Couleur"
+                        <ChoiceBox fx:id="colorFilter"
                                   prefWidth="220"
                                   styleClass="filter-input"/>
 
@@ -158,8 +156,7 @@
                     <HBox spacing="15" alignment="CENTER_LEFT" styleClass="toolbar-secondary">
 
                         <!-- Ordre (Tri) -->
-                        <ComboBox fx:id="sortOrder"
-                                  promptText="▼ Ordre"
+                        <ChoiceBox fx:id="sortOrder"
                                   prefWidth="200"
                                   styleClass="filter-input"/>
 

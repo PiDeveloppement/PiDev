@@ -37,9 +37,9 @@ public class CategoryListController {
 
     // ========== FILTRES ==========
     @FXML private TextField searchField;
-    @FXML private ComboBox<String> statusFilter;
-    @FXML private ComboBox<String> colorFilter;
-    @FXML private ComboBox<String> sortOrder;
+    @FXML private ChoiceBox<String> statusFilter;
+    @FXML private ChoiceBox<String> colorFilter;
+    @FXML private ChoiceBox<String> sortOrder;
 
     // ========== KPI ==========
     @FXML private Label totalLabel;
@@ -53,7 +53,7 @@ public class CategoryListController {
     // ========== BOUTONS ==========
     @FXML private Button addBtn;
 
-    // ========== PAGINATION ==========
+     // ========== PAGINATION ==========
     @FXML private HBox paginationContainer;
     @FXML private Button prevBtn;
     @FXML private Label pageInfoLabel;
@@ -108,7 +108,7 @@ public class CategoryListController {
     }
 
     /**
-     * Configuration des filtres avec placeholders intégrés comme premier item
+     * Configuration des filtres avec ChoiceBox et placeholders intégrés
      */
     private void setupFilters() {
         // ============ RECHERCHE ============
@@ -117,44 +117,8 @@ public class CategoryListController {
 
         // ============ FILTRE STATUT ============
         statusFilter.getItems().addAll("-- Tous les statuts --", "Actif", "Inactif");
-        statusFilter.setValue("-- Tous les statuts --"); // Sélectionner le placeholder par défaut
+        statusFilter.setValue("-- Tous les statuts --");
         statusFilter.valueProperty().addListener((obs, old, newVal) -> applyFilters());
-
-        // Style pour le dropdown
-        statusFilter.setCellFactory(param -> new ListCell<String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item);
-                    if (item.startsWith("--")) {
-                        setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
-                    } else {
-                        setStyle("-fx-text-fill: #495057;");
-                    }
-                }
-            }
-        });
-
-        // Style pour le bouton (ce qui s'affiche quand fermé)
-        statusFilter.setButtonCell(new ListCell<String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item);
-                    if (item.startsWith("--")) {
-                        setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
-                    } else {
-                        setStyle("-fx-text-fill: #495057;");
-                    }
-                }
-            }
-        });
 
         // ============ FILTRE COULEUR ============
         colorFilter.getItems().add("-- Toutes les couleurs --");
@@ -166,42 +130,7 @@ public class CategoryListController {
         sortOrder.setValue("-- Ordre --");
         sortOrder.valueProperty().addListener((obs, old, newVal) -> applyFilters());
 
-        // Style pour l'ordre
-        sortOrder.setCellFactory(param -> new ListCell<String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item);
-                    if (item.startsWith("--")) {
-                        setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
-                    } else {
-                        setStyle("-fx-text-fill: #495057;");
-                    }
-                }
-            }
-        });
-
-        sortOrder.setButtonCell(new ListCell<String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item);
-                    if (item.startsWith("--")) {
-                        setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
-                    } else {
-                        setStyle("-fx-text-fill: #495057;");
-                    }
-                }
-            }
-        });
-
-        System.out.println("✅ Filtres configurés avec placeholders intégrés");
+        System.out.println("✅ Filtres configurés avec ChoiceBox");
     }
 
     private void setupTableColumns() {
@@ -379,61 +308,6 @@ public class CategoryListController {
             colorFilter.setValue("-- Toutes les couleurs --");
         }
 
-        // Configuration du CellFactory pour le dropdown avec cercles de couleur
-        colorFilter.setCellFactory(param -> new ListCell<String>() {
-            private final Circle colorCircle = new Circle(8);
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                    setText(null);
-                } else if (item.startsWith("--")) {
-                    // Placeholder en gris italique
-                    setGraphic(null);
-                    setText(item);
-                    setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
-                } else {
-                    // Couleur normale avec cercle
-                    String colorHex = extractColorHex(item);
-                    if (colorHex != null) {
-                        try {
-                            colorCircle.setFill(Color.web(colorHex));
-                            colorCircle.setStroke(Color.web("#dee2e6"));
-                            colorCircle.setStrokeWidth(1.5);
-                        } catch (Exception e) {
-                            colorCircle.setFill(Color.GRAY);
-                        }
-                        HBox box = new HBox(10, colorCircle, new Label(item));
-                        box.setAlignment(Pos.CENTER_LEFT);
-                        setGraphic(box);
-                        setText(null);
-                    } else {
-                        setGraphic(null);
-                        setText(item);
-                    }
-                    setStyle("-fx-text-fill: #495057;");
-                }
-            }
-        });
-
-        // Configuration du ButtonCell pour l'affichage dans le ComboBox fermé
-        colorFilter.setButtonCell(new ListCell<String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item);
-                    if (item.startsWith("--")) {
-                        setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
-                    } else {
-                        setStyle("-fx-text-fill: #495057;");
-                    }
-                }
-            }
-        });
 
         System.out.println("✅ Filtre couleur mis à jour avec " + (colors.size() + 1) + " options");
     }
