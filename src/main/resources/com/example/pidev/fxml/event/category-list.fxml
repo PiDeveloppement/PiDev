@@ -130,11 +130,13 @@
 
                         <!-- Statut -->
                         <ComboBox fx:id="statusFilter"
+                                  promptText="▼ Statut"
                                   prefWidth="200"
                                   styleClass="filter-input"/>
 
                         <!-- Couleur -->
                         <ComboBox fx:id="colorFilter"
+                                  promptText="▼ Couleur"
                                   prefWidth="220"
                                   styleClass="filter-input"/>
 
@@ -157,6 +159,7 @@
 
                         <!-- Ordre (Tri) -->
                         <ComboBox fx:id="sortOrder"
+                                  promptText="▼ Ordre"
                                   prefWidth="200"
                                   styleClass="filter-input"/>
 

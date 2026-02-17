@@ -22,9 +22,8 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
- * Controller pour la liste des catégories - Version avec Navbar
+ * Controller pour la liste des catégories - Version simplifiée
  * @author Ons Abdesslem
- * @version 10.0 - CORRECTED: Placeholders for all ComboBox
  */
 public class CategoryListController {
 
@@ -61,169 +60,103 @@ public class CategoryListController {
 
     @FXML
     public void initialize() {
-        System.out.println("✅ CategoryListController - Version avec Navbar");
+        System.out.println("✅ CategoryListController initialisé");
 
         categoryService = new EventCategoryService();
 
         setupFilters();
-        System.out.println("=== DIAGNOSTIC ===");
-        System.out.println("statusFilter ButtonCell class: " +
-                (statusFilter.getButtonCell() != null ? statusFilter.getButtonCell().getClass() : "NULL"));
-        System.out.println("colorFilter ButtonCell class: " +
-                (colorFilter.getButtonCell() != null ? colorFilter.getButtonCell().getClass() : "NULL"));
-        System.out.println("colorFilter value: " + colorFilter.getValue());
-        System.out.println("colorFilter items: " + colorFilter.getItems());
         setupTableColumns();
         loadCategories();
 
         // ========== DATE/HEURE TEMPS RÉEL ==========
         updateDateTime();
-
-        Timeline clock = new Timeline(new KeyFrame(Duration.ZERO, e -> updateDateTime()),
-                new KeyFrame(Duration.seconds(1)));
+        Timeline clock = new Timeline(
+                new KeyFrame(Duration.ZERO, e -> updateDateTime()),
+                new KeyFrame(Duration.seconds(1))
+        );
         clock.setCycleCount(Timeline.INDEFINITE);
         clock.play();
     }
 
-
-    /**
-     * Mise à jour de la date et l'heure en temps réel
-     */
     private void updateDateTime() {
         LocalDateTime now = LocalDateTime.now();
-
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE dd MMMM yyyy", Locale.FRENCH);
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
         if (dateLabel != null) {
             String dateText = now.format(dateFormatter);
-            // Capitaliser la première lettre
             dateLabel.setText(dateText.substring(0, 1).toUpperCase() + dateText.substring(1));
         }
-
         if (timeLabel != null) {
             timeLabel.setText(now.format(timeFormatter));
         }
     }
 
-
     public void setHelloController(HelloController helloController) {
         this.helloController = helloController;
     }
 
-
     /**
-     * Configuration des filtres avec placeholders visibles
+     * Configuration simplifiée des filtres - PLUS DE ButtonCell
      */
     private void setupFilters() {
         // ============ RECHERCHE ============
         searchField.setPromptText("Recherche");
-
+        searchField.textProperty().addListener((obs, old, newVal) -> applyFilters());
 
         // ============ FILTRE STATUT ============
-        statusFilter.setPromptText("Statut");
         statusFilter.getItems().addAll("Tous les statuts", "Actif", "Inactif");
-        statusFilter.setValue(null);
-
-        statusFilter.setButtonCell(new ListCell<String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText("Statut");
-                    setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
-                } else {
-                    setText(item);
-                    setStyle("-fx-text-fill: #495057; -fx-font-style: normal;");
-                }
-            }
-        });
-
+        statusFilter.setButtonCell(createPlaceholderCell("▼ Statut"));
+        statusFilter.valueProperty().addListener((obs, old, newVal) -> applyFilters());
 
         // ============ FILTRE COULEUR ============
-        colorFilter.setPromptText("Couleur");
         colorFilter.getItems().add("Toutes les couleurs");
-        colorFilter.setValue(null);
-
-        // Configuration du ButtonCell pour le placeholder
-        setupColorFilterButtonCell();
-
+        colorFilter.setButtonCell(createPlaceholderCell("▼ Couleur"));
+        colorFilter.valueProperty().addListener((obs, old, newVal) -> applyFilters());
 
         // ============ TRI (ORDRE) ============
-        sortOrder.setPromptText("Ordre");
-        sortOrder.getItems().addAll(
-                "A → Z",
-                "Z → A",
-                "Plus récents",
-                "Plus anciens"
-        );
-        sortOrder.setValue(null);
-
-        sortOrder.setButtonCell(new ListCell<String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText("Ordre");
-                    setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
-                } else {
-                    setText(item);
-                    setStyle("-fx-text-fill: #495057; -fx-font-style: normal;");
-                }
-            }
-        });
-
-
-        // Recherche temps réel
-        searchField.textProperty().addListener((obs, old, newVal) -> applyFilters());
+        sortOrder.getItems().addAll("A → Z", "Z → A", "Plus récents", "Plus anciens");
+        sortOrder.setButtonCell(createPlaceholderCell("▼ Ordre"));
+        sortOrder.valueProperty().addListener((obs, old, newVal) -> applyFilters());
 
         System.out.println("✅ Filtres configurés avec placeholders");
     }
 
-
     /**
-     * Configure le ButtonCell du filtre couleur (pour le placeholder)
+     * Crée une cellule qui affiche le placeholder quand aucune valeur n'est sélectionnée
      */
-    private void setupColorFilterButtonCell() {
-        colorFilter.setButtonCell(new ListCell<String>() {
+    private ListCell<String> createPlaceholderCell(String placeholder) {
+        return new ListCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
-                    setText("Couleur");
-                    setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
-                    setGraphic(null);
+                    setText(placeholder);
+                    setStyle("-fx-text-fill: #adb5bd;");
                 } else {
                     setText(item);
-                    setStyle("-fx-text-fill: #495057; -fx-font-style: normal;");
-                    setGraphic(null);
+                    setStyle("-fx-text-fill: #495057;");
                 }
             }
-        });
+        };
     }
 
-
     private void setupTableColumns() {
-
-        // ============ CATÉGORIE ============
+        // Catégorie avec icône
         categoryCol.setCellValueFactory(param ->
                 new javafx.beans.property.SimpleObjectProperty<>(param.getValue())
         );
-
         categoryCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(EventCategory cat, boolean empty) {
                 super.updateItem(cat, empty);
-
                 if (empty || cat == null) {
                     setGraphic(null);
                 } else {
                     Label icon = new Label(cat.getIcon() != null ? cat.getIcon() : "📌");
                     icon.setStyle("-fx-font-size: 22px;");
-
                     Label name = new Label(cat.getName());
                     name.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;");
-
                     HBox box = new HBox(10, icon, name);
                     box.setAlignment(Pos.CENTER_LEFT);
                     setGraphic(box);
@@ -231,19 +164,16 @@ public class CategoryListController {
             }
         });
 
-
-        // ============ DESCRIPTION ============
+        // Description
         descriptionCol.setCellValueFactory(param ->
                 new javafx.beans.property.SimpleStringProperty(
                         param.getValue().getDescription() != null ? param.getValue().getDescription() : ""
                 )
         );
-
         descriptionCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String desc, boolean empty) {
                 super.updateItem(desc, empty);
-
                 if (empty || desc == null || desc.isEmpty()) {
                     setText(null);
                 } else {
@@ -254,17 +184,14 @@ public class CategoryListController {
             }
         });
 
-
-        // ============ COULEUR ============
+        // Couleur avec cercle
         colorCol.setCellValueFactory(param ->
                 new javafx.beans.property.SimpleStringProperty(param.getValue().getColor())
         );
-
         colorCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String colorHex, boolean empty) {
                 super.updateItem(colorHex, empty);
-
                 if (empty || colorHex == null) {
                     setGraphic(null);
                 } else {
@@ -276,10 +203,8 @@ public class CategoryListController {
                     } catch (Exception e) {
                         circle.setFill(Color.GRAY);
                     }
-
                     Label hex = new Label(colorHex);
                     hex.setStyle("-fx-font-size: 12px; -fx-text-fill: #495057; -fx-font-family: monospace;");
-
                     HBox box = new HBox(10, circle, hex);
                     box.setAlignment(Pos.CENTER);
                     setGraphic(box);
@@ -287,17 +212,14 @@ public class CategoryListController {
             }
         });
 
-
-        // ============ STATUT ============
+        // Statut avec badge
         statusCol.setCellValueFactory(param ->
                 new javafx.beans.property.SimpleObjectProperty<>(param.getValue().isActive())
         );
-
         statusCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(Boolean active, boolean empty) {
                 super.updateItem(active, empty);
-
                 if (empty || active == null) {
                     setGraphic(null);
                 } else {
@@ -309,71 +231,55 @@ public class CategoryListController {
             }
         });
 
-
-        // ============ ACTIONS ============
+        // Actions (voir, modifier, supprimer)
         actionsCol.setCellFactory(col -> new TableCell<>() {
             private final Button viewBtn = createIconButton("eye", "#17a2b8");
             private final Button editBtn = createIconButton("edit", "#0d6efd");
             private final Button deleteBtn = createIconButton("trash", "#dc3545");
             private final HBox container = new HBox(8, viewBtn, editBtn, deleteBtn);
-
             {
                 container.setAlignment(Pos.CENTER);
             }
-
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-
                 if (empty) {
                     setGraphic(null);
                 } else {
                     EventCategory category = getTableView().getItems().get(getIndex());
-
                     viewBtn.setOnAction(e -> handleView(category));
                     editBtn.setOnAction(e -> handleEdit(category));
                     deleteBtn.setOnAction(e -> handleDelete(category));
-
                     setGraphic(container);
                 }
             }
         });
     }
 
-
     private Button createIconButton(String iconType, String color) {
         Button btn = new Button();
         btn.setMinSize(38, 38);
         btn.setMaxSize(38, 38);
         btn.getStyleClass().add("action-btn-icon");
-
         SVGPath icon = new SVGPath();
-
         switch (iconType) {
             case "eye":
                 icon.setContent("M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z");
-                btn.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 6;");
                 break;
-
             case "edit":
                 icon.setContent("M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z");
-                btn.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 6;");
                 break;
-
             case "trash":
                 icon.setContent("M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z");
-                btn.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 6;");
                 break;
         }
-
         icon.setFill(Color.WHITE);
         icon.setScaleX(0.7);
         icon.setScaleY(0.7);
-
         btn.setGraphic(icon);
+        btn.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 6;");
         return btn;
     }
-
 
     private void loadCategories() {
         try {
@@ -381,14 +287,12 @@ public class CategoryListController {
             populateColorFilter();
             applyFilters();
             updateStatistics();
-
             System.out.println("✅ " + allCategories.size() + " catégories chargées");
         } catch (Exception e) {
             System.err.println("❌ Erreur: " + e.getMessage());
             showError("Erreur", "Impossible de charger les catégories");
         }
     }
-
 
     private void populateColorFilter() {
         List<String> colors = allCategories.stream()
@@ -398,37 +302,27 @@ public class CategoryListController {
                 .sorted()
                 .collect(Collectors.toList());
 
-        // Sauvegarder la valeur actuelle
         String currentValue = colorFilter.getValue();
-
-        // Reconstruire la liste
         colorFilter.getItems().clear();
         colorFilter.getItems().add("Toutes les couleurs");
-
         for (String colorHex : colors) {
-            String colorName = getColorName(colorHex);
-            colorFilter.getItems().add(colorName);
+            colorFilter.getItems().add(getColorName(colorHex));
         }
 
-        // === AJOUTE CES 2 LIGNES ===
-        colorFilter.setValue(null);  // Force l'affichage du placeholder
-        setupColorFilterButtonCell(); // Reconfigure le ButtonCell
+        // Reconfigurer le ButtonCell pour le placeholder
+        colorFilter.setButtonCell(createPlaceholderCell("▼ Couleur"));
 
+        // Restaurer la valeur si elle existait
+        if (currentValue != null && colorFilter.getItems().contains(currentValue)) {
+            colorFilter.setValue(currentValue);
+        }
 
-        // RECONFIGURER LE BUTTONCELL (important pour le placeholder)
-        setupColorFilterButtonCell();
-
-        // Restaurer la valeur (ou null si pas de sélection)
-        colorFilter.setValue(currentValue);
-
-        // Configuration de l'affichage des items avec cercles
+        // Configuration de l'affichage des items avec cercles (pour le dropdown seulement)
         colorFilter.setCellFactory(param -> new ListCell<String>() {
             private final Circle colorCircle = new Circle(8);
-
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-
                 if (empty || item == null) {
                     setGraphic(null);
                     setText(null);
@@ -437,7 +331,6 @@ public class CategoryListController {
                     setText(item);
                 } else {
                     String colorHex = extractColorHex(item);
-
                     if (colorHex != null) {
                         try {
                             colorCircle.setFill(Color.web(colorHex));
@@ -446,7 +339,6 @@ public class CategoryListController {
                         } catch (Exception e) {
                             colorCircle.setFill(Color.GRAY);
                         }
-
                         HBox box = new HBox(10, colorCircle, new Label(item));
                         box.setAlignment(Pos.CENTER_LEFT);
                         setGraphic(box);
@@ -458,10 +350,8 @@ public class CategoryListController {
                 }
             }
         });
-
         System.out.println("✅ Filtre couleur mis à jour avec " + (colors.size() + 1) + " options");
     }
-
 
     private String extractColorHex(String colorText) {
         for (EventCategory cat : allCategories) {
@@ -472,10 +362,8 @@ public class CategoryListController {
         return null;
     }
 
-
     private String getColorName(String hex) {
         if (hex == null) return "Inconnue";
-
         switch (hex.toUpperCase()) {
             case "#FF9800": return "Orange (" + hex + ")";
             case "#4CAF50": return "Vert (" + hex + ")";
@@ -491,27 +379,21 @@ public class CategoryListController {
         }
     }
 
-
     private void updateStatistics() {
         if (allCategories == null) return;
-
         int total = allCategories.size();
         int events = allCategories.stream().mapToInt(EventCategory::getEventCount).sum();
-
         totalLabel.setText(String.valueOf(total));
         eventsLabel.setText(String.valueOf(events));
     }
-
 
     @FXML
     private void handleFilter() {
         applyFilters();
     }
 
-
     private void applyFilters() {
         if (allCategories == null) return;
-
         String searchText = searchField.getText().toLowerCase().trim();
         String status = statusFilter.getValue();
         String color = colorFilter.getValue();
@@ -519,34 +401,22 @@ public class CategoryListController {
 
         List<EventCategory> filtered = allCategories.stream()
                 .filter(cat -> {
-                    boolean matchSearch = searchText.isEmpty() ||
-                            cat.getName().toLowerCase().contains(searchText);
-
+                    boolean matchSearch = searchText.isEmpty() || cat.getName().toLowerCase().contains(searchText);
                     boolean matchStatus = status == null || status.equals("Tous les statuts") ||
                             (status.equals("Actif") && cat.isActive()) ||
                             (status.equals("Inactif") && !cat.isActive());
-
                     boolean matchColor = color == null || color.equals("Toutes les couleurs") ||
                             (cat.getColor() != null && color.contains(cat.getColor()));
-
                     return matchSearch && matchStatus && matchColor;
                 })
                 .collect(Collectors.toList());
 
         if (sort != null) {
             switch (sort) {
-                case "A → Z":
-                    filtered.sort(Comparator.comparing(EventCategory::getName));
-                    break;
-                case "Z → A":
-                    filtered.sort(Comparator.comparing(EventCategory::getName).reversed());
-                    break;
-                case "Plus récents":
-                    filtered.sort(Comparator.comparing(EventCategory::getCreatedAt).reversed());
-                    break;
-                case "Plus anciens":
-                    filtered.sort(Comparator.comparing(EventCategory::getCreatedAt));
-                    break;
+                case "A → Z": filtered.sort(Comparator.comparing(EventCategory::getName)); break;
+                case "Z → A": filtered.sort(Comparator.comparing(EventCategory::getName).reversed()); break;
+                case "Plus récents": filtered.sort(Comparator.comparing(EventCategory::getCreatedAt).reversed()); break;
+                case "Plus anciens": filtered.sort(Comparator.comparing(EventCategory::getCreatedAt)); break;
             }
         } else {
             filtered.sort(Comparator.comparing(EventCategory::getName));
@@ -557,25 +427,18 @@ public class CategoryListController {
         resultLabel.setText(filtered.size() + " résultat(s) trouvé(s)");
     }
 
-
     @FXML
     private void handleAdd() {
         System.out.println("[CategoryList] handleAdd() appelé");
-
         if (helloController == null) {
-            System.err.println("[CategoryList] helloController est null: navigation impossible");
-
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Erreur de navigation");
             alert.setHeaderText("Impossible d'ouvrir le formulaire");
-            alert.setContentText("helloController est null. La page liste doit être chargée via HelloController.showCategories().");
             alert.showAndWait();
             return;
         }
-
         helloController.showCategoryForm(null);
     }
-
 
     private void handleView(EventCategory category) {
         Alert details = new Alert(Alert.AlertType.INFORMATION);
@@ -590,20 +453,17 @@ public class CategoryListController {
         details.showAndWait();
     }
 
-
     private void handleEdit(EventCategory category) {
         if (helloController != null) {
             helloController.showCategoryForm(category);
         }
     }
 
-
     private void handleDelete(EventCategory category) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Confirmation");
         confirm.setHeaderText("Supprimer " + category.getName() + " ?");
         confirm.setContentText("Cette action est irréversible.");
-
         confirm.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
                 if (categoryService.deleteCategory(category.getId())) {
@@ -616,12 +476,10 @@ public class CategoryListController {
         });
     }
 
-
     @FXML
     private void handleRefresh() {
         loadCategories();
     }
-
 
     private void showError(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -630,7 +488,6 @@ public class CategoryListController {
         alert.showAndWait();
     }
 
-
     private void showSuccess(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
@@ -638,4 +495,3 @@ public class CategoryListController {
         alert.showAndWait();
     }
 }
-

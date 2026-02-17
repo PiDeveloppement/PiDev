@@ -125,11 +125,8 @@
     -fx-pref-height: 42px;
     -fx-min-height: 42px;
     -fx-max-height: 42px;
-    -fx-pref-width: 200px;  /* AJOUTE ÇA - largeur fixe */
-    -fx-min-width: 200px;    /* AJOUTE ÇA - largeur minimum */
-    -fx-max-width: 200px;    /* AJOUTE ÇA - largeur maximum */
+    /* Largeur contrôlée par le FXML, pas le CSS */
 }
-
 
 .filter-input:focused {
     -fx-border-color: #0d6efd;
@@ -137,16 +134,36 @@
     -fx-effect: dropshadow(gaussian, rgba(13,110,253,0.15), 4, 0, 0, 0);
 }
 
+/* Style pour le bouton du ComboBox (où s'affiche la valeur sélectionnée ou le placeholder) */
 .filter-input .list-cell {
     -fx-padding: 10 14;
     -fx-font-size: 13px;
+    -fx-text-fill: #495057;
 }
 
+/* Style pour la flèche du ComboBox */
 .filter-input .arrow-button {
     -fx-padding: 0 8 0 0;
 }
 
+/* Style pour les labels dans les cellules */
 .filter-input .list-cell .label {
+    -fx-text-fill: #495057;
+}
+
+/* IMPORTANT: Style pour afficher le placeholder quand aucune valeur n'est sélectionnée */
+.filter-input .list-cell:empty {
+    -fx-text-fill: #adb5bd;
+    -fx-font-style: italic;
+}
+
+/* Style pour le texte du ComboBox */
+.filter-input > .list-cell {
+    -fx-text-fill: #495057;
+}
+
+/* Force le prompt text à être visible */
+.filter-input:showing > .list-cell {
     -fx-text-fill: #495057;
 }
 
@@ -415,6 +432,8 @@
 .combo-box-popup .list-view .list-cell {
     -fx-padding: 10 14;
     -fx-background-color: transparent;
+    -fx-text-fill: #495057;
+    -fx-font-size: 13px;
 }
 
 .combo-box-popup .list-view .list-cell:hover {
@@ -423,6 +442,7 @@
 
 .combo-box-popup .list-view .list-cell:selected {
     -fx-background-color: #e7f1ff;
+    -fx-text-fill: #0d6efd;
 }
 
 /* ==================== ANIMATIONS ==================== */
