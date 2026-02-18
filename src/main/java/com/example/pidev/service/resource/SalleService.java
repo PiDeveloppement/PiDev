@@ -9,7 +9,7 @@ import java.util.List;
 public class SalleService {
     private Connection connection = DBConnection.getConnection();
 
-    public void ajouter(Salle s) throws SQLException {
+    public void ajouter(Salle s) {
         String sql = "INSERT INTO salle (name, capacity, building, floor, status, image_path, latitude, longitude) VALUES (?,?,?,?,?,?,?,?)";
         try (PreparedStatement pst = connection.prepareStatement(sql)) {
             pst.setString(1, s.getName());
@@ -21,10 +21,12 @@ public class SalleService {
             pst.setDouble(7, s.getLatitude());
             pst.setDouble(8, s.getLongitude());
             pst.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
-    public void modifier(Salle s) throws SQLException {
+    public void modifier(Salle s) {
         String sql = "UPDATE salle SET name=?, capacity=?, building=?, floor=?, status=?, image_path=?, latitude=?, longitude=? WHERE id=?";
         try (PreparedStatement pst = connection.prepareStatement(sql)) {
             pst.setString(1, s.getName());
@@ -37,6 +39,8 @@ public class SalleService {
             pst.setDouble(8, s.getLongitude());
             pst.setInt(9, s.getId());
             pst.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 

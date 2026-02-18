@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="20" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.pidev.controller.resource.ReservationFormController">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+    <Label text="Formulaire de Réservation" style="-fx-font-size: 20; -fx-font-weight: bold;" />
+
+    <GridPane hgap="10" vgap="15">
+        <Label text="Type:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <ComboBox fx:id="typeCombo" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+
+        <Label text="Ressource:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+        <ComboBox fx:id="itemCombo" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+
+        <Label text="Date Début:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+        <DatePicker fx:id="startDatePicker" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+
+        <Label text="Quantité:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+        <TextField fx:id="quantityField" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+    </GridPane>
+
+    <ImageView fx:id="imagePreview" fitHeight="100" fitWidth="100" preserveRatio="true" />
+
+    <HBox spacing="10">
+        <Button text="Retour à la liste" onAction="#goToList" />
+        <Button text="Enregistrer" onAction="#handleSave" style="-fx-background-color: #059669; -fx-text-fill: white;" />
+    </HBox>
+</VBox>

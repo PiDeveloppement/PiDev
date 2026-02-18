@@ -8,10 +8,9 @@ public class Salle {
     private int floor;
     private String status;
     private String imagePath;
-    private double latitude;  // Nouveau
-    private double longitude; // Nouveau
+    private double latitude;
+    private double longitude;
 
-    // Constructeur complet mis à jour (9 paramètres)
     public Salle(int id, String name, int capacity, String building, int floor, String status, String imagePath, double latitude, double longitude) {
         this.id = id;
         this.name = name;
@@ -24,7 +23,7 @@ public class Salle {
         this.longitude = longitude;
     }
 
-    // Getters
+    // Getters (Indispensables pour que le tableau affiche les données)
     public int getId() { return id; }
     public String getName() { return name; }
     public int getCapacity() { return capacity; }
@@ -32,9 +31,6 @@ public class Salle {
     public int getFloor() { return floor; }
     public String getStatus() { return status; }
     public String getImagePath() { return imagePath; }
-    public double getLatitude() { return latitude; }  // Nouveau
-    public double getLongitude() { return longitude; } // Nouveau
-
-    @Override
-    public String toString() { return name; }
+    public double getLatitude() { return latitude; }
+    public double getLongitude() { return longitude; }
 }

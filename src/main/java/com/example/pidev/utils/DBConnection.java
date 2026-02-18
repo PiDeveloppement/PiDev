@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 public class DBConnection {
     // Coordonnées de la base de données
-    private static final String URL = "jdbc:mysql://localhost:3306/pidev";
+    private static final String URL = "jdbc:mysql://localhost:3306/pidev"; //mabin java w sql jdpc un pilote bch tkoun
     private static final String USER = "root";
     private static final String PASSWORD = "souhail123";
 
@@ -26,5 +26,9 @@ public class DBConnection {
             }
         }
         return connection;
+    }
+
+    public static DBConnection getInstance() {
+        return new DBConnection();
     }
 }

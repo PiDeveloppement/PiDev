@@ -1,26 +1,26 @@
 package com.example.pidev.model.resource;
-
 import java.time.LocalDateTime;
 
 public class ReservationResource {
     private int id;
-    private String resourceType, resourceName, imagePath;
+    private String resourceType;
     private Integer salleId, equipementId;
     private LocalDateTime startTimedate, endTime;
     private int quantity;
+    private String resourceName; // Pour l'affichage
+    private String imagePath;    // Pour l'affichage
 
-    public ReservationResource(int id, String resourceType, Integer salleId, Integer equipementId,
-                               LocalDateTime startTimedate, LocalDateTime endTime, int quantity) {
-        this.id = id;
-        this.resourceType = resourceType;
-        this.salleId = salleId;
-        this.equipementId = equipementId;
-        this.startTimedate = startTimedate;
-        this.endTime = endTime;
-        this.quantity = quantity;
+    // Constructeurs, Getters et Setters...
+    public ReservationResource() {}
+    public ReservationResource(int id, String type, Integer sId, Integer eId, LocalDateTime start, LocalDateTime end, int qty) {
+        this.id = id; this.resourceType = type; this.salleId = sId; this.equipementId = eId;
+        this.startTimedate = start; this.endTime = end; this.quantity = qty;
     }
-
-    // Getters
+    // Ajoutez les getters/setters pour resourceName et imagePath
+    public String getResourceName() { return resourceName; }
+    public void setResourceName(String resourceName) { this.resourceName = resourceName; }
+    public String getImagePath() { return imagePath; }
+    public void setImagePath(String imagePath) { this.imagePath = imagePath; }
     public int getId() { return id; }
     public String getResourceType() { return resourceType; }
     public Integer getSalleId() { return salleId; }
@@ -28,10 +28,4 @@ public class ReservationResource {
     public LocalDateTime getStartTimedate() { return startTimedate; }
     public LocalDateTime getEndTime() { return endTime; }
     public int getQuantity() { return quantity; }
-    public String getResourceName() { return resourceName; }
-    public String getImagePath() { return imagePath; }
-
-    // Setters pour les données jointes
-    public void setResourceName(String name) { this.resourceName = name; }
-    public void setImagePath(String path) { this.imagePath = path; }
 }

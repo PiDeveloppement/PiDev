@@ -1,150 +1,181 @@
 package com.example.pidev.controller.resource;
 
-// CORRECTION DES IMPORTS : Pointent vers le sous-package .resource
+import com.example.pidev.MainController;
 import com.example.pidev.model.resource.Equipement;
 import com.example.pidev.service.resource.EquipementService;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import javafx.stage.FileChooser;
+import javafx.scene.shape.Circle;
+
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 public class EquipementController implements Initializable {
-    @FXML private TextField nameField, typeField, quantityField, searchField;
-    @FXML private ComboBox<String> statusCombo;
-    @FXML private Button btnValider;
-    @FXML private Label totalArticlesLabel, aReparerLabel;
-    @FXML private ImageView previewImage;
 
+    @FXML private TextField searchField;
+    @FXML private ComboBox<String> categoryFilter;
+    @FXML private Label totalArticlesLabel, aReparerLabel;
     @FXML private TableView<Equipement> equipementTable;
     @FXML private TableColumn<Equipement, String> imageCol, nameCol, typeCol, statusCol;
-    @FXML private TableColumn<Equipement, Integer> idCol, quantityCol;
+    @FXML private TableColumn<Equipement, Integer> quantityCol;
     @FXML private TableColumn<Equipement, Void> actionCol;
 
     private final EquipementService service = new EquipementService();
     private ObservableList<Equipement> masterData = FXCollections.observableArrayList();
-    private String currentImagePath = "";
-    private int selectedId = -1;
+    private FilteredList<Equipement> filteredData;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        statusCombo.setItems(FXCollections.observableArrayList("DISPONIBLE", "EN_PANNE"));
+        setupColumns();
+        loadTable();
+        setupSearchLogic();
+    }
 
-        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+    private void setupColumns() {
         nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
         typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
-        statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
         quantityCol.setCellValueFactory(new PropertyValueFactory<>("quantity"));
-
-        // Affichage de l'image dans le tableau
+        statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
         imageCol.setCellValueFactory(new PropertyValueFactory<>("imagePath"));
-        imageCol.setCellFactory(param -> new TableCell<Equipement, String>() {
+
+        // STYLE IMAGE : Gestion robuste des chemins (Fix pour les erreurs "Fichier introuvable")
+        imageCol.setCellFactory(param -> new TableCell<>() {
             private final ImageView view = new ImageView();
-            @Override protected void updateItem(String path, boolean empty) {
+
+            @Override
+            protected void updateItem(String path, boolean empty) {
                 super.updateItem(path, empty);
                 if (empty || path == null || path.isEmpty()) {
                     setGraphic(null);
                 } else {
                     try {
-                        // FitHeight/Width pour éviter que l'image ne dépasse de la ligne
-                        view.setFitHeight(40);
-                        view.setFitWidth(40);
-                        view.setPreserveRatio(true);
-                        view.setImage(new Image(path, true)); // true pour chargement en arrière-plan
-                        setGraphic(view);
+                        // Nettoyage du chemin stocké en base
+                        String cleanPath = path.replace("file:/", "").replace("%20", " ");
+                        File file = new File(cleanPath);
+
+                        // FALLBACK : Si le chemin complet src/uploads ne marche pas,
+                        // on cherche dans le dossier uploads à la racine du projet
+                        if (!file.exists()) {
+                            String fileName = new File(path).getName();
+                            file = new File("uploads/" + fileName);
+                        }
+
+                        if (file.exists()) {
+                            Image img = new Image(file.toURI().toString(), 100, 100, true, true);
+                            view.setImage(img);
+                            view.setFitHeight(45);
+                            view.setFitWidth(45);
+                            Circle clip = new Circle(22.5, 22.5, 22.5);
+                            view.setClip(clip);
+                            setGraphic(view);
+                        } else {
+                            // Si l'image n'existe nulle part
+                            setGraphic(new Label("🚫"));
+                            System.out.println("❌ Image manquante : " + path);
+                        }
                     } catch (Exception e) {
-                        setGraphic(null);
+                        setGraphic(new Label("⚠️"));
                     }
+                }
+                setAlignment(Pos.CENTER);
+            }
+        });
+
+        // STYLE STATUT : Badges couleurs
+        statusCol.setCellFactory(column -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) setGraphic(null);
+                else {
+                    Label badge = new Label(item.toUpperCase());
+                    String style = "-fx-padding: 5 12; -fx-background-radius: 12; -fx-font-weight: bold; -fx-text-fill: white;";
+                    if (item.equalsIgnoreCase("EN_PANNE")) style += "-fx-background-color: #ef4444;";
+                    else style += "-fx-background-color: #10b981;";
+                    badge.setStyle(style);
+                    setGraphic(badge);
+                    setAlignment(Pos.CENTER);
                 }
             }
         });
 
         setupActionColumn();
-        loadTable();
-        setupSearch();
-    }
-
-    private void setupSearch() {
-        FilteredList<Equipement> filteredData = new FilteredList<>(masterData, p -> true);
-        if (searchField != null) {
-            searchField.textProperty().addListener((obs, old, newValue) -> {
-                filteredData.setPredicate(eq -> {
-                    if (newValue == null || newValue.isEmpty()) return true;
-                    String lower = newValue.toLowerCase();
-                    return eq.getName().toLowerCase().contains(lower) ||
-                            eq.getType().toLowerCase().contains(lower);
-                });
-            });
-        }
-        equipementTable.setItems(filteredData);
-    }
-
-    @FXML
-    void choisirImage() {
-        FileChooser fc = new FileChooser();
-        // Filtre pour ne montrer que les images
-        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg"));
-        File selectedFile = fc.showOpenDialog(null);
-        if (selectedFile != null) {
-            currentImagePath = selectedFile.toURI().toString();
-            previewImage.setImage(new Image(currentImagePath));
-        }
-    }
-
-    @FXML
-    void enregistrer() {
-        try {
-            if (nameField.getText().isEmpty() || statusCombo.getValue() == null) {
-                new Alert(Alert.AlertType.WARNING, "Veuillez remplir les champs obligatoires").show();
-                return;
-            }
-            int qty = Integer.parseInt(quantityField.getText());
-
-            Equipement e = new Equipement(selectedId == -1 ? 0 : selectedId,
-                    nameField.getText(), typeField.getText(),
-                    statusCombo.getValue(), qty, currentImagePath);
-
-            if (selectedId == -1) service.ajouter(e);
-            else service.modifier(e);
-
-            loadTable();
-            viderChamps();
-        } catch (NumberFormatException ex) {
-            new Alert(Alert.AlertType.ERROR, "La quantité doit être un nombre").show();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
     }
 
     private void loadTable() {
         masterData.setAll(service.afficher());
-        updateStatistics();
+        filteredData = new FilteredList<>(masterData, p -> true);
+        SortedList<Equipement> sortedData = new SortedList<>(filteredData);
+        sortedData.comparatorProperty().bind(equipementTable.comparatorProperty());
+        equipementTable.setItems(sortedData);
+
+        // Remplir les catégories
+        ObservableList<String> categories = FXCollections.observableArrayList("Toutes les catégories");
+        categories.addAll(masterData.stream().map(Equipement::getType).distinct().collect(Collectors.toList()));
+        categoryFilter.setItems(categories);
+        categoryFilter.getSelectionModel().selectFirst();
+
+        updateStats();
+    }
+
+    private void setupSearchLogic() {
+        searchField.textProperty().addListener((obs, old, val) -> applyFilters());
+        categoryFilter.valueProperty().addListener((obs, old, val) -> applyFilters());
+    }
+
+    private void applyFilters() {
+        filteredData.setPredicate(eq -> {
+            String searchText = (searchField.getText() == null) ? "" : searchField.getText().toLowerCase();
+            String selectedCat = categoryFilter.getValue();
+
+            boolean matchesSearch = searchText.isEmpty() || eq.getName().toLowerCase().contains(searchText);
+            boolean matchesCategory = selectedCat == null || selectedCat.equals("Toutes les catégories") || eq.getType().equals(selectedCat);
+
+            return matchesSearch && matchesCategory;
+        });
+        updateStats();
+    }
+
+    private void updateStats() {
+        totalArticlesLabel.setText(String.valueOf(filteredData.size()));
+        long enPanne = filteredData.stream().filter(e -> "EN_PANNE".equalsIgnoreCase(e.getStatus())).count();
+        aReparerLabel.setText(String.valueOf(enPanne));
     }
 
     private void setupActionColumn() {
-        actionCol.setCellFactory(param -> new TableCell<Equipement, Void>() {
+        actionCol.setCellFactory(param -> new TableCell<>() {
             private final Button editBtn = new Button("✎");
             private final Button deleteBtn = new Button("🗑");
-            private final HBox pane = new HBox(10, editBtn, deleteBtn);
+            private final HBox pane = new HBox(12, editBtn, deleteBtn);
             {
-                editBtn.setStyle("-fx-cursor: hand;");
-                deleteBtn.setStyle("-fx-cursor: hand; -fx-text-fill: red;");
+                pane.setAlignment(Pos.CENTER);
+                editBtn.getStyleClass().add("action-button-update");
+                deleteBtn.getStyleClass().add("action-button-delete");
 
-                editBtn.setOnAction(e -> remplirFormulaire(getTableView().getItems().get(getIndex())));
+                editBtn.setOnAction(e -> changerVersFormulaire(getTableView().getItems().get(getIndex())));
                 deleteBtn.setOnAction(e -> {
-                    Equipement selected = getTableView().getItems().get(getIndex());
-                    service.supprimer(selected.getId());
-                    loadTable();
+                    Equipement eq = getTableView().getItems().get(getIndex());
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Supprimer " + eq.getName() + " ?", ButtonType.YES, ButtonType.NO);
+                    alert.showAndWait().ifPresent(res -> {
+                        if (res == ButtonType.YES) {
+                            service.supprimer(eq.getId());
+                            loadTable();
+                        }
+                    });
                 });
             }
             @Override protected void updateItem(Void item, boolean empty) {
@@ -154,36 +185,17 @@ public class EquipementController implements Initializable {
         });
     }
 
-    private void remplirFormulaire(Equipement e) {
-        selectedId = e.getId();
-        nameField.setText(e.getName());
-        typeField.setText(e.getType());
-        quantityField.setText(String.valueOf(e.getQuantity()));
-        statusCombo.setValue(e.getStatus());
-        currentImagePath = e.getImagePath();
-        if (currentImagePath != null && !currentImagePath.isEmpty()) {
-            try {
-                previewImage.setImage(new Image(currentImagePath));
-            } catch (Exception ex) {
-                previewImage.setImage(null);
+    @FXML void ouvrirAjout() { changerVersFormulaire(null); }
+
+    private void changerVersFormulaire(Equipement e) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pidev/fxml/resource/form_equipement.fxml"));
+            Parent root = loader.load();
+            if (e != null) {
+                EquipementFormController controller = loader.getController();
+                controller.setEquipementData(e);
             }
-        }
-        btnValider.setText("Mettre à jour");
-    }
-
-    @FXML
-    void viderChamps() {
-        nameField.clear(); typeField.clear(); quantityField.clear();
-        statusCombo.setValue(null); previewImage.setImage(null);
-        selectedId = -1; currentImagePath = "";
-        btnValider.setText("Enregistrer");
-    }
-
-    private void updateStatistics() {
-        totalArticlesLabel.setText(String.valueOf(masterData.size()));
-        long count = masterData.stream()
-                .filter(e -> e.getStatus() != null && "EN_PANNE".equalsIgnoreCase(e.getStatus()))
-                .count();
-        aReparerLabel.setText(String.valueOf(count));
+            MainController.getInstance().setContent(root);
+        } catch (IOException ex) { ex.printStackTrace(); }
     }
 }

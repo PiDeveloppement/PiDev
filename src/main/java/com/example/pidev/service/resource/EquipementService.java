@@ -75,3 +75,4 @@ public class EquipementService {
         return liste;
     }
 }
+//prepare statement(taawedh les 4 etapes akther securite) w statement
