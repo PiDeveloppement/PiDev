@@ -3,7 +3,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
-<StackPane stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+<StackPane stylesheets="@../css/atlantafx-custom.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="com.melocode.pigestion.controller.ParticipantController">
 
     <VBox spacing="20" style="-fx-background-color: #f8fafc; -fx-padding: 40;">

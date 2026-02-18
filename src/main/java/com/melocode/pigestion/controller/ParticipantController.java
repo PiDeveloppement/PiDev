@@ -26,7 +26,7 @@ public class ParticipantController {
     private int indexActuel = 0;
     private int etoilesSelectionnees = 0;
 
-    private int idParticipantConnecte = 2; // Simulation Souhail
+    private int idParticipantConnecte = 3; // Simulation Souhail
     private int idEventActuel = 1;
 
     private final FeedbackService fs = new FeedbackService();
@@ -132,7 +132,7 @@ public class ParticipantController {
             resCtrl.initData(listeQuestions, reponsesUtilisateur, txtCommentaire.getText(), etoilesSelectionnees);
 
             // 4. NAVIGATION CORRECTE : On remplace le contenu du Dashboard
-            // On cherche le StackPane 'contentArea' définit dans Dashboard.fxml
+            // On cherche le StackPane 'contentArea' définit dans main_layout.fxml
             StackPane contentArea = (StackPane) btnSuivant.getScene().lookup("#contentArea");
 
             if (contentArea != null) {

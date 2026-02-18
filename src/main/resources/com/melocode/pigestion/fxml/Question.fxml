@@ -3,58 +3,70 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
+<?import javafx.geometry.Insets?>
 
-<AnchorPane prefHeight="600.0" prefWidth="1000.0" style="-fx-background-color: #ecf0f1;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.melocode.pigestion.controller.QuestionController">
+<StackPane prefHeight="750.0" prefWidth="1100.0" style="-fx-background-color: #f0f2f5;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.melocode.pigestion.controller.QuestionController">
     <children>
-        <HBox spacing="20.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">
+        <VBox maxWidth="450.0" spacing="20.0" style="-fx-background-color: white; -fx-padding: 35; -fx-background-radius: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 20, 0, 0, 10);">
             <children>
-
-                <VBox prefWidth="320.0" spacing="12.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);">
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
                     <children>
-                        <Label text="Éditeur de Questions" textFill="#34495e">
-                            <font><Font name="System Bold" size="20.0" /></font>
+                        <Label text="✨" style="-fx-font-size: 24px;" />
+                        <Label text="Éditeur de Questions" textFill="#1a202c">
+                            <font>
+                                <Font name="System Bold" size="26.0" />
+                            </font>
                         </Label>
-                        <Separator />
+                    </children>
+                </HBox>
 
-                        <Label text="Sélectionner l'Événement" style="-fx-font-weight: bold;" />
-                        <ComboBox fx:id="comboEvent" maxWidth="Infinity" promptText="Choisir un événement..." style="-fx-cursor: hand;" />
+                <Separator style="-fx-opacity: 0.5;" />
 
-                        <Label text="Texte de la Question" style="-fx-font-weight: bold;" />
-                        <TextArea fx:id="txtTexte" prefHeight="120.0" promptText="Saisissez votre question ici..." wrapText="true" />
+                <VBox spacing="15.0">
+                    <children>
+                        <VBox spacing="8.0">
+                            <Label text="Événement" style="-fx-font-weight: bold; -fx-text-fill: #4a5568; -fx-font-size: 14px;" />
+                            <ComboBox fx:id="comboEvent" maxWidth="Infinity" promptText="Choisir l'événement"
+                                      style="-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-pref-height: 45;" />
+                        </VBox>
 
-                        <Label text="Bonne Réponse" style="-fx-font-weight: bold;" />
-                        <TextField fx:id="txtReponse" promptText="La réponse attendue" />
+                        <VBox spacing="8.0">
+                            <Label text="Texte de la Question" style="-fx-font-weight: bold; -fx-text-fill: #4a5568; -fx-font-size: 14px;" />
+                            <TextArea fx:id="txtTexte" prefHeight="120.0" promptText="Saisissez l'énoncé ici..." wrapText="true"
+                                      style="-fx-control-inner-background: #f8fafc; -fx-background-color: transparent; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-background-radius: 10;" />
+                        </VBox>
 
-                        <Label text="Points" style="-fx-font-weight: bold;" />
-                        <TextField fx:id="txtPoints" promptText="Ex: 5" />
+                        <VBox spacing="8.0">
+                            <Label text="Bonne Réponse" style="-fx-font-weight: bold; -fx-text-fill: #4a5568; -fx-font-size: 14px;" />
+                            <TextField fx:id="txtReponse" promptText="Réponse attendue"
+                                       style="-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-pref-height: 45;" />
+                        </VBox>
 
-                        <Region VBox.vgrow="ALWAYS" />
-
-                        <Button maxWidth="Infinity" onAction="#handleSave" prefHeight="40.0" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" text="ENREGISTRER" />
-                        <Button maxWidth="Infinity" onAction="#viderChampsSaufCombo" prefHeight="30.0" style="-fx-cursor: hand;" text="Vider les champs / Nouveau" />
+                        <VBox spacing="8.0">
+                            <Label text="Points" style="-fx-font-weight: bold; -fx-text-fill: #4a5568; -fx-font-size: 14px;" />
+                            <TextField fx:id="txtPoints" promptText="Ex: 10"
+                                       style="-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-pref-height: 45;" />
+                        </VBox>
                     </children>
                 </VBox>
 
-                <VBox HBox.hgrow="ALWAYS" spacing="10.0">
+                <Region VBox.vgrow="ALWAYS" />
+
+                <VBox spacing="12.0">
                     <children>
-                        <Label text="Liste des Questions de l'Événement Sélectionné" textFill="#2c3e50">
-                            <font><Font name="System Italic" size="14.0" /></font>
-                        </Label>
-                        <TableView fx:id="tableQuestions" style="-fx-background-radius: 10; -fx-overflow-hidden: true;" VBox.vgrow="ALWAYS">
-                            <columns>
-                                <TableColumn fx:id="colTexte" prefWidth="400.0" text="Question" />
-                                <TableColumn fx:id="colReponse" prefWidth="150.0" text="Réponse" />
-                                <TableColumn fx:id="colPoints" prefWidth="80.0" text="Points" />
-                                <TableColumn fx:id="colActions" prefWidth="200.0" text="Actions" />
-                            </columns>
-                            <columnResizePolicy>
-                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                            </columnResizePolicy>
-                        </TableView>
+                        <Button maxWidth="Infinity" onAction="#handleSave" prefHeight="50.0"
+                                style="-fx-background-color: #4f46e5; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 15px; -fx-background-radius: 12; -fx-cursor: hand;"
+                                text="ENREGISTRER LA QUESTION" />
+
+                        <Button maxWidth="Infinity" onAction="#viderChampsSaufCombo" prefHeight="45.0"
+                                style="-fx-background-color: white; -fx-text-fill: #64748b; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-background-radius: 12; -fx-cursor: hand;"
+                                text="Vider les champs / Nouveau" />
                     </children>
                 </VBox>
-
             </children>
-        </HBox>
+        </VBox>
     </children>
-</AnchorPane>
+    <padding>
+        <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+    </padding>
+</StackPane>
