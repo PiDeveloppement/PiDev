@@ -1,5 +1,6 @@
 package com.example.pidev.controller.auth;
 
+import com.example.pidev.HelloApplication;
 import com.example.pidev.model.user.UserModel;
 import com.example.pidev.service.user.UserService;
 import javafx.application.Platform;
@@ -245,5 +246,9 @@ public class SignupController implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    @FXML
+    private void goToLanding(ActionEvent event) {
+        HelloApplication.loadLandingPage();
     }
 }

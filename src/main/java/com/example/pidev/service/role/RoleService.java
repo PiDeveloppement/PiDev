@@ -122,6 +122,15 @@ public ObservableList<Role> getAllRoles() {
 
         return roles;
     }
-
+    public int getTotalRolesCount() throws SQLException {
+        String query = "SELECT COUNT(*) FROM role";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
 
 }

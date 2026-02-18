@@ -221,4 +221,9 @@ public class LoginController implements Initializable {
         alert.setContentText(message);
         alert.showAndWait();
     }
+    // Dans SignupController.java et LoginController.java
+    @FXML
+    private void goToLanding(ActionEvent event) {
+        HelloApplication.loadLandingPage();
+    }
 }

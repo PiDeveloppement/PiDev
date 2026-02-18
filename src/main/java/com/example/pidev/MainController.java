@@ -1,13 +1,16 @@
 package com.example.pidev;
 
+import com.example.pidev.controller.role.RoleController;
 import com.example.pidev.controller.user.EditUserController;
 import com.example.pidev.controller.user.ProfilController;
 import com.example.pidev.controller.user.UserController;
+import com.example.pidev.model.role.Role;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -161,12 +164,16 @@ public class MainController {
     @FXML
     public void initialize() {
         System.out.println("✅ MainController initialisé");
-
+        UserSession session = UserSession.getInstance();
+        System.out.println("👤 Rôle connecté dans MainController: " + session.getRole());
         initializePageInfo();
         configureSidebarButtons();
+        hideAllButtons();     // reset complet
+        configureSidebarByRole();
         updateDateTime();
         loadUserProfileInHeader();
         setupGlobalSearch();
+
         // Charger le dashboard au lieu des catégories
         loadDashboardView();
 
@@ -721,6 +728,7 @@ public class MainController {
         if (fxmlPath.contains("settings")) return "settings";
         if (fxmlPath.contains("profil")) return "profile";
         if (fxmlPath.contains("editUser")) return "editUsers";
+        if (fxmlPath.contains("editRole")) return "editRoles";
         return "dashboard";
     }
 
@@ -747,14 +755,13 @@ public class MainController {
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/com/example/pidev/fxml/user/user.fxml")
             );
-
             Parent root = loader.load();
-
             UserController controller = loader.getController();
             controller.setMainController(this);
 
-            pageContentContainer.getChildren().setAll(root);
+            updatePageHeader("users"); // 👈 AJOUTER CETTE LIGNE
 
+            pageContentContainer.getChildren().setAll(root);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -762,7 +769,22 @@ public class MainController {
 
 
     public void loadRoleView() {
-        loadPage("/com/example/pidev/fxml/role/role.fxml", "roles");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/role/role.fxml")
+            );
+            Parent root = loader.load();
+
+            RoleController controller = loader.getController();
+            controller.setMainController(this); // TRÈS IMPORTANT
+
+            pageContentContainer.getChildren().setAll(root);
+            updatePageHeader("roles");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showSimpleAlert("Erreur", "Impossible de charger la page des rôles: " + e.getMessage());
+        }
     }
 
     public void loadEditUserView() {
@@ -820,6 +842,45 @@ public class MainController {
         collapseAllSubmenus();
         loadPage("/com/example/pidev/fxml/settings/settings.fxml", "settings");
     }
+    public void loadEditRolePage(Role role) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/role/editRole.fxml")
+            );
+            Parent root = loader.load();
+
+            com.example.pidev.controller.role.EditRoleController controller = loader.getController();
+            controller.setEditMode(role); // Mode modification
+            controller.setMainController(this);
+
+            pageContentContainer.getChildren().setAll(root);
+            updatePageHeader("roles"); // Mettre à jour le titre si nécessaire
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showSimpleAlert("Erreur", "Impossible de charger la page de modification: " + e.getMessage());
+        }
+    }
+
+    public void loadAddRolePage() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/role/editRole.fxml")
+            );
+            Parent root = loader.load();
+
+            com.example.pidev.controller.role.EditRoleController controller = loader.getController();
+            controller.setAddMode(); // Mode ajout
+            controller.setMainController(this);
+
+            pageContentContainer.getChildren().setAll(root);
+            updatePageHeader("roles"); // Mettre à jour le titre si nécessaire
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showSimpleAlert("Erreur", "Impossible de charger la page d'ajout: " + e.getMessage());
+        }
+    }
 
     @FXML
     public void logout() {
@@ -833,6 +894,13 @@ public class MainController {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    public void refreshSidebarForRole() {
+        System.out.println("🔄 Rafraîchissement de la sidebar pour le nouveau rôle");
+
+
+        // Réinitialiser l'affichage des sous-menus
+        collapseAllSubmenus();
     }
 ////////////boutton Recherche Globale///////////////
 
@@ -1027,4 +1095,165 @@ public class MainController {
             e.printStackTrace();
         }
     }
+    private void updatePageHeader(String pageKey) {
+        PageInfo pageInfo = pageInfoMap.get(pageKey);
+        if (pageInfo != null) {
+            pageTitle.setText(pageInfo.title);
+            pageSubtitle.setText(pageInfo.subtitle);
+        }
+    }
+
+
+
+
+
+
+
+    private void hideAllSubmenus() {
+        VBox[] submenus = {
+                eventsSubmenu, usersSubmenu, sponsorsSubmenu,
+                resourcesSubmenu, questionnairesSubmenu
+        };
+
+        Text[] arrows = {
+                eventsArrow, usersArrow, sponsorsArrow,
+                resourcesArrow, questionnairesArrow
+        };
+
+        for (VBox submenu : submenus) {
+            if (submenu != null) {
+                submenu.setVisible(false);
+                submenu.setManaged(false);
+            }
+        }
+
+        for (Text arrow : arrows) {
+            if (arrow != null) arrow.setText("▶");
+        }
+    }
+    private void configureSidebarByRole() {
+
+        UserSession session = UserSession.getInstance();
+        String role = session.getRole();
+
+        if (role == null) {
+            hideAllButtons();
+            return;
+        }
+
+        role = role.trim().toLowerCase();
+        System.out.println("🔧 Configuration sidebar pour le rôle: " + role);
+
+        hideAllButtons();
+
+        switch (role) {
+
+            case "admin":
+            case "admin2":
+            case "admin3":
+                showAllButtons();
+                System.out.println("✅ Admin: tous les boutons affichés");
+                break;
+
+            case "organisateur":
+            case "organisateur2":
+                showAllButtons();
+                hideNode(usersToggleBtn);
+                hideNode(usersSubmenu);
+                System.out.println("✅ Organisateur: tous sauf gestion utilisateurs");
+                break;
+
+            case "sponsor":
+            case "sponsor2":
+            case "sponsor3":
+                showOnlySponsorButtons();
+                System.out.println("✅ Sponsor: dashboard, sponsors, budget");
+                break;
+
+            case "participant":
+            case "default":      // 👈 DEFAULT = PARTICIPANT (uniquement dashboard)
+            case "invité":
+                showOnlyParticipantButtons();
+                System.out.println("✅ Participant/Default: uniquement dashboard");
+                break;
+
+            default:
+                hideAllButtons(); // sécurité max
+                System.out.println("⚠️ Rôle inconnu: " + role + " - aucun bouton");
+                break;
+        }
+    }
+    private void showOnlyParticipantButtons() {
+        // Participant voit uniquement le dashboard
+        showNode(dashboardBtn);
+
+        // Cache tous les autres boutons
+        hideNode(eventsToggleBtn);
+        hideNode(usersToggleBtn);
+        hideNode(sponsorsBtn);
+        hideNode(resourcesToggleBtn);
+        hideNode(questionnairesToggleBtn);
+        hideNode(settingsBtn);
+        hideNode(budgetBtn);
+
+        // Cache tous les sous-menus
+        hideAllSubmenus();
+
+        System.out.println("✅ Mode participant activé");
+    }
+
+    private void hideNode(Node node) {
+        if (node != null) {
+            node.setVisible(false);
+            node.setManaged(false);
+        }
+    }
+
+    private void showNode(Node node) {
+        if (node != null) {
+            node.setVisible(true);
+            node.setManaged(true);
+        }
+    }
+    private void hideAllButtons() {
+        hideNode(dashboardBtn);
+        hideNode(sponsorsBtn);
+        hideNode(eventsToggleBtn);
+        hideNode(usersToggleBtn);
+        hideNode(resourcesToggleBtn);
+        hideNode(questionnairesToggleBtn);
+        hideNode(settingsBtn);
+        hideNode(budgetBtn);
+    }
+
+    private void showAllButtons() {
+
+        Node[] main = {
+                dashboardBtn, eventsToggleBtn, usersToggleBtn, sponsorsBtn,
+                resourcesToggleBtn, questionnairesToggleBtn,
+                settingsBtn, budgetBtn
+        };
+
+        for (Node n : main) showNode(n);
+
+        collapseAllSubmenus();
+    }
+    private void showOnlySponsorButtons() {
+
+        showNode(dashboardBtn);
+        showNode(sponsorsBtn);
+        showNode(budgetBtn);
+
+        hideNode(eventsToggleBtn);
+        hideNode(usersToggleBtn);
+        hideNode(resourcesToggleBtn);
+        hideNode(questionnairesToggleBtn);
+        hideNode(settingsBtn);
+
+
+        hideAllSubmenus();
+    }
+
+
+
 }

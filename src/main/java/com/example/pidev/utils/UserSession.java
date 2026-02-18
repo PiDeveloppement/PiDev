@@ -77,7 +77,7 @@ public class UserSession {
         if (currentUser != null && currentUser.getRole() != null) {
             return currentUser.getRole().getRoleName();
         }
-        return "Utilisateur";
+        return null;
     }
 
     // Récupérer l'ID du rôle

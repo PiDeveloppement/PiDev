@@ -459,3 +459,54 @@
 .dialog-pane .button:hover {
     -fx-background-color: #0D47A1;
 }
+/* Landing page styles */
+.nav-link:hover {
+    -fx-text-fill: #0D47A1 !important;
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.feature-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 8, 0, 0, 2);
+    -fx-padding: 25;
+}
+
+.feature-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(13,71,161,0.15), 16, 0, 0, 4);
+    -fx-translate-y: -2;
+}
+
+.stat-number {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #0D47A1;
+}
+
+.stat-label {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 14px;
+}
+/* Style pour les liens de navigation */
+.nav-link:hover {
+    -fx-text-fill: #0D47A1 !important;
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+/* Style pour les cartes de fonctionnalités */
+.feature-card {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 20;
+    -fx-padding: 30;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 8, 0, 0, 2);
+}
+
+.feature-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(13,71,161,0.15), 16, 0, 0, 4);
+    -fx-translate-y: -2;
+}

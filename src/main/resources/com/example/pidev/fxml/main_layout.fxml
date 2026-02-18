@@ -342,17 +342,8 @@
                     </VBox>
                     <Region HBox.hgrow="ALWAYS"/>
 
-                    <!-- Page-specific actions -->
-                    <HBox spacing="10">
-                        <Button text="+ Exporter"
-                                style="-fx-background-color: #f1f5f9; -fx-text-fill: #334155;
-                                       -fx-background-radius: 6; -fx-padding: 8 16; -fx-cursor: hand;
-                                       -fx-border-color: #e2e8f0; -fx-border-width: 1;"/>
-                        <Button text="+ Créer"
-                                style="-fx-background-color: #2196F3; -fx-text-fill: white;
-                                       -fx-font-weight: bold; -fx-background-radius: 6;
-                                       -fx-padding: 8 16; -fx-cursor: hand;"/>
-                    </HBox>
+
+
                 </HBox>
 
                 <!-- CONTENT AREA (Cartes + Table) - Ceci sera chargé dynamiquement -->

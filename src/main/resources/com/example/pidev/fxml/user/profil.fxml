@@ -27,21 +27,7 @@
             <Label text="Événements créés" style="-fx-text-fill: #22c55e; -fx-font-size: 11px;"/>
         </VBox>
 
-        <VBox alignment="CENTER" spacing="2"
-              style="-fx-padding: 10 25; -fx-background-color: #eff6ff; -fx-background-radius: 10;
-                     -fx-border-color: #bfdbfe; -fx-border-width: 1; -fx-border-radius: 10;">
-            <Label fx:id="participationCountLabel" text="125"
-                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2563eb;"/>
-            <Label text="Participations" style="-fx-text-fill: #3b82f6; -fx-font-size: 11px;"/>
-        </VBox>
 
-        <VBox alignment="CENTER" spacing="2"
-              style="-fx-padding: 10 25; -fx-background-color: #fef3c7; -fx-background-radius: 10;
-                     -fx-border-color: #fcd34d; -fx-border-width: 1; -fx-border-radius: 10;">
-            <Label fx:id="roleCountLabel" text="3"
-                   style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #d97706;"/>
-            <Label text="Rôles" style="-fx-text-fill: #f59e0b; -fx-font-size: 11px;"/>
-        </VBox>
     </HBox>
 
     <!-- Section scrollable (contenu principal) -->
@@ -298,7 +284,6 @@
                                        -fx-cursor: hand;"/>
                     </HBox>
 
-                    <Separator style="-fx-background-color: #e2e8f0;"/>
 
                     <HBox spacing="15" alignment="CENTER_LEFT">
                         <VBox spacing="5">
@@ -318,7 +303,7 @@
 
             <!-- Footer -->
             <HBox style="-fx-padding: 10 0 0 0;" alignment="CENTER">
-                <Label text="© 2024 EventFlow - Mon profil"
+                <Label text="© 2026 EventFlow - Mon profil"
                        style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
             </HBox>
 

@@ -52,8 +52,8 @@ public class ProfilController implements Initializable {
 
     // Statistiques
     @FXML private Label eventCountLabel;
-    @FXML private Label participationCountLabel;
-    @FXML private Label roleCountLabel;
+
+
     @FXML private Label verificationStatusLabel;
     @FXML private Label lastLoginLabel;
     @FXML private Label userRoleDisplayLabel;
@@ -241,8 +241,7 @@ public class ProfilController implements Initializable {
     private void updateStatistics() {
         if (currentUser != null) {
             eventCountLabel.setText("0");
-            participationCountLabel.setText("0");
-            roleCountLabel.setText(currentUser.getRole() != null ? "1" : "0");
+
 
             if (userLevelLabel != null && currentUser.getRole() != null) {
                 userLevelLabel.setText(currentUser.getRole().getRoleName());

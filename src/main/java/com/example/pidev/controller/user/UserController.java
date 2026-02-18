@@ -11,7 +11,6 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
-import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.*;
 import javafx.scene.Node;
@@ -20,12 +19,12 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableCell;
-import javafx.scene.layout.HBox;
 
 import java.net.URL;
 import java.sql.SQLException;
@@ -54,19 +53,24 @@ public class UserController implements Initializable {
     private RoleService roleService;
     private ObservableList<UserModel> usersList;
     private FilteredList<UserModel> filteredData;
-    private SortedList<UserModel> sortedData;
+
+    @FXML private Label totalParticipantsLabel;
+    @FXML private VBox totalParticipantsCard;
     @FXML private Button prevPageBtn;
     @FXML private Button nextPageBtn;
     @FXML private Button page1Btn;
     @FXML private Button page2Btn;
     @FXML private Button page3Btn;
-    @FXML private Button page10Btn;
+    @FXML private Button lastPageBtn;
     @FXML private Label paginationLabel;
+    @FXML private Label statsLabel;
 
     private int currentPage = 1;
-    private final int rowsPerPage = 10;
+    private final int rowsPerPage = 5;
+    private int totalPages = 1;
 
     /* ================= INITIALIZE ================= */
+
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -77,31 +81,31 @@ public class UserController implements Initializable {
 
             initializeTableColumns();
 
-            // Setup filtered et sorted data
-            filteredData = new FilteredList<>(usersList, b -> true);
-            sortedData = new SortedList<>(filteredData);
-            sortedData.comparatorProperty().bind(userTable.comparatorProperty());
-            userTable.setItems(sortedData);
+            // Configuration de la table - SANS SCROLL INTERNE
+            userTable.setFixedCellSize(45);
+            userTable.setPrefHeight(300);
+            userTable.setMinHeight(300);
+            userTable.setMaxHeight(300);
+
+            // CACHER LES BARRES DE SCROLL DE LA TABLE
+            userTable.setStyle("-fx-bar-policy: never;");
+
+            userTable.setPlaceholder(new Label("Aucune donnée à afficher"));
 
             // Charger les données
             loadUsers();
 
-            // === CHARGER LES LISTES POUR LES FILTRES ===
+            // Configurer les filtres
             loadFaculteFilterList();
             loadRoleFilterList();
 
             setupSearch();
             setupActionsColumn();
-
-            userTable.setFixedCellSize(40);
-            userTable.prefHeightProperty().bind(
-                    Bindings.size(userTable.getItems())
-                            .multiply(userTable.getFixedCellSize())
-                            .add(40)
-            );
+            setupPaginationControls();
 
         } catch (SQLException e) {
             showAlert("Erreur", e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -120,32 +124,218 @@ public class UserController implements Initializable {
 
     private void loadUsers() {
         try {
+            // Chargez les données réelles
             usersList.setAll(userService.getAllUsers());
-            loadFaculteFilterList();
+
+            // SI AUCUNE DONNÉE, AJOUTEZ DES DONNÉES FACTICES POUR TEST
+            if (usersList.isEmpty()) {
+                System.out.println("⚠️ AUCUNE DONNÉE - Création de données factices");
+                // Créez quelques utilisateurs factices pour tester l'affichage
+                for (int i = 1; i <= 10; i++) {
+                    UserModel testUser = new UserModel(i, "Test" + i, "User" + i, "test" + i + "@test.com", "Faculté", "pass", 1);
+                    usersList.add(testUser);
+                }
+            }
+
+            System.out.println("=== CHARGEMENT DES UTILISATEURS ===");
+            System.out.println("Nombre d'utilisateurs chargés: " + usersList.size());
+
+            filteredData = new FilteredList<>(usersList, p -> true);
+            updateTotalParticipantsCount();
+            currentPage = 1;
+            updateTableWithPagination();
+
         } catch (Exception e) {
-            showAlert("Erreur", "Impossible de charger les utilisateurs: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    /* ================= DELETE ================= */
+    /* ================= PAGINATION ================= */
 
-    private void deleteUser(UserModel user) {
-        boolean confirmed = showConfirmation(
-                "Confirmer",
-                "Supprimer " + user.getFirst_Name() + " ?"
-        );
-
-        if (!confirmed) return;
-
-        if (userService.deleteUser(user.getId_User())) {
-            showAlert("Succès", "Utilisateur supprimé");
-            loadUsers();
+    private void setupPaginationControls() {
+        if (page1Btn != null) {
+            page1Btn.setOnAction(e -> goToPage(1));
+            page2Btn.setOnAction(e -> goToPage(2));
+            page3Btn.setOnAction(e -> goToPage(3));
+            prevPageBtn.setOnAction(e -> goToPage(currentPage - 1));
+            nextPageBtn.setOnAction(e -> goToPage(currentPage + 1));
+            lastPageBtn.setOnAction(e -> goToPage(totalPages));
         }
     }
 
-    /* ================= ACTION COLUMN ================= */
+    private void updateTableWithPagination() {
+        if (filteredData == null || filteredData.isEmpty()) {
+            userTable.setItems(FXCollections.observableArrayList());
+            if (paginationLabel != null) {
+                paginationLabel.setText("Page 0 sur 0");
+            }
+            if (statsLabel != null) {
+                statsLabel.setText("0 utilisateurs");
+            }
+            return;
+        }
+
+        int totalItems = filteredData.size();
+        totalPages = (int) Math.ceil((double) totalItems / rowsPerPage);
+        if (totalPages == 0) totalPages = 1;
+
+        // Ajuster la page courante
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+
+        int fromIndex = (currentPage - 1) * rowsPerPage;
+        int toIndex = Math.min(fromIndex + rowsPerPage, totalItems);
+
+        if (fromIndex < totalItems) {
+            ObservableList<UserModel> pageData = FXCollections.observableArrayList(
+                    filteredData.subList(fromIndex, toIndex)
+            );
+            userTable.setItems(pageData);
+            System.out.println("Affichage de " + pageData.size() + " utilisateurs");
+
+            // FORCER LE RAFRAÎCHISSEMENT
+            userTable.refresh();
+        }
+
+        if (paginationLabel != null) {
+            paginationLabel.setText("Page " + currentPage + " sur " + totalPages);
+        }
+
+        if (statsLabel != null) {
+            statsLabel.setText(totalItems + " utilisateurs");
+        }
+
+        updatePaginationButtons();
+    }
+
+    private void updatePaginationButtons() {
+        if (page1Btn == null) return;
+
+        // Style des boutons de page
+        page1Btn.setStyle(getPageButtonStyle(1));
+        page2Btn.setStyle(getPageButtonStyle(2));
+        page3Btn.setStyle(getPageButtonStyle(3));
+
+        // Activer/désactiver les boutons
+        if (prevPageBtn != null) prevPageBtn.setDisable(currentPage == 1);
+        if (nextPageBtn != null) nextPageBtn.setDisable(currentPage == totalPages);
+        if (lastPageBtn != null) lastPageBtn.setDisable(currentPage == totalPages);
+
+        // Visibilité des boutons
+        page1Btn.setVisible(totalPages >= 1);
+        page2Btn.setVisible(totalPages >= 2);
+        page3Btn.setVisible(totalPages >= 3);
+    }
+
+    private String getPageButtonStyle(int page) {
+        if (page == currentPage) {
+            return "-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 36; -fx-min-height: 36; -fx-background-radius: 8; -fx-cursor: hand;";
+        } else {
+            return "-fx-background-color: white; -fx-text-fill: #475569; -fx-min-width: 36; -fx-min-height: 36; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-cursor: hand;";
+        }
+    }
+
+    /* ================= FILTRES ================= */
+
+    private void setupFilters() {
+        if (faculteFilterCombo != null) {
+            faculteFilterCombo.setOnAction(e -> applyFilters());
+        }
+        if (roleFilterCombo != null) {
+            roleFilterCombo.setOnAction(e -> applyFilters());
+        }
+    }
+
+    private void setupSearch() {
+        if (searchField != null) {
+            searchField.textProperty().addListener((obs, oldValue, newValue) -> {
+                applyFilters();
+            });
+        }
+    }
+
+    private void loadFaculteFilterList() {
+        try {
+            if (faculteFilterCombo != null) {
+                ObservableList<String> faculteList = FXCollections.observableArrayList();
+                faculteList.addAll(userService.getAllFacultes());
+                faculteFilterCombo.setItems(faculteList);
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement des facultés: " + e.getMessage());
+        }
+    }
+
+    private void loadRoleFilterList() {
+        try {
+            if (roleFilterCombo != null) {
+                ObservableList<String> roleList = FXCollections.observableArrayList();
+                roleList.addAll(roleService.getAllRoleNames());
+                roleFilterCombo.setItems(roleList);
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement des rôles: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void filterByFaculte(ActionEvent event) {
+        applyFilters();
+    }
+
+    @FXML
+    private void filterByRole(ActionEvent event) {
+        applyFilters();
+    }
+
+    @FXML
+    private void resetFilters(ActionEvent event) {
+        if (faculteFilterCombo != null) faculteFilterCombo.getSelectionModel().clearSelection();
+        if (roleFilterCombo != null) roleFilterCombo.getSelectionModel().clearSelection();
+        if (searchField != null) searchField.clear();
+        applyFilters();
+    }
+
+    private void applyFilters() {
+        if (filteredData == null || usersList == null) return;
+
+        String selectedFaculte = faculteFilterCombo != null ? faculteFilterCombo.getValue() : null;
+        String selectedRole = roleFilterCombo != null ? roleFilterCombo.getValue() : null;
+        String keyword = searchField != null ? searchField.getText().toLowerCase().trim() : "";
+
+        filteredData.setPredicate(user -> {
+            // Filtre par faculté
+            boolean matchesFaculte = (selectedFaculte == null || selectedFaculte.isEmpty()) ||
+                    (user.getFaculte() != null && user.getFaculte().equalsIgnoreCase(selectedFaculte));
+
+            // Filtre par rôle
+            boolean matchesRole = (selectedRole == null || selectedRole.isEmpty()) ||
+                    (user.getRole() != null && user.getRole().getRoleName() != null &&
+                            user.getRole().getRoleName().equalsIgnoreCase(selectedRole));
+
+            // Filtre par recherche
+            boolean matchesSearch = keyword.isEmpty() ||
+                    (user.getFirst_Name() != null && user.getFirst_Name().toLowerCase().contains(keyword)) ||
+                    (user.getLast_Name() != null && user.getLast_Name().toLowerCase().contains(keyword)) ||
+                    (user.getEmail() != null && user.getEmail().toLowerCase().contains(keyword)) ||
+                    (user.getFaculte() != null && user.getFaculte().toLowerCase().contains(keyword)) ||
+                    (user.getRole() != null && user.getRole().getRoleName() != null &&
+                            user.getRole().getRoleName().toLowerCase().contains(keyword));
+
+            return matchesFaculte && matchesRole && matchesSearch;
+        });
+
+        // Retour à la première page
+        currentPage = 1;
+        updateTableWithPagination();
+    }
+
+    /* ================= ACTIONS ================= */
+
     private void setupActionsColumn() {
+        if (actions_column == null) return;
+
         actions_column.setCellFactory(param -> new TableCell<UserModel, Void>() {
             private final Button editBtn = new Button();
             private final Button deleteBtn = new Button();
@@ -153,99 +343,25 @@ public class UserController implements Initializable {
 
             {
                 // Bouton Modifier
-                Label editIcon = new Label("✏️");
+                Label editIcon = new Label("\uD83D\uDCDD");
                 editIcon.setStyle("-fx-font-size: 16px; -fx-text-fill: white;");
                 editBtn.setGraphic(editIcon);
-                editBtn.setStyle(
-                        "-fx-background-color: #3b82f6;" +        // Bleu
-                                "-fx-background-radius: 8;" +
-                                "-fx-text-fill: white;" +
-                                "-fx-font-size: 13px;" +
-                                "-fx-font-weight: bold;" +
-                                "-fx-padding: 8 12 8 12;" +
-                                "-fx-cursor: hand;" +
-                                "-fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.3), 4, 0, 0, 2);" +
-                                "-fx-border: none;"
-                );
-                editBtn.setOnMouseEntered(e ->
-                        editBtn.setStyle(
-                                "-fx-background-color: #2563eb;" +
-                                        "-fx-background-radius: 8;" +
-                                        "-fx-text-fill: white;" +
-                                        "-fx-font-size: 13px;" +
-                                        "-fx-font-weight: bold;" +
-                                        "-fx-padding: 8 12 8 12;" +
-                                        "-fx-cursor: hand;" +
-                                        "-fx-effect: dropshadow(gaussian, rgba(37, 99, 235, 0.4), 6, 0, 0, 3);" +
-                                        "-fx-border: none;"
-                        )
-                );
-                editBtn.setOnMouseExited(e ->
-                        editBtn.setStyle(
-                                "-fx-background-color: #3b82f6;" +
-                                        "-fx-background-radius: 8;" +
-                                        "-fx-text-fill: white;" +
-                                        "-fx-font-size: 13px;" +
-                                        "-fx-font-weight: bold;" +
-                                        "-fx-padding: 8 12 8 12;" +
-                                        "-fx-cursor: hand;" +
-                                        "-fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.3), 4, 0, 0, 2);" +
-                                        "-fx-border: none;"
-                        )
-                );
+                editBtn.setStyle("-fx-background-color: #3b82f6; -fx-background-radius: 8; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 8 12 8 12; -fx-cursor: hand; -fx-border: none;");
+
                 Tooltip editTooltip = new Tooltip("Modifier");
                 editTooltip.setStyle("-fx-background-color: #1f2937; -fx-text-fill: white; -fx-font-size: 12px;");
                 editBtn.setTooltip(editTooltip);
 
                 editBtn.setOnAction(e -> {
                     UserModel user = getTableView().getItems().get(getIndex());
-                    openEditPage(user); // MODIFIÉ : Appelle openEditPage au lieu de openEditWindow
+                    openEditPage(user);
                 });
 
                 // Bouton Supprimer
-                Label deleteIcon = new Label("🗑");
+                Label deleteIcon = new Label("\u2702");
                 deleteIcon.setStyle("-fx-font-size: 16px; -fx-text-fill: white;");
                 deleteBtn.setGraphic(deleteIcon);
-                deleteBtn.setStyle(
-                        "-fx-background-color: #ef4444;" +
-                                "-fx-background-radius: 8;" +
-                                "-fx-text-fill: white;" +
-                                "-fx-font-size: 13px;" +
-                                "-fx-font-weight: bold;" +
-                                "-fx-padding: 8 12 8 12;" +
-                                "-fx-cursor: hand;" +
-                                "-fx-effect: dropshadow(gaussian, rgba(239, 68, 68, 0.3), 4, 0, 0, 2);" +
-                                "-fx-border: none;"
-                );
-
-                // Effet au survol pour le bouton Supprimer
-                deleteBtn.setOnMouseEntered(e ->
-                        deleteBtn.setStyle(
-                                "-fx-background-color: #dc2626;" +
-                                        "-fx-background-radius: 8;" +
-                                        "-fx-text-fill: white;" +
-                                        "-fx-font-size: 13px;" +
-                                        "-fx-font-weight: bold;" +
-                                        "-fx-padding: 8 12 8 12;" +
-                                        "-fx-cursor: hand;" +
-                                        "-fx-effect: dropshadow(gaussian, rgba(220, 38, 38, 0.4), 6, 0, 0, 3);" +
-                                        "-fx-border: none;"
-                        )
-                );
-
-                deleteBtn.setOnMouseExited(e ->
-                        deleteBtn.setStyle(
-                                "-fx-background-color: #ef4444;" +
-                                        "-fx-background-radius: 8;" +
-                                        "-fx-text-fill: white;" +
-                                        "-fx-font-size: 13px;" +
-                                        "-fx-font-weight: bold;" +
-                                        "-fx-padding: 8 12 8 12;" +
-                                        "-fx-cursor: hand;" +
-                                        "-fx-effect: dropshadow(gaussian, rgba(239, 68, 68, 0.3), 4, 0, 0, 2);" +
-                                        "-fx-border: none;"
-                        )
-                );
+                deleteBtn.setStyle("-fx-background-color: #ef4444; -fx-background-radius: 8; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 8 12 8 12; -fx-cursor: hand; -fx-border: none;");
 
                 Tooltip deleteTooltip = new Tooltip("Supprimer");
                 deleteTooltip.setStyle("-fx-background-color: #1f2937; -fx-text-fill: white; -fx-font-size: 12px;");
@@ -270,7 +386,18 @@ public class UserController implements Initializable {
         });
     }
 
-    /* ================= NOUVELLE MÉTHODE : openEditPage ================= */
+    private void deleteUser(UserModel user) {
+        boolean confirmed = showConfirmation("Confirmer", "Supprimer " + user.getFirst_Name() + " ?");
+
+        if (!confirmed) return;
+
+        if (userService.deleteUser(user.getId_User())) {
+            showAlert("Succès", "Utilisateur supprimé");
+            loadUsers();
+            goToPage(1);
+        }
+    }
+
     private void openEditPage(UserModel user) {
         if (mainController != null) {
             mainController.loadEditUserPage(user);
@@ -278,155 +405,6 @@ public class UserController implements Initializable {
             showAlert("Erreur", "Impossible d'ouvrir la page de modification");
         }
     }
-
-    /* ================= UTILS ================= */
-
-    private void showAlert(String title, String msg) {
-        new Alert(Alert.AlertType.INFORMATION, msg).showAndWait();
-    }
-
-    private boolean showConfirmation(String title, String msg) {
-        return new Alert(Alert.AlertType.CONFIRMATION, msg)
-                .showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
-    }
-
-    /* ================= NAVIGATION ================= */
-
-    @FXML
-    private void goToRole(ActionEvent event) {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/example/pidev/fxml/role/role.fxml")
-            );
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception ignored) {}
-    }
-
-    private void setupSearch() {
-        searchField.textProperty().addListener((obs, oldValue, newValue) -> {
-            String keyword = newValue.toLowerCase().trim();
-
-            filteredData.setPredicate(user -> {
-                if (keyword.isEmpty()) return true;
-
-                boolean matchesFirstName = user.getFirst_Name().toLowerCase().contains(keyword);
-                boolean matchesLastName = user.getLast_Name().toLowerCase().contains(keyword);
-                boolean matchesEmail = user.getEmail().toLowerCase().contains(keyword);
-                boolean matchesFaculte = user.getFaculte().toLowerCase().contains(keyword);
-
-                boolean matchesRole = user.getRole() != null &&
-                        user.getRole().getRoleName().toLowerCase().contains(keyword);
-
-                return matchesFirstName || matchesLastName || matchesEmail || matchesFaculte || matchesRole;
-            });
-        });
-    }
-
-    /**
-     * Charge la liste unique des facultés depuis la base de données
-     */
-    private void loadFaculteFilterList() {
-        try {
-            ObservableList<String> faculteList = FXCollections.observableArrayList();
-            faculteList.addAll(userService.getAllFacultes());
-            faculteFilterCombo.setItems(faculteList);
-        } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des facultés: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Charge la liste unique des rôles depuis la base de données
-     */
-    private void loadRoleFilterList() {
-        try {
-            ObservableList<String> roleList = FXCollections.observableArrayList();
-            roleList.addAll(roleService.getAllRoleNames());
-            roleFilterCombo.setItems(roleList);
-        } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des rôles: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    @FXML
-    private void filterByFaculte(ActionEvent event) {
-        String selectedFaculte = faculteFilterCombo.getValue();
-        String currentSearch = searchField.getText().toLowerCase().trim();
-        String selectedRole = roleFilterCombo.getValue();
-
-        filteredData.setPredicate(user -> {
-            boolean matchesFaculte = (selectedFaculte == null || selectedFaculte.isEmpty()) ||
-                    user.getFaculte().equalsIgnoreCase(selectedFaculte);
-
-            boolean matchesRole = (selectedRole == null || selectedRole.isEmpty()) ||
-                    (user.getRole() != null &&
-                            user.getRole().getRoleName().equalsIgnoreCase(selectedRole));
-
-            boolean matchesSearch = currentSearch.isEmpty() ||
-                    user.getFirst_Name().toLowerCase().contains(currentSearch) ||
-                    user.getLast_Name().toLowerCase().contains(currentSearch) ||
-                    user.getEmail().toLowerCase().contains(currentSearch) ||
-                    user.getFaculte().toLowerCase().contains(currentSearch) ||
-                    (user.getRole() != null && user.getRole().getRoleName().toLowerCase().contains(currentSearch));
-
-            return matchesFaculte && matchesRole && matchesSearch;
-        });
-    }
-
-    @FXML
-    private void filterByRole(ActionEvent event) {
-        String selectedRole = roleFilterCombo.getValue();
-        String currentSearch = searchField.getText().toLowerCase().trim();
-        String selectedFaculte = faculteFilterCombo.getValue();
-
-        filteredData.setPredicate(user -> {
-            boolean matchesRole = (selectedRole == null || selectedRole.isEmpty()) ||
-                    (user.getRole() != null &&
-                            user.getRole().getRoleName().equalsIgnoreCase(selectedRole));
-
-            boolean matchesFaculte = (selectedFaculte == null || selectedFaculte.isEmpty()) ||
-                    user.getFaculte().equalsIgnoreCase(selectedFaculte);
-
-            boolean matchesSearch = currentSearch.isEmpty() ||
-                    user.getFirst_Name().toLowerCase().contains(currentSearch) ||
-                    user.getLast_Name().toLowerCase().contains(currentSearch) ||
-                    user.getEmail().toLowerCase().contains(currentSearch) ||
-                    user.getFaculte().toLowerCase().contains(currentSearch) ||
-                    (user.getRole() != null && user.getRole().getRoleName().toLowerCase().contains(currentSearch));
-
-            return matchesRole && matchesFaculte && matchesSearch;
-        });
-    }
-
-    @FXML
-    private void resetFilters(ActionEvent event) {
-        faculteFilterCombo.getSelectionModel().clearSelection();
-        roleFilterCombo.getSelectionModel().clearSelection();
-        searchField.clear();
-        filteredData.setPredicate(user -> true);
-    }
-
-    private void setupPagination() {
-        int totalItems = filteredData.size();
-        int totalPages = (int) Math.ceil((double) totalItems / rowsPerPage);
-        paginationLabel.setText("Page " + currentPage + " sur " + totalPages);
-
-        int fromIndex = (currentPage - 1) * rowsPerPage;
-        int toIndex = Math.min(fromIndex + rowsPerPage, totalItems);
-
-        if (fromIndex <= toIndex) {
-            userTable.setItems(FXCollections.observableArrayList(
-                    filteredData.subList(fromIndex, toIndex)
-            ));
-        }
-    }
-
-    /* ================= ANCIENNE MÉTHODE SUPPRIMÉE ================= */
-    // La méthode openEditWindow a été supprimée car nous utilisons maintenant openEditPage
 
     private void confirmAndDelete(UserModel user) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -450,6 +428,52 @@ public class UserController implements Initializable {
         });
     }
 
+    /* ================= UTILS ================= */
+
+    private void showAlert(String title, String msg) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, msg);
+        alert.setTitle(title);
+        alert.showAndWait();
+    }
+
+    private boolean showConfirmation(String title, String msg) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, msg);
+        alert.setTitle(title);
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
+    }
+
+    @FXML
+    private void goToRole(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/role/role.fxml")
+            );
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateTotalParticipantsCount() {
+        try {
+            int totalCount = userService.getTotalParticipantsCount();
+            if (totalParticipantsLabel != null) {
+                totalParticipantsLabel.setText(String.valueOf(totalCount));
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur compteur: " + e.getMessage());
+            if (totalParticipantsLabel != null) {
+                totalParticipantsLabel.setText("0");
+            }
+        }
+    }
+    private void goToPage(int page) {
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        updateTableWithPagination();
+    }
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
     }

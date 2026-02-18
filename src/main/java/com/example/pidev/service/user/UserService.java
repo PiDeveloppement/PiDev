@@ -71,6 +71,7 @@ public class UserService {
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setLong(1, id);
             return stmt.executeUpdate() > 0;
+
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -315,4 +316,16 @@ public class UserService {
         }
         return null;
     }
+    public int getTotalParticipantsCount() throws SQLException {
+        String query = "SELECT COUNT(*) FROM user_model";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
+
 }
