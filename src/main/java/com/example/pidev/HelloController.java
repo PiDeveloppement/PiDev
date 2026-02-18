@@ -10,6 +10,7 @@ import javafx.scene.text.Text;
 import com.example.pidev.controller.event.*;
 import com.example.pidev.model.event.Event;
 import com.example.pidev.model.event.EventCategory;
+import com.example.pidev.model.event.EventTicket;
 
 import java.io.IOException;
 
@@ -17,7 +18,7 @@ import java.io.IOException;
  * Controller principal pour la navigation de l'application EventFlow
  * Gère le chargement des pages et les sous-menus déroulants
  * @author Ons Abdesslem
- * @version 6.0 - Avec module événements
+ * @version 7.0 - Avec module tickets
  */
 public class HelloController {
 
@@ -101,11 +102,11 @@ public class HelloController {
     @FXML
     public void showDashboard() {
         System.out.println("📊 Dashboard (page temporaire)");
-        showCategories(); // Redirige vers les catégories en attendant
+        showCategories();
         highlightButton(dashboardBtn);
     }
 
-    // ========== LISTE DES ÉVÉNEMENTS (en cours) ==========
+    // ========== LISTE DES ÉVÉNEMENTS ==========
     @FXML
     public void showEventsList() {
         System.out.println("📋 Navigation vers Liste des événements");
@@ -178,7 +179,55 @@ public class HelloController {
         }
     }
 
-    // ========== CATÉGORIES (déjà fait) ==========
+    // ========== TICKETS ==========
+
+    public void showTicketsList() {
+        System.out.println("🎫 Navigation vers Liste des tickets");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/event/ticket-list.fxml")
+            );
+            Parent page = loader.load();
+
+            EventTicketListController controller = loader.getController();
+            if (controller != null) {
+                controller.setHelloController(this);
+                System.out.println("✅ EventTicketListController connecté");
+            }
+
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(page);
+            highlightButton(null);
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void showTicketView(EventTicket ticket) {
+        try {
+            System.out.println("👁️ Vue détaillée du ticket: " + ticket.getTicketCode());
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/event/ticket-view.fxml")
+            );
+            Parent page = loader.load();
+
+            EventTicketViewController controller = loader.getController();
+            controller.setHelloController(this);
+            controller.setTicket(ticket);
+
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(page);
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur chargement vue ticket: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // ========== CATÉGORIES ==========
     @FXML
     public void showCategories() {
         System.out.println(" 🗂️ Navigation vers Catégories");
@@ -254,12 +303,11 @@ public class HelloController {
         }
     }
 
-    // ========== BILLETS (à faire plus tard) ==========
+    // ========== BILLETS (mis à jour) ==========
     @FXML
     public void showTickets() {
-        System.out.println("🎫 Navigation vers Billets (à venir)");
-        // Pour l'instant, rediriger vers les catégories
-        showCategories();
+        System.out.println("🎫 Navigation vers Billets");
+        showTicketsList();  // Maintenant ça fonctionne vraiment
         highlightButton(null);
     }
 
