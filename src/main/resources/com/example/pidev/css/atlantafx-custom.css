@@ -105,10 +105,13 @@
 /* ==================== TOOLBAR ==================== */
 .toolbar {
     -fx-padding: 5 0;
+    -fx-min-height: 55px;
+    -fx-spacing: 15px;
 }
 
 .toolbar-secondary {
     -fx-padding: 0 0 10 30;
+    -fx-min-height: 55px;
 }
 
 /* ==================== FILTER INPUTS ==================== */
@@ -361,7 +364,8 @@
     -fx-background-color: white;
     -fx-border-color: #f1f3f5;
     -fx-border-width: 0 0 1 0;
-    -fx-cell-size: 60;
+    -fx-cell-size: 80; /* Augmenté de 60 à 80 pour les lignes avec texte multi-ligne */
+    -fx-padding: 8 0;
 }
 
 .data-table .table-row-cell:hover {
@@ -373,8 +377,10 @@
 }
 
 .data-table .table-cell {
-    -fx-padding: 10 10;
-    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 8 10;
+    -fx-alignment: TOP_LEFT; /* Changé de CENTER_LEFT à TOP_LEFT pour afficher le texte en haut */
+    -fx-wrap-text: true; /* Activer le retour à la ligne */
+    -fx-text-alignment: LEFT;
 }
 
 .data-table .scroll-bar:vertical {

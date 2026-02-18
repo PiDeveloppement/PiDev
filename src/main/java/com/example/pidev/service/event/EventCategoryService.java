@@ -230,6 +230,19 @@ public class EventCategoryService {
 
             if (rowsAffected > 0) {
                 System.out.println("✅ Catégorie mise à jour avec succès: " + category.getName());
+
+                // ========== IMPORTANT ==========
+                // Recharger la catégorie depuis la base de données pour obtenir le updated_at mis à jour
+                System.out.println("📝 Rechargement de la catégorie pour récupérer updated_at...");
+                EventCategory updatedCategory = getCategoryById(category.getId());
+                if (updatedCategory != null) {
+                    // Mettre à jour l'objet passé en paramètre avec les nouvelles valeurs
+                    category.setUpdatedAt(updatedCategory.getUpdatedAt());
+                    System.out.println("✅ updated_at mis à jour: " + updatedCategory.getUpdatedAt());
+                } else {
+                    System.err.println("⚠️ Impossible de recharger la catégorie");
+                }
+
                 return true;
             } else {
                 System.err.println("⚠️ Aucune catégorie trouvée avec l'ID " + category.getId());

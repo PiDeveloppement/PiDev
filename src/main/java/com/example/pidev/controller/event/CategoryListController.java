@@ -22,7 +22,7 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
- * Controller pour la liste des catégories - Version simplifiée avec diagnostic
+ * Controller pour la liste des catégories - Version avec recherche corrigée
  * @author Ons Abdesslem
  */
 public class CategoryListController {
@@ -37,9 +37,9 @@ public class CategoryListController {
 
     // ========== FILTRES ==========
     @FXML private TextField searchField;
-    @FXML private ChoiceBox<String> statusFilter;
-    @FXML private ChoiceBox<String> colorFilter;
-    @FXML private ChoiceBox<String> sortOrder;
+    @FXML private ComboBox<String> statusFilter;
+    @FXML private ComboBox<String> colorFilter;
+    @FXML private ComboBox<String> sortOrder;
 
     // ========== KPI ==========
     @FXML private Label totalLabel;
@@ -53,7 +53,7 @@ public class CategoryListController {
     // ========== BOUTONS ==========
     @FXML private Button addBtn;
 
-     // ========== PAGINATION ==========
+    // ========== PAGINATION ==========
     @FXML private HBox paginationContainer;
     @FXML private Button prevBtn;
     @FXML private Label pageInfoLabel;
@@ -61,11 +61,11 @@ public class CategoryListController {
     private EventCategoryService categoryService;
     private HelloController helloController;
     private List<EventCategory> allCategories;
-    private List<EventCategory> filteredCategories; // Liste filtrée pour la pagination
+    private List<EventCategory> filteredCategories;
 
     // Variables de pagination
     private int currentPage = 1;
-    private int itemsPerPage = 10; // 10 catégories par page
+    private int itemsPerPage = 10;
     private int totalPages = 1;
 
 
@@ -108,29 +108,140 @@ public class CategoryListController {
     }
 
     /**
-     * Configuration des filtres avec ChoiceBox et placeholders intégrés
+     * Configuration des filtres
      */
     private void setupFilters() {
         // ============ RECHERCHE ============
-        searchField.setPromptText("🔍 Rechercher une catégorie...");
-        searchField.textProperty().addListener((obs, old, newVal) -> applyFilters());
+        if (searchField != null) {
+            searchField.setPromptText("Rechercher une catégorie...");
+            searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+                System.out.println("🔍 Recherche changée: '" + newVal + "' (ancienne: '" + oldVal + "')");
+                currentPage = 1;
+                applyFilters();
+            });
+        }
 
         // ============ FILTRE STATUT ============
-        statusFilter.getItems().addAll("-- Tous les statuts --", "Actif", "Inactif");
-        statusFilter.setValue("-- Tous les statuts --");
-        statusFilter.valueProperty().addListener((obs, old, newVal) -> applyFilters());
+        if (statusFilter != null) {
+            statusFilter.getItems().addAll("Tous les statuts", "Actif", "Inactif");
+            statusFilter.setValue("Tous les statuts");
+            statusFilter.valueProperty().addListener((obs, old, newVal) -> {
+                System.out.println("📊 Filtre statut changé: " + newVal);
+                currentPage = 1;
+                applyFilters();
+            });
+        }
 
         // ============ FILTRE COULEUR ============
-        colorFilter.getItems().add("-- Toutes les couleurs --");
-        colorFilter.setValue("-- Toutes les couleurs --");
-        colorFilter.valueProperty().addListener((obs, old, newVal) -> applyFilters());
+        if (colorFilter != null) {
+            colorFilter.getItems().add("Toutes les couleurs");
+            configureColorFilterCells();
+            colorFilter.setValue("Toutes les couleurs");
+            colorFilter.valueProperty().addListener((obs, old, newVal) -> {
+                System.out.println("🎨 Filtre couleur changé: " + newVal);
+                currentPage = 1;
+                applyFilters();
+            });
+        }
 
         // ============ TRI (ORDRE) ============
-        sortOrder.getItems().addAll("-- Ordre --", "A → Z", "Z → A", "Plus récents", "Plus anciens");
-        sortOrder.setValue("-- Ordre --");
-        sortOrder.valueProperty().addListener((obs, old, newVal) -> applyFilters());
+        if (sortOrder != null) {
+            sortOrder.getItems().addAll("A → Z", "Z → A", "Plus récents", "Plus anciens");
+            sortOrder.setValue("A → Z");
+            sortOrder.valueProperty().addListener((obs, old, newVal) -> {
+                System.out.println("🔤 Tri changé: " + newVal);
+                currentPage = 1;
+                applyFilters();
+            });
+        }
 
-        System.out.println("✅ Filtres configurés avec ChoiceBox");
+        System.out.println("✅ Filtres configurés");
+    }
+
+    /**
+     * Configure les cellules du filtre COULEUR avec affichage personnalisé
+     */
+    private void configureColorFilterCells() {
+        colorFilter.setCellFactory(listView -> new ListCell<>() {
+            private final Circle colorCircle = new Circle(7);
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+
+                if ("Toutes les couleurs".equals(item)) {
+                    setGraphic(null);
+                    setText(item);
+                    setStyle("-fx-text-fill: #495057;");
+                    return;
+                }
+
+                String colorHex = extractColorHex(item);
+                if (colorHex != null) {
+                    try {
+                        colorCircle.setFill(Color.web(colorHex));
+                        colorCircle.setStroke(Color.web("#dee2e6"));
+                        colorCircle.setStrokeWidth(1.2);
+                        HBox box = new HBox(8, colorCircle, new Label(item));
+                        box.setAlignment(Pos.CENTER_LEFT);
+                        setGraphic(box);
+                        setText(null);
+                    } catch (Exception e) {
+                        setGraphic(null);
+                        setText(item);
+                    }
+                } else {
+                    setGraphic(null);
+                    setText(item);
+                }
+            }
+        });
+
+        colorFilter.setButtonCell(new ListCell<>() {
+            private final Circle colorCircle = new Circle(7);
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText("Toutes les couleurs");
+                    setStyle("-fx-text-fill: #495057;");
+                    return;
+                }
+
+                if ("Toutes les couleurs".equals(item)) {
+                    setGraphic(null);
+                    setText(item);
+                    setStyle("-fx-text-fill: #495057;");
+                    return;
+                }
+
+                String colorHex = extractColorHex(item);
+                if (colorHex != null) {
+                    try {
+                        colorCircle.setFill(Color.web(colorHex));
+                        colorCircle.setStroke(Color.web("#dee2e6"));
+                        colorCircle.setStrokeWidth(1.2);
+                        HBox box = new HBox(8, colorCircle, new Label(item));
+                        box.setAlignment(Pos.CENTER_LEFT);
+                        setGraphic(box);
+                        setText(null);
+                    } catch (Exception e) {
+                        setGraphic(null);
+                        setText(item);
+                    }
+                } else {
+                    setGraphic(null);
+                    setText(item);
+                }
+            }
+        });
     }
 
     private void setupTableColumns() {
@@ -290,34 +401,39 @@ public class CategoryListController {
         List<String> colors = allCategories.stream()
                 .map(EventCategory::getColor)
                 .filter(color -> color != null && !color.isEmpty())
+                .map(String::toUpperCase)
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
 
         String currentValue = colorFilter.getValue();
         colorFilter.getItems().clear();
-        colorFilter.getItems().add("-- Toutes les couleurs --");
+        colorFilter.getItems().add("Toutes les couleurs");
         for (String colorHex : colors) {
             colorFilter.getItems().add(getColorName(colorHex));
         }
 
-        // Restaurer la valeur ou mettre le placeholder par défaut
         if (currentValue != null && colorFilter.getItems().contains(currentValue)) {
             colorFilter.setValue(currentValue);
         } else {
-            colorFilter.setValue("-- Toutes les couleurs --");
+            colorFilter.setValue("Toutes les couleurs");
         }
-
 
         System.out.println("✅ Filtre couleur mis à jour avec " + (colors.size() + 1) + " options");
     }
 
     private String extractColorHex(String colorText) {
-        for (EventCategory cat : allCategories) {
-            if (cat.getColor() != null && colorText.contains(cat.getColor())) {
-                return cat.getColor();
-            }
+        if (colorText == null) {
+            return null;
         }
+
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("#[0-9A-Fa-f]{6}")
+                .matcher(colorText);
+        if (matcher.find()) {
+            return matcher.group();
+        }
+
         return null;
     }
 
@@ -351,32 +467,65 @@ public class CategoryListController {
         applyFilters();
     }
 
+    /**
+     * Méthode de filtrage avec la recherche de l'ancien code (qui fonctionnait)
+     */
     private void applyFilters() {
-        if (allCategories == null) return;
+        if (allCategories == null || allCategories.isEmpty()) {
+            System.out.println("⚠️ Aucune catégorie chargée");
+            return;
+        }
+
         String searchText = searchField.getText().toLowerCase().trim();
         String status = statusFilter.getValue();
         String color = colorFilter.getValue();
         String sort = sortOrder.getValue();
 
+        String selectedColorHex = extractColorHex(color);
+
+        // ========== LOGS DE DIAGNOSTIC ==========
+        if (!searchText.isEmpty()) {
+            System.out.println("\n🔎 DIAGNOSTIC DE RECHERCHE");
+            System.out.println("   Texte saisi: '" + searchField.getText() + "'");
+            System.out.println("   Texte traité: '" + searchText + "'");
+            System.out.println("   Total catégories: " + allCategories.size());
+        }
+
         List<EventCategory> filtered = allCategories.stream()
                 .filter(cat -> {
-                    boolean matchSearch = searchText.isEmpty() || cat.getName().toLowerCase().contains(searchText);
+                    // RECHERCHE - version ancienne qui fonctionnait
+                    boolean matchSearch = searchText.isEmpty() ||
+                            cat.getName().toLowerCase().contains(searchText) ||
+                            (cat.getDescription() != null && cat.getDescription().toLowerCase().contains(searchText));
 
-                    // Filtre statut : ignorer si c'est le placeholder
-                    boolean matchStatus = status == null || status.startsWith("--") ||
+                    boolean matchStatus = status == null || "Tous les statuts".equals(status) ||
                             (status.equals("Actif") && cat.isActive()) ||
                             (status.equals("Inactif") && !cat.isActive());
 
-                    // Filtre couleur : ignorer si c'est le placeholder
-                    boolean matchColor = color == null || color.startsWith("--") ||
-                            (cat.getColor() != null && color.contains(cat.getColor()));
+                    boolean matchColor = color == null || "Toutes les couleurs".equals(color) ||
+                            (selectedColorHex != null && cat.getColor() != null &&
+                                    cat.getColor().equalsIgnoreCase(selectedColorHex));
+
+                    // Log détaillé pour chaque catégorie
+                    if (!searchText.isEmpty()) {
+                        boolean nameMatch = cat.getName().toLowerCase().contains(searchText);
+                        boolean descMatch = cat.getDescription() != null &&
+                                           cat.getDescription().toLowerCase().contains(searchText);
+                        if (matchSearch) {
+                            String source = nameMatch ? "(nom)" : descMatch ? "(desc)" : "(vide)";
+                            System.out.println("   ✅ '" + cat.getName() + "' " + source);
+                        }
+                    }
 
                     return matchSearch && matchStatus && matchColor;
                 })
                 .collect(Collectors.toList());
 
-        // Tri : ignorer si c'est le placeholder
-        if (sort != null && !sort.startsWith("--")) {
+        if (!searchText.isEmpty()) {
+            System.out.println("   📊 Résultat: " + filtered.size() + "/" + allCategories.size() + " catégories\n");
+        }
+
+        if (sort != null) {
             switch (sort) {
                 case "A → Z": filtered.sort(Comparator.comparing(EventCategory::getName)); break;
                 case "Z → A": filtered.sort(Comparator.comparing(EventCategory::getName).reversed()); break;
@@ -387,16 +536,9 @@ public class CategoryListController {
             filtered.sort(Comparator.comparing(EventCategory::getName));
         }
 
-        // Stocker les résultats filtrés pour la pagination
         filteredCategories = filtered;
-
-        // Réinitialiser à la page 1 après un nouveau filtrage
         currentPage = 1;
-
-        // Mettre à jour le label de résultats
         resultLabel.setText(filtered.size() + " résultat(s) trouvé(s)");
-
-        // Configurer et afficher la pagination
         setupPagination();
     }
 
@@ -414,19 +556,25 @@ public class CategoryListController {
     }
 
     private void handleView(EventCategory category) {
-        Alert details = new Alert(Alert.AlertType.INFORMATION);
-        details.setTitle("Détails");
-        details.setHeaderText(category.getDisplayName());
-        details.setContentText(String.format(
-                "Description: %s\n\nCouleur: %s\n\nStatut: %s\n\nÉvénements: %d",
-                category.getDescription(), category.getColor(),
-                category.isActive() ? "✅ Actif" : "❌ Inactif",
-                category.getEventCount()
-        ));
-        details.showAndWait();
+        System.out.println("👁️ Consultation de: " + category.getName());
+        if (helloController != null) {
+            helloController.showCategoryView(category);
+        } else {
+            Alert details = new Alert(Alert.AlertType.INFORMATION);
+            details.setTitle("Détails");
+            details.setHeaderText(category.getDisplayName());
+            details.setContentText(String.format(
+                    "Description: %s\n\nCouleur: %s\n\nStatut: %s\n\nÉvénements: %d",
+                    category.getDescription(), category.getColor(),
+                    category.isActive() ? "✅ Actif" : "❌ Inactif",
+                    category.getEventCount()
+            ));
+            details.showAndWait();
+        }
     }
 
     private void handleEdit(EventCategory category) {
+        System.out.println("✏️ Modification de: " + category.getName());
         if (helloController != null) {
             helloController.showCategoryForm(category);
         }
@@ -470,9 +618,6 @@ public class CategoryListController {
 
     // ===================== PAGINATION =====================
 
-    /**
-     * Configure la pagination dynamique
-     */
     private void setupPagination() {
         if (filteredCategories == null || filteredCategories.isEmpty()) {
             totalPages = 1;
@@ -489,9 +634,6 @@ public class CategoryListController {
         displayCurrentPage();
     }
 
-    /**
-     * Affiche les items de la page actuelle
-     */
     private void displayCurrentPage() {
         if (filteredCategories == null || filteredCategories.isEmpty()) {
             categoryTable.getItems().clear();
@@ -506,22 +648,13 @@ public class CategoryListController {
         categoryTable.getItems().addAll(pageItems);
     }
 
-    /**
-     * Met à jour l'interface de pagination (boutons + label)
-     */
     private void updatePaginationUI() {
-        // Mettre à jour le label d'info
         pageInfoLabel.setText("Page " + currentPage + " sur " + totalPages);
-
-        // Nettoyer les boutons existants (sauf "Précédent")
         paginationContainer.getChildren().clear();
-
-        // Bouton Précédent
         prevBtn.setDisable(currentPage == 1);
         paginationContainer.getChildren().add(prevBtn);
 
-        // Générer les boutons de page
-        int maxButtons = 5; // Nombre max de boutons de page à afficher
+        int maxButtons = 5;
         int startPage, endPage;
 
         if (totalPages <= maxButtons) {
@@ -541,34 +674,28 @@ public class CategoryListController {
             }
         }
 
-        // Ajouter les boutons de page
         for (int i = startPage; i <= endPage; i++) {
             final int pageNum = i;
             Button pageBtn = new Button(String.valueOf(i));
-
             if (i == currentPage) {
                 pageBtn.getStyleClass().add("btn-page-active");
             } else {
                 pageBtn.getStyleClass().add("btn-page");
             }
-
             pageBtn.setOnAction(e -> goToPage(pageNum));
             paginationContainer.getChildren().add(pageBtn);
         }
 
-        // Points de suspension si nécessaire
         if (endPage < totalPages) {
             Label dots = new Label("...");
             dots.setStyle("-fx-text-fill: #6c757d; -fx-padding: 5 10;");
             paginationContainer.getChildren().add(dots);
-
             Button lastPageBtn = new Button(String.valueOf(totalPages));
             lastPageBtn.getStyleClass().add("btn-page");
             lastPageBtn.setOnAction(e -> goToPage(totalPages));
             paginationContainer.getChildren().add(lastPageBtn);
         }
 
-        // Bouton Suivant
         Button nextBtn = new Button("Suivant »");
         nextBtn.getStyleClass().add("btn-pagination");
         nextBtn.setDisable(currentPage == totalPages);
@@ -576,9 +703,6 @@ public class CategoryListController {
         paginationContainer.getChildren().add(nextBtn);
     }
 
-    /**
-     * Aller à une page spécifique
-     */
     private void goToPage(int pageNum) {
         if (pageNum >= 1 && pageNum <= totalPages) {
             currentPage = pageNum;
@@ -587,9 +711,6 @@ public class CategoryListController {
         }
     }
 
-    /**
-     * Page précédente
-     */
     @FXML
     private void handlePrevPage() {
         if (currentPage > 1) {
@@ -599,9 +720,6 @@ public class CategoryListController {
         }
     }
 
-    /**
-     * Page suivante
-     */
     private void handleNextPage() {
         if (currentPage < totalPages) {
             currentPage++;

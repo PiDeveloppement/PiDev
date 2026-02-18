@@ -1,206 +1,707 @@
 package com.example.pidev.controller.event;
 
+import com.example.pidev.HelloController;
 import com.example.pidev.model.event.Event;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import com.example.pidev.model.event.EventCategory;
+import com.example.pidev.service.event.EventService;
+import com.example.pidev.service.event.EventCategoryService;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
-import javafx.util.Callback;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.SVGPath;
+import javafx.util.Duration;
 
-import java.net.URL;
-import java.util.ResourceBundle;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
-public class EventListController implements Initializable {
+/**
+ * Controller pour la liste des événements
+ * @author Ons Abdesslem
+ */
+public class EventListController {
+
+    // ========== TABLEAU ==========
+    @FXML private TableView<Event> eventTable;
+    @FXML private TableColumn<Event, String> titleCol;
+    @FXML private TableColumn<Event, String> startDateCol;
+    @FXML private TableColumn<Event, String> endDateCol;
+    @FXML private TableColumn<Event, String> locationCol;
+    @FXML private TableColumn<Event, String> categoryCol;
+    @FXML private TableColumn<Event, String> statusCol;
+    @FXML private TableColumn<Event, String> priceCol;
+    @FXML private TableColumn<Event, Void> actionsCol;
+
+    // ========== FILTRES ==========
+    @FXML private TextField searchField;
+    @FXML private ComboBox<String> statusFilter;
+    @FXML private ComboBox<String> categoryFilter;
+    @FXML private ComboBox<String> sortOrder;
+
+    // ========== KPI ==========
+    @FXML private Label totalLabel;
+    @FXML private Label upcomingLabel;
+    @FXML private Label resultLabel;
+
+    // ========== NAVBAR ==========
+    @FXML private Label dateLabel;
+    @FXML private Label timeLabel;
+
+    // ========== BOUTONS ==========
+    @FXML private Button addBtn;
+
+    // ========== PAGINATION ==========
+    @FXML private HBox paginationContainer;
+    @FXML private Button prevBtn;
+    @FXML private Label pageInfoLabel;
+
+    private EventService eventService;
+    private EventCategoryService categoryService;
+    private HelloController helloController;
+    private List<Event> allEvents;
+    private List<Event> filteredEvents;
+    private List<EventCategory> allCategories;
+
+    // Variables de pagination
+    private int currentPage = 1;
+    private int itemsPerPage = 10;
+    private int totalPages = 1;
+
 
     @FXML
-    private TableView<Event> eventsTable;
+    public void initialize() {
+        System.out.println("✅ EventListController initialisé");
 
-    @FXML
-    private TableColumn<Event, Integer> idCol;
+        eventService = new EventService();
+        categoryService = new EventCategoryService();
 
-    @FXML
-    private TableColumn<Event, String> titleCol;
-
-    @FXML
-    private TableColumn<Event, String> dateCol;
-
-    @FXML
-    private TableColumn<Event, String> categoryCol;
-
-    @FXML
-    private TableColumn<Event, String> statusCol;
-
-    @FXML
-    private TableColumn<Event, Integer> participantsCol;
-
-    @FXML
-    private TableColumn<Event, Double> budgetCol;
-
-    @FXML
-    private TableColumn<Event, Void> actionsCol; // IMPORTANT: Type Void pour les actions
-
-    @FXML
-    private Button addEventBtn;
-
-    @FXML
-    private Label statusLabel;
-
-    private ObservableList<Event> eventsList = FXCollections.observableArrayList();
-
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
+        setupFilters();
         setupTableColumns();
         loadEvents();
-        setupActionsColumn(); // Cette méthode crée les boutons
 
-        addEventBtn.setOnAction(e -> handleAddEvent());
+        // ========== DATE/HEURE TEMPS RÉEL ==========
+        updateDateTime();
+        Timeline clock = new Timeline(
+                new KeyFrame(Duration.ZERO, e -> updateDateTime()),
+                new KeyFrame(Duration.seconds(1))
+        );
+        clock.setCycleCount(Timeline.INDEFINITE);
+        clock.play();
     }
 
-    private void setupTableColumns() {
-        // Configurez les colonnes normales
-        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
-        titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
-        dateCol.setCellValueFactory(new PropertyValueFactory<>("date"));
-        categoryCol.setCellValueFactory(new PropertyValueFactory<>("category"));
-        statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
-        participantsCol.setCellValueFactory(new PropertyValueFactory<>("participants"));
-        budgetCol.setCellValueFactory(new PropertyValueFactory<>("budget"));
+    private void updateDateTime() {
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE dd MMMM yyyy", Locale.FRENCH);
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-        // Option: Utilisez lambda pour éviter les problèmes de module
-        /*
-        idCol.setCellValueFactory(cellData ->
-            new SimpleObjectProperty<>(cellData.getValue().getId()));
-        titleCol.setCellValueFactory(cellData ->
-            new SimpleStringProperty(cellData.getValue().getTitle()));
-        */
+        if (dateLabel != null) {
+            String dateText = now.format(dateFormatter);
+            dateLabel.setText(dateText.substring(0, 1).toUpperCase() + dateText.substring(1));
+        }
+        if (timeLabel != null) {
+            timeLabel.setText(now.format(timeFormatter));
+        }
     }
 
-    private void setupActionsColumn() {
-        actionsCol.setCellFactory(param -> {
-            return new TableCell<Event, Void>() {
-                private final HBox container = new HBox(8);
+    public void setHelloController(HelloController helloController) {
+        this.helloController = helloController;
+    }
 
-                // Utiliser les codes Unicode directement
-                private final Button updateBtn = new Button("\u270F"); // ✏
-                private final Button deleteBtn = new Button("\uD83D\uDDD1"); // 🗑
-
-                {
-                    // Style des boutons
-                    updateBtn.setStyle("-fx-background-color: #3b82f6; " +
-                            "-fx-text-fill: white; " +
-                            "-fx-font-size: 14px; " +
-                            "-fx-font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif; " +
-                            "-fx-padding: 6 12; " +
-                            "-fx-background-radius: 6; " +
-                            "-fx-cursor: hand; " +
-                            "-fx-min-width: 40px; " +
-                            "-fx-min-height: 30px;");
-
-                    deleteBtn.setStyle("-fx-background-color: #ef4444; " +
-                            "-fx-text-fill: white; " +
-                            "-fx-font-size: 14px; " +
-                            "-fx-font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif; " +
-                            "-fx-padding: 6 12; " +
-                            "-fx-background-radius: 6; " +
-                            "-fx-cursor: hand; " +
-                            "-fx-min-width: 40px; " +
-                            "-fx-min-height: 30px;");
-
-                    // Actions
-                    updateBtn.setOnAction(e -> {
-                        Event event = getTableView().getItems().get(getIndex());
-                        handleUpdateEvent(event);
-                    });
-
-                    deleteBtn.setOnAction(e -> {
-                        Event event = getTableView().getItems().get(getIndex());
-                        handleDeleteEvent(event);
-                    });
-
-                    container.getChildren().addAll(updateBtn, deleteBtn);
-                    container.setAlignment(javafx.geometry.Pos.CENTER);
-                }
-
-                @Override
-                protected void updateItem(Void item, boolean empty) {
-                    super.updateItem(item, empty);
-                    setGraphic(empty ? null : container);
-                }
-            };
+    /**
+     * Configuration des filtres
+     */
+    private void setupFilters() {
+        // ============ RECHERCHE ============
+        searchField.setPromptText("Rechercher un événement par titre, lieu ou description...");
+        searchField.textProperty().addListener((obs, old, newVal) -> {
+            currentPage = 1;
+            applyFilters();
         });
+
+        // ============ FILTRE STATUT ============
+        statusFilter.getItems().addAll("Tous les statuts", "À venir", "En cours", "Terminé");
+        statusFilter.setValue("Tous les statuts");
+        statusFilter.valueProperty().addListener((obs, old, newVal) -> {
+            currentPage = 1;
+            applyFilters();
+        });
+
+        // ============ FILTRE CATÉGORIE ============
+        categoryFilter.getItems().add("Toutes les catégories");
+        categoryFilter.setValue("Toutes les catégories");
+        configureCategoryFilterCells(); // Configuration avec icônes
+        categoryFilter.valueProperty().addListener((obs, old, newVal) -> {
+            currentPage = 1;
+            applyFilters();
+        });
+
+        // ============ TRI (ORDRE) ============
+        sortOrder.getItems().addAll("Plus récents", "Plus anciens", "A → Z", "Z → A");
+        sortOrder.setValue("Plus récents");
+        sortOrder.valueProperty().addListener((obs, old, newVal) -> {
+            currentPage = 1;
+            applyFilters();
+        });
+
+        System.out.println("✅ Filtres configurés");
     }
 
-    private void loadEvents() {
-        // Exemple de données de test avec plus d'événements
-        eventsList.add(new Event(1, "Conférence IA", "2024-12-15", "Technologie",
-                "Planifié", 150, 5000.0));
-        eventsList.add(new Event(2, "Tournoi Sportif", "2024-11-20", "Sport",
-                "En cours", 200, 3000.0));
-        eventsList.add(new Event(3, "Atelier Développement", "2024-10-05", "Éducation",
-                "Terminé", 80, 1500.0));
-        eventsList.add(new Event(4, "Journée Portes Ouvertes", "2024-09-28", "Événement",
-                "Planifié", 300, 8000.0));
-        eventsList.add(new Event(5, "Séminaire Recherche", "2024-08-15", "Académique",
-                "Terminé", 120, 4000.0));
-        eventsList.add(new Event(6, "Festival Culturel", "2024-07-10", "Culture",
-                "En cours", 500, 12000.0));
+    /**
+     * Configure l'affichage du filtre catégorie avec icônes
+     */
+    private void configureCategoryFilterCells() {
+        // CellFactory pour la liste déroulante
+        categoryFilter.setCellFactory(listView -> new ListCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
 
-        eventsTable.setItems(eventsList);
-        statusLabel.setText("📊 " + eventsList.size() + " événements trouvés • 🔄 Dernière mise à jour: Maintenant");
-    }
+                if ("Toutes les catégories".equals(item)) {
+                    setGraphic(null);
+                    setText(item);
+                    return;
+                }
 
-    private void handleAddEvent() {
-        System.out.println("Ajouter un nouvel événement");
-        // Implémentez la logique d'ajout
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Ajouter un événement");
-        alert.setHeaderText("Fonctionnalité d'ajout");
-        alert.setContentText("Bouton 'Nouvel Événement' cliqué");
-        alert.showAndWait();
-    }
+                // Trouver la catégorie correspondante
+                EventCategory cat = findCategoryByName(item);
+                if (cat != null) {
+                    Label iconLabel = new Label(cat.getIcon() != null ? cat.getIcon() : "📌");
+                    iconLabel.setStyle("-fx-font-size: 16px;");
+                    Label nameLabel = new Label(cat.getName());
+                    HBox box = new HBox(10, iconLabel, nameLabel);
+                    box.setAlignment(Pos.CENTER_LEFT);
+                    setGraphic(box);
+                    setText(null);
+                } else {
+                    setText(item);
+                }
+            }
+        });
 
-    private void handleUpdateEvent(Event event) {
-        System.out.println("Mettre à jour l'événement: " + event.getTitle());
+        // ButtonCell pour le bouton (affichage de la sélection)
+        categoryFilter.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText("Toutes les catégories");
+                    return;
+                }
 
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Mise à jour");
-        alert.setHeaderText("Mettre à jour l'événement");
-        alert.setContentText("✏️ Vous avez cliqué sur Modifier pour: " +
-                event.getTitle() + "\nID: " + event.getId());
-        alert.showAndWait();
-    }
+                if ("Toutes les catégories".equals(item)) {
+                    setText(item);
+                    return;
+                }
 
-    private void handleDeleteEvent(Event event) {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Confirmation de suppression");
-        confirm.setHeaderText("🗑️ Supprimer l'événement");
-        confirm.setContentText("Êtes-vous sûr de vouloir supprimer l'événement: \n\n" +
-                "📝 " + event.getTitle() + "\n" +
-                "🔢 ID: " + event.getId() + "\n" +
-                "📅 Date: " + event.getDate() + "\n\n" +
-                "Cette action est irréversible !");
-
-        confirm.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                eventsList.remove(event);
-                statusLabel.setText("✅ Événement supprimé avec succès • 📊 " +
-                        eventsList.size() + " événements restants");
-
-                // Notification de succès
-                Alert success = new Alert(Alert.AlertType.INFORMATION);
-                success.setTitle("Suppression réussie");
-                success.setHeaderText("✅ Événement supprimé");
-                success.setContentText("L'événement '" + event.getTitle() + "' a été supprimé avec succès.");
-                success.showAndWait();
+                EventCategory cat = findCategoryByName(item);
+                if (cat != null) {
+                    setText(cat.getIcon() + " " + cat.getName());
+                } else {
+                    setText(item);
+                }
             }
         });
     }
-}
 
+    /**
+     * Trouve une catégorie par son nom
+     */
+    private EventCategory findCategoryByName(String name) {
+        if (allCategories != null) {
+            for (EventCategory cat : allCategories) {
+                if (cat.getName().equals(name)) {
+                    return cat;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void setupTableColumns() {
+        // Titre
+        titleCol.setCellValueFactory(param ->
+                new javafx.beans.property.SimpleStringProperty(param.getValue().getTitle())
+        );
+        // Configure la colonne Titre avec wrap text pour afficher le texte sur plusieurs lignes
+        titleCol.setCellFactory(col -> new TableCell<>() {
+            private final Label label = new Label();
+            {
+                label.setWrapText(true);
+                label.setStyle("-fx-text-fill: #212529; -fx-font-size: 13px; -fx-font-weight: 600;");
+            }
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    label.setText(item);
+                    setGraphic(label);
+                }
+            }
+        });
+
+        // Date début
+        startDateCol.setCellValueFactory(param ->
+                new javafx.beans.property.SimpleStringProperty(
+                        param.getValue().getFormattedStartDate()
+                )
+        );
+
+        // Date fin
+        endDateCol.setCellValueFactory(param ->
+                new javafx.beans.property.SimpleStringProperty(
+                        param.getValue().getFormattedEndDate()
+                )
+        );
+
+        // Lieu
+        locationCol.setCellValueFactory(param ->
+                new javafx.beans.property.SimpleStringProperty(param.getValue().getLocation())
+        );
+        // Configure la colonne Lieu avec wrap text pour afficher le texte sur plusieurs lignes
+        locationCol.setCellFactory(col -> new TableCell<>() {
+            private final Label label = new Label();
+            {
+                label.setWrapText(true);
+                label.setStyle("-fx-text-fill: #495057; -fx-font-size: 13px;");
+            }
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    label.setText(item);
+                    setGraphic(label);
+                }
+            }
+        });
+
+        // Catégorie (dynamique avec icône)
+        categoryCol.setCellValueFactory(param ->
+                new javafx.beans.property.SimpleStringProperty(getCategoryName(param.getValue().getCategoryId()))
+        );
+
+        // Statut avec badge
+        statusCol.setCellValueFactory(param ->
+                new javafx.beans.property.SimpleStringProperty(getEventStatus(param.getValue()))
+        );
+        statusCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setGraphic(null);
+                } else {
+                    Label badge = new Label(status);
+                    badge.getStyleClass().add("status-badge");
+
+                    switch (status) {
+                        case "À venir":
+                            badge.setStyle("-fx-background-color: #d1fae5; -fx-text-fill: #065f46; " +
+                                    "-fx-padding: 4 12; -fx-background-radius: 20;");
+                            break;
+                        case "En cours":
+                            badge.setStyle("-fx-background-color: #fef3c7; -fx-text-fill: #92400e; " +
+                                    "-fx-padding: 4 12; -fx-background-radius: 20;");
+                            break;
+                        case "Terminé":
+                            badge.setStyle("-fx-background-color: #e5e7eb; -fx-text-fill: #4b5563; " +
+                                    "-fx-padding: 4 12; -fx-background-radius: 20;");
+                            break;
+                    }
+
+                    setGraphic(badge);
+                }
+            }
+        });
+
+        // Prix
+        priceCol.setCellValueFactory(param ->
+                new javafx.beans.property.SimpleStringProperty(param.getValue().getPriceDisplay())
+        );
+
+        // Actions (voir, modifier, supprimer)
+        actionsCol.setCellFactory(col -> new TableCell<>() {
+            private final Button viewBtn = createIconButton("eye", "#17a2b8");
+            private final Button editBtn = createIconButton("edit", "#0d6efd");
+            private final Button deleteBtn = createIconButton("trash", "#dc3545");
+            private final HBox container = new HBox(8, viewBtn, editBtn, deleteBtn);
+            {
+                container.setAlignment(Pos.CENTER);
+            }
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    Event event = getTableView().getItems().get(getIndex());
+                    viewBtn.setOnAction(e -> handleView(event));
+                    editBtn.setOnAction(e -> handleEdit(event));
+                    deleteBtn.setOnAction(e -> handleDelete(event));
+                    setGraphic(container);
+                }
+            }
+        });
+    }
+
+    private Button createIconButton(String iconType, String color) {
+        Button btn = new Button();
+        btn.setMinSize(38, 38);
+        btn.setMaxSize(38, 38);
+        btn.getStyleClass().add("action-btn-icon");
+        SVGPath icon = new SVGPath();
+        switch (iconType) {
+            case "eye":
+                icon.setContent("M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z");
+                break;
+            case "edit":
+                icon.setContent("M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z");
+                break;
+            case "trash":
+                icon.setContent("M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z");
+                break;
+        }
+        icon.setFill(Color.WHITE);
+        icon.setScaleX(0.7);
+        icon.setScaleY(0.7);
+        btn.setGraphic(icon);
+        btn.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 6;");
+        return btn;
+    }
+
+    private void loadEvents() {
+        try {
+            allEvents = eventService.getAllEvents();
+            allCategories = categoryService.getAllCategories();
+            populateCategoryFilter();
+            applyFilters();
+            updateStatistics();
+            System.out.println("✅ " + allEvents.size() + " événements chargés");
+        } catch (Exception e) {
+            System.err.println("❌ Erreur: " + e.getMessage());
+            showError("Erreur", "Impossible de charger les événements");
+        }
+    }
+
+    private void populateCategoryFilter() {
+        categoryFilter.getItems().clear();
+        categoryFilter.getItems().add("Toutes les catégories");
+
+        if (allCategories != null) {
+            for (EventCategory cat : allCategories) {
+                categoryFilter.getItems().add(cat.getName());
+            }
+        }
+
+        System.out.println("✅ Filtre catégorie mis à jour avec " + (allCategories != null ? allCategories.size() + 1 : 1) + " options");
+    }
+
+    private String getCategoryName(int categoryId) {
+        if (allCategories != null) {
+            for (EventCategory cat : allCategories) {
+                if (cat.getId() == categoryId) {
+                    return cat.getName();
+                }
+            }
+        }
+        return "Catégorie " + categoryId;
+    }
+
+    /**
+     * Retourne le statut temporel de l'événement
+     */
+    private String getEventStatus(Event event) {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (event.getStartDate() == null || event.getEndDate() == null) {
+            return "À venir"; // Par défaut
+        }
+
+        if (event.getEndDate().isBefore(now)) {
+            return "Terminé";
+        } else if (event.getStartDate().isAfter(now)) {
+            return "À venir";
+        } else if (now.isAfter(event.getStartDate()) && now.isBefore(event.getEndDate())) {
+            return "En cours";
+        }
+
+        return "À venir";
+    }
+
+    private void updateStatistics() {
+        if (allEvents == null) return;
+        int total = allEvents.size();
+        long upcoming = allEvents.stream()
+                .filter(e -> e.getStartDate() != null && e.getStartDate().isAfter(LocalDateTime.now()))
+                .count();
+        totalLabel.setText(String.valueOf(total));
+        upcomingLabel.setText(String.valueOf(upcoming));
+    }
+
+    @FXML
+    private void handleFilter() {
+        applyFilters();
+    }
+
+    private void applyFilters() {
+        if (allEvents == null) return;
+
+        String searchText = searchField.getText().toLowerCase().trim();
+        String status = statusFilter.getValue();
+        String category = categoryFilter.getValue();
+        String sort = sortOrder.getValue();
+
+        List<Event> filtered = allEvents.stream()
+                .filter(event -> {
+                    // Recherche
+                    boolean matchSearch = searchText.isEmpty() ||
+                            event.getTitle().toLowerCase().contains(searchText) ||
+                            (event.getDescription() != null && event.getDescription().toLowerCase().contains(searchText)) ||
+                            (event.getLocation() != null && event.getLocation().toLowerCase().contains(searchText));
+
+                    // Filtre statut
+                    boolean matchStatus = status == null || "Tous les statuts".equals(status);
+                    if (!matchStatus) {
+                        String eventStatus = getEventStatus(event);
+                        matchStatus = eventStatus.equals(status);
+                    }
+
+                    // Filtre catégorie
+                    boolean matchCategory = category == null || "Toutes les catégories".equals(category);
+                    if (!matchCategory) {
+                        String categoryName = getCategoryName(event.getCategoryId());
+                        matchCategory = categoryName.equals(category);
+                    }
+
+                    return matchSearch && matchStatus && matchCategory;
+                })
+                .collect(Collectors.toList());
+
+        // Tri
+        if (sort != null) {
+            switch (sort) {
+                case "Plus récents":
+                    filtered.sort(Comparator.comparing(Event::getStartDate).reversed());
+                    break;
+                case "Plus anciens":
+                    filtered.sort(Comparator.comparing(Event::getStartDate));
+                    break;
+                case "A → Z":
+                    filtered.sort(Comparator.comparing(Event::getTitle));
+                    break;
+                case "Z → A":
+                    filtered.sort(Comparator.comparing(Event::getTitle).reversed());
+                    break;
+            }
+        } else {
+            filtered.sort(Comparator.comparing(Event::getStartDate).reversed());
+        }
+
+        filteredEvents = filtered;
+        currentPage = 1;
+        resultLabel.setText(filtered.size() + " résultat(s) trouvé(s)");
+        setupPagination();
+    }
+
+    @FXML
+    private void handleAdd() {
+        System.out.println("[EventList] handleAdd() appelé");
+        if (helloController == null) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Erreur de navigation");
+            alert.setHeaderText("Impossible d'ouvrir le formulaire");
+            alert.showAndWait();
+            return;
+        }
+        helloController.showEventForm(null);
+    }
+
+    private void handleView(Event event) {
+        System.out.println("👁️ Consultation de: " + event.getTitle());
+        if (helloController != null) {
+            helloController.showEventView(event);
+        } else {
+            Alert details = new Alert(Alert.AlertType.INFORMATION);
+            details.setTitle("Détails");
+            details.setHeaderText(event.getDisplayName());
+            details.setContentText(String.format(
+                    "Description: %s\n\nLieu: %s\n\nDate: %s - %s\n\nCapacité: %d\n\nPrix: %s",
+                    event.getDescription(), event.getLocation(),
+                    event.getFormattedStartDate(), event.getFormattedEndDate(),
+                    event.getCapacity(), event.getPriceDisplay()
+            ));
+            details.showAndWait();
+        }
+    }
+
+    private void handleEdit(Event event) {
+        System.out.println("✏️ Modification de: " + event.getTitle());
+        if (helloController != null) {
+            helloController.showEventForm(event);
+        }
+    }
+
+    private void handleDelete(Event event) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirmation");
+        confirm.setHeaderText("Supprimer " + event.getTitle() + " ?");
+        confirm.setContentText("Cette action est irréversible.");
+        confirm.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                if (eventService.deleteEvent(event.getId())) {
+                    showSuccess("Succès", "Événement supprimé !");
+                    loadEvents();
+                } else {
+                    showError("Erreur", "Impossible de supprimer");
+                }
+            }
+        });
+    }
+
+    @FXML
+    private void handleRefresh() {
+        loadEvents();
+    }
+
+    private void showError(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showSuccess(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    // ===================== PAGINATION =====================
+
+    private void setupPagination() {
+        if (filteredEvents == null || filteredEvents.isEmpty()) {
+            totalPages = 1;
+            currentPage = 1;
+            updatePaginationUI();
+            return;
+        }
+
+        totalPages = (int) Math.ceil((double) filteredEvents.size() / itemsPerPage);
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+        updatePaginationUI();
+        displayCurrentPage();
+    }
+
+    private void displayCurrentPage() {
+        if (filteredEvents == null || filteredEvents.isEmpty()) {
+            eventTable.getItems().clear();
+            return;
+        }
+
+        int fromIndex = (currentPage - 1) * itemsPerPage;
+        int toIndex = Math.min(fromIndex + itemsPerPage, filteredEvents.size());
+
+        List<Event> pageItems = filteredEvents.subList(fromIndex, toIndex);
+        eventTable.getItems().clear();
+        eventTable.getItems().addAll(pageItems);
+    }
+
+    private void updatePaginationUI() {
+        pageInfoLabel.setText("Page " + currentPage + " sur " + totalPages);
+        paginationContainer.getChildren().clear();
+        prevBtn.setDisable(currentPage == 1);
+        paginationContainer.getChildren().add(prevBtn);
+
+        int maxButtons = 5;
+        int startPage, endPage;
+
+        if (totalPages <= maxButtons) {
+            startPage = 1;
+            endPage = totalPages;
+        } else {
+            int halfButtons = maxButtons / 2;
+            if (currentPage <= halfButtons + 1) {
+                startPage = 1;
+                endPage = maxButtons;
+            } else if (currentPage >= totalPages - halfButtons) {
+                startPage = totalPages - maxButtons + 1;
+                endPage = totalPages;
+            } else {
+                startPage = currentPage - halfButtons;
+                endPage = currentPage + halfButtons;
+            }
+        }
+
+        for (int i = startPage; i <= endPage; i++) {
+            final int pageNum = i;
+            Button pageBtn = new Button(String.valueOf(i));
+            if (i == currentPage) {
+                pageBtn.getStyleClass().add("btn-page-active");
+            } else {
+                pageBtn.getStyleClass().add("btn-page");
+            }
+            pageBtn.setOnAction(e -> goToPage(pageNum));
+            paginationContainer.getChildren().add(pageBtn);
+        }
+
+        if (endPage < totalPages) {
+            Label dots = new Label("...");
+            dots.setStyle("-fx-text-fill: #6c757d; -fx-padding: 5 10;");
+            paginationContainer.getChildren().add(dots);
+            Button lastPageBtn = new Button(String.valueOf(totalPages));
+            lastPageBtn.getStyleClass().add("btn-page");
+            lastPageBtn.setOnAction(e -> goToPage(totalPages));
+            paginationContainer.getChildren().add(lastPageBtn);
+        }
+
+        Button nextBtn = new Button("Suivant »");
+        nextBtn.getStyleClass().add("btn-pagination");
+        nextBtn.setDisable(currentPage == totalPages);
+        nextBtn.setOnAction(e -> handleNextPage());
+        paginationContainer.getChildren().add(nextBtn);
+    }
+
+    private void goToPage(int pageNum) {
+        if (pageNum >= 1 && pageNum <= totalPages) {
+            currentPage = pageNum;
+            displayCurrentPage();
+            updatePaginationUI();
+        }
+    }
+
+    @FXML
+    private void handlePrevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            displayCurrentPage();
+            updatePaginationUI();
+        }
+    }
+
+    private void handleNextPage() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            displayCurrentPage();
+            updatePaginationUI();
+        }
+    }
+}
