@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
  */
 public class Event {
 
-    // ==================== CONSTANTES ====================
+    // ==================== les CONSTANTES ====================
 
     public enum EventStatus {
         DRAFT("Brouillon"),
