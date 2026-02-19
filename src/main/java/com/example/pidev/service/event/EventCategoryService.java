@@ -1,7 +1,7 @@
 package com.example.pidev.service.event;
 
 import com.example.pidev.model.event.EventCategory;
-import com.example.pidev.utils.MyDatabase;
+import com.example.pidev.utils.DBConnection;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -11,19 +11,24 @@ import java.util.List;
 /**
  * Service pour gérer les opérations CRUD sur les catégories d'événements
  *
- * @author Ons Abdesslem
+ * @author Ons Abdesslem (adapté par vous)
  * @version 1.0
  */
 public class EventCategoryService {
 
-    private final Connection connection;
+    private Connection connection;
 
     // ==================== CONSTRUCTEUR ====================
 
     public EventCategoryService() {
-        this.connection = MyDatabase.getInstance().getConnection();
+        // Initialiser la connexion
+        this.connection = DBConnection.getConnection();
+        if (this.connection == null) {
+            System.err.println("❌ Erreur de connexion à la base de données");
+        } else {
+            System.out.println("✅ Connexion établie pour EventCategoryService");
+        }
     }
-
 
     // ==================== CREATE ====================
 
@@ -33,6 +38,12 @@ public class EventCategoryService {
      * @return true si ajout réussi, false sinon
      */
     public boolean addCategory(EventCategory category) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return false;
+        }
+
         // Validation
         if (!category.isValid()) {
             System.err.println("Erreur: Catégorie invalide (nom vide ou trop long)");
@@ -85,6 +96,13 @@ public class EventCategoryService {
      */
     public List<EventCategory> getAllCategories() {
         List<EventCategory> categories = new ArrayList<>();
+
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return categories;
+        }
+
         String sql = "SELECT * FROM event_category ORDER BY name";
 
         try (Statement stmt = connection.createStatement();
@@ -110,6 +128,12 @@ public class EventCategoryService {
      */
     public List<EventCategory> getAllCategoriesWithCount() {
         List<EventCategory> categories = new ArrayList<>();
+
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return categories;
+        }
 
         // Requête JOIN optimisée pour récupérer tout en une seule fois
         String sql = "SELECT ec.*, COUNT(e.id) as event_count " +
@@ -143,6 +167,12 @@ public class EventCategoryService {
      * @return La catégorie ou null si non trouvée
      */
     public EventCategory getCategoryById(int id) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return null;
+        }
+
         String sql = "SELECT * FROM event_category WHERE id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -172,6 +202,13 @@ public class EventCategoryService {
      */
     public List<EventCategory> getActiveCategories() {
         List<EventCategory> categories = new ArrayList<>();
+
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return categories;
+        }
+
         String sql = "SELECT * FROM event_category WHERE is_active = 1 ORDER BY name";
 
         try (Statement stmt = connection.createStatement();
@@ -198,6 +235,12 @@ public class EventCategoryService {
      * @return true si mise à jour réussie, false sinon
      */
     public boolean updateCategory(EventCategory category) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return false;
+        }
+
         // Validation
         if (category.getId() <= 0) {
             System.err.println("Erreur: ID invalide pour la mise à jour");
@@ -265,6 +308,12 @@ public class EventCategoryService {
      * @return true si suppression réussie, false sinon
      */
     public boolean deleteCategory(int id) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return false;
+        }
+
         // Vérifier si la catégorie est utilisée par des événements
         if (isCategoryUsed(id)) {
             System.err.println("❌ Impossible de supprimer: Cette catégorie est utilisée par des événements");
@@ -302,6 +351,12 @@ public class EventCategoryService {
      * @return Le nombre d'événements
      */
     public int countEventsByCategory(int categoryId) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return 0;
+        }
+
         String sql = "SELECT COUNT(*) as count FROM event WHERE category_id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -326,6 +381,12 @@ public class EventCategoryService {
      * @return Le nombre de catégories
      */
     public int countCategories() {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return 0;
+        }
+
         String sql = "SELECT COUNT(*) as count FROM event_category";
 
         try (Statement stmt = connection.createStatement();
@@ -352,6 +413,12 @@ public class EventCategoryService {
      * @return true si le nom existe déjà, false sinon
      */
     private boolean categoryNameExists(String name, int excludeId) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return false;
+        }
+
         String sql = "SELECT COUNT(*) as count FROM event_category WHERE name = ? AND id != ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {

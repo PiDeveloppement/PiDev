@@ -1,6 +1,6 @@
 package com.example.pidev.controller.event;
 
-import com.example.pidev.HelloController;
+import com.example.pidev.MainController;
 import com.example.pidev.model.event.EventTicket;
 import com.example.pidev.service.event.EventTicketService;
 import javafx.animation.KeyFrame;
@@ -44,7 +44,7 @@ public class EventTicketViewController {
 
     // ==================== SERVICES ====================
 
-    private HelloController helloController;
+    private MainController helloController;
     private EventTicketService ticketService;
     private EventTicket currentTicket;
 
@@ -78,7 +78,7 @@ public class EventTicketViewController {
         }
     }
 
-    public void setHelloController(HelloController helloController) {
+    public void setMainController(MainController helloController) {
         this.helloController = helloController;
     }
 

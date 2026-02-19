@@ -1,7 +1,7 @@
 package com.example.pidev.service.event;
 
 import com.example.pidev.model.event.EventTicket;
-import com.example.pidev.utils.MyDatabase;
+import com.example.pidev.utils.DBConnection;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -14,12 +14,18 @@ import java.util.List;
  */
 public class EventTicketService {
 
-    private final Connection connection;
+    private Connection connection;
 
     // ==================== CONSTRUCTEUR ====================
 
     public EventTicketService() {
-        this.connection = MyDatabase.getInstance().getConnection();
+        // Initialiser la connexion
+        this.connection = DBConnection.getConnection();
+        if (this.connection == null) {
+            System.err.println("❌ Erreur de connexion à la base de données pour EventTicketService");
+        } else {
+            System.out.println("✅ Connexion établie pour EventTicketService");
+        }
     }
 
     // ==================== CREATE ====================
@@ -31,6 +37,12 @@ public class EventTicketService {
      * @return Le ticket créé ou null si erreur
      */
     public EventTicket createTicket(int eventId, int userId) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return null;
+        }
+
         String ticketCode = EventTicket.generateTicketCode(eventId, userId);
 
         String sql = "INSERT INTO event_ticket (ticket_code, event_id, user_id) VALUES (?, ?, ?)";
@@ -71,6 +83,13 @@ public class EventTicketService {
      */
     public List<EventTicket> getAllTickets() {
         List<EventTicket> tickets = new ArrayList<>();
+
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return tickets;
+        }
+
         String sql = "SELECT * FROM event_ticket ORDER BY created_at DESC";
 
         try (Statement stmt = connection.createStatement();
@@ -94,6 +113,12 @@ public class EventTicketService {
      * Récupérer un ticket par son ID
      */
     public EventTicket getTicketById(int id) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return null;
+        }
+
         String sql = "SELECT * FROM event_ticket WHERE id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -119,6 +144,13 @@ public class EventTicketService {
      */
     public List<EventTicket> getTicketsByEvent(int eventId) {
         List<EventTicket> tickets = new ArrayList<>();
+
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return tickets;
+        }
+
         String sql = "SELECT * FROM event_ticket WHERE event_id = ? ORDER BY created_at";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -144,6 +176,13 @@ public class EventTicketService {
      */
     public List<EventTicket> getTicketsByUser(int userId) {
         List<EventTicket> tickets = new ArrayList<>();
+
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return tickets;
+        }
+
         String sql = "SELECT * FROM event_ticket WHERE user_id = ? ORDER BY created_at DESC";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -168,6 +207,12 @@ public class EventTicketService {
      * Récupérer un ticket par son code
      */
     public EventTicket getTicketByCode(String ticketCode) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return null;
+        }
+
         String sql = "SELECT * FROM event_ticket WHERE ticket_code = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -194,6 +239,12 @@ public class EventTicketService {
      * Marquer un ticket comme utilisé (check-in)
      */
     public boolean markTicketAsUsed(int ticketId) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return false;
+        }
+
         String sql = "UPDATE event_ticket SET is_used = TRUE, used_at = NOW() WHERE id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -219,6 +270,12 @@ public class EventTicketService {
      * Mettre à jour un ticket (admin)
      */
     public boolean updateTicket(EventTicket ticket) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return false;
+        }
+
         String sql = "UPDATE event_ticket SET ticket_code = ?, event_id = ?, user_id = ?, is_used = ?, used_at = ? WHERE id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -251,6 +308,12 @@ public class EventTicketService {
      * Supprimer un ticket
      */
     public boolean deleteTicket(int id) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return false;
+        }
+
         String sql = "DELETE FROM event_ticket WHERE id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -277,6 +340,12 @@ public class EventTicketService {
      * Compter le nombre de tickets pour un événement
      */
     public int countTicketsByEvent(int eventId) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return 0;
+        }
+
         String sql = "SELECT COUNT(*) as count FROM event_ticket WHERE event_id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -301,6 +370,12 @@ public class EventTicketService {
      * Compter le nombre de tickets utilisés (présents) pour un événement
      */
     public int countUsedTicketsByEvent(int eventId) {
+        // Vérifier la connexion
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return 0;
+        }
+
         String sql = "SELECT COUNT(*) as count FROM event_ticket WHERE event_id = ? AND is_used = TRUE";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {

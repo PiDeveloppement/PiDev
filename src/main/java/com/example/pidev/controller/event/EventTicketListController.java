@@ -1,6 +1,6 @@
 package com.example.pidev.controller.event;
 
-import com.example.pidev.HelloController;
+import com.example.pidev.MainController;
 import com.example.pidev.model.event.EventTicket;
 import com.example.pidev.service.event.EventTicketService;
 import javafx.animation.KeyFrame;
@@ -52,7 +52,7 @@ public class EventTicketListController {
     @FXML private Button scanBtn;
 
     private EventTicketService ticketService;
-    private HelloController helloController;
+    private MainController helloController;
     private List<EventTicket> allTickets;
     private List<EventTicket> filteredTickets;
 
@@ -91,7 +91,7 @@ public class EventTicketListController {
         }
     }
 
-    public void setHelloController(HelloController helloController) {
+    public void setMainController(MainController helloController) {
         this.helloController = helloController;
     }
 
@@ -213,7 +213,7 @@ public class EventTicketListController {
             System.out.println("✅ " + allTickets.size() + " tickets chargés");
         } catch (Exception e) {
             System.err.println("❌ Erreur: " + e.getMessage());
-            showError("Erreur", "Impossible de charger les tickets");
+
         }
     }
 

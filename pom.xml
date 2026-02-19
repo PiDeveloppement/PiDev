@@ -25,27 +25,56 @@
   </repositories>
 
   <dependencies>
-    <!-- JavaFX -->
+    <!-- ========== JAVAFX ========== -->
     <dependency>
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-controls</artifactId>
       <version>17.0.6</version>
     </dependency>
-
     <dependency>
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-fxml</artifactId>
       <version>17.0.6</version>
     </dependency>
 
-    <!-- AtlantaFX -->
+    <!-- ========== BIBLIOTHÈQUES UI ========== -->
     <dependency>
       <groupId>io.github.mkpaz</groupId>
       <artifactId>atlantafx-base</artifactId>
       <version>2.0.1</version>
     </dependency>
+    <dependency>
+      <groupId>de.jensd</groupId>
+      <artifactId>fontawesomefx-fontawesome</artifactId>
+      <version>4.7.0-9.1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jfxtras</groupId>
+      <artifactId>jfxtras-controls</artifactId>
+      <version>17-r1</version>
+    </dependency>
 
-    <!-- JUnit -->
+    <!-- ========== BASE DE DONNÉES ========== -->
+    <!-- MySQL Connector (version unifiée) -->
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <version>8.0.33</version>
+    </dependency>
+
+    <!-- ========== JPA / HIBERNATE (d'Arij) ========== -->
+    <dependency>
+      <groupId>jakarta.persistence</groupId>
+      <artifactId>jakarta.persistence-api</artifactId>
+      <version>3.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>6.4.4.Final</version>
+    </dependency>
+
+    <!-- ========== TESTS ========== -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
@@ -59,29 +88,12 @@
       <scope>test</scope>
     </dependency>
 
-
-    <!-- MySQL Connector -->
+    <!-- ========== UTILITAIRES ========== -->
     <dependency>
-      <groupId>com.mysql</groupId>
-      <artifactId>mysql-connector-j</artifactId>
-      <version>8.0.33</version>
+      <groupId>xml-apis</groupId>
+      <artifactId>xml-apis</artifactId>
+      <version>1.3.04</version>
     </dependency>
-
-
-    <dependency>
-      <groupId>de.jensd</groupId>
-      <artifactId>fontawesomefx-fontawesome</artifactId>
-      <version>4.7.0-9.1.2</version>
-    </dependency>
-
-
-    <dependency>
-      <groupId>org.jfxtras</groupId>
-      <artifactId>jfxtras-controls</artifactId>
-      <version>17-r1</version>
-    </dependency>
-
-
 
   </dependencies>
 

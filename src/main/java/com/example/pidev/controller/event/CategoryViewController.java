@@ -1,6 +1,6 @@
 package com.example.pidev.controller.event;
 
-import com.example.pidev.HelloController;
+import com.example.pidev.MainController;
 import com.example.pidev.model.event.EventCategory;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -35,7 +35,7 @@ public class CategoryViewController {
     @FXML private Label dateLabel;
     @FXML private Label timeLabel;
 
-    private HelloController helloController;
+    private MainController helloController;
 
     @FXML
     public void initialize() {
@@ -64,7 +64,7 @@ public class CategoryViewController {
         }
     }
 
-    public void setHelloController(HelloController helloController) {
+    public void setMainController(MainController helloController) {
         this.helloController = helloController;
     }
 

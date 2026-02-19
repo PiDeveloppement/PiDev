@@ -1,6 +1,7 @@
 package com.example.pidev.controller.event;
 
-import com.example.pidev.HelloController;
+import com.example.pidev.MainController;
+
 import com.example.pidev.model.event.Event;
 import com.example.pidev.model.event.EventCategory;
 import com.example.pidev.service.event.EventService;
@@ -65,7 +66,7 @@ public class EventListController {
 
     private EventService eventService;
     private EventCategoryService categoryService;
-    private HelloController helloController;
+    private MainController helloController;
     private List<Event> allEvents;
     private List<Event> filteredEvents;
     private List<EventCategory> allCategories;
@@ -111,7 +112,7 @@ public class EventListController {
         }
     }
 
-    public void setHelloController(HelloController helloController) {
+    public void setMainController(MainController helloController) {
         this.helloController = helloController;
     }
 
@@ -395,7 +396,7 @@ public class EventListController {
             System.out.println("✅ " + allEvents.size() + " événements chargés");
         } catch (Exception e) {
             System.err.println("❌ Erreur: " + e.getMessage());
-            showError("Erreur", "Impossible de charger les événements");
+
         }
     }
 

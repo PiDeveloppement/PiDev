@@ -1,7 +1,7 @@
 package com.example.pidev.service.event;
 
 import com.example.pidev.model.event.Event;
-import com.example.pidev.utils.MyDatabase;
+import com.example.pidev.utils.DBConnection;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -19,7 +19,7 @@ public class EventService {
     // ==================== CONSTRUCTEUR ====================
 
     public EventService() {
-        this.connection = MyDatabase.getInstance().getConnection();
+        this.connection = DBConnection.getConnection();
     }
 
     // ==================== CREATE ====================

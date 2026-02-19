@@ -7,137 +7,58 @@
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.example.pidev.controller.event.EventTicketListController"
       spacing="0"
-      styleClass="page-background"
-      stylesheets="@../../css/atlantafx-custom.css">
+      style="-fx-background-color: #f8fafc;">
 
-    <!-- ===================== NAVBAR EN HAUT ===================== -->
-    <HBox style="-fx-background-color: linear-gradient(to right, #1e88e5, #0d47a1);
-                 -fx-padding: 15 30; -fx-spacing: 20;"
-          alignment="CENTER_LEFT">
 
-        <HBox spacing="8" alignment="CENTER_LEFT"
-              style="-fx-background-color: rgba(255,255,255,0.15);
-                     -fx-background-radius: 20; -fx-padding: 8 15;"
-              prefWidth="350">
-            <Label text="🔍" style="-fx-text-fill: white; -fx-font-size: 16px;"/>
-            <TextField promptText="Recherche globale..."
-                       style="-fx-background-color: transparent;
-                              -fx-text-fill: white;
-                              -fx-prompt-text-fill: rgba(255,255,255,0.6);
-                              -fx-border-width: 0;"
-                       HBox.hgrow="ALWAYS"/>
-        </HBox>
+    <!-- Barre de filtres (FIXE) -->
+    <HBox style="-fx-background-color: #f1f5f9; -fx-padding: 15 30; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;"
+          spacing="15" alignment="CENTER_LEFT" prefHeight="70">
 
-        <Region HBox.hgrow="ALWAYS"/>
+                <TextField fx:id="searchField"
+                           promptText="🔍 Rechercher un ticket par code..."
+                           style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 8 15; -fx-pref-width: 300;
+                                  -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
 
-        <VBox spacing="2" alignment="CENTER_RIGHT">
-            <Label fx:id="dateLabel" text=""
-                   style="-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: 600;"/>
-            <Label fx:id="timeLabel" text=""
-                   style="-fx-text-fill: rgba(255,255,255,0.8); -fx-font-size: 12px;"/>
-        </VBox>
+                <ComboBox fx:id="eventFilter"
+                          promptText="📅 Événement"
+                          prefWidth="200"
+                          style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 8 15;
+                                 -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
 
-        <Separator orientation="VERTICAL"
-                   style="-fx-background-color: transparent; -fx-pref-height: 40;"/>
-
-        <HBox spacing="10" alignment="CENTER"
-              style="-fx-background-color: rgba(255,255,255,0.1);
-                     -fx-background-radius: 20; -fx-padding: 8 15;">
-            <Label text="👤" style="-fx-text-fill: white; -fx-font-size: 18px;"/>
-            <VBox spacing="1">
-                <Label text="Ons Abdesslem"
-                       style="-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: 600;"/>
-                <Label text="Administrateur"
-                       style="-fx-text-fill: rgba(255,255,255,0.7); -fx-font-size: 11px;"/>
-            </VBox>
-        </HBox>
-    </HBox>
-
-    <!-- ===================== ZONE SCROLLABLE ===================== -->
-    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
-                style="-fx-background-color: transparent; -fx-border-color: transparent;">
-
-        <VBox spacing="0">
-
-            <!-- ===================== HEADER ===================== -->
-            <HBox style="-fx-background-color: white; -fx-padding: 15 30; -fx-border-color: #e9ecef; -fx-border-width: 0 0 1 0;"
-                  alignment="CENTER_LEFT">
-
-                <VBox spacing="3">
-                    <Label text="🎫 Gestion des Tickets"
-                           style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #212529;"/>
-                    <Label text="Gérez les tickets des participants"
-                           style="-fx-font-size: 13px; -fx-text-fill: #6c757d;"/>
-                </VBox>
+                <ComboBox fx:id="statusFilter"
+                          promptText="📊 Statut"
+                          prefWidth="150"
+                          style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 8 15;
+                                 -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
 
-                <HBox spacing="15" alignment="CENTER">
-                    <VBox alignment="CENTER" spacing="4"
-                          style="-fx-padding: 15 28; -fx-background-color: #d1f4e0;
-                                 -fx-background-radius: 10; -fx-border-color: #95d5b2;
-                                 -fx-border-width: 1.5; -fx-border-radius: 10; -fx-min-width: 130;">
-                        <Label fx:id="totalLabel" text="0"
-                               style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1b5e20;"/>
-                        <Label text="Total"
-                               style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #2d6a4f;"/>
-                    </VBox>
+                <Button fx:id="scanBtn" text="📱 Scanner QR" onAction="#handleScan"
+                        style="-fx-background-color: #0D47A1; -fx-text-fill: white; -fx-padding: 8 20;
+                               -fx-background-radius: 8; -fx-cursor: hand;"
+                        minWidth="140"/>
 
-                    <VBox alignment="CENTER" spacing="4"
-                          style="-fx-padding: 15 28; -fx-background-color: #cfe2ff;
-                                 -fx-background-radius: 10; -fx-border-color: #9ec5fe;
-                                 -fx-border-width: 1.5; -fx-border-radius: 10; -fx-min-width: 130;">
-                        <Label fx:id="usedLabel" text="0"
-                               style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #004085;"/>
-                        <Label text="Utilisés"
-                               style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #0056b3;"/>
-                    </VBox>
-                </HBox>
+                <Button fx:id="addBtn" text="➕ Créer un ticket" onAction="#handleAdd"
+                        style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 8 20;
+                               -fx-background-radius: 8; -fx-cursor: hand; -fx-font-weight: bold;"
+                        minWidth="140"/>
             </HBox>
 
-            <!-- ===================== CONTENU ===================== -->
-            <VBox styleClass="page-content" style="-fx-padding: 25 30;">
+            <!-- SCROLLPANE GLOBAL - Tout le contenu peut défiler -->
+            <ScrollPane fitToWidth="true"
+                        vbarPolicy="AS_NEEDED"
+                        style="-fx-background-color: transparent; -fx-border-color: transparent;"
+                        VBox.vgrow="ALWAYS">
 
-                <VBox styleClass="content-card">
+                <!-- Contenu principal qui défile -->
+                <VBox spacing="20" style="-fx-padding: 20 30;">
 
-                    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="section-header">
-                        <Label text="📋" style="-fx-font-size: 18px;"/>
-                        <Label text="Liste des Tickets" styleClass="section-title"/>
-                    </HBox>
-
-                    <!-- TOOLBAR -->
-                    <HBox spacing="15" alignment="CENTER_LEFT" styleClass="toolbar">
-
-                        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-pref-width: 400px;">
-                            <TextField fx:id="searchField"
-                                       promptText="Rechercher un ticket par code..."
-                                       HBox.hgrow="ALWAYS"
-                                       styleClass="filter-input"/>
-                        </HBox>
-
-                        <ComboBox fx:id="eventFilter"
-                                  promptText="▼ Événement"
-                                  prefWidth="200"
-                                  styleClass="filter-input"/>
-
-                        <ComboBox fx:id="statusFilter"
-                                  promptText="▼ Statut"
-                                  prefWidth="150"
-                                  styleClass="filter-input"/>
-
-                        <Region HBox.hgrow="ALWAYS"/>
-
-                        <Button fx:id="scanBtn" text="📱 Scanner QR" onAction="#handleScan"
-                                styleClass="btn-primary"
-                                minWidth="140"/>
-
-                        <Button fx:id="addBtn" text="➕ Créer un ticket" onAction="#handleAdd"
-                                styleClass="btn-primary"
-                                minWidth="140"/>
-                    </HBox>
-
-                    <HBox spacing="15" alignment="CENTER_LEFT" styleClass="toolbar-secondary">
-                        <Button onAction="#handleRefresh" styleClass="btn-refresh-icon">
+                    <!-- Barre de filtres secondaire -->
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Button onAction="#handleRefresh"
+                                style="-fx-background-color: white; -fx-text-fill: #475569; -fx-padding: 8 15;
+                                       -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-width: 1;
+                                       -fx-cursor: hand;">
                             <graphic>
                                 <Label text="🔄" style="-fx-font-size: 16px;"/>
                             </graphic>
@@ -147,13 +68,14 @@
 
                         <Label fx:id="resultLabel"
                                text="0 résultat(s) trouvé(s)"
-                               styleClass="result-label"/>
+                               style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
                     </HBox>
 
                     <!-- TABLEAU -->
                     <TableView fx:id="ticketTable"
-                               prefHeight="600"
-                               styleClass="data-table">
+                               VBox.vgrow="NEVER"
+                               prefHeight="400"
+                               style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-border-radius: 12;">
 
                         <columns>
                             <TableColumn fx:id="ticketCodeCol"
@@ -193,9 +115,35 @@
                         </columnResizePolicy>
                     </TableView>
 
-                </VBox>
-            </VBox>
-        </VBox>
-    </ScrollPane>
+                    <!-- Pagination -->
+                    <HBox spacing="20" alignment="CENTER" style="-fx-padding: 10 0 0 0;">
+                        <HBox spacing="8" alignment="CENTER">
+                            <Button fx:id="prevBtn" text="« Précédent"
+                                    style="-fx-background-color: white; -fx-text-fill: #475569; -fx-padding: 8 16;
+                                           -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-background-radius: 8; -fx-cursor: hand;"/>
 
-</VBox>
+                            <HBox fx:id="paginationContainer" spacing="4" alignment="CENTER">
+                                <!-- Les boutons de pagination seront générés dynamiquement -->
+                            </HBox>
+
+                            <Button fx:id="nextBtn" text="Suivant »"
+                                    style="-fx-background-color: white; -fx-text-fill: #475569; -fx-padding: 8 16;
+                                           -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-background-radius: 8; -fx-cursor: hand;"/>
+                        </HBox>
+
+                        <Region HBox.hgrow="ALWAYS"/>
+
+                        <Label fx:id="pageInfoLabel" text="Page 1 sur 1"
+                               style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                    </HBox>
+
+                    <!-- Footer -->
+                    <HBox alignment="CENTER" style="-fx-padding: 20 0 10 0;">
+                        <Label text="© 2026 EventFlow - Gestion des tickets"
+                               style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
+                    </HBox>
+
+                </VBox> <!-- FIN du VBox contenu -->
+            </ScrollPane> <!-- FIN du ScrollPane -->
+
+</VBox> <!-- FIN du VBox principal -->

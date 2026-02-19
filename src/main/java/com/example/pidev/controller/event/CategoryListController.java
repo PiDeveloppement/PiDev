@@ -1,6 +1,6 @@
 package com.example.pidev.controller.event;
 
-import com.example.pidev.HelloController;
+import com.example.pidev.MainController;
 import com.example.pidev.model.event.EventCategory;
 import com.example.pidev.service.event.EventCategoryService;
 import javafx.animation.KeyFrame;
@@ -59,7 +59,7 @@ public class CategoryListController {
     @FXML private Label pageInfoLabel;
 
     private EventCategoryService categoryService;
-    private HelloController helloController;
+    private MainController helloController;
     private List<EventCategory> allCategories;
     private List<EventCategory> filteredCategories;
 
@@ -103,7 +103,7 @@ public class CategoryListController {
         }
     }
 
-    public void setHelloController(HelloController helloController) {
+    public void setMainController(MainController helloController) {
         this.helloController = helloController;
     }
 
@@ -393,7 +393,6 @@ public class CategoryListController {
             System.out.println("✅ " + allCategories.size() + " catégories chargées");
         } catch (Exception e) {
             System.err.println("❌ Erreur: " + e.getMessage());
-            showError("Erreur", "Impossible de charger les catégories");
         }
     }
 
@@ -510,7 +509,7 @@ public class CategoryListController {
                     if (!searchText.isEmpty()) {
                         boolean nameMatch = cat.getName().toLowerCase().contains(searchText);
                         boolean descMatch = cat.getDescription() != null &&
-                                           cat.getDescription().toLowerCase().contains(searchText);
+                                cat.getDescription().toLowerCase().contains(searchText);
                         if (matchSearch) {
                             String source = nameMatch ? "(nom)" : descMatch ? "(desc)" : "(vide)";
                             System.out.println("   ✅ '" + cat.getName() + "' " + source);

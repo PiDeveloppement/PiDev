@@ -1,6 +1,7 @@
 package com.example.pidev.controller.event;
 
-import com.example.pidev.HelloController;
+import com.example.pidev.MainController;
+import com.example.pidev.MainController;
 import com.example.pidev.model.event.Event;
 import com.example.pidev.model.event.EventCategory;
 import com.example.pidev.service.event.EventService;
@@ -56,7 +57,7 @@ public class EventFormController {
 
     private EventService eventService;
     private EventCategoryService categoryService;
-    private HelloController helloController;
+    private MainController helloController;
     private Event currentEvent;
     private List<EventCategory> allCategories;
 
@@ -215,7 +216,7 @@ public class EventFormController {
         }
     }
 
-    public void setHelloController(HelloController helloController) {
+    public void setMainController(MainController helloController) {
         this.helloController = helloController;
     }
 

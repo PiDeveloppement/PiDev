@@ -1,6 +1,6 @@
 package com.example.pidev.controller.event;
 
-import com.example.pidev.HelloController;
+import com.example.pidev.MainController;
 import com.example.pidev.model.event.EventCategory;
 import com.example.pidev.service.event.EventCategoryService;
 import javafx.animation.KeyFrame;
@@ -49,7 +49,7 @@ public class CategoryFormController {
     // ==================== SERVICES ====================
 
     private EventCategoryService categoryService;
-    private HelloController helloController;
+    private MainController helloController;
     private EventCategory currentCategory;
 
 
@@ -104,7 +104,7 @@ public class CategoryFormController {
         }
     }
 
-    public void setHelloController(HelloController helloController) {
+    public void setMainController(MainController helloController) {
         this.helloController = helloController;
     }
 
