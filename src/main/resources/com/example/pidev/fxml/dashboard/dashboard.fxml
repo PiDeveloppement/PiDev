@@ -12,9 +12,7 @@
       VBox.vgrow="ALWAYS"
       style="-fx-background-color: #f8fafc;">
 
-
-
-    <!-- Contenu avec ScrollPane (AJOUTÉ POUR LE SCROLL) -->
+    <!-- Contenu avec ScrollPane -->
     <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
                 style="-fx-background-color: transparent; -fx-border-color: transparent;"
                 hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
@@ -37,13 +35,13 @@
                                 <Text text="📅" style="-fx-font-size: 16px;"/>
                             </StackPane>
                             <VBox spacing="2">
-                                <Label text="10"
+                                <Label fx:id="totalEventsLabel" text="0"
                                        style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #0ea5e9;"/>
                                 <Label text="Événements"
                                        style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
                             </VBox>
                         </HBox>
-                        <Label text="+2 cette semaine"
+                        <Label fx:id="eventsEvolutionLabel" text="Chargement..."
                                style="-fx-text-fill: #22c55e; -fx-font-size: 12px; -fx-padding: 5 0 0 0;"/>
                     </VBox>
 
@@ -58,35 +56,14 @@
                                 <Text text="👥" style="-fx-font-size: 16px;"/>
                             </StackPane>
                             <VBox spacing="2">
-                                <Label text="1,235"
+                                <Label fx:id="totalParticipantsLabel" text="0"
                                        style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #22c55e;"/>
                                 <Label text="Participants"
                                        style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
                             </VBox>
                         </HBox>
-                        <Label text="+185 cette semaine"
+                        <Label fx:id="participantsEvolutionLabel" text="Chargement..."
                                style="-fx-text-fill: #22c55e; -fx-font-size: 12px; -fx-padding: 5 0 0 0;"/>
-                    </VBox>
-
-                    <!-- Budget total -->
-                    <VBox alignment="CENTER" spacing="5" HBox.hgrow="ALWAYS"
-                          style="-fx-background-color: white; -fx-background-radius: 12;
-                                 -fx-padding: 25 20; -fx-border-color: #e2e8f0; -fx-border-width: 1;
-                                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 8, 0, 0, 2);">
-                        <HBox spacing="10" alignment="CENTER">
-                            <StackPane>
-                                <Circle radius="20" fill="#fef3c7"/>
-                                <Text text="💰" style="-fx-font-size: 16px;"/>
-                            </StackPane>
-                            <VBox spacing="2">
-                                <Label text="€15,230"
-                                       style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #f59e0b;"/>
-                                <Label text="Budget total"
-                                       style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
-                            </VBox>
-                        </HBox>
-                        <Label text="Utilisé: 65%"
-                               style="-fx-text-fill: #f59e0b; -fx-font-size: 12px; -fx-padding: 5 0 0 0;"/>
                     </VBox>
 
                     <!-- Taux participation -->
@@ -100,18 +77,18 @@
                                 <Text text="📈" style="-fx-font-size: 16px;"/>
                             </StackPane>
                             <VBox spacing="2">
-                                <Label text="85%"
+                                <Label fx:id="participationRateLabel" text="0%"
                                        style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #a855f7;"/>
                                 <Label text="Taux participation"
                                        style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
                             </VBox>
                         </HBox>
-                        <Label text="+5% vs dernier mois"
+                        <Label fx:id="participationEvolutionLabel" text="Chargement..."
                                style="-fx-text-fill: #22c55e; -fx-font-size: 12px; -fx-padding: 5 0 0 0;"/>
                     </VBox>
                 </HBox>
 
-                <!-- Graphiques et visualisations (GARDEZ TOUT LE RESTE IDENTIQUE) -->
+                <!-- Graphiques et visualisations -->
                 <HBox spacing="25" VBox.vgrow="ALWAYS">
                     <!-- Événements par statut -->
                     <VBox spacing="15" HBox.hgrow="ALWAYS"
@@ -129,12 +106,12 @@
                             <!-- Planifié -->
                             <VBox spacing="5">
                                 <HBox alignment="CENTER_LEFT" spacing="15">
-                                    <Label text="Planifié" style="-fx-text-fill: #475569; -fx-font-size: 14px; -fx-min-width: 100;"/>
-                                    <Label text="40%" style="-fx-text-fill: #22c55e; -fx-font-size: 14px; -fx-font-weight: bold;"/>
+                                    <Label text="A venir" style="-fx-text-fill: #475569; -fx-font-size: 14px; -fx-min-width: 100;"/>
+                                    <Label fx:id="planifiePercentLabel" text="0%" style="-fx-text-fill: #22c55e; -fx-font-size: 14px; -fx-font-weight: bold;"/>
                                     <Region HBox.hgrow="ALWAYS"/>
-                                    <Label text="4 événements" style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
+                                    <Label fx:id="planifieCountLabel" text="0 événements" style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
                                 </HBox>
-                                <ProgressBar fx:id="planifieProgress" progress="0.4"
+                                <ProgressBar fx:id="planifieProgress" progress="0.0"
                                              style="-fx-accent: #22c55e; -fx-background-color: #e2e8f0; -fx-pref-height: 10; -fx-background-radius: 5;"/>
                             </VBox>
 
@@ -142,11 +119,11 @@
                             <VBox spacing="5">
                                 <HBox alignment="CENTER_LEFT" spacing="15">
                                     <Label text="En cours" style="-fx-text-fill: #475569; -fx-font-size: 14px; -fx-min-width: 100;"/>
-                                    <Label text="30%" style="-fx-text-fill: #3b82f6; -fx-font-size: 14px; -fx-font-weight: bold;"/>
+                                    <Label fx:id="enCoursPercentLabel" text="0%" style="-fx-text-fill: #3b82f6; -fx-font-size: 14px; -fx-font-weight: bold;"/>
                                     <Region HBox.hgrow="ALWAYS"/>
-                                    <Label text="3 événements" style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
+                                    <Label fx:id="enCoursCountLabel" text="0 événements" style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
                                 </HBox>
-                                <ProgressBar fx:id="enCoursProgress" progress="0.3"
+                                <ProgressBar fx:id="enCoursProgress" progress="0.0"
                                              style="-fx-accent: #3b82f6; -fx-background-color: #e2e8f0; -fx-pref-height: 10; -fx-background-radius: 5;"/>
                             </VBox>
 
@@ -154,11 +131,11 @@
                             <VBox spacing="5">
                                 <HBox alignment="CENTER_LEFT" spacing="15">
                                     <Label text="Terminé" style="-fx-text-fill: #475569; -fx-font-size: 14px; -fx-min-width: 100;"/>
-                                    <Label text="30%" style="-fx-text-fill: #94a3b8; -fx-font-size: 14px; -fx-font-weight: bold;"/>
+                                    <Label fx:id="terminePercentLabel" text="0%" style="-fx-text-fill: #94a3b8; -fx-font-size: 14px; -fx-font-weight: bold;"/>
                                     <Region HBox.hgrow="ALWAYS"/>
-                                    <Label text="3 événements" style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
+                                    <Label fx:id="termineCountLabel" text="0 événements" style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
                                 </HBox>
-                                <ProgressBar fx:id="termineProgress" progress="0.3"
+                                <ProgressBar fx:id="termineProgress" progress="0.0"
                                              style="-fx-accent: #94a3b8; -fx-background-color: #e2e8f0; -fx-pref-height: 10; -fx-background-radius: 5;"/>
                             </VBox>
                         </VBox>
@@ -174,66 +151,14 @@
                             <Label text="Événements à Venir"
                                    style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
                             <Region HBox.hgrow="ALWAYS"/>
-                            <Button text="Voir tout"
+                            <Button fx:id="viewAllEventsBtn" text="Voir tout"
                                     style="-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-size: 12px;
                                            -fx-padding: 5 12; -fx-background-radius: 6;"/>
                         </HBox>
 
-                        <!-- Liste des événements à venir -->
-                        <VBox spacing="12" style="-fx-padding: 15 0;">
-                            <!-- Événement 1 -->
-                            <HBox spacing="15" alignment="CENTER_LEFT"
-                                  style="-fx-padding: 15 20; -fx-background-color: #f8fafc; -fx-background-radius: 10;
-                                         -fx-border-color: #e2e8f0; -fx-border-width: 1;">
-                                <StackPane>
-                                    <Circle radius="5" fill="#22c55e"/>
-                                </StackPane>
-                                <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                    <Label text="Conférence IA"
-                                           style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
-                                    <Label text="15 Déc 2024 • Technologie • 150 participants"
-                                           style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
-                                </VBox>
-                                <Label text="Planifié"
-                                       style="-fx-text-fill: #22c55e; -fx-font-size: 12px; -fx-font-weight: bold;
-                                              -fx-padding: 6 15; -fx-background-color: #dcfce7; -fx-background-radius: 15;"/>
-                            </HBox>
-
-                            <!-- Événement 2 -->
-                            <HBox spacing="15" alignment="CENTER_LEFT"
-                                  style="-fx-padding: 15 20; -fx-background-color: #f8fafc; -fx-background-radius: 10;
-                                         -fx-border-color: #e2e8f0; -fx-border-width: 1;">
-                                <StackPane>
-                                    <Circle radius="5" fill="#3b82f6"/>
-                                </StackPane>
-                                <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                    <Label text="Tournoi Sportif"
-                                           style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
-                                    <Label text="20 Nov 2024 • Sport • 200 participants"
-                                           style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
-                                </VBox>
-                                <Label text="En cours"
-                                       style="-fx-text-fill: #3b82f6; -fx-font-size: 12px; -fx-font-weight: bold;
-                                              -fx-padding: 6 15; -fx-background-color: #dbeafe; -fx-background-radius: 15;"/>
-                            </HBox>
-
-                            <!-- Événement 3 -->
-                            <HBox spacing="15" alignment="CENTER_LEFT"
-                                  style="-fx-padding: 15 20; -fx-background-color: #f8fafc; -fx-background-radius: 10;
-                                         -fx-border-color: #e2e8f0; -fx-border-width: 1;">
-                                <StackPane>
-                                    <Circle radius="5" fill="#f59e0b"/>
-                                </StackPane>
-                                <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                    <Label text="Journée Portes Ouvertes"
-                                           style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
-                                    <Label text="28 Sep 2024 • Événement • 300 participants"
-                                           style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
-                                </VBox>
-                                <Label text="À venir"
-                                       style="-fx-text-fill: #f59e0b; -fx-font-size: 12px; -fx-font-weight: bold;
-                                              -fx-padding: 6 15; -fx-background-color: #fef3c7; -fx-background-radius: 15;"/>
-                            </HBox>
+                        <!-- Liste des événements à venir - DYNAMIQUE -->
+                        <VBox fx:id="upcomingEventsContainer" spacing="12" style="-fx-padding: 15 0;">
+                            <!-- Les événements seront ajoutés dynamiquement ici -->
                         </VBox>
                     </VBox>
                 </HBox>
@@ -243,20 +168,11 @@
                     <Label text="⚡ Actions Rapides"
                            style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
                     <HBox spacing="20" alignment="CENTER_LEFT">
-                        <Button fx:id="createEventBtn" text="➕ Créer un événement"
-                                style="-fx-background-color: linear-gradient(to right, #10b981, #059669);
-                                       -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;
-                                       -fx-background-radius: 8; -fx-padding: 12 25;
-                                       -fx-effect: dropshadow(gaussian, rgba(16,185,129,0.3), 4, 0, 0, 2);"/>
-
-                        <Button fx:id="exportBtn" text="📥 Exporter données"
-                                style="-fx-background-color: white; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-font-size: 14px;
-                                       -fx-background-radius: 8; -fx-padding: 12 25; -fx-border-color: #e2e8f0; -fx-border-width: 1;"/>
 
                         <Button fx:id="reportBtn" text="📊 Générer rapport"
                                 style="-fx-background-color: white; -fx-text-fill: #475569; -fx-font-weight: bold; -fx-font-size: 14px;
-                                       -fx-background-radius: 8; -fx-padding: 12 25; -fx-border-color: #e2e8f0; -fx-border-width: 1;"/>
-
+               -fx-background-radius: 8; -fx-padding: 12 25; -fx-border-color: #e2e8f0; -fx-border-width: 1;"
+                                onAction="#generateReport"/>
                         <Region HBox.hgrow="ALWAYS"/>
 
                         <Button fx:id="refreshBtn" text="🔄 Actualiser"

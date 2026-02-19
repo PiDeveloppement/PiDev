@@ -1,9 +1,14 @@
 package com.example.pidev;
 
+import com.example.pidev.controller.dashboard.DashboardController;
+import com.example.pidev.controller.event.*;
 import com.example.pidev.controller.role.RoleController;
 import com.example.pidev.controller.user.EditUserController;
 import com.example.pidev.controller.user.ProfilController;
 import com.example.pidev.controller.user.UserController;
+import com.example.pidev.model.event.Event;
+import com.example.pidev.model.event.EventCategory;
+import com.example.pidev.model.event.EventTicket;
 import com.example.pidev.model.role.Role;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,7 +24,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
@@ -38,9 +42,6 @@ public class MainController {
 
     @FXML
     private VBox pageContentContainer;
-
-
-
 
     @FXML
     private Label pageTitle;
@@ -62,8 +63,10 @@ public class MainController {
 
     @FXML
     private ImageView profileImageView;
+
     @FXML
     private Label userRoleLabel;
+
     @FXML
     private StackPane avatarContainer;
 
@@ -77,19 +80,18 @@ public class MainController {
     @FXML
     private Button dashboardBtn;
     @FXML
-    private Button eventsToggleBtn;  // Bouton principal Événements
+    private Button eventsToggleBtn;
     @FXML
-    private Button usersToggleBtn;    // Participants (changé de usersBtn à usersToggleBtn)
+    private Button usersToggleBtn;
     @FXML
     private Button resourcesToggleBtn;
     @FXML
-    private Button questionnairesToggleBtn;// Bouton principal Ressources
+    private Button questionnairesToggleBtn;
     @FXML
     private Button sponsorsBtn;
     @FXML
     private Button budgetBtn;
-    @FXML
-    private Button settingsBtn;
+
     @FXML
     private Button logoutBtn;
 
@@ -136,8 +138,10 @@ public class MainController {
     private Button reservationsBtn;
     @FXML
     private Text resourcesArrow;
+
     @FXML
-    private TextField globalSearchField; // Ajoutez ce champ
+    private TextField globalSearchField;
+
     // Sous-menus Questionnaires
     @FXML
     private VBox questionnairesSubmenu;
@@ -148,8 +152,11 @@ public class MainController {
     @FXML
     private Text questionnairesArrow;
 
-    private Map<String, PageInfo> pageInfoMap = new HashMap<>();
+    private final Map<String, PageInfo> pageInfoMap = new HashMap<>();
     private Button activeButton;
+
+    // Référence au contrôleur du dashboard pour le rafraîchissement
+    private DashboardController dashboardController;
 
     private static class PageInfo {
         String title;
@@ -168,16 +175,15 @@ public class MainController {
         System.out.println("👤 Rôle connecté dans MainController: " + session.getRole());
         initializePageInfo();
         configureSidebarButtons();
-        hideAllButtons();     // reset complet
+        hideAllButtons();
         configureSidebarByRole();
         updateDateTime();
         loadUserProfileInHeader();
         setupGlobalSearch();
 
-        // Charger le dashboard au lieu des catégories
+        // Charger le dashboard
         loadDashboardView();
 
-        // Mettre le bouton dashboard en actif
         if (dashboardBtn != null) {
             setActiveButton(dashboardBtn);
         }
@@ -252,53 +258,41 @@ public class MainController {
         UserModel currentUser = session.getCurrentUser();
 
         if (currentUser != null) {
-            // Afficher le nom complet
             if (userNameLabel != null) {
                 userNameLabel.setText(session.getFullName());
             }
 
-            // Afficher le rôle de l'utilisateur
             if (userRoleLabel != null) {
                 String roleName = session.getRole();
                 userRoleLabel.setText(roleName);
             }
 
-            // Gérer la photo de profil
             String photoUrl = currentUser.getProfilePictureUrl();
             if (photoUrl != null && !photoUrl.isEmpty()) {
                 try {
-                    // Charger l'image
                     Image image = new Image(photoUrl, 28, 28, true, true);
                     profileImageView.setImage(image);
                     profileImageView.setVisible(true);
 
-                    // IMPORTANT: Appliquer le clip circulaire
                     Circle clip = new Circle(14, 14, 14);
                     profileImageView.setClip(clip);
 
-                    // Cacher les initiales
                     if (initialsContainer != null) {
                         initialsContainer.setVisible(false);
                     }
 
-                    System.out.println("✅ Image de profil chargée et clip appliqué");
+                    System.out.println("✅ Image de profil chargée");
 
                 } catch (Exception e) {
                     System.err.println("Erreur chargement photo: " + e.getMessage());
                     showInitials(session.getInitials());
                 }
             } else {
-                // Pas de photo, afficher les initiales
                 showInitials(session.getInitials());
             }
         } else {
-            // Aucun utilisateur connecté
-            if (userNameLabel != null) {
-                userNameLabel.setText("Invité");
-            }
-            if (userRoleLabel != null) {
-                userRoleLabel.setText("Non connecté");
-            }
+            if (userNameLabel != null) userNameLabel.setText("Invité");
+            if (userRoleLabel != null) userRoleLabel.setText("Non connecté");
             showInitials("?");
         }
     }
@@ -310,40 +304,12 @@ public class MainController {
     private void showInitials(String initials) {
         if (profileImageView != null) {
             profileImageView.setVisible(false);
-            // Enlever le clip pour éviter les problèmes
             profileImageView.setClip(null);
         }
         if (initialsContainer != null) {
             initialsContainer.setVisible(true);
             if (userInitialsText != null) {
                 userInitialsText.setText(initials);
-            }
-        }
-    }
-
-    /**
-     * Applique un clip circulaire à l'image de profil de façon plus robuste
-     */
-    private void applyCircularClip(ImageView imageView, double radius) {
-        if (imageView != null) {
-            // S'assurer que l'image est chargée
-            if (imageView.getImage() != null) {
-                // Créer un cercle avec le bon rayon
-                Circle clip = new Circle(radius, radius, radius);
-
-                // Appliquer le clip
-                imageView.setClip(clip);
-
-                // Important: maintainer le ratio et ajuster la taille
-                imageView.setPreserveRatio(true);
-
-                // Forcer le redimensionnement
-                imageView.setFitHeight(radius * 2);
-                imageView.setFitWidth(radius * 2);
-
-                System.out.println("✅ Clip circulaire appliqué - Rayon: " + radius);
-            } else {
-                System.out.println("⚠️ Image non chargée, clip non appliqué");
             }
         }
     }
@@ -374,7 +340,6 @@ public class MainController {
     // ================= CONFIGURATION SIDEBAR =================
 
     private void configureSidebarButtons() {
-        // Dashboard
         if (dashboardBtn != null) {
             dashboardBtn.setOnAction(e -> {
                 collapseAllSubmenus();
@@ -383,7 +348,6 @@ public class MainController {
             });
         }
 
-        // Événements toggle
         if (eventsToggleBtn != null) {
             eventsToggleBtn.setOnAction(e -> {
                 toggleEvents();
@@ -392,7 +356,6 @@ public class MainController {
             });
         }
 
-        // Participants toggle
         if (usersToggleBtn != null) {
             usersToggleBtn.setOnAction(e -> {
                 toggleUsers();
@@ -401,7 +364,6 @@ public class MainController {
             });
         }
 
-        // Sponsors toggle
         if (sponsorsBtn != null) {
             sponsorsBtn.setOnAction(e -> {
                 toggleSponsors();
@@ -410,7 +372,6 @@ public class MainController {
             });
         }
 
-        // Ressources toggle
         if (resourcesToggleBtn != null) {
             resourcesToggleBtn.setOnAction(e -> {
                 toggleResources();
@@ -419,27 +380,13 @@ public class MainController {
             });
         }
 
-        // Questionnaires toggle
-        if (settingsBtn != null && settingsBtn.getText().equals("Questionnaires")) {
-            settingsBtn.setOnAction(e -> {
-                toggleQuestionnaires();
-                collapseOtherSubmenus("questionnaires");
-                setActiveButton(settingsBtn);
-            });
-        } else if (settingsBtn != null) {
-            settingsBtn.setOnAction(e -> {
-                collapseAllSubmenus();
-                setActiveButton(settingsBtn);
-                loadSettingsView();
-            });
-        }
 
-        // Sous-menus Événements
+
         if (eventsListBtn != null) {
             eventsListBtn.setOnAction(e -> {
                 collapseAllSubmenus();
                 setActiveButton(eventsListBtn);
-                loadEventView();
+                showEventsList();
             });
         }
 
@@ -447,7 +394,7 @@ public class MainController {
             categoriesBtn.setOnAction(e -> {
                 collapseAllSubmenus();
                 setActiveButton(categoriesBtn);
-                loadCategoriesView();
+                showCategories();
             });
         }
 
@@ -455,11 +402,10 @@ public class MainController {
             ticketsBtn.setOnAction(e -> {
                 collapseAllSubmenus();
                 setActiveButton(ticketsBtn);
-                loadTicketsView();
+                showTicketsList();
             });
         }
 
-        // Sous-menus Participants
         if (rolesBtn != null) {
             rolesBtn.setOnAction(e -> {
                 collapseAllSubmenus();
@@ -476,7 +422,6 @@ public class MainController {
             });
         }
 
-        // Sous-menus Sponsors
         if (sponsorsListBtn != null) {
             sponsorsListBtn.setOnAction(e -> {
                 collapseAllSubmenus();
@@ -493,7 +438,6 @@ public class MainController {
             });
         }
 
-        // Sous-menus Ressources
         if (sallesBtn != null) {
             sallesBtn.setOnAction(e -> {
                 collapseAllSubmenus();
@@ -518,7 +462,6 @@ public class MainController {
             });
         }
 
-        // Sous-menus Questionnaires
         if (questionsBtn != null) {
             questionsBtn.setOnAction(e -> {
                 collapseAllSubmenus();
@@ -535,7 +478,6 @@ public class MainController {
             });
         }
 
-        // Budget
         if (budgetBtn != null && budgetBtn.getText().equals("Budget")) {
             budgetBtn.setOnAction(e -> {
                 collapseAllSubmenus();
@@ -544,7 +486,6 @@ public class MainController {
             });
         }
 
-        // Logout
         if (logoutBtn != null) {
             logoutBtn.setOnAction(e -> logout());
         }
@@ -607,23 +548,19 @@ public class MainController {
     }
 
     private void setActiveButton(Button button) {
-        // Liste de tous les boutons
         Button[] allButtons = {
                 dashboardBtn, eventsToggleBtn, eventsListBtn, categoriesBtn, ticketsBtn,
                 usersToggleBtn, rolesBtn, inscriptionsBtn,
                 sponsorsBtn, sponsorsListBtn, contratsBtn,
                 resourcesToggleBtn, sallesBtn, equipementsBtn, reservationsBtn,
-                settingsBtn, questionsBtn, reponsesBtn,
+                 questionsBtn, reponsesBtn,
                 budgetBtn
         };
 
-        // Reset all buttons - use CSS classes instead of inline styles
         for (Button btn : allButtons) {
             if (btn != null) {
-                // Remove any existing style classes
                 btn.getStyleClass().removeAll("main-menu-button", "submenu-button", "sidebar-button-active");
 
-                // Add the appropriate base class based on the button type
                 if (btn == eventsListBtn || btn == categoriesBtn || btn == ticketsBtn ||
                         btn == rolesBtn || btn == inscriptionsBtn ||
                         btn == sponsorsListBtn || btn == contratsBtn ||
@@ -636,16 +573,12 @@ public class MainController {
             }
         }
 
-        // Set active button - add the active class
         if (button != null) {
-            // Remove any existing active class
             for (Button btn : allButtons) {
                 if (btn != null) {
                     btn.getStyleClass().remove("sidebar-button-active");
                 }
             }
-
-            // Add active class to the current button
             button.getStyleClass().add("sidebar-button-active");
         }
     }
@@ -688,6 +621,12 @@ public class MainController {
 
             if ("profile".equals(pageKey) && loader.getController() instanceof ProfilController) {
                 ((ProfilController) loader.getController()).setMainController(this);
+            }
+
+            // Si c'est le dashboard, garder une référence au contrôleur
+            if ("dashboard".equals(pageKey) && loader.getController() instanceof DashboardController) {
+                dashboardController = (DashboardController) loader.getController();
+                dashboardController.setMainController(this);
             }
 
             PageInfo pageInfo = pageInfoMap.get(pageKey);
@@ -735,7 +674,17 @@ public class MainController {
     // ================= MÉTHODES DE NAVIGATION =================
 
     public void loadDashboardView() {
-        loadPage("/com/example/pidev/fxml/dashboard/dashboard.fxml", "dashboard");
+        UserSession session = UserSession.getInstance();
+        String role = session.getRole();
+
+        if (role != null && (role.toLowerCase().contains("participant") ||
+                role.toLowerCase().contains("default") ||
+                role.toLowerCase().contains("invité") ||
+                role.toLowerCase().contains("sponsor") ||
+                role.toLowerCase().contains("organisateur") ||
+                role.toLowerCase().contains("admin"))) {
+            loadPage("/com/example/pidev/fxml/dashboard/dashboard.fxml", "dashboard");
+        }
     }
 
     public void loadEventView() {
@@ -759,14 +708,13 @@ public class MainController {
             UserController controller = loader.getController();
             controller.setMainController(this);
 
-            updatePageHeader("users"); // 👈 AJOUTER CETTE LIGNE
+            updatePageHeader("users");
 
             pageContentContainer.getChildren().setAll(root);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
 
     public void loadRoleView() {
         try {
@@ -776,7 +724,7 @@ public class MainController {
             Parent root = loader.load();
 
             RoleController controller = loader.getController();
-            controller.setMainController(this); // TRÈS IMPORTANT
+            controller.setMainController(this);
 
             pageContentContainer.getChildren().setAll(root);
             updatePageHeader("roles");
@@ -842,6 +790,7 @@ public class MainController {
         collapseAllSubmenus();
         loadPage("/com/example/pidev/fxml/settings/settings.fxml", "settings");
     }
+
     public void loadEditRolePage(Role role) {
         try {
             FXMLLoader loader = new FXMLLoader(
@@ -850,11 +799,11 @@ public class MainController {
             Parent root = loader.load();
 
             com.example.pidev.controller.role.EditRoleController controller = loader.getController();
-            controller.setEditMode(role); // Mode modification
+            controller.setEditMode(role);
             controller.setMainController(this);
 
             pageContentContainer.getChildren().setAll(root);
-            updatePageHeader("roles"); // Mettre à jour le titre si nécessaire
+            updatePageHeader("roles");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -870,11 +819,11 @@ public class MainController {
             Parent root = loader.load();
 
             com.example.pidev.controller.role.EditRoleController controller = loader.getController();
-            controller.setAddMode(); // Mode ajout
+            controller.setAddMode();
             controller.setMainController(this);
 
             pageContentContainer.getChildren().setAll(root);
-            updatePageHeader("roles"); // Mettre à jour le titre si nécessaire
+            updatePageHeader("roles");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -885,6 +834,11 @@ public class MainController {
     @FXML
     public void logout() {
         try {
+            // Nettoyer le dashboard si nécessaire
+            if (dashboardController != null) {
+                dashboardController.cleanup();
+            }
+
             UserSession.getInstance().clearSession();
             Parent root = FXMLLoader.load(getClass().getResource("/com/example/pidev/fxml/auth/login.fxml"));
             Stage stage = HelloApplication.getPrimaryStage();
@@ -895,23 +849,17 @@ public class MainController {
             e.printStackTrace();
         }
     }
+
     public void refreshSidebarForRole() {
-        System.out.println("🔄 Rafraîchissement de la sidebar pour le nouveau rôle");
-
-
-        // Réinitialiser l'affichage des sous-menus
+        System.out.println("🔄 Rafraîchissement de la sidebar");
+        configureSidebarByRole();
         collapseAllSubmenus();
     }
-////////////boutton Recherche Globale///////////////
 
+    // ================= RECHERCHE GLOBALE =================
 
-    // Ajoutez ce champ avec les autres @FXML
-
-
-    // Ajoutez cette méthode dans votre MainController
     private void setupGlobalSearch() {
         if (globalSearchField != null) {
-            // Recherche quand on appuie sur Entrée
             globalSearchField.setOnAction(event -> {
                 String query = globalSearchField.getText().trim();
                 if (!query.isEmpty()) {
@@ -919,7 +867,6 @@ public class MainController {
                 }
             });
 
-            // Optionnel: effacer avec Escape
             globalSearchField.setOnKeyPressed(event -> {
                 if (event.getCode() == KeyCode.ESCAPE) {
                     globalSearchField.clear();
@@ -928,17 +875,11 @@ public class MainController {
         }
     }
 
-    // Méthode de recherche simplifiée
     private void performSimpleSearch(String query) {
         String lowerQuery = query.toLowerCase();
-
-        // Créer une liste simple de résultats
         ObservableList<String> results = FXCollections.observableArrayList();
 
-        // 1. Chercher dans les menus de la sidebar
-        if ("dashboard".contains(lowerQuery)) {
-            results.add("📊 Dashboard");
-        }
+        if ("dashboard".contains(lowerQuery)) results.add("📊 Dashboard");
         if ("événements".contains(lowerQuery) || "events".contains(lowerQuery)) {
             results.add("📅 Événements");
             results.add("   📋 Liste des événements");
@@ -970,7 +911,6 @@ public class MainController {
             results.add("⚙️ Paramètres");
         }
 
-        // Afficher les résultats
         if (results.isEmpty()) {
             showSimpleAlert("Aucun résultat", "Aucun résultat trouvé pour: " + query);
         } else {
@@ -978,9 +918,7 @@ public class MainController {
         }
     }
 
-    // Popup simple pour les résultats
     private void showSimpleResultsPopup(String query, ObservableList<String> results) {
-        // Créer une nouvelle fenêtre
         Stage stage = new Stage();
         stage.setTitle("Résultats de recherche");
         stage.initModality(Modality.APPLICATION_MODAL);
@@ -990,16 +928,13 @@ public class MainController {
         root.setPrefWidth(400);
         root.setMaxWidth(400);
 
-        // En-tête
         Label titleLabel = new Label("Résultats pour: \"" + query + "\"");
         titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0D47A1;");
 
-        // Liste des résultats
         ListView<String> listView = new ListView<>(results);
         listView.setPrefHeight(Math.min(300, results.size() * 40));
         listView.setStyle("-fx-background-color: transparent;");
 
-        // Action au clic
         listView.setOnMouseClicked(event -> {
             String selected = listView.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -1008,7 +943,6 @@ public class MainController {
             }
         });
 
-        // Bouton fermer
         Button closeBtn = new Button("Fermer");
         closeBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; " +
                 "-fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;");
@@ -1019,56 +953,32 @@ public class MainController {
         buttonBar.getChildren().add(closeBtn);
 
         root.getChildren().addAll(titleLabel, listView, buttonBar);
-
-        Scene scene = new Scene(root);
-        stage.setScene(scene);
+        stage.setScene(new Scene(root));
         stage.show();
     }
 
-    // Navigation depuis les résultats
     private void navigateFromSearch(String selected) {
-        if (selected.contains("Dashboard")) {
-            dashboardBtn.fire();
-        } else if (selected.contains("Événements") && !selected.contains("  ")) {
-            eventsToggleBtn.fire();
-        } else if (selected.contains("Liste événements")) {
-            eventsListBtn.fire();
-        } else if (selected.contains("Catégories")) {
-            categoriesBtn.fire();
-        } else if (selected.contains("Billets")) {
-            ticketsBtn.fire();
-        } else if (selected.contains("Participants") && !selected.contains("  ")) {
-            usersToggleBtn.fire();
-        } else if (selected.contains("Rôles")) {
-            rolesBtn.fire();
-        } else if (selected.contains("Inscriptions")) {
-            inscriptionsBtn.fire();
-        } else if (selected.contains("Sponsors") && !selected.contains("  ")) {
-            sponsorsBtn.fire();
-        } else if (selected.contains("Liste sponsors")) {
-            sponsorsListBtn.fire();
-        } else if (selected.contains("Contrats")) {
-            contratsBtn.fire();
-        } else if (selected.contains("Ressources") && !selected.contains("  ")) {
-            resourcesToggleBtn.fire();
-        } else if (selected.contains("Budget")) {
-            budgetBtn.fire();
-        } else if (selected.contains("Équipements")) {
-            equipementsBtn.fire();
-        } else if (selected.contains("Salles")) {
-            sallesBtn.fire();
-        } else if (selected.contains("Questionnaires") && !selected.contains("  ")) {
-            questionnairesToggleBtn.fire();
-        } else if (selected.contains("Questions")) {
-            questionsBtn.fire();
-        } else if (selected.contains("Réponses")) {
-            reponsesBtn.fire();
-        } else if (selected.contains("Paramètres")) {
-            settingsBtn.fire();
-        }
+        if (selected.contains("Dashboard")) dashboardBtn.fire();
+        else if (selected.contains("Événements") && !selected.contains("  ")) eventsToggleBtn.fire();
+        else if (selected.contains("Liste événements")) eventsListBtn.fire();
+        else if (selected.contains("Catégories")) categoriesBtn.fire();
+        else if (selected.contains("Billets")) ticketsBtn.fire();
+        else if (selected.contains("Participants") && !selected.contains("  ")) usersToggleBtn.fire();
+        else if (selected.contains("Rôles")) rolesBtn.fire();
+        else if (selected.contains("Inscriptions")) inscriptionsBtn.fire();
+        else if (selected.contains("Sponsors") && !selected.contains("  ")) sponsorsBtn.fire();
+        else if (selected.contains("Liste sponsors")) sponsorsListBtn.fire();
+        else if (selected.contains("Contrats")) contratsBtn.fire();
+        else if (selected.contains("Ressources") && !selected.contains("  ")) resourcesToggleBtn.fire();
+        else if (selected.contains("Budget")) budgetBtn.fire();
+        else if (selected.contains("Équipements")) equipementsBtn.fire();
+        else if (selected.contains("Salles")) sallesBtn.fire();
+        else if (selected.contains("Questionnaires") && !selected.contains("  ")) questionnairesToggleBtn.fire();
+        else if (selected.contains("Questions")) questionsBtn.fire();
+        else if (selected.contains("Réponses")) reponsesBtn.fire();
+
     }
 
-    // Alerte simple
     private void showSimpleAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
@@ -1076,25 +986,22 @@ public class MainController {
         alert.setContentText(message);
         alert.showAndWait();
     }
+
     public void loadEditUserPage(UserModel user) {
         try {
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/com/example/pidev/fxml/user/editUser.fxml")
             );
-
             Parent root = loader.load();
-
             EditUserController controller = loader.getController();
-
-            controller.setMainController(this); // ⭐
-            controller.setUser(user);           // ⭐⭐ passer l'utilisateur
-
+            controller.setMainController(this);
+            controller.setUser(user);
             pageContentContainer.getChildren().setAll(root);
-
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
     private void updatePageHeader(String pageKey) {
         PageInfo pageInfo = pageInfoMap.get(pageKey);
         if (pageInfo != null) {
@@ -1103,22 +1010,9 @@ public class MainController {
         }
     }
 
-
-
-
-
-
-
     private void hideAllSubmenus() {
-        VBox[] submenus = {
-                eventsSubmenu, usersSubmenu, sponsorsSubmenu,
-                resourcesSubmenu, questionnairesSubmenu
-        };
-
-        Text[] arrows = {
-                eventsArrow, usersArrow, sponsorsArrow,
-                resourcesArrow, questionnairesArrow
-        };
+        VBox[] submenus = {eventsSubmenu, usersSubmenu, sponsorsSubmenu, resourcesSubmenu, questionnairesSubmenu};
+        Text[] arrows = {eventsArrow, usersArrow, sponsorsArrow, resourcesArrow, questionnairesArrow};
 
         for (VBox submenu : submenus) {
             if (submenu != null) {
@@ -1126,13 +1020,12 @@ public class MainController {
                 submenu.setManaged(false);
             }
         }
-
         for (Text arrow : arrows) {
             if (arrow != null) arrow.setText("▶");
         }
     }
-    private void configureSidebarByRole() {
 
+    private void configureSidebarByRole() {
         UserSession session = UserSession.getInstance();
         String role = session.getRole();
 
@@ -1147,7 +1040,6 @@ public class MainController {
         hideAllButtons();
 
         switch (role) {
-
             case "admin":
             case "admin2":
             case "admin3":
@@ -1171,34 +1063,29 @@ public class MainController {
                 break;
 
             case "participant":
-            case "default":      // 👈 DEFAULT = PARTICIPANT (uniquement dashboard)
+            case "default":
             case "invité":
                 showOnlyParticipantButtons();
                 System.out.println("✅ Participant/Default: uniquement dashboard");
                 break;
 
             default:
-                hideAllButtons(); // sécurité max
-                System.out.println("⚠️ Rôle inconnu: " + role + " - aucun bouton");
+                hideAllButtons();
+                System.out.println("⚠️ Rôle inconnu: " + role);
                 break;
         }
     }
-    private void showOnlyParticipantButtons() {
-        // Participant voit uniquement le dashboard
-        showNode(dashboardBtn);
 
-        // Cache tous les autres boutons
+    private void showOnlyParticipantButtons() {
+        showNode(dashboardBtn);
         hideNode(eventsToggleBtn);
         hideNode(usersToggleBtn);
         hideNode(sponsorsBtn);
         hideNode(resourcesToggleBtn);
         hideNode(questionnairesToggleBtn);
-        hideNode(settingsBtn);
+
         hideNode(budgetBtn);
-
-        // Cache tous les sous-menus
         hideAllSubmenus();
-
         System.out.println("✅ Mode participant activé");
     }
 
@@ -1215,6 +1102,7 @@ public class MainController {
             node.setManaged(true);
         }
     }
+
     private void hideAllButtons() {
         hideNode(dashboardBtn);
         hideNode(sponsorsBtn);
@@ -1222,38 +1110,290 @@ public class MainController {
         hideNode(usersToggleBtn);
         hideNode(resourcesToggleBtn);
         hideNode(questionnairesToggleBtn);
-        hideNode(settingsBtn);
+
         hideNode(budgetBtn);
     }
 
     private void showAllButtons() {
-
         Node[] main = {
                 dashboardBtn, eventsToggleBtn, usersToggleBtn, sponsorsBtn,
                 resourcesToggleBtn, questionnairesToggleBtn,
-                settingsBtn, budgetBtn
+               budgetBtn
         };
-
         for (Node n : main) showNode(n);
-
         collapseAllSubmenus();
     }
-    private void showOnlySponsorButtons() {
 
+    private void showOnlySponsorButtons() {
         showNode(dashboardBtn);
         showNode(sponsorsBtn);
         showNode(budgetBtn);
-
         hideNode(eventsToggleBtn);
         hideNode(usersToggleBtn);
         hideNode(resourcesToggleBtn);
         hideNode(questionnairesToggleBtn);
-        hideNode(settingsBtn);
-
 
         hideAllSubmenus();
     }
 
+    // ================= MÉTHODES POUR LES ÉVÉNEMENTS =================
 
+    public void showEventsList() {
+        System.out.println("📋 Navigation vers Liste des événements");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/event/event-list.fxml")
+            );
+            Parent page = loader.load();
 
+            Object controller = loader.getController();
+            if (controller instanceof EventListController) {
+                ((EventListController) controller).setMainController(this);
+                System.out.println("✅ EventListController connecté");
+            }
+
+            pageContentContainer.getChildren().clear();
+            pageContentContainer.getChildren().add(page);
+            updatePageHeader("events");
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur chargement liste événements: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void showEventForm(Event event) {
+        try {
+            System.out.println("📝 Formulaire événement");
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/event/event-form.fxml")
+            );
+            Parent page = loader.load();
+
+            Object controller = loader.getController();
+            if (controller instanceof EventFormController) {
+                ((EventFormController) controller).setMainController(this);
+                if (event != null) {
+                    ((EventFormController) controller).setEvent(event);
+                }
+            }
+
+            pageContentContainer.getChildren().clear();
+            pageContentContainer.getChildren().add(page);
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur chargement formulaire événement: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void showEventView(Event event) {
+        try {
+            System.out.println("👁️ Vue détaillée de l'événement: " + event.getTitle());
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/event/event-view.fxml")
+            );
+            Parent page = loader.load();
+
+            Object controller = loader.getController();
+            if (controller instanceof EventViewController) {
+                ((EventViewController) controller).setMainController(this);
+                ((EventViewController) controller).setEvent(event);
+            }
+
+            pageContentContainer.getChildren().clear();
+            pageContentContainer.getChildren().add(page);
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur chargement vue événement: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void showTicketsList() {
+        System.out.println("🎫 Navigation vers Liste des tickets");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/event/ticket-list.fxml")
+            );
+            Parent page = loader.load();
+
+            Object controller = loader.getController();
+            if (controller instanceof EventTicketListController) {
+                ((EventTicketListController) controller).setMainController(this);
+                System.out.println("✅ EventTicketListController connecté");
+            }
+
+            pageContentContainer.getChildren().clear();
+            pageContentContainer.getChildren().add(page);
+            updatePageHeader("tickets");
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur chargement liste tickets: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void showTicketView(EventTicket ticket) {
+        try {
+            System.out.println("👁️ Vue détaillée du ticket: " + ticket.getTicketCode());
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/event/ticket-view.fxml")
+            );
+            Parent page = loader.load();
+
+            Object controller = loader.getController();
+            if (controller instanceof EventTicketViewController) {
+                ((EventTicketViewController) controller).setMainController(this);
+                ((EventTicketViewController) controller).setTicket(ticket);
+            }
+
+            pageContentContainer.getChildren().clear();
+            pageContentContainer.getChildren().add(page);
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur chargement vue ticket: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void showCategories() {
+        System.out.println("🗂️ Navigation vers Catégories");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/event/category-list.fxml")
+            );
+            Parent page = loader.load();
+
+            Object controller = loader.getController();
+            if (controller instanceof CategoryListController) {
+                ((CategoryListController) controller).setMainController(this);
+                System.out.println("✅ CategoryListController connecté");
+            }
+
+            pageContentContainer.getChildren().clear();
+            pageContentContainer.getChildren().add(page);
+            updatePageHeader("categories");
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur chargement liste catégories: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void showCategoryForm(EventCategory category) {
+        try {
+            System.out.println("📝 Formulaire catégorie");
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/event/category-form.fxml")
+            );
+            Parent page = loader.load();
+
+            Object controller = loader.getController();
+            if (controller instanceof CategoryFormController) {
+                ((CategoryFormController) controller).setMainController(this);
+                if (category != null) {
+                    ((CategoryFormController) controller).setCategory(category);
+                }
+            }
+
+            pageContentContainer.getChildren().clear();
+            pageContentContainer.getChildren().add(page);
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur chargement formulaire catégorie: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void showCategoryView(EventCategory category) {
+        try {
+            System.out.println("👁️ Vue détaillée de la catégorie: " + category.getName());
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/event/category-view.fxml")
+            );
+            Parent page = loader.load();
+
+            Object controller = loader.getController();
+            if (controller instanceof CategoryViewController) {
+                ((CategoryViewController) controller).setMainController(this);
+                ((CategoryViewController) controller).setCategory(category);
+            }
+
+            pageContentContainer.getChildren().clear();
+            pageContentContainer.getChildren().add(page);
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur chargement vue catégorie: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void showTickets() {
+        showTicketsList();
+    }
+
+    // ================= MÉTHODES POUR LES RESSOURCES =================
+
+    public void showRooms() {
+        System.out.println("🏢 Navigation vers Salles");
+        loadPage("/com/example/pidev/fxml/reservationRessources/salle.fxml", "salles");
+    }
+
+    public void showEquipments() {
+        System.out.println("💻 Navigation vers Équipements");
+        loadPage("/com/example/pidev/fxml/reservationRessources/equipement.fxml", "equipements");
+    }
+
+    public void showReservations() {
+        System.out.println("📅 Navigation vers Réservations");
+        loadPage("/com/example/pidev/fxml/reservationRessources/reservation.fxml", "reservations");
+    }
+
+    // ================= MÉTHODES DE RAFRAÎCHISSEMENT =================
+
+    /**
+     * Rafraîchit le dashboard si affiché
+     */
+    public void refreshDashboard() {
+        if (dashboardController != null) {
+            System.out.println("🔄 Rafraîchissement du dashboard depuis MainController");
+            dashboardController.refreshData();
+        }
+    }
+
+    /**
+     * Appelé après la sauvegarde d'un événement
+     */
+    public void onEventSaved() {
+        refreshDashboard();
+    }
+
+    /**
+     * Appelé après la sauvegarde d'un participant
+     */
+    public void onParticipantSaved() {
+        refreshDashboard();
+    }
+
+    /**
+     * Appelé après la sauvegarde d'une inscription
+     */
+    public void onInscriptionSaved() {
+        refreshDashboard();
+    }
+
+    /**
+     * Nettoie les ressources avant fermeture
+     */
+    public void cleanup() {
+        if (dashboardController != null) {
+            dashboardController.cleanup();
+        }
+    }
 }
