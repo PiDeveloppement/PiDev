@@ -16,6 +16,10 @@ module com.example.pidev {
     requires jakarta.persistence;          // ← AJOUT ARIJ
     requires java.prefs;                   // ← AJOUT ARIJ
 
+    // iText PDF
+    requires kernel;
+    requires layout;
+
     // ========== EXPORTS ==========
 
     exports com.example.pidev;
@@ -28,6 +32,7 @@ module com.example.pidev {
     exports com.example.pidev.controller.user;      // ← AJOUT ARIJ
     exports com.example.pidev.controller.role;      // ← AJOUT ARIJ
     exports com.example.pidev.controller.sponsor;
+    exports com.example.pidev.controller.front;     // ← AJOUT FRONT OFFICE
     exports com.example.pidev.utils;
 
     // ========== OPENS ==========
@@ -39,5 +44,6 @@ module com.example.pidev {
     opens com.example.pidev.controller.auth to javafx.fxml;      // ← AJOUT ARIJ
     opens com.example.pidev.controller.user to javafx.fxml;      // ← AJOUT ARIJ
     opens com.example.pidev.controller.role to javafx.fxml;      // ← AJOUT ARIJ
+    opens com.example.pidev.controller.front to javafx.fxml;     // ← AJOUT FRONT OFFICE
     opens com.example.pidev.utils to javafx.fxml;
 }

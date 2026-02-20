@@ -183,6 +183,65 @@ public class HelloApplication extends Application {
         }
     }
 
+    // ✅ NOUVELLE MÉTHODE: Page des événements publique (front office)
+    public static void loadPublicEventsPage() {
+        try {
+            System.out.println("📂 Chargement de la page des événements publique");
+
+            Parent root = FXMLLoader.load(
+                    HelloApplication.class.getResource("/com/example/pidev/fxml/front/events.fxml")
+            );
+
+            Scene scene = new Scene(root, 1400, 900);
+            scene.getStylesheets().add(
+                    HelloApplication.class.getResource("/com/example/pidev/css/atlantafx-custom.css").toExternalForm()
+            );
+
+            primaryStage.setTitle("EventFlow - Événements");
+            primaryStage.setScene(scene);
+            primaryStage.setMinWidth(1200);
+            primaryStage.setMinHeight(800);
+            primaryStage.centerOnScreen();
+            primaryStage.show();
+
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors du chargement de la page des événements");
+            e.printStackTrace();
+        }
+    }
+
+    // ✅ NOUVELLE MÉTHODE: Page de détails d'un événement (front office)
+    public static void loadEventDetailsPage(com.example.pidev.model.event.Event event) {
+        try {
+            System.out.println("📂 Chargement de la page de détails de l'événement: " + event.getTitle());
+
+            FXMLLoader loader = new FXMLLoader(
+                    HelloApplication.class.getResource("/com/example/pidev/fxml/front/event-detail.fxml")
+            );
+            Parent root = loader.load();
+
+            // Passer l'événement au contrôleur
+            com.example.pidev.controller.front.EventDetailController controller = loader.getController();
+            controller.setEvent(event);
+
+            Scene scene = new Scene(root, 1400, 900);
+            scene.getStylesheets().add(
+                    HelloApplication.class.getResource("/com/example/pidev/css/atlantafx-custom.css").toExternalForm()
+            );
+
+            primaryStage.setTitle("EventFlow - " + event.getTitle());
+            primaryStage.setScene(scene);
+            primaryStage.setMinWidth(1200);
+            primaryStage.setMinHeight(800);
+            primaryStage.centerOnScreen();
+            primaryStage.show();
+
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors du chargement de la page de détails");
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) {
         launch(args);
     }

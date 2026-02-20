@@ -44,6 +44,7 @@
         <Region HBox.hgrow="ALWAYS"/>
 
         <Button text="📄 Exporter PDF"
+                onAction="#handleExportPDF"
                 style="-fx-background-color: #0D47A1; -fx-text-fill: white; -fx-padding: 8 20;
                        -fx-background-radius: 8; -fx-cursor: hand;"
                 minWidth="140"/>
@@ -110,20 +111,18 @@
                 </columnResizePolicy>
             </TableView>
 
-            <!-- Pagination -->
+            <!-- Pagination CORRIGÉE -->
             <HBox spacing="20" alignment="CENTER" style="-fx-padding: 10 0 0 0;">
                 <HBox spacing="8" alignment="CENTER">
+                    <!-- Garde le bouton Précédent -->
                     <Button fx:id="prevBtn" text="« Précédent" onAction="#handlePrevPage"
                             style="-fx-background-color: white; -fx-text-fill: #475569; -fx-padding: 8 16;
-                                   -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-background-radius: 8; -fx-cursor: hand;"/>
+                       -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-background-radius: 8; -fx-cursor: hand;"/>
 
+                    <!-- Le conteneur qui recevra TOUS les boutons de pagination (pages + Suivant) -->
                     <HBox fx:id="paginationContainer" spacing="4" alignment="CENTER">
-                        <!-- Les boutons de pagination seront générés dynamiquement -->
+                        <!-- Les boutons seront générés par le controller -->
                     </HBox>
-
-                    <Button fx:id="nextBtn" text="Suivant »"
-                            style="-fx-background-color: white; -fx-text-fill: #475569; -fx-padding: 8 16;
-                                   -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-background-radius: 8; -fx-cursor: hand;"/>
                 </HBox>
 
                 <Region HBox.hgrow="ALWAYS"/>
@@ -131,7 +130,6 @@
                 <Label fx:id="pageInfoLabel" text="Page 1 sur 1"
                        style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
             </HBox>
-
             <!-- Footer -->
             <HBox alignment="CENTER" style="-fx-padding: 20 0 10 0;">
                 <Label text="© 2026 EventFlow - Gestion des catégories"

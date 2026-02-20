@@ -57,6 +57,11 @@ public class LandingPageController implements Initializable {
         HelloApplication.loadSignupPage();
     }
 
+    @FXML
+    private void handleGoToEvents(ActionEvent event) {
+        HelloApplication.loadPublicEventsPage();
+    }
+
     // Animation simple au survol des cartes (optionnel)
     @FXML
     private void animateCard(javafx.scene.input.MouseEvent event) {

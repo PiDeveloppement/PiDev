@@ -182,13 +182,65 @@ public class CategoryFormController {
     }
 
     private void setupPreviewListeners() {
-        // Mettre à jour l'aperçu de l'icône
+        // Écouter les changements de l'icône
         iconCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) {
+            if (newVal != null && iconPreview != null) {
                 iconPreview.setText(newVal);
-                System.out.println("Icône changée: " + newVal);
             }
         });
+
+        // Écouter les changements de la couleur via le ColorPicker
+        colorPicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                String hexColor = String.format("#%02X%02X%02X",
+                        (int) (newVal.getRed() * 255),
+                        (int) (newVal.getGreen() * 255),
+                        (int) (newVal.getBlue() * 255));
+                colorField.setText(hexColor);
+
+                if (colorPreview != null) {
+                    colorPreview.setStyle("-fx-background-color: " + hexColor + ";");
+                }
+            }
+        });
+
+        // ==================== VALIDATION EN TEMPS RÉEL ====================
+
+        // Validation du nom (max 100 caractères)
+        nameField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (nameError != null) {
+                nameError.setVisible(false);
+                nameField.setStyle(nameField.getStyle().replace("-fx-border-color: #ef4444;", ""));
+            }
+
+            if (newVal != null && newVal.length() > 100) {
+                nameField.setText(oldVal);
+                showTemporaryError(nameError, "❌ Maximum 100 caractères");
+            }
+        });
+
+        // Validation de la description (max 500 caractères)
+        descriptionArea.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && newVal.length() > 500) {
+                descriptionArea.setText(oldVal);
+            }
+        });
+    }
+
+    /**
+     * Affiche temporairement un message d'erreur
+     */
+    private void showTemporaryError(Label errorLabel, String message) {
+        if (errorLabel != null) {
+            errorLabel.setText(message);
+            errorLabel.setVisible(true);
+
+            // Masquer après 3 secondes
+            Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(3), e -> {
+                errorLabel.setVisible(false);
+            }));
+            timeline.play();
+        }
     }
 
 
@@ -234,12 +286,19 @@ public class CategoryFormController {
     private boolean validateForm() {
         boolean isValid = true;
 
+        // Réinitialiser les erreurs
         nameError.setVisible(false);
         nameField.setStyle(nameField.getStyle().replace("-fx-border-color: #ef4444;", ""));
 
+        // ==================== VALIDATION DU NOM ====================
         String name = nameField.getText().trim();
         if (name.isEmpty()) {
             nameError.setText("❌ Le nom est obligatoire");
+            nameError.setVisible(true);
+            nameField.setStyle(nameField.getStyle() + "-fx-border-color: #ef4444; -fx-border-width: 2;");
+            isValid = false;
+        } else if (name.length() < 3) {
+            nameError.setText("❌ Le nom doit contenir au moins 3 caractères");
             nameError.setVisible(true);
             nameField.setStyle(nameField.getStyle() + "-fx-border-color: #ef4444; -fx-border-width: 2;");
             isValid = false;
@@ -250,7 +309,44 @@ public class CategoryFormController {
             isValid = false;
         }
 
+        // ==================== VALIDATION DE LA DESCRIPTION ====================
+        String description = descriptionArea.getText().trim();
+        if (description.isEmpty()) {
+            showAlert("Erreur", "La description est obligatoire", Alert.AlertType.WARNING);
+            descriptionArea.setStyle(descriptionArea.getStyle() + "-fx-border-color: #ef4444; -fx-border-width: 2;");
+            isValid = false;
+        } else if (description.length() < 10) {
+            showAlert("Erreur", "La description doit contenir au moins 10 caractères", Alert.AlertType.WARNING);
+            descriptionArea.setStyle(descriptionArea.getStyle() + "-fx-border-color: #ef4444; -fx-border-width: 2;");
+            isValid = false;
+        } else if (description.length() > 500) {
+            showAlert("Erreur", "La description ne doit pas dépasser 500 caractères", Alert.AlertType.WARNING);
+            descriptionArea.setStyle(descriptionArea.getStyle() + "-fx-border-color: #ef4444; -fx-border-width: 2;");
+            isValid = false;
+        }
+
+        // ==================== VALIDATION DE L'ICÔNE ====================
+        if (iconCombo.getValue() == null || iconCombo.getValue().isEmpty()) {
+            showAlert("Erreur", "Veuillez sélectionner une icône", Alert.AlertType.WARNING);
+            iconCombo.setStyle(iconCombo.getStyle() + "-fx-border-color: #ef4444; -fx-border-width: 2;");
+            isValid = false;
+        }
+
+        // ==================== VALIDATION DE LA COULEUR ====================
+        if (colorField.getText() == null || colorField.getText().trim().isEmpty()) {
+            showAlert("Erreur", "Veuillez sélectionner une couleur", Alert.AlertType.WARNING);
+            isValid = false;
+        }
+
         return isValid;
+    }
+
+    private void showAlert(String title, String message, Alert.AlertType type) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
 
@@ -348,3 +444,5 @@ public class CategoryFormController {
         alert.showAndWait();
     }
 }
+
+

@@ -10,6 +10,9 @@ public class UserSession {
     // Utilisateur connecté
     private UserModel currentUser;
 
+    // ID de l'événement en attente (pour participation après connexion)
+    private Integer pendingEventId;
+
     // Constructeur privé (empêche l'instanciation directe)
     private UserSession() {}
 
@@ -43,6 +46,39 @@ public class UserSession {
         System.out.println("👋 Déconnexion de: " +
                 (currentUser != null ? currentUser.getEmail() : "inconnu"));
         this.currentUser = null;
+        this.pendingEventId = null; // Nettoyer aussi l'événement en attente
+    }
+
+    // ===== Gestion de la participation différée =====
+
+    /**
+     * Sauvegarder l'ID de l'événement pour une participation après connexion
+     */
+    public void setPendingEventId(int eventId) {
+        this.pendingEventId = eventId;
+        System.out.println("📌 Événement en attente de participation: " + eventId);
+    }
+
+    /**
+     * Récupérer l'ID de l'événement en attente
+     */
+    public Integer getPendingEventId() {
+        return pendingEventId;
+    }
+
+    /**
+     * Vérifier s'il y a un événement en attente de participation
+     */
+    public boolean hasPendingEvent() {
+        return pendingEventId != null;
+    }
+
+    /**
+     * Nettoyer l'événement en attente
+     */
+    public void clearPendingEventId() {
+        System.out.println("🧹 Nettoyage de l'événement en attente: " + pendingEventId);
+        this.pendingEventId = null;
     }
 
     // ===== Méthodes utilitaires =====

@@ -1524,6 +1524,8 @@ public class MainController {
         kpiContainer.getChildren().addAll(categoryCard, eventCard);
         kpiContainer.setVisible(true);
         kpiContainer.setManaged(true);
+
+        loadCategoryData();
     }
 
     /**
@@ -1548,6 +1550,8 @@ public class MainController {
         kpiContainer.getChildren().addAll(eventCard, ticketCard);
         kpiContainer.setVisible(true);
         kpiContainer.setManaged(true);
+
+        loadEventData();
     }
 
     /**
@@ -1572,6 +1576,8 @@ public class MainController {
         kpiContainer.getChildren().addAll(ticketCard, eventCard);
         kpiContainer.setVisible(true);
         kpiContainer.setManaged(true);
+
+        loadTicketData();
     }
 
     /**
@@ -1606,8 +1612,79 @@ public class MainController {
         return card;
     }
 
-    // ===========================================
-    // MÉTHODES DE NAVIGATION MISES À JOUR
+    private void loadCategoryData() {
+        try {
+            List<EventCategory> categories = categoryService.getAllCategoriesWithCount();
+            int totalCategories = categories.size();
+            int totalEvents = categories.stream().mapToInt(EventCategory::getEventCount).sum();
+
+            updateLabel("totalCategoriesLabel", String.valueOf(totalCategories));
+            updateLabel("totalEventsLabel", String.valueOf(totalEvents));
+        } catch (Exception e) {
+            System.err.println("❌ Erreur chargement KPI catégories: " + e.getMessage());
+            updateLabel("totalCategoriesLabel", "0");
+            updateLabel("totalEventsLabel", "0");
+        }
+    }
+
+    private void loadEventData() {
+        try {
+            List<Event> events = eventService.getAllEvents();
+            int totalEvents = events.size();
+
+            List<EventTicket> tickets = ticketService.getAllTickets();
+            int totalTickets = tickets.size();
+
+            updateLabel("totalEventsLabel", String.valueOf(totalEvents));
+            updateLabel("totalTicketsLabel", String.valueOf(totalTickets));
+        } catch (Exception e) {
+            System.err.println("❌ Erreur chargement KPI événements: " + e.getMessage());
+            updateLabel("totalEventsLabel", "0");
+            updateLabel("totalTicketsLabel", "0");
+        }
+    }
+
+    private void loadTicketData() {
+        try {
+            List<EventTicket> tickets = ticketService.getAllTickets();
+            int totalTickets = tickets.size();
+
+            long totalEvents = tickets.stream()
+                    .map(EventTicket::getEventId)
+                    .distinct()
+                    .count();
+
+            updateLabel("totalTicketsLabel", String.valueOf(totalTickets));
+            updateLabel("totalEventsLabel", String.valueOf(totalEvents));
+        } catch (Exception e) {
+            System.err.println("❌ Erreur chargement KPI tickets: " + e.getMessage());
+            updateLabel("totalTicketsLabel", "0");
+            updateLabel("totalEventsLabel", "0");
+        }
+    }
+
+    private void updateLabel(String id, String value) {
+        if (kpiContainer == null || id == null) {
+            return;
+        }
+
+        for (Node node : kpiContainer.getChildren()) {
+            if (node instanceof VBox) {
+                VBox card = (VBox) node;
+                for (Node child : card.getChildren()) {
+                    if (child instanceof Label) {
+                        Label label = (Label) child;
+                        if (id.equals(label.getId())) {
+                            label.setText(value);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ================= MÉTHODES DE NAVIGATION MISES À JOUR
     // ===========================================
 
     public void showCategories() {
@@ -1679,3 +1756,4 @@ public class MainController {
         }
     }
 }
+

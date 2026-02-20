@@ -188,12 +188,80 @@ public class EventFormController {
     }
 
     private void setupListeners() {
+        // Activer/désactiver le champ prix selon le checkbox
         freeCheckbox.selectedProperty().addListener((obs, old, isFree) -> {
             priceField.setDisable(isFree);
             if (isFree) {
                 priceField.setText("0");
             }
         });
+
+        // ==================== VALIDATION EN TEMPS RÉEL ====================
+
+        // Validation du titre (texte uniquement, max 200 caractères)
+        titleField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (titleError != null) {
+                titleError.setVisible(false);
+                titleField.setStyle(titleField.getStyle().replace("-fx-border-color: #ef4444;", ""));
+            }
+
+            if (newVal != null && newVal.length() > 200) {
+                titleField.setText(oldVal);
+                showTemporaryError(titleError, "❌ Maximum 200 caractères");
+            }
+        });
+
+        // Validation de la capacité (nombres uniquement)
+        capacityField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal.matches("\\d*")) {
+                capacityField.setText(newVal.replaceAll("[^\\d]", ""));
+            }
+            // Limiter à 6 chiffres maximum (999999)
+            if (newVal.length() > 6) {
+                capacityField.setText(oldVal);
+            }
+        });
+
+        // Validation du prix (nombres décimaux uniquement)
+        priceField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal.matches("\\d*\\.?\\d*")) {
+                priceField.setText(oldVal);
+            }
+            // Limiter à 10 caractères maximum (ex: 99999.99)
+            if (newVal.length() > 10) {
+                priceField.setText(oldVal);
+            }
+        });
+
+        // Validation de la description (max 1000 caractères)
+        descriptionArea.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && newVal.length() > 1000) {
+                descriptionArea.setText(oldVal);
+            }
+        });
+
+        // Validation du lieu (max 200 caractères)
+        locationField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && newVal.length() > 200) {
+                locationField.setText(oldVal);
+            }
+        });
+    }
+
+    /**
+     * Affiche temporairement un message d'erreur
+     */
+    private void showTemporaryError(Label errorLabel, String message) {
+        if (errorLabel != null) {
+            errorLabel.setText(message);
+            errorLabel.setVisible(true);
+
+            // Masquer après 3 secondes
+            Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(3), e -> {
+                errorLabel.setVisible(false);
+            }));
+            timeline.play();
+        }
     }
 
     private void setDefaultValues() {
@@ -270,16 +338,22 @@ public class EventFormController {
     private boolean validateForm() {
         boolean isValid = true;
 
+        // Réinitialiser les erreurs
         titleError.setVisible(false);
         dateError.setVisible(false);
         titleField.setStyle(titleField.getStyle().replace("-fx-border-color: #ef4444;", ""));
         startDatePicker.setStyle(startDatePicker.getStyle().replace("-fx-border-color: #ef4444;", ""));
         endDatePicker.setStyle(endDatePicker.getStyle().replace("-fx-border-color: #ef4444;", ""));
 
-        // Validation titre
+        // ==================== VALIDATION DU TITRE ====================
         String title = titleField.getText().trim();
         if (title.isEmpty()) {
             titleError.setText("❌ Le titre est obligatoire");
+            titleError.setVisible(true);
+            titleField.setStyle(titleField.getStyle() + "-fx-border-color: #ef4444; -fx-border-width: 2;");
+            isValid = false;
+        } else if (title.length() < 3) {
+            titleError.setText("❌ Le titre doit contenir au moins 3 caractères");
             titleError.setVisible(true);
             titleField.setStyle(titleField.getStyle() + "-fx-border-color: #ef4444; -fx-border-width: 2;");
             isValid = false;
@@ -290,7 +364,17 @@ public class EventFormController {
             isValid = false;
         }
 
-        // Validation dates
+        // ==================== VALIDATION DE LA DESCRIPTION ====================
+        String description = descriptionArea.getText().trim();
+        if (description.isEmpty()) {
+            showAlert("Erreur", "La description est obligatoire", Alert.AlertType.WARNING);
+            isValid = false;
+        } else if (description.length() < 10) {
+            showAlert("Erreur", "La description doit contenir au moins 10 caractères", Alert.AlertType.WARNING);
+            isValid = false;
+        }
+
+        // ==================== VALIDATION DES DATES ====================
         if (startDatePicker.getValue() == null) {
             dateError.setText("❌ La date de début est obligatoire");
             dateError.setVisible(true);
@@ -305,32 +389,67 @@ public class EventFormController {
             isValid = false;
         }
 
-        // Les Spinner gèrent déjà la validation des heures avec min/max
+        // Vérifier que la date de fin est après la date de début
+        if (startDatePicker.getValue() != null && endDatePicker.getValue() != null) {
+            LocalDateTime startDateTime = LocalDateTime.of(
+                startDatePicker.getValue(),
+                LocalTime.of(startHourSpinner.getValue(), startMinuteSpinner.getValue())
+            );
+            LocalDateTime endDateTime = LocalDateTime.of(
+                endDatePicker.getValue(),
+                LocalTime.of(endHourSpinner.getValue(), endMinuteSpinner.getValue())
+            );
 
-        // Validation capacité
-        try {
-            int capacity = Integer.parseInt(capacityField.getText());
-            if (capacity <= 0) {
-                throw new NumberFormatException();
-            }
-        } catch (NumberFormatException e) {
-            isValid = false;
-        }
-
-        // Validation prix
-        if (!freeCheckbox.isSelected()) {
-            try {
-                double price = Double.parseDouble(priceField.getText());
-                if (price < 0) {
-                    throw new NumberFormatException();
-                }
-            } catch (NumberFormatException e) {
+            if (endDateTime.isBefore(startDateTime) || endDateTime.equals(startDateTime)) {
+                dateError.setText("❌ La date de fin doit être après la date de début");
+                dateError.setVisible(true);
+                endDatePicker.setStyle(endDatePicker.getStyle() + "-fx-border-color: #ef4444; -fx-border-width: 2;");
                 isValid = false;
             }
         }
 
-        // Validation catégorie
-        if (categoryCombo.getValue() == null) {
+        // ==================== VALIDATION DU LIEU ====================
+        String location = locationField.getText().trim();
+        if (location.isEmpty()) {
+            showAlert("Erreur", "Le lieu est obligatoire", Alert.AlertType.WARNING);
+            isValid = false;
+        } else if (location.length() < 3) {
+            showAlert("Erreur", "Le lieu doit contenir au moins 3 caractères", Alert.AlertType.WARNING);
+            isValid = false;
+        }
+
+        // ==================== VALIDATION DE LA CAPACITÉ ====================
+        try {
+            int capacity = Integer.parseInt(capacityField.getText().trim());
+            if (capacity <= 0) {
+                showAlert("Erreur", "La capacité doit être supérieure à 0", Alert.AlertType.WARNING);
+                isValid = false;
+            } else if (capacity > 999999) {
+                showAlert("Erreur", "La capacité ne peut pas dépasser 999999", Alert.AlertType.WARNING);
+                isValid = false;
+            }
+        } catch (NumberFormatException e) {
+            showAlert("Erreur", "La capacité doit être un nombre valide", Alert.AlertType.WARNING);
+            isValid = false;
+        }
+
+        // ==================== VALIDATION DU PRIX ====================
+        if (!freeCheckbox.isSelected()) {
+            try {
+                double price = Double.parseDouble(priceField.getText().trim());
+                if (price <= 0) {
+                    showAlert("Erreur", "Le prix doit être supérieur à 0", Alert.AlertType.WARNING);
+                    isValid = false;
+                }
+            } catch (NumberFormatException e) {
+                showAlert("Erreur", "Le prix doit être un nombre valide", Alert.AlertType.WARNING);
+                isValid = false;
+            }
+        }
+
+        // ==================== VALIDATION DE LA CATÉGORIE ====================
+        if (categoryCombo.getValue() == null || categoryCombo.getValue().isEmpty()) {
+            showAlert("Erreur", "Veuillez sélectionner une catégorie", Alert.AlertType.WARNING);
             isValid = false;
         }
 
@@ -448,6 +567,14 @@ public class EventFormController {
     }
 
     // ==================== DIALOGS ====================
+
+    private void showAlert(String title, String message, Alert.AlertType type) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
 
     private void showError(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
