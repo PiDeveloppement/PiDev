@@ -1,6 +1,7 @@
 package com.example.pidev.controller.budget;
 
 import com.example.pidev.model.budget.Budget;
+import com.example.pidev.service.event.EventService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -10,7 +11,9 @@ public class BudgetCardController {
     @FXML private Label titleLabel;
     @FXML private Label rentLabel;
 
-    @FXML private Label idLabel;
+    // ✅ ID supprimé
+    // @FXML private Label idLabel;
+
     @FXML private Label eventLabel;
 
     @FXML private Label initialLabel;
@@ -19,20 +22,28 @@ public class BudgetCardController {
 
     @FXML private Label statusLabel;
 
-    // optionnel si tu gardes rent2Label dans FXML
     @FXML private Label rent2Label;
 
     @FXML private Button detailsBtn;
     @FXML private Button editBtn;
     @FXML private Button deleteBtn;
 
+    private final EventService eventService = new EventService();
+
     public void setData(Budget b, Runnable onDetails, Runnable onEdit, Runnable onDelete) {
         if (b == null) return;
 
         if (titleLabel != null) titleLabel.setText("Budget");
 
-        if (idLabel != null) idLabel.setText("ID: " + b.getId());
-        if (eventLabel != null) eventLabel.setText("Event: " + b.getEvent_id());
+        // ✅ plus d'affichage ID
+        if (eventLabel != null) {
+            try {
+                String eventTitle = eventService.getEventTitleById(b.getEvent_id());
+                eventLabel.setText("Événement: " + eventTitle);
+            } catch (Exception e) {
+                eventLabel.setText("Événement: (ID: " + b.getEvent_id() + ")");
+            }
+        }
 
         if (initialLabel != null) initialLabel.setText(String.format("%,.2f DT", b.getInitial_budget()));
         if (expensesLabel != null) expensesLabel.setText(String.format("%,.2f DT", b.getTotal_expenses()));

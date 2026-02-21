@@ -1,7 +1,9 @@
 package com.example.pidev.controller.budget;
 
+import com.example.pidev.MainController;
 import com.example.pidev.model.budget.Budget;
 import com.example.pidev.service.budget.BudgetService;
+import com.example.pidev.service.event.EventService;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -11,37 +13,36 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.TilePane;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class BudgetListController implements Initializable {
 
-    // KPI (match budget.fxml)
+    @FXML private ScrollPane pageScroll;
+
+    // KPI
     @FXML private Label kpiCountLabel;
     @FXML private Label kpiInitialLabel;
     @FXML private Label kpiRentLabel;
     @FXML private Label kpiDeficitLabel;
 
-    // Filters (match budget.fxml)
-    @FXML private TextField searchField;
-    @FXML private ComboBox<Integer> eventFilter;
+    // Filters
+    @FXML private ComboBox<String> healthFilter;
+    @FXML private ComboBox<String> eventFilter;
     @FXML private ComboBox<String> statusFilter;
     @FXML private Button addBtn;
 
     @FXML private Label statusLabel;
 
-    // Cards/Grid (match budget.fxml)
-    @FXML private ScrollPane cardsScroll;
+    // Cards
     @FXML private TilePane cardsPane;
 
     private final BudgetService budgetService = new BudgetService();
+    private final EventService eventService = new EventService();
 
     private final ObservableList<Budget> baseList = FXCollections.observableArrayList();
     private FilteredList<Budget> filtered;
@@ -56,24 +57,27 @@ public class BudgetListController implements Initializable {
         filtered = new FilteredList<>(baseList, b -> true);
         filtered.addListener((ListChangeListener<Budget>) c -> renderCards());
 
-        if (searchField != null) searchField.textProperty().addListener((obs, o, n) -> applyPredicate());
-        if (eventFilter != null) eventFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
+        if (healthFilter != null) healthFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
+        if (eventFilter  != null) eventFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
         if (statusFilter != null) statusFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
 
         if (addBtn != null) addBtn.setOnAction(e -> onAdd());
 
-        if (cardsScroll != null && cardsPane != null) {
+        if (cardsPane != null) {
             cardsPane.setPadding(new Insets(8));
             cardsPane.setHgap(14);
             cardsPane.setVgap(14);
+        }
 
-            cardsScroll.viewportBoundsProperty().addListener((obs, oldB, b) ->
+        // ✅ colonnes responsive selon largeur viewport du scroll global
+        if (pageScroll != null && cardsPane != null) {
+            pageScroll.viewportBoundsProperty().addListener((obs, oldB, b) ->
                     cardsPane.setPrefColumns(computeCols(b.getWidth()))
             );
         }
 
-        setupFilters();
-        loadData();
+        setupFiltersSafe();
+        loadDataSafe();
         applyPredicate();
     }
 
@@ -83,62 +87,103 @@ public class BudgetListController implements Initializable {
         return 3;
     }
 
-    private void setupFilters() {
-        if (eventFilter != null) {
-            eventFilter.getItems().setAll(budgetService.getEventIdsFromBudgets());
-            eventFilter.setValue(null);
+    // ✅ important: ne jamais laisser une exception casser initialize
+    private void setupFiltersSafe() {
+        if (healthFilter != null) {
+            healthFilter.getItems().setAll("Tous", "🟢 Excellent", "🔵 Bon", "🟡 Fragile", "🔴 Critique");
+            healthFilter.setValue("Tous");
         }
+
         if (statusFilter != null) {
             statusFilter.getItems().setAll("Tous", "OK", "Déficit");
             statusFilter.setValue("Tous");
         }
+
+        if (eventFilter != null) {
+            try {
+                eventFilter.getItems().setAll(eventService.getAllEventTitles());
+            } catch (Exception e) {
+                eventFilter.getItems().clear();
+            }
+            eventFilter.setValue(null);
+        }
     }
 
-    private void loadData() {
-        baseList.setAll(budgetService.getAllBudgets());
-        updateKpis();
+    private void loadDataSafe() {
+        try {
+            baseList.setAll(budgetService.getAllBudgets());
+            updateKpis();
 
-        if (statusLabel != null) {
-            statusLabel.setText("📊 " + baseList.size() + " budget(s) • Mise à jour: Maintenant");
+            if (statusLabel != null) {
+                statusLabel.setText("📊 " + baseList.size() + " budget(s) • Mise à jour: Maintenant");
+            }
+
+            renderCards();
+        } catch (Exception e) {
+            if (statusLabel != null) {
+                statusLabel.setText("❌ Erreur chargement budgets: " + e.getMessage());
+            }
         }
-        renderCards();
     }
 
     private void updateKpis() {
-        if (kpiCountLabel != null) kpiCountLabel.setText(String.valueOf(budgetService.countBudgets()));
+        if (kpiCountLabel   != null) kpiCountLabel.setText(String.valueOf(budgetService.countBudgets()));
         if (kpiInitialLabel != null) kpiInitialLabel.setText(String.format("%,.2f DT", budgetService.sumInitial()));
-        if (kpiRentLabel != null) kpiRentLabel.setText(String.format("%,.2f DT", budgetService.globalRentability()));
+        if (kpiRentLabel    != null) kpiRentLabel.setText(String.format("%,.2f DT", budgetService.globalRentability()));
         if (kpiDeficitLabel != null) kpiDeficitLabel.setText(String.valueOf(budgetService.countDeficitBudgets()));
     }
 
     private void applyPredicate() {
         if (filtered == null) return;
 
-        String q = (searchField == null || searchField.getText() == null)
-                ? "" : searchField.getText().trim().toLowerCase();
+        String selectedHealth =
+                (healthFilter == null || healthFilter.getValue() == null) ? "Tous" : healthFilter.getValue();
 
-        Integer ev = (eventFilter == null) ? null : eventFilter.getValue();
+        String selectedEventTitle = (eventFilter == null) ? null : eventFilter.getValue();
+        Integer eventId = null;
+        if (selectedEventTitle != null && !selectedEventTitle.isEmpty()) {
+            try {
+                eventId = eventService.getEventIdByTitle(selectedEventTitle);
+            } catch (Exception ignored) {
+                eventId = null;
+            }
+        }
+
         String st = (statusFilter == null || statusFilter.getValue() == null) ? "Tous" : statusFilter.getValue();
+        Integer finalEventId = eventId;
 
         filtered.setPredicate(b -> {
-            boolean okQ = q.isEmpty()
-                    || String.valueOf(b.getId()).contains(q)
-                    || String.valueOf(b.getEvent_id()).contains(q);
-
-            boolean okEv = (ev == null) || b.getEvent_id() == ev;
+            boolean okHealth = matchesHealth(b, selectedHealth);
+            boolean okEv = (finalEventId == null) || b.getEvent_id() == finalEventId;
 
             boolean okStatus;
             if ("OK".equalsIgnoreCase(st)) okStatus = b.getRentabilite() >= 0;
             else if ("Déficit".equalsIgnoreCase(st)) okStatus = b.getRentabilite() < 0;
             else okStatus = true;
 
-            return okQ && okEv && okStatus;
+            return okHealth && okEv && okStatus;
         });
 
         if (statusLabel != null) {
             statusLabel.setText("📊 " + filtered.size() + " budget(s) filtrés • Mise à jour: Maintenant");
         }
         renderCards();
+    }
+
+    private String getFinancialHealth(Budget b) {
+        if (b == null) return "Tous";
+        double initial = b.getInitial_budget();
+        double rent = b.getRentabilite();
+
+        if (rent >= initial * 0.5) return "🟢 Excellent";
+        if (rent >= 0) return "🔵 Bon";
+        if (rent >= -initial * 0.2) return "🟡 Fragile";
+        return "🔴 Critique";
+    }
+
+    private boolean matchesHealth(Budget b, String selectedHealth) {
+        if ("Tous".equalsIgnoreCase(selectedHealth)) return true;
+        return getFinancialHealth(b).contains(selectedHealth);
     }
 
     private void renderCards() {
@@ -159,9 +204,9 @@ public class BudgetListController implements Initializable {
                 BudgetCardController cell = loader.getController();
                 cell.setData(
                         b,
-                        () -> openDetails(b),
+                        () -> openDetailsAsPage(b),
                         () -> onEdit(b),
-                        () -> onDelete(b)
+                        () -> onDeleteNoIdText(b)
                 );
 
                 cardsPane.getChildren().add(cardRoot);
@@ -172,45 +217,35 @@ public class BudgetListController implements Initializable {
     }
 
     private void onAdd() {
-        Budget b = openForm(null);
-        if (b == null) return;
-
-        try {
-            budgetService.addBudget(b);
-            setupFilters();
-            loadData();
-            openDetails(b);
-        } catch (Exception ex) {
-            showError("Erreur ajout", ex.getMessage());
-        }
+        openFormAsPage(null);
     }
 
     private void onEdit(Budget existing) {
-        Budget b = openForm(existing);
-        if (b == null) return;
-
-        try {
-            budgetService.updateBudget(b);
-            setupFilters();
-            loadData();
-            openDetails(b);
-        } catch (Exception ex) {
-            showError("Erreur modification", ex.getMessage());
-        }
+        if (existing == null) return;
+        openFormAsPage(existing);
     }
 
-    private void onDelete(Budget b) {
+    // ✅ confirm suppression sans ID dans le message
+    private void onDeleteNoIdText(Budget b) {
+        String eventTitle;
+        try {
+            eventTitle = eventService.getEventTitleById(b.getEvent_id());
+        } catch (Exception e) {
+            eventTitle = "cet événement";
+        }
+
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Suppression");
         confirm.setHeaderText("Supprimer budget");
-        confirm.setContentText("Supprimer budget ID=" + b.getId() + " ?");
+        confirm.setContentText("Voulez-vous supprimer le budget de : " + eventTitle + " ?");
 
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
                 try {
                     budgetService.deleteBudget(b.getId());
-                    setupFilters();
-                    loadData();
+                    setupFiltersSafe();
+                    loadDataSafe();
+                    applyPredicate();
                 } catch (Exception ex) {
                     showError("Erreur suppression", ex.getMessage());
                 }
@@ -218,47 +253,48 @@ public class BudgetListController implements Initializable {
         });
     }
 
-    private Budget openForm(Budget existing) {
+    // ✅ Form en page + après save -> ouvre details en page
+    private void openFormAsPage(Budget existing) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(FORM_FXML));
-            Parent root = loader.load();
+            MainController.getInstance().loadIntoCenter(
+                    FORM_FXML,
+                    (BudgetFormController ctrl) -> {
+                        if (existing == null) ctrl.setModeAdd();
+                        else ctrl.setModeEdit(existing);
 
-            BudgetFormController ctrl = loader.getController();
-            if (existing == null) ctrl.setModeAdd();
-            else ctrl.setModeEdit(existing);
+                        ctrl.setOnFormDone(() -> {
+                            Budget saved = ctrl.getResult(); // null si Annuler / erreur
 
-            Stage st = new Stage();
-            st.initModality(Modality.APPLICATION_MODAL);
-            st.setTitle(existing == null ? "Nouveau Budget" : "Modifier Budget");
-            st.setScene(new Scene(root));
-            st.setResizable(false);
-            st.sizeToScene();
-            st.showAndWait();
+                            setupFiltersSafe();
+                            loadDataSafe();
+                            applyPredicate();
 
-            return ctrl.getResult();
+                            if (saved != null) {
+                                openDetailsAsPage(saved);  // ✅ ouvrir details après Add/Edit
+                            } else {
+                                MainController.getInstance().onBudget(); // retour liste
+                            }
+                        });
+                    }
+            );
         } catch (Exception e) {
             showError("UI", "Impossible d'ouvrir le formulaire: " + e.getMessage());
-            return null;
         }
     }
 
-    private void openDetails(Budget b) {
+    // ✅ Details en page
+    private void openDetailsAsPage(Budget b) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(DETAILS_FXML));
-            Parent root = loader.load();
-
-            BudgetDetailsController ctrl = loader.getController();
-            ctrl.setBudget(b);
-
-            Stage st = new Stage();
-            st.initModality(Modality.APPLICATION_MODAL);
-            st.setTitle("Détails Budget");
-            st.setScene(new Scene(root));
-            st.setResizable(false);
-            st.sizeToScene();
-            st.showAndWait();
+            MainController.getInstance().loadIntoCenter(
+                    DETAILS_FXML,
+                    (BudgetDetailsController ctrl) -> {
+                        ctrl.setBudget(b);
+                        // ⚠️ ce nom doit matcher BudgetDetailsController
+                        ctrl.setOnCloseAction(() -> MainController.getInstance().onBudget());
+                    }
+            );
         } catch (Exception e) {
-            showError("Détails", "FXML détails: " + e.getMessage());
+            showError("Détails", "Impossible d'ouvrir les détails: " + e.getMessage());
         }
     }
 

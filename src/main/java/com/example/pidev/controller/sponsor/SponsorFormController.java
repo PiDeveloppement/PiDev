@@ -1,8 +1,11 @@
 package com.example.pidev.controller.sponsor;
 
 import com.example.pidev.model.sponsor.Sponsor;
+import com.example.pidev.service.event.EventService;
+import com.example.pidev.service.sponsor.SponsorService;
 import com.example.pidev.service.upload.CloudinaryUploadService;
 import javafx.fxml.FXML;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
@@ -11,12 +14,13 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public class SponsorFormController {
 
     @FXML private Label titleLabel;
-    @FXML private TextField eventIdField;
+    @FXML private ComboBox<String> eventComboBox;
     @FXML private TextField companyField;
     @FXML private TextField emailField;
 
@@ -33,10 +37,43 @@ public class SponsorFormController {
     private String fixedEmail;
     private File selectedLogoFile;
 
+    // ✅ callbacks
+    private Runnable onFormDone;
+    private Consumer<Sponsor> onSaved; // <-- NEW: pour ouvrir détails après save/update
+
     private final CloudinaryUploadService cloud = new CloudinaryUploadService();
+    private final EventService eventService = new EventService();
+    private final SponsorService sponsorService = new SponsorService();
 
     private static final Pattern EMAIL_RX =
             Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+
+    public void setOnFormDone(Runnable callback) { this.onFormDone = callback; }
+    public void setOnSaved(Consumer<Sponsor> callback) { this.onSaved = callback; }
+
+    public Sponsor getResult() { return result; }
+
+    @FXML
+    private void initialize() {
+        loadEventTitles();
+
+        if (companyField != null) {
+            companyField.textProperty().addListener((obs, old, n) -> {
+                if (n == null) return;
+                String filtered = n.replaceAll("\\d", "");
+                if (filtered.length() > 150) filtered = filtered.substring(0, 150);
+                if (!filtered.equals(n)) companyField.setText(filtered);
+            });
+        }
+    }
+
+    private void loadEventTitles() {
+        try {
+            eventComboBox.setItems(eventService.getAllEventTitles());
+        } catch (Exception e) {
+            error("Erreur chargement événements: " + e.getMessage());
+        }
+    }
 
     public void setFixedEmail(String email) {
         this.fixedEmail = (email == null) ? null : email.trim();
@@ -53,8 +90,9 @@ public class SponsorFormController {
         editing = null;
         result = null;
         clearErrors();
+        loadEventTitles();
 
-        eventIdField.clear();
+        eventComboBox.setValue(null);
         companyField.clear();
         contributionField.clear();
 
@@ -74,19 +112,25 @@ public class SponsorFormController {
     }
 
     public void setModeEdit(Sponsor s) {
-        titleLabel.setText("✏ Modifier Sponsor (ID: " + s.getId() + ")");
+        titleLabel.setText("✏ Modifier Sponsor");
         editing = s;
         result = null;
         clearErrors();
+        loadEventTitles();
 
-        eventIdField.setText(String.valueOf(s.getEvent_id()));
+        try {
+            String eventTitle = eventService.getEventTitleById(s.getEvent_id());
+            eventComboBox.setValue(eventTitle);
+        } catch (Exception e) {
+            // ignore
+        }
+
         companyField.setText(s.getCompany_name());
         contributionField.setText(String.valueOf(s.getContribution_name()));
 
         logoField.setText(s.getLogo_url() == null ? "" : s.getLogo_url());
         selectedLogoFile = null;
 
-        // preview depuis URL existante
         try {
             if (s.getLogo_url() != null && !s.getLogo_url().isBlank()) {
                 logoPreview.setImage(new Image(s.getLogo_url(), true));
@@ -108,8 +152,6 @@ public class SponsorFormController {
         }
     }
 
-    public Sponsor getResult() { return result; }
-
     @FXML
     private void onChooseLogo() {
         clearErrors();
@@ -124,11 +166,8 @@ public class SponsorFormController {
         if (f != null) {
             selectedLogoFile = f;
             if (logoFileLabel != null) logoFileLabel.setText(f.getName());
-
-            // ✅ preview local direct
-            try {
-                logoPreview.setImage(new Image(f.toURI().toString(), true));
-            } catch (Exception ignored) {}
+            try { logoPreview.setImage(new Image(f.toURI().toString(), true)); }
+            catch (Exception ignored) {}
         }
     }
 
@@ -136,7 +175,7 @@ public class SponsorFormController {
     private void onSave() {
         clearErrors();
 
-        String eventTxt = safe(eventIdField.getText());
+        String selectedEventTitle = eventComboBox.getValue();
         String company = safe(companyField.getText());
         String email = safe(emailField.getText());
         String contribTxt = safe(contributionField.getText()).replace(",", ".");
@@ -145,15 +184,19 @@ public class SponsorFormController {
 
         int eventId;
         try {
-            eventId = Integer.parseInt(eventTxt);
-            if (eventId <= 0) { error("event_id doit être > 0"); return; }
-        } catch (NumberFormatException e) {
-            error("event_id doit être un entier (ex: 1)");
+            if (selectedEventTitle == null || selectedEventTitle.isEmpty()) {
+                error("Veuillez sélectionner un événement");
+                return;
+            }
+            eventId = eventService.getEventIdByTitle(selectedEventTitle);
+        } catch (Exception e) {
+            error("Événement invalide: " + e.getMessage());
             return;
         }
 
         if (company.isEmpty()) { error("Entreprise obligatoire"); return; }
         if (company.length() < 2) { error("Entreprise trop courte"); return; }
+        if (company.matches(".*\\d.*")) { error("Entreprise: pas de chiffres"); return; }
 
         if (email.isEmpty()) { error("Email obligatoire"); return; }
         if (!EMAIL_RX.matcher(email).matches()) { error("Email invalide"); return; }
@@ -167,7 +210,6 @@ public class SponsorFormController {
             return;
         }
 
-        // upload logo si choisi
         String logoUrlFinal = safe(logoField.getText());
         try {
             if (selectedLogoFile != null) {
@@ -188,23 +230,56 @@ public class SponsorFormController {
         out.setContribution_name(contribution);
         out.setLogo_url(logoUrlFinal.isEmpty() ? null : logoUrlFinal);
 
-        // contrat gardé si edit
+        // garde contrat/access/user_id si edit
         out.setContract_url(editing == null ? null : editing.getContract_url());
+        out.setAccess_code(editing == null ? null : editing.getAccess_code());
+        out.setUser_id(editing == null ? null : editing.getUser_id());
 
-        result = out;
-        closeWindow();
+        try {
+            if (editing == null) sponsorService.addSponsor(out);
+            else sponsorService.updateSponsor(out);
+
+            // ✅ re-fetch depuis DB (important)
+            Sponsor saved = sponsorService.getSponsorById(out.getId());
+            result = saved != null ? saved : out;
+
+            // ✅ navigation: ouvrir details via callback
+            if (onSaved != null) onSaved.accept(result);
+
+            // ✅ si tu veux aussi refresh parent
+            if (onFormDone != null) onFormDone.run();
+
+            // si popup modal => fermer
+            closeWindowIfModal();
+
+        } catch (Exception ex) {
+            error("Erreur sauvegarde: " + ex.getMessage());
+        }
     }
 
     @FXML
     private void onCancel() {
         result = null;
-        closeWindow();
+        if (onFormDone != null) onFormDone.run();
+        closeWindowIfModal();
+    }
+
+    private void closeWindowIfModal() {
+        // si c'est une page, on ne ferme pas
+        if (onSaved != null) return;
+
+        try {
+            Stage stage = getStage();
+            if (stage != null && stage.isShowing()) stage.close();
+        } catch (Exception ignored) {}
     }
 
     private String safe(String s) { return s == null ? "" : s.trim(); }
     private void error(String msg) { if (errorLabel != null) errorLabel.setText("❌ " + msg); }
     private void clearErrors() { if (errorLabel != null) errorLabel.setText(""); }
 
-    private void closeWindow() { getStage().close(); }
-    private Stage getStage() { return (Stage) eventIdField.getScene().getWindow(); }
+    private Stage getStage() {
+        try { return (Stage) eventComboBox.getScene().getWindow(); }
+        catch (Exception e) { return null; }
+    }
 }

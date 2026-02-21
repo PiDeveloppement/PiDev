@@ -39,28 +39,21 @@
                         <ColumnConstraints hgrow="ALWAYS"/>
                     </columnConstraints>
 
-                    <Label text="ID :" style="-fx-text-fill:#334155; -fx-font-weight:700;" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                    <Label fx:id="idLabel" text="—" style="-fx-text-fill:#0f172a;" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                    <Label text="Entreprise :" style="-fx-text-fill:#334155; -fx-font-weight:700;" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <Label fx:id="companyLabel" text="—" style="-fx-text-fill:#0f172a;" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
-                    <Label text="Event ID :" style="-fx-text-fill:#334155; -fx-font-weight:700;" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                    <Label fx:id="eventIdLabel" text="—" style="-fx-text-fill:#0f172a;" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                    <Label text="Email :" style="-fx-text-fill:#334155; -fx-font-weight:700;" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <Label fx:id="emailLabel" text="—" style="-fx-text-fill:#0f172a;" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
-                    <Label text="Entreprise :" style="-fx-text-fill:#334155; -fx-font-weight:700;" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                    <Label fx:id="companyLabel" text="—" style="-fx-text-fill:#0f172a;" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-
-                    <Label text="Email :" style="-fx-text-fill:#334155; -fx-font-weight:700;" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-                    <Label fx:id="emailLabel" text="—" style="-fx-text-fill:#0f172a;" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
-
-                    <Label text="Contribution :" style="-fx-text-fill:#334155; -fx-font-weight:700;" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                    <Label text="Contribution :" style="-fx-text-fill:#334155; -fx-font-weight:700;" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
                     <Label fx:id="contributionLabel" text="—"
-                           style="-fx-text-fill:#059669; -fx-font-weight:800;" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                           style="-fx-text-fill:#059669; -fx-font-weight:800;" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
-                    <!-- si tu ne veux plus afficher l’URL, tu peux supprimer ces 2 lignes -->
-                    <Label text="Logo URL :" style="-fx-text-fill:#334155; -fx-font-weight:700;" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
-                    <Label fx:id="logoUrlLabel" text="—" wrapText="true" style="-fx-text-fill:#0f172a;" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                    <Label text="Logo URL :" style="-fx-text-fill:#334155; -fx-font-weight:700;" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                    <Label fx:id="logoUrlLabel" text="—" wrapText="true" style="-fx-text-fill:#0f172a;" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
 
-                    <Label text="Contract URL :" style="-fx-text-fill:#334155; -fx-font-weight:700;" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
-                    <Label fx:id="contractUrlLabel" text="—" wrapText="true" style="-fx-text-fill:#0f172a;" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+                    <Label text="Contract URL :" style="-fx-text-fill:#334155; -fx-font-weight:700;" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                    <Label fx:id="contractUrlLabel" text="—" wrapText="true" style="-fx-text-fill:#0f172a;" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
                 </GridPane>
             </VBox>
 

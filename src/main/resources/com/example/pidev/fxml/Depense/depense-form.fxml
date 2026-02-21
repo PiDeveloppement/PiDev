@@ -14,20 +14,25 @@
                style="-fx-font-size:22px; -fx-font-weight:900; -fx-text-fill:#0f172a;"/>
 
         <GridPane hgap="10" vgap="10">
-            <Label text="Budget ID" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-            <TextField fx:id="budgetIdField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+            <columnConstraints>
+                <ColumnConstraints minWidth="100" prefWidth="120" maxWidth="150"/>
+                <ColumnConstraints minWidth="200" prefWidth="250" maxWidth="500" hgrow="ALWAYS"/>
+            </columnConstraints>
+
+            <Label text="Budget" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <ComboBox fx:id="budgetComboBox" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
             <Label text="Description" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-            <TextField fx:id="descField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+            <TextField fx:id="descField" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
             <Label text="Catégorie" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-            <TextField fx:id="categoryField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+            <TextField fx:id="categoryField" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
             <Label text="Montant" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-            <TextField fx:id="amountField" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+            <TextField fx:id="amountField" maxWidth="Infinity" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
 
             <Label text="Date" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-            <DatePicker fx:id="datePicker" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+            <DatePicker fx:id="datePicker" maxWidth="Infinity" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
         </GridPane>
 
         <Label fx:id="errorLabel" text=""

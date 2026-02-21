@@ -6,65 +6,54 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.stage.Stage;
 
 import java.awt.Desktop;
-import java.io.InputStream;
 import java.net.URI;
 
 public class SponsorDetailsController {
 
-    @FXML private ImageView appLogoView;
-    @FXML private ImageView sponsorLogoView;
-
-    @FXML private Label idLabel;
-    @FXML private Label eventIdLabel;
     @FXML private Label companyLabel;
     @FXML private Label emailLabel;
     @FXML private Label contributionLabel;
     @FXML private Label logoUrlLabel;
     @FXML private Label contractUrlLabel;
 
+    @FXML private ImageView sponsorLogoView;
+
     @FXML private Button openContractBtn;
     @FXML private Button okBtn;
 
-    private static final String APP_LOGO = "/com/example/pidev/icons/logo.png";
     private Sponsor sponsor;
+    private Runnable onBack;
 
-    @FXML
-    private void initialize() {
-        try (InputStream is = getClass().getResourceAsStream(APP_LOGO)) {
-            if (is != null && appLogoView != null) {
-                appLogoView.setImage(new Image(is));
+    public void setSponsor(Sponsor sponsor) {
+        this.sponsor = sponsor;
+
+        if (sponsor == null) return;
+
+        if (companyLabel != null) companyLabel.setText(nvl(sponsor.getCompany_name()));
+        if (emailLabel != null) emailLabel.setText(nvl(sponsor.getContact_email()));
+        if (contributionLabel != null) contributionLabel.setText(String.format("%,.2f DT", sponsor.getContribution_name()));
+
+        if (logoUrlLabel != null) logoUrlLabel.setText(nvl(sponsor.getLogo_url()));
+        if (contractUrlLabel != null) contractUrlLabel.setText(nvl(sponsor.getContract_url()));
+
+        // logo
+        try {
+            if (sponsorLogoView != null && sponsor.getLogo_url() != null && !sponsor.getLogo_url().isBlank()) {
+                sponsorLogoView.setImage(new Image(sponsor.getLogo_url(), true));
             }
         } catch (Exception ignored) {}
+
+        // bouton contrat désactivé si pas de lien
+        if (openContractBtn != null) {
+            boolean has = sponsor.getContract_url() != null && !sponsor.getContract_url().isBlank();
+            openContractBtn.setDisable(!has);
+        }
     }
 
-    public void setSponsor(Sponsor s) {
-        this.sponsor = s;
-        if (s == null) return;
-
-        idLabel.setText(String.valueOf(s.getId()));
-        eventIdLabel.setText(String.valueOf(s.getEvent_id()));
-        companyLabel.setText(nv(s.getCompany_name()));
-        emailLabel.setText(nv(s.getContact_email()));
-        contributionLabel.setText(String.format("%,.2f DT", s.getContribution_name()));
-
-        if (logoUrlLabel != null) logoUrlLabel.setText(nv(s.getLogo_url()));
-        if (contractUrlLabel != null) contractUrlLabel.setText(nv(s.getContract_url()));
-
-        // logo sponsor (URL Cloudinary)
-        try {
-            if (sponsorLogoView != null && s.getLogo_url() != null && !s.getLogo_url().isBlank()) {
-                sponsorLogoView.setImage(new Image(s.getLogo_url(), true));
-            } else if (sponsorLogoView != null) {
-                sponsorLogoView.setImage(null);
-            }
-        } catch (Exception ignored) {}
-
-        boolean hasContract = s.getContract_url() != null && !s.getContract_url().isBlank();
-        openContractBtn.setDisable(!hasContract);
-        openContractBtn.setOpacity(hasContract ? 1.0 : 0.45);
+    public void setOnBack(Runnable onBack) {
+        this.onBack = onBack;
     }
 
     @FXML
@@ -80,11 +69,10 @@ public class SponsorDetailsController {
 
     @FXML
     private void onOk() {
-        Stage st = (Stage) okBtn.getScene().getWindow();
-        st.close();
+        if (onBack != null) onBack.run();
     }
 
-    private static String nv(String s) {
+    private String nvl(String s) {
         return (s == null || s.isBlank()) ? "—" : s;
     }
 }

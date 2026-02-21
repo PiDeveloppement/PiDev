@@ -1,6 +1,8 @@
 package com.example.pidev.controller.depense;
 
 import com.example.pidev.model.depense.Depense;
+import com.example.pidev.service.budget.BudgetService;
+import com.example.pidev.service.depense.DepenseService;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
@@ -12,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 public class DepenseFormController {
 
     @FXML private Label titleLabel;
-    @FXML private TextField budgetIdField;
+    @FXML private ComboBox<String> budgetComboBox;
     @FXML private TextField descField;
     @FXML private TextField categoryField;
     @FXML private TextField amountField;
@@ -22,7 +24,18 @@ public class DepenseFormController {
     private Depense depense;
     private boolean saved = false;
 
+    private final BudgetService budgetService = new BudgetService();
+    private final DepenseService depenseService = new DepenseService();
+
+    // ✅ si chargé en page (Option B)
+    private Runnable onFormDone;
+
     private static final DateTimeFormatter DB_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    public void setOnFormDone(Runnable callback) { this.onFormDone = callback; }
+
+    public boolean isSaved() { return saved; }
+    public Depense getDepense() { return depense; }
 
     @FXML
     private void initialize() {
@@ -38,7 +51,43 @@ public class DepenseFormController {
             });
             datePicker.setEditable(false);
         }
+
         if (errorLabel != null) errorLabel.setText("");
+
+        if (budgetComboBox != null) {
+            try {
+                budgetComboBox.setItems(budgetService.getAllBudgetNames());
+            } catch (Exception e) {
+                if (errorLabel != null) errorLabel.setText("⚠️ Erreur chargement budgets");
+            }
+        }
+
+        // validations light
+        if (descField != null) {
+            descField.textProperty().addListener((obs, old, n) -> {
+                if (n == null) return;
+                String filtered = n.replaceAll("\\d", "");
+                if (filtered.length() > 255) filtered = filtered.substring(0, 255);
+                if (!filtered.equals(n)) descField.setText(filtered);
+            });
+        }
+
+        if (categoryField != null) {
+            categoryField.textProperty().addListener((obs, old, n) -> {
+                if (n == null) return;
+                String filtered = n.replaceAll("\\d", "");
+                if (filtered.length() > 100) filtered = filtered.substring(0, 100);
+                if (!filtered.equals(n)) categoryField.setText(filtered);
+            });
+        }
+
+        if (amountField != null) {
+            amountField.textProperty().addListener((obs, old, n) -> {
+                if (n == null || n.isEmpty()) return;
+                String cleaned = n.replaceAll("[^0-9.,]", "");
+                if (!cleaned.equals(n)) amountField.setText(cleaned);
+            });
+        }
     }
 
     public void setDepense(Depense existing) {
@@ -46,7 +95,7 @@ public class DepenseFormController {
 
         if (existing == null) {
             if (titleLabel != null) titleLabel.setText("➕ Nouvelle Dépense");
-            if (budgetIdField != null) budgetIdField.clear();
+            if (budgetComboBox != null) budgetComboBox.setValue(null);
             if (descField != null) descField.clear();
             if (categoryField != null) categoryField.clear();
             if (amountField != null) amountField.clear();
@@ -54,16 +103,18 @@ public class DepenseFormController {
             return;
         }
 
-        if (titleLabel != null) titleLabel.setText("✏ Modifier Dépense (ID: " + existing.getId() + ")");
-        if (budgetIdField != null) budgetIdField.setText(String.valueOf(existing.getBudget_id()));
+        // ✅ pas d'ID dans le titre
+        if (titleLabel != null) titleLabel.setText("✏ Modifier Dépense");
+
+        if (budgetComboBox != null) {
+            String budgetName = budgetService.getBudgetNameById(existing.getBudget_id());
+            budgetComboBox.setValue(budgetName);
+        }
         if (descField != null) descField.setText(existing.getDescription());
         if (categoryField != null) categoryField.setText(existing.getCategory());
         if (amountField != null) amountField.setText(String.valueOf(existing.getAmount()));
         if (datePicker != null) datePicker.setValue(existing.getExpense_date());
     }
-
-    public boolean isSaved() { return saved; }
-    public Depense getDepense() { return depense; }
 
     @FXML
     private void onCancel() {
@@ -75,48 +126,68 @@ public class DepenseFormController {
     private void onSave() {
         clearError();
 
-        int budgetId;
-        try {
-            budgetId = Integer.parseInt(budgetIdField.getText().trim());
-            if (budgetId <= 0) { showError("ID Budget doit être > 0."); return; }
-        } catch (Exception e) {
-            showError("ID Budget doit être un entier (ex: 1).");
-            return;
-        }
+        String budgetName = (budgetComboBox == null) ? null : budgetComboBox.getValue();
+        if (budgetName == null || budgetName.trim().isEmpty()) { showError("Sélectionnez un budget"); return; }
+
+        int budgetId = budgetService.getBudgetIdByName(budgetName);
+        if (budgetId <= 0) { showError("Budget invalide"); return; }
 
         String desc = descField.getText() == null ? "" : descField.getText().trim();
-        if (desc.isEmpty()) { showError("Description obligatoire."); return; }
+        if (desc.isEmpty()) { showError("Description obligatoire"); return; }
+        if (desc.length() > 255) { showError("Description trop longue (max 255)"); return; }
 
         String cat = categoryField.getText() == null ? "" : categoryField.getText().trim();
-        if (cat.isEmpty()) { showError("Catégorie obligatoire."); return; }
+        if (cat.isEmpty()) { showError("Catégorie obligatoire"); return; }
+        if (cat.length() > 100) { showError("Catégorie trop longue (max 100)"); return; }
 
         double amount;
         try {
-            String raw = amountField.getText().trim().replace(',', '.');
+            String raw = amountField.getText() == null ? "" : amountField.getText().trim().replace(',', '.');
+            if (raw.isEmpty()) { showError("Montant obligatoire"); return; }
             amount = Double.parseDouble(raw);
-            if (amount <= 0) { showError("Montant doit être > 0."); return; }
-        } catch (Exception e) {
-            showError("Montant invalide (ex: 150.00).");
+            if (amount <= 0) { showError("Montant doit être > 0"); return; }
+        } catch (NumberFormatException e) {
+            showError("Montant invalide (ex: 150.50)");
             return;
         }
 
-        LocalDate dt = datePicker.getValue();
-        if (dt == null) { showError("Veuillez choisir une date."); return; }
+        LocalDate dt = (datePicker == null) ? null : datePicker.getValue();
+        if (dt == null) { showError("Date obligatoire"); return; }
+        if (dt.isAfter(LocalDate.now())) { showError("Date ne peut pas être dans le futur"); return; }
 
+        boolean isNew = (depense == null || depense.getId() <= 0);
         if (depense == null) depense = new Depense();
+
+        int oldBudgetId = isNew ? 0 : depense.getBudget_id();
+
         depense.setBudget_id(budgetId);
         depense.setDescription(desc);
         depense.setCategory(cat);
         depense.setAmount(amount);
         depense.setExpense_date(dt);
 
-        saved = true;
-        closeWindow();
+        try {
+            if (isNew) depenseService.addDepense(depense);
+            else depenseService.updateDepense(depense, oldBudgetId);
+
+            saved = true;
+            closeWindow();
+        } catch (Exception ex) {
+            showError("Erreur sauvegarde: " + ex.getMessage());
+        }
     }
 
     private void closeWindow() {
-        Stage stage = (Stage) budgetIdField.getScene().getWindow();
-        stage.close();
+        // ✅ page mode
+        if (onFormDone != null) { onFormDone.run(); return; }
+
+        // ✅ modal mode (si jamais)
+        try {
+            if (budgetComboBox != null && budgetComboBox.getScene() != null) {
+                Stage stage = (Stage) budgetComboBox.getScene().getWindow();
+                if (stage != null && stage.isShowing()) stage.close();
+            }
+        } catch (Exception ignored) {}
     }
 
     private void showError(String msg) {

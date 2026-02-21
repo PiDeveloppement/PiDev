@@ -6,325 +6,310 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SponsorService {
 
-    private Connection cnx() {
-        return MyDatabase.getConnectionInstance();
+    private final Connection cnx;
+
+    public SponsorService() {
+        // ✅ ton MyDatabase expose getConnection()
+        cnx = MyDatabase.getInstance().getConnection();
     }
 
-    /**
-     * Tant que l'intégration "event" n'est pas prête, on ne bloque pas.
-     * Si la table event existe, on vérifie, sinon on laisse passer.
-     */
-    public boolean eventExists(int eventId) {
-        String sql = "SELECT 1 FROM `event` WHERE id = ? LIMIT 1";
-        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
-            ps.setInt(1, eventId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            // table event non dispo / pas d'intégration => ne bloque pas
-            return true;
-        }
-    }
+    // =========================
+    // CRUD BASIC (ADMIN/DEMO)
+    // =========================
 
-    public boolean sponsorExistsById(int id) {
-        String sql = "SELECT 1 FROM sponsor WHERE id=? LIMIT 1";
-        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("sponsorExistsById failed", e);
-        }
-    }
+    public void addSponsor(Sponsor s) throws SQLException {
+        String sql = """
+            INSERT INTO sponsor(event_id, company_name, contact_email, logo_url, contribution_name, contract_url, access_code, user_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """;
 
-    // ---------- LISTES ----------
-    public ObservableList<Sponsor> getAllSponsors() {
-        ObservableList<Sponsor> list = FXCollections.observableArrayList();
-        String sql = "SELECT id, event_id, company_name, logo_url, contact_email, contribution_name, contract_url FROM sponsor";
-        try (PreparedStatement ps = cnx().prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (PreparedStatement ps = cnx.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, s.getEvent_id());
+            ps.setString(2, s.getCompany_name());
+            ps.setString(3, s.getContact_email());
+            ps.setString(4, s.getLogo_url());
+            ps.setDouble(5, s.getContribution_name());
+            ps.setString(6, s.getContract_url());
+            ps.setString(7, s.getAccess_code());
 
-            while (rs.next()) {
-                list.add(new Sponsor(
-                        rs.getInt("id"),
-                        rs.getInt("event_id"),
-                        rs.getString("company_name"),
-                        rs.getString("logo_url"),
-                        rs.getDouble("contribution_name"),
-                        rs.getString("contact_email"),
-                        rs.getString("contract_url")
-                ));
-            }
-            return list;
+            if (s.getUser_id() == null) ps.setNull(8, Types.INTEGER);
+            else ps.setInt(8, s.getUser_id());
 
-        } catch (SQLException e) {
-            throw new RuntimeException("getAllSponsors failed", e);
-        }
-    }
+            ps.executeUpdate();
 
-    public ObservableList<Sponsor> getSponsorsByEmail(String email) {
-        ObservableList<Sponsor> list = FXCollections.observableArrayList();
-        String sql = "SELECT id, event_id, company_name, logo_url, contact_email, contribution_name, contract_url " +
-                "FROM sponsor WHERE contact_email = ?";
-
-        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
-            ps.setString(1, email);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(new Sponsor(
-                            rs.getInt("id"),
-                            rs.getInt("event_id"),
-                            rs.getString("company_name"),
-                            rs.getString("logo_url"),
-                            rs.getDouble("contribution_name"),
-                            rs.getString("contact_email"),
-                            rs.getString("contract_url")
-                    ));
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    s.setId(rs.getInt(1));
                 }
             }
-            return list;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("getSponsorsByEmail failed", e);
         }
     }
 
-    // ✅ POUR PORTAL (ComboBox emails)
-    public ObservableList<String> getSponsorEmails() {
-        ObservableList<String> list = FXCollections.observableArrayList();
-        String sql = "SELECT DISTINCT contact_email FROM sponsor " +
-                "WHERE contact_email IS NOT NULL AND contact_email <> '' ORDER BY contact_email";
+    public void updateSponsor(Sponsor s) throws SQLException {
+        String sql = """
+            UPDATE sponsor
+            SET event_id=?, company_name=?, contact_email=?, logo_url=?, contribution_name=?, contract_url=?, access_code=?, user_id=?
+            WHERE id=?
+        """;
 
-        try (PreparedStatement ps = cnx().prepareStatement(sql);
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, s.getEvent_id());
+            ps.setString(2, s.getCompany_name());
+            ps.setString(3, s.getContact_email());
+            ps.setString(4, s.getLogo_url());
+            ps.setDouble(5, s.getContribution_name());
+            ps.setString(6, s.getContract_url());
+            ps.setString(7, s.getAccess_code());
+
+            if (s.getUser_id() == null) ps.setNull(8, Types.INTEGER);
+            else ps.setInt(8, s.getUser_id());
+
+            ps.setInt(9, s.getId());
+
+            ps.executeUpdate();
+        }
+    }
+
+    public void deleteSponsor(int sponsorId) throws SQLException {
+        String sql = "DELETE FROM sponsor WHERE id=?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, sponsorId);
+            ps.executeUpdate();
+        }
+    }
+
+    public void updateContractUrl(int sponsorId, String url) throws SQLException {
+        String sql = "UPDATE sponsor SET contract_url=? WHERE id=?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setString(1, url);
+            ps.setInt(2, sponsorId);
+            ps.executeUpdate();
+        }
+    }
+
+    public List<Sponsor> getAllSponsors() throws SQLException {
+        String sql = "SELECT * FROM sponsor ORDER BY id DESC";
+        try (PreparedStatement ps = cnx.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
-            while (rs.next()) list.add(rs.getString(1));
-            return list;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("getSponsorEmails failed", e);
+            List<Sponsor> out = new ArrayList<>();
+            while (rs.next()) out.add(map(rs));
+            return out;
         }
     }
 
-    public ObservableList<String> getCompanyNamesByEmail(String email) {
-        ObservableList<String> list = FXCollections.observableArrayList();
-        String sql = "SELECT DISTINCT company_name FROM sponsor " +
-                "WHERE contact_email = ? AND company_name IS NOT NULL AND company_name <> '' ORDER BY company_name";
-
-        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
-            ps.setString(1, email);
-
+    public Sponsor getSponsorById(int id) throws SQLException {
+        String sql = "SELECT * FROM sponsor WHERE id=?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(rs.getString(1));
+                return rs.next() ? map(rs) : null;
             }
-            return list;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("getCompanyNamesByEmail failed", e);
         }
     }
 
-    public ObservableList<Integer> getEventIdsByEmail(String email) {
-        ObservableList<Integer> list = FXCollections.observableArrayList();
-        String sql = "SELECT DISTINCT event_id FROM sponsor WHERE contact_email = ? ORDER BY event_id";
+    // =========================
+    // ADMIN FILTERS (SponsorAdminController)
+    // =========================
 
-        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
+    public ObservableList<String> getCompanyNamesAll() throws SQLException {
+        String sql = """
+            SELECT DISTINCT company_name
+            FROM sponsor
+            WHERE company_name IS NOT NULL AND TRIM(company_name) <> ''
+            ORDER BY company_name
+        """;
+
+        ObservableList<String> names = FXCollections.observableArrayList();
+        try (PreparedStatement ps = cnx.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) names.add(rs.getString(1));
+        }
+        return names;
+    }
+
+    public ObservableList<Integer> getEventIdsAll() throws SQLException {
+        String sql = """
+            SELECT DISTINCT event_id
+            FROM sponsor
+            ORDER BY event_id
+        """;
+
+        ObservableList<Integer> ids = FXCollections.observableArrayList();
+        try (PreparedStatement ps = cnx.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) ids.add(rs.getInt(1));
+        }
+        return ids;
+    }
+
+    // =========================
+    // ADMIN STATS
+    // =========================
+
+    public int getTotalSponsors() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM sponsor";
+        try (PreparedStatement ps = cnx.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            rs.next();
+            return rs.getInt(1);
+        }
+    }
+
+    public double getTotalContribution() throws SQLException {
+        String sql = "SELECT COALESCE(SUM(contribution_name),0) FROM sponsor";
+        try (PreparedStatement ps = cnx.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            rs.next();
+            return rs.getDouble(1);
+        }
+    }
+
+    public double getAverageContribution() throws SQLException {
+        String sql = "SELECT COALESCE(AVG(contribution_name),0) FROM sponsor";
+        try (PreparedStatement ps = cnx.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            rs.next();
+            return rs.getDouble(1);
+        }
+    }
+
+    // =========================
+    // MODE DEMO (SponsorPortalController)
+    // =========================
+
+    public ObservableList<String> getDemoEmailsFromSponsor() throws SQLException {
+        String sql = """
+            SELECT DISTINCT contact_email
+            FROM sponsor
+            WHERE contact_email IS NOT NULL AND TRIM(contact_email) <> ''
+            ORDER BY contact_email
+        """;
+
+        ObservableList<String> emails = FXCollections.observableArrayList();
+        try (PreparedStatement ps = cnx.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) emails.add(rs.getString(1));
+        }
+        return emails;
+    }
+
+    public List<Sponsor> getSponsorsByContactEmail(String email) throws SQLException {
+        String sql = """
+            SELECT *
+            FROM sponsor
+            WHERE LOWER(contact_email)=LOWER(?)
+            ORDER BY id DESC
+        """;
+
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setString(1, email);
-
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) list.add(rs.getInt(1));
+                List<Sponsor> out = new ArrayList<>();
+                while (rs.next()) out.add(map(rs));
+                return out;
             }
-            return list;
-
-        } catch (SQLException e) {
-            // si event_id pas propre, ne casse pas
-            return FXCollections.observableArrayList();
         }
     }
 
-    public int getMySponsorsCount(String email) {
-        String sql = "SELECT COUNT(*) FROM sponsor WHERE contact_email = ?";
-        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
+    public int getMySponsorsCountDemo(String email) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM sponsor WHERE LOWER(contact_email)=LOWER(?)";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setString(1, email);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return rs.getInt(1);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("getMySponsorsCount failed", e);
         }
     }
 
-    public double getMyTotalContribution(String email) {
-        String sql = "SELECT COALESCE(SUM(contribution_name), 0) FROM sponsor WHERE contact_email = ?";
-        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
+    public double getMyTotalContributionDemo(String email) throws SQLException {
+        String sql = "SELECT COALESCE(SUM(contribution_name),0) FROM sponsor WHERE LOWER(contact_email)=LOWER(?)";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setString(1, email);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return rs.getDouble(1);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("getMyTotalContribution failed", e);
         }
     }
 
-    public int getMySponsoredEventsCount(String email) {
-        String sql = "SELECT COUNT(DISTINCT event_id) FROM sponsor WHERE contact_email = ?";
-        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
+    public int getMySponsoredEventsCountDemo(String email) throws SQLException {
+        String sql = """
+            SELECT COUNT(DISTINCT event_id)
+            FROM sponsor
+            WHERE LOWER(contact_email)=LOWER(?)
+        """;
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setString(1, email);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return rs.getInt(1);
             }
-        } catch (SQLException e) {
-            return 0;
         }
     }
 
-    // ---------- ✅ ADMIN HELPERS (pour SponsorAdminController) ----------
-    public ObservableList<String> getCompanyNamesAll() {
-        ObservableList<String> list = FXCollections.observableArrayList();
-        String sql = "SELECT DISTINCT company_name FROM sponsor " +
-                "WHERE company_name IS NOT NULL AND company_name<>'' ORDER BY company_name";
+    public ObservableList<String> getCompanyNamesByContactEmail(String email) throws SQLException {
+        String sql = """
+            SELECT DISTINCT company_name
+            FROM sponsor
+            WHERE LOWER(contact_email)=LOWER(?)
+              AND company_name IS NOT NULL AND TRIM(company_name) <> ''
+            ORDER BY company_name
+        """;
 
-        try (PreparedStatement ps = cnx().prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) list.add(rs.getString(1));
-            return list;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("getCompanyNamesAll failed", e);
-        }
-    }
-
-    public ObservableList<Integer> getEventIdsAll() {
-        ObservableList<Integer> list = FXCollections.observableArrayList();
-        String sql = "SELECT DISTINCT event_id FROM sponsor ORDER BY event_id";
-
-        try (PreparedStatement ps = cnx().prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) list.add(rs.getInt(1));
-            return list;
-
-        } catch (SQLException e) {
-            return FXCollections.observableArrayList();
-        }
-    }
-
-    public int getTotalSponsors() {
-        String sql = "SELECT COUNT(*) FROM sponsor";
-        try (PreparedStatement ps = cnx().prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            rs.next();
-            return rs.getInt(1);
-
-        } catch (SQLException e) {
-            throw new RuntimeException("getTotalSponsors failed", e);
-        }
-    }
-
-    public double getTotalContribution() {
-        String sql = "SELECT COALESCE(SUM(contribution_name),0) FROM sponsor";
-        try (PreparedStatement ps = cnx().prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            rs.next();
-            return rs.getDouble(1);
-
-        } catch (SQLException e) {
-            throw new RuntimeException("getTotalContribution failed", e);
-        }
-    }
-
-    public double getAverageContribution() {
-        String sql = "SELECT COALESCE(AVG(contribution_name),0) FROM sponsor";
-        try (PreparedStatement ps = cnx().prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            rs.next();
-            return rs.getDouble(1);
-
-        } catch (SQLException e) {
-            throw new RuntimeException("getAverageContribution failed", e);
-        }
-    }
-
-    // ---------- CRUD ----------
-    public void addSponsor(Sponsor s) {
-        String sql = "INSERT INTO sponsor (event_id, company_name, logo_url, contact_email, contribution_name, contract_url) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
-
-        try (PreparedStatement ps = cnx().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setInt(1, s.getEvent_id());
-            ps.setString(2, s.getCompany_name());
-            ps.setString(3, s.getLogo_url());
-            ps.setString(4, s.getContact_email());
-            ps.setDouble(5, s.getContribution_name());
-            ps.setString(6, s.getContract_url());
-
-            ps.executeUpdate();
-
-            try (ResultSet keys = ps.getGeneratedKeys()) {
-                if (keys.next()) s.setId(keys.getInt(1)); // ✅ auto-increment
+        ObservableList<String> names = FXCollections.observableArrayList();
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) names.add(rs.getString(1));
             }
-
-        } catch (SQLException e) {
-            throw new RuntimeException("insert sponsor failed", e);
         }
+        return names;
     }
 
-    public void updateSponsor(Sponsor s) {
-        if (!sponsorExistsById(s.getId())) {
-            throw new IllegalArgumentException("Sponsor introuvable (id=" + s.getId() + ")");
+    public ObservableList<Integer> getEventIdsByContactEmail(String email) throws SQLException {
+        String sql = """
+            SELECT DISTINCT event_id
+            FROM sponsor
+            WHERE LOWER(contact_email)=LOWER(?)
+            ORDER BY event_id
+        """;
+
+        ObservableList<Integer> ids = FXCollections.observableArrayList();
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) ids.add(rs.getInt(1));
+            }
         }
-
-        String sql = "UPDATE sponsor SET event_id=?, company_name=?, logo_url=?, contact_email=?, contribution_name=?, contract_url=? " +
-                "WHERE id=?";
-
-        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
-            ps.setInt(1, s.getEvent_id());
-            ps.setString(2, s.getCompany_name());
-            ps.setString(3, s.getLogo_url());
-            ps.setString(4, s.getContact_email());
-            ps.setDouble(5, s.getContribution_name());
-            ps.setString(6, s.getContract_url());
-            ps.setInt(7, s.getId());
-
-            int updated = ps.executeUpdate();
-            if (updated == 0) throw new RuntimeException("Aucune ligne modifiée: " + s.getId());
-
-        } catch (SQLException e) {
-            throw new RuntimeException("update sponsor failed", e);
-        }
+        return ids;
     }
 
-    public void deleteSponsor(int id) {
-        String sql = "DELETE FROM sponsor WHERE id=?";
-        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
-            ps.setInt(1, id);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("delete sponsor failed", e);
-        }
-    }
+    // =========================
+    // MAPPING
+    // =========================
 
-    public void updateContractUrl(int sponsorId, String contractUrl) {
-        String sql = "UPDATE sponsor SET contract_url=? WHERE id=?";
-        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
-            ps.setString(1, contractUrl);
-            ps.setInt(2, sponsorId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("updateContractUrl failed", e);
-        }
+    private Sponsor map(ResultSet rs) throws SQLException {
+        Sponsor s = new Sponsor();
+        s.setId(rs.getInt("id"));
+        s.setEvent_id(rs.getInt("event_id"));
+        s.setCompany_name(rs.getString("company_name"));
+        s.setContact_email(rs.getString("contact_email"));
+        s.setLogo_url(rs.getString("logo_url"));
+        s.setContribution_name(rs.getDouble("contribution_name"));
+        s.setContract_url(rs.getString("contract_url"));
+        s.setAccess_code(rs.getString("access_code"));
+
+        // user_id nullable
+        int uid = rs.getInt("user_id");
+        s.setUser_id(rs.wasNull() ? null : uid);
+
+        return s;
     }
 }

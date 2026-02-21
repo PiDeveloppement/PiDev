@@ -175,4 +175,58 @@ public class BudgetService {
             throw new RuntimeException("countDeficitBudgets failed", e);
         }
     }
+
+    // New methods for Depense form - budget selection by name
+    public ObservableList<String> getAllBudgetNames() {
+        ObservableList<String> list = FXCollections.observableArrayList();
+        String sql = "SELECT id, initial_budget FROM budget ORDER BY id DESC";
+
+        try (PreparedStatement ps = cnx().prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                int budgetId = rs.getInt("id");
+                double initial = rs.getDouble("initial_budget");
+                String name = String.format("Budget N°%d (%.2f DT)", budgetId, initial);
+                list.add(name);
+            }
+            return list;
+        } catch (SQLException e) {
+            throw new RuntimeException("getAllBudgetNames failed", e);
+        }
+    }
+
+    public int getBudgetIdByName(String name) {
+        if (name == null || name.isEmpty()) return -1;
+
+        try {
+            // Extract "Budget N°123" from "Budget N°123 (1500.00 DT)"
+            int startIdx = name.indexOf("°") + 1;
+            int endIdx = name.indexOf("(");
+            if (startIdx <= 0 || endIdx <= 0) return -1;
+
+            String idStr = name.substring(startIdx, endIdx).trim();
+            return Integer.parseInt(idStr);
+        } catch (Exception e) {
+            System.err.println("getBudgetIdByName error: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    public String getBudgetNameById(int budgetId) {
+        String sql = "SELECT initial_budget FROM budget WHERE id=?";
+
+        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
+            ps.setInt(1, budgetId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    double initial = rs.getDouble("initial_budget");
+                    return String.format("Budget N°%d (%.2f DT)", budgetId, initial);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("getBudgetNameById error: " + e.getMessage());
+        }
+        return "Budget N°" + budgetId;
+    }
 }

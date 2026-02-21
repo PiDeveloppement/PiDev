@@ -24,9 +24,9 @@
             <VBox spacing="12" style="-fx-padding: 0 8 0 8;">
 
                 <VBox spacing="6">
-                    <Label text="ID Événement" style="-fx-font-weight: 700; -fx-text-fill: #0f172a;"/>
-                    <TextField fx:id="eventIdField" promptText="ex: 1"
-                               style="-fx-background-radius: 10; -fx-border-radius: 10;"/>
+                    <Label text="Événement" style="-fx-font-weight: 700; -fx-text-fill: #0f172a;"/>
+                    <ComboBox fx:id="eventComboBox" promptText="Choisir un événement"
+                              style="-fx-background-radius: 10; -fx-border-radius: 10;"/>
                 </VBox>
 
                 <VBox spacing="6">

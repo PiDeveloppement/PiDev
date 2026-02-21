@@ -12,9 +12,6 @@ public class DepenseCardController {
     @FXML private Label descLabel;
     @FXML private Label amountLabel;
 
-    @FXML private Label idLabel;
-    @FXML private Label budgetLabel;
-
     @FXML private Label categoryLabel;
     @FXML private Label dateLabel;
 
@@ -30,11 +27,7 @@ public class DepenseCardController {
         if (descLabel != null) descLabel.setText(nvl(d.getDescription(), "—"));
         if (amountLabel != null) amountLabel.setText(String.format("%,.2f DT", d.getAmount()));
 
-        if (idLabel != null) idLabel.setText("ID: " + d.getId());
-        if (budgetLabel != null) budgetLabel.setText("Budget: " + d.getBudget_id());
-
         if (categoryLabel != null) categoryLabel.setText(nvl(d.getCategory(), "—"));
-
         if (dateLabel != null) {
             dateLabel.setText(d.getExpense_date() == null ? "—" : FMT.format(d.getExpense_date()));
         }

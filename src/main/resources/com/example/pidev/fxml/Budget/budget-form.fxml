@@ -5,12 +5,12 @@
 
 <AnchorPane xmlns="http://javafx.com/javafx/17"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.pidev.controller.depense.DepenseFormController"
+            fx:controller="com.example.pidev.controller.budget.BudgetFormController"
             style="-fx-background-color:white; -fx-padding:18;">
 
     <VBox spacing="12" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0">
 
-        <Label fx:id="titleLabel" text="➕ Nouvelle Dépense"
+        <Label fx:id="titleLabel" text="➕ Nouveau Budget"
                style="-fx-font-size:20px; -fx-font-weight:900; -fx-text-fill:#0f172a;"/>
 
         <Label fx:id="errorLabel" text=""
@@ -22,20 +22,14 @@
                 <ColumnConstraints percentWidth="65"/>
             </columnConstraints>
 
-            <Label text="Budget ID" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
-            <TextField fx:id="budgetIdField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+            <Label text="Événement" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
+            <ComboBox fx:id="eventComboBox" promptText="Choisir un événement" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
-            <Label text="Description" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
-            <TextField fx:id="descField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+            <Label text="Budget Initial" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
+            <TextField fx:id="initialField" promptText="ex: 5000" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
-            <Label text="Catégorie" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
-            <TextField fx:id="categoryField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-
-            <Label text="Montant" GridPane.rowIndex="3" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
-            <TextField fx:id="amountField" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
-
-            <Label text="Date" GridPane.rowIndex="4" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
-            <DatePicker fx:id="datePicker" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+            <Label text="Revenus" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-font-weight:800;"/>
+            <TextField fx:id="revenueField" promptText="ex: 3000" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
         </GridPane>
 
         <HBox alignment="CENTER_RIGHT" spacing="10">

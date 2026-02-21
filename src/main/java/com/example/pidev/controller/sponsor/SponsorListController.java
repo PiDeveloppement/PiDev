@@ -2,158 +2,155 @@ package com.example.pidev.controller.sponsor;
 
 import com.example.pidev.model.sponsor.Sponsor;
 import com.example.pidev.service.sponsor.SponsorService;
-import javafx.beans.property.*;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
+import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
 
-import java.io.InputStream;
+import java.net.URL;
+import java.sql.SQLException;
+import java.util.ResourceBundle;
 
-public class SponsorListController {
+public class SponsorListController implements Initializable {
 
     @FXML private TableView<Sponsor> table;
-    @FXML private TableColumn<Sponsor, Integer> colId;
-    @FXML private TableColumn<Sponsor, Integer> colEventId;
+
+    @FXML private TableColumn<Sponsor, String> colId;
+    @FXML private TableColumn<Sponsor, String> colEventName;
     @FXML private TableColumn<Sponsor, String> colCompany;
-    @FXML private TableColumn<Sponsor, Double> colContribution;
     @FXML private TableColumn<Sponsor, String> colEmail;
-    @FXML private TableColumn<Sponsor, Void> colActions;
+    @FXML private TableColumn<Sponsor, String> colContribution;
+    @FXML private TableColumn<Sponsor, String> colContract;
 
     @FXML private TextField searchField;
 
     private final SponsorService sponsorService = new SponsorService();
+
     private final ObservableList<Sponsor> baseList = FXCollections.observableArrayList();
     private FilteredList<Sponsor> filtered;
 
-    private static final String ICON_EDIT   = "/com/example/pidev/icons/edit.png";
-    private static final String ICON_DELETE = "/com/example/pidev/icons/delete.png";
+    @Override
+    public void initialize(URL url, ResourceBundle rb) {
 
-    @FXML
-    private void initialize() {
+        // ⚠️ Si ton FXML n'a pas ces fx:id, table sera null -> NPE
+        if (table == null) return;
+
         setupColumns();
-        setupActions();
-        setupFilter();
+
+        filtered = new FilteredList<>(baseList, s -> true);
+
+        SortedList<Sponsor> sorted = new SortedList<>(filtered);
+        sorted.comparatorProperty().bind(table.comparatorProperty());
+        table.setItems(sorted);
+
+        if (searchField != null) {
+            searchField.textProperty().addListener((obs, o, n) -> applyFilter());
+        }
 
         refresh();
     }
 
     private void setupColumns() {
-        colId.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getId()).asObject());
-        colEventId.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getEvent_id()).asObject());
-        colCompany.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getCompany_name()));
-        colContribution.setCellValueFactory(c -> new SimpleDoubleProperty(c.getValue().getContribution_name()).asObject());
-        colEmail.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getContact_email()));
-    }
 
-    private void setupActions() {
-        colActions.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Void item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) { setGraphic(null); return; }
-
-                Sponsor s = getTableView().getItems().get(getIndex());
-
-                Button editBtn = makeIconButton(ICON_EDIT, "#e0f2fe", "#0ea5e9");
-                Button delBtn  = makeIconButton(ICON_DELETE, "#fee2e2", "#ef4444");
-
-                editBtn.setTooltip(new Tooltip("Modifier"));
-                delBtn.setTooltip(new Tooltip("Supprimer"));
-
-                editBtn.setOnAction(e -> handleEdit(s));
-                delBtn.setOnAction(e -> handleDelete(s));
-
-                HBox box = new HBox(8, editBtn, delBtn);
-                box.setAlignment(Pos.CENTER);
-                setGraphic(box);
-            }
-        });
-    }
-
-    private Button makeIconButton(String path, String bg, String border) {
-        Button b = new Button();
-        b.setMinSize(36, 32);
-        b.setPrefSize(36, 32);
-        b.setMaxSize(36, 32);
-
-        ImageView iv = loadIcon(path, 16);
-        if (iv != null) {
-            b.setGraphic(iv);
-            b.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-        } else {
-            b.setText("?");
+        if (colId != null) {
+            colId.setCellValueFactory(c ->
+                    new SimpleStringProperty(String.valueOf(c.getValue().getId())));
         }
 
-        b.setStyle(
-                "-fx-background-color: " + bg + ";" +
-                        "-fx-background-radius: 8;" +
-                        "-fx-border-radius: 8;" +
-                        "-fx-border-color: " + border + ";" +
-                        "-fx-border-width: 1;" +
-                        "-fx-cursor: hand;"
-        );
-        return b;
-    }
-
-    private ImageView loadIcon(String path, int size) {
-        try (InputStream is = getClass().getResourceAsStream(path)) {
-            if (is == null) return null;
-            ImageView iv = new ImageView(new Image(is));
-            iv.setFitWidth(size);
-            iv.setFitHeight(size);
-            iv.setPreserveRatio(true);
-            return iv;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private void setupFilter() {
-        filtered = new FilteredList<>(baseList, x -> true);
-
-        if (searchField != null) {
-            searchField.textProperty().addListener((obs, o, n) -> {
-                String q = n == null ? "" : n.toLowerCase();
-
-                filtered.setPredicate(s ->
-                        q.isEmpty()
-                                || String.valueOf(s.getId()).contains(q)
-                                || (s.getCompany_name() != null && s.getCompany_name().toLowerCase().contains(q))
-                                || (s.getContact_email() != null && s.getContact_email().toLowerCase().contains(q))
-                );
-            });
+        if (colCompany != null) {
+            colCompany.setCellValueFactory(c ->
+                    new SimpleStringProperty(nvl(c.getValue().getCompany_name())));
         }
 
-        SortedList<Sponsor> sorted = new SortedList<>(filtered);
-        sorted.comparatorProperty().bind(table.comparatorProperty());
-        table.setItems(sorted);
+        if (colEmail != null) {
+            colEmail.setCellValueFactory(c ->
+                    new SimpleStringProperty(nvl(c.getValue().getContact_email())));
+        }
+
+        if (colContribution != null) {
+            colContribution.setCellValueFactory(c ->
+                    new SimpleStringProperty(String.format("%,.2f", c.getValue().getContribution_name())));
+        }
+
+        if (colContract != null) {
+            colContract.setCellValueFactory(c ->
+                    new SimpleStringProperty(nvl(c.getValue().getContract_url())));
+        }
+
+        // Event name: si tu n’as pas join Event dans SponsorService,
+        // laisse vide ou affiche event_id.
+        if (colEventName != null) {
+            colEventName.setCellValueFactory(c ->
+                    new SimpleStringProperty(String.valueOf(c.getValue().getEvent_id())));
+        }
     }
 
     private void refresh() {
-        baseList.setAll(sponsorService.getAllSponsors());
+        try {
+            baseList.setAll(sponsorService.getAllSponsors());
+            applyFilter();
+        } catch (SQLException e) {
+            showError("DB", "Erreur chargement sponsors: " + e.getMessage());
+        }
     }
 
-    private void handleEdit(Sponsor s) {
-        System.out.println("Modifier sponsor ID = " + s.getId());
+    private void applyFilter() {
+        if (filtered == null) return;
+
+        String q = (searchField == null || searchField.getText() == null)
+                ? "" : searchField.getText().trim().toLowerCase();
+
+        filtered.setPredicate(s -> {
+            if (q.isEmpty()) return true;
+
+            return String.valueOf(s.getId()).contains(q)
+                    || nvl(s.getCompany_name()).toLowerCase().contains(q)
+                    || nvl(s.getContact_email()).toLowerCase().contains(q)
+                    || String.valueOf(s.getEvent_id()).contains(q);
+        });
     }
 
-    private void handleDelete(Sponsor s) {
+    // Exemple actions (si tu as des boutons/menu)
+    @FXML
+    private void handleDelete() {
+        Sponsor s = (table == null) ? null : table.getSelectionModel().getSelectedItem();
+        if (s == null) return;
+
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Suppression");
         confirm.setHeaderText("Supprimer sponsor");
-        confirm.setContentText("Supprimer sponsor ID = " + s.getId() + " ?");
+        confirm.setContentText("Supprimer: " + s.getCompany_name() + " (id=" + s.getId() + ") ?");
+
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
-                sponsorService.deleteSponsor(s.getId());
-                refresh();
+                try {
+                    sponsorService.deleteSponsor(s.getId());
+                    refresh();
+                } catch (SQLException e) {
+                    showError("DB", "Erreur suppression: " + e.getMessage());
+                }
             }
         });
+    }
+
+    @FXML
+    private void handleRefresh() {
+        refresh();
+    }
+
+    private String nvl(String s) {
+        return (s == null) ? "" : s;
+    }
+
+    private void showError(String title, String msg) {
+        Alert a = new Alert(Alert.AlertType.ERROR);
+        a.setTitle(title);
+        a.setHeaderText(null);
+        a.setContentText(msg);
+        a.showAndWait();
     }
 }
