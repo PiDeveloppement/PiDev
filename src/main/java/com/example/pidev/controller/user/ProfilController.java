@@ -3,6 +3,7 @@ package com.example.pidev.controller.user;
 import com.example.pidev.MainController;
 import com.example.pidev.model.role.Role;
 import com.example.pidev.model.user.UserModel;
+import com.example.pidev.service.event.EventService;  // ← AJOUTER CET IMPORT
 import com.example.pidev.service.role.RoleService;
 import com.example.pidev.service.user.UserService;
 import com.example.pidev.utils.UserSession;
@@ -32,13 +33,13 @@ public class ProfilController implements Initializable {
     @FXML private TextField lastNameField;
     @FXML private TextField emailField;
     @FXML private TextField phoneField;
-    @FXML private ComboBox<String> facultyComboBox;  // Pour les facultés
-    @FXML private ComboBox<String> roleComboBox;      // Pour les rôles (disabled)
+    @FXML private ComboBox<String> facultyComboBox;
+    @FXML private ComboBox<String> roleComboBox;
     @FXML private TextField registrationDateField;
     @FXML private TextArea bioTextArea;
     @FXML private Label bioCharCountLabel;
 
-    // Photo de profil - NOUVEAUX CHAMPS
+    // Photo de profil
     @FXML private StackPane avatarContainer;
     @FXML private ImageView profileImageView;
     @FXML private StackPane initialsContainer;
@@ -51,8 +52,7 @@ public class ProfilController implements Initializable {
     @FXML private PasswordField confirmPasswordField;
 
     // Statistiques
-    @FXML private Label eventCountLabel;
-
+    @FXML private Label eventCountLabel;  // ← Label pour le nombre d'événements
 
     @FXML private Label verificationStatusLabel;
     @FXML private Label lastLoginLabel;
@@ -62,6 +62,7 @@ public class ProfilController implements Initializable {
     private UserModel currentUser;
     private UserService userService;
     private RoleService roleService;
+    private EventService eventService;  // ← AJOUTER CETTE VARIABLE
     private MainController mainController;
 
     public void setMainController(MainController mainController) {
@@ -74,6 +75,7 @@ public class ProfilController implements Initializable {
             System.out.println("✅ ProfilController initialisé");
             userService = new UserService();
             roleService = new RoleService();
+            eventService = new EventService();  // ← INITIALISER LE SERVICE
 
             // Récupérer l'utilisateur connecté depuis la session
             currentUser = UserSession.getInstance().getCurrentUser();
@@ -86,10 +88,10 @@ public class ProfilController implements Initializable {
 
                 // Charger les données
                 loadUserDataFromModel();
-                loadFacultiesFromDatabase();  // Charger les facultés depuis user_model
-                loadRolesFromDatabase();       // Charger les rôles depuis role
-                loadProfileImage();             // Charger l'image avec le style circulaire
-                updateStatistics();
+                loadFacultiesFromDatabase();
+                loadRolesFromDatabase();
+                loadProfileImage();
+                updateStatistics();      // ← MET À JOUR LES STATISTIQUES
                 setupBioCounter();
                 disableReadOnlyFields();
 
@@ -105,16 +107,57 @@ public class ProfilController implements Initializable {
     }
 
     /**
+     * Met à jour les statistiques du profil
+     */
+    private void updateStatistics() {
+        if (currentUser != null) {
+            // Compter les événements créés par l'utilisateur
+            int eventCount = countUserEvents();
+            eventCountLabel.setText(String.valueOf(eventCount));
+
+            // Mettre à jour les autres statistiques
+            if (userLevelLabel != null && currentUser.getRole() != null) {
+                userLevelLabel.setText(currentUser.getRole().getRoleName());
+            }
+
+            verificationStatusLabel.setText("🟢 Compte vérifié");
+            lastLoginLabel.setText("Dernière connexion: " +
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+        }
+    }
+
+    /**
+     * Compte le nombre d'événements créés par l'utilisateur
+     */
+    private int countUserEvents() {
+        try {
+            // Utiliser la méthode countEvents() qui compte tous les événements
+            int totalEvents = eventService.countEvents();
+            System.out.println("📊 Nombre total d'événements: " + totalEvents);
+            return totalEvents;
+
+            // Si vous voulez compter uniquement les événements créés par l'utilisateur connecté,
+            // vous devrez ajouter une méthode spécifique dans EventService, comme:
+            // return eventService.countEventsByUser(currentUser.getId_User());
+
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors du comptage des événements: " + e.getMessage());
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    // === LE RESTE DE VOTRE CODE RESTE IDENTIQUE ===
+
+    /**
      * Charge les facultés depuis la table user_model
      */
     private void loadFacultiesFromDatabase() {
         try {
-            // Récupérer toutes les facultés uniques depuis user_model
             ObservableList<String> faculties = userService.getAllFacultes();
 
             if (faculties.isEmpty()) {
                 System.out.println("⚠️ Aucune faculté trouvée dans la base de données");
-                // Optionnel: Ajouter une valeur par défaut
                 faculties.add("Non définie");
             } else {
                 System.out.println("✅ " + faculties.size() + " facultés chargées depuis la base");
@@ -122,21 +165,18 @@ public class ProfilController implements Initializable {
 
             facultyComboBox.setItems(faculties);
 
-            // Sélectionner la faculté de l'utilisateur
             String userFaculty = currentUser.getFaculte();
             if (userFaculty != null && !userFaculty.isEmpty()) {
                 if (faculties.contains(userFaculty)) {
                     facultyComboBox.setValue(userFaculty);
                     System.out.println("✅ Faculté sélectionnée: " + userFaculty);
                 } else {
-                    // Ajouter la faculté si elle n'existe pas dans la liste
                     facultyComboBox.getItems().add(userFaculty);
                     facultyComboBox.setValue(userFaculty);
                     System.out.println("➕ Faculté ajoutée: " + userFaculty);
                 }
             }
 
-            // Écouter les changements
             facultyComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal != null && !newVal.equals(oldVal)) {
                     System.out.println("Faculté changée: " + oldVal + " -> " + newVal);
@@ -155,7 +195,6 @@ public class ProfilController implements Initializable {
      */
     private void loadRolesFromDatabase() {
         try {
-            // Récupérer tous les noms de rôles depuis role
             ObservableList<String> roles = roleService.getAllRoleNames();
 
             if (roles.isEmpty()) {
@@ -167,7 +206,6 @@ public class ProfilController implements Initializable {
 
             roleComboBox.setItems(roles);
 
-            // Sélectionner le rôle de l'utilisateur
             if (currentUser.getRole() != null) {
                 String userRole = currentUser.getRole().getRoleName();
                 if (userRole != null && !userRole.isEmpty()) {
@@ -178,7 +216,6 @@ public class ProfilController implements Initializable {
                 }
             }
 
-            // Le champ rôle est désactivé (lecture seule)
             roleComboBox.setDisable(true);
 
         } catch (Exception e) {
@@ -197,7 +234,6 @@ public class ProfilController implements Initializable {
             emailField.setText(currentUser.getEmail());
             phoneField.setText(currentUser.getPhone() != null ? currentUser.getPhone() : "");
 
-            // Date d'inscription
             if (currentUser.getRegistrationDate() != null) {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
                 registrationDateField.setText(currentUser.getRegistrationDate().format(formatter));
@@ -205,18 +241,15 @@ public class ProfilController implements Initializable {
                 registrationDateField.setText("Non disponible");
             }
 
-            // Biographie
             bioTextArea.setText(currentUser.getBio() != null ? currentUser.getBio() : "");
             if (bioCharCountLabel != null) {
                 bioCharCountLabel.setText((currentUser.getBio() != null ? currentUser.getBio().length() : 0) + "/500");
             }
 
-            // Mot de passe actuel
             if (currentPasswordField != null && currentUser.getPassword() != null) {
                 currentPasswordField.setText(currentUser.getPassword());
             }
 
-            // Mettre à jour les labels d'affichage
             if (userRoleDisplayLabel != null && currentUser.getRole() != null) {
                 userRoleDisplayLabel.setText(currentUser.getRole().getRoleName());
             }
@@ -235,21 +268,6 @@ public class ProfilController implements Initializable {
         if (registrationDateField != null) {
             registrationDateField.setDisable(true);
             registrationDateField.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #64748b;");
-        }
-    }
-
-    private void updateStatistics() {
-        if (currentUser != null) {
-            eventCountLabel.setText("0");
-
-
-            if (userLevelLabel != null && currentUser.getRole() != null) {
-                userLevelLabel.setText(currentUser.getRole().getRoleName());
-            }
-
-            verificationStatusLabel.setText("🟢 Compte vérifié");
-            lastLoginLabel.setText("Dernière connexion: " +
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
         }
     }
 
@@ -272,12 +290,10 @@ public class ProfilController implements Initializable {
         UserSession session = UserSession.getInstance();
 
         if (currentUser != null) {
-            // Afficher les initiales par défaut (comme dans la top bar)
             if (userInitialsText != null) {
                 userInitialsText.setText(session.getInitials());
             }
 
-            // Charger la photo si elle existe
             String photoUrl = currentUser.getProfilePictureUrl();
             if (photoUrl != null && !photoUrl.isEmpty()) {
                 try {
@@ -285,26 +301,21 @@ public class ProfilController implements Initializable {
                     profileImageView.setImage(image);
                     profileImageView.setVisible(true);
 
-                    // Cacher les initiales
                     if (initialsContainer != null) {
                         initialsContainer.setVisible(false);
                     }
 
-                    // Appliquer le clip circulaire à l'image
                     applyCircularClip(profileImageView, 66);
-
                     System.out.println("✅ Photo de profil chargée depuis: " + photoUrl);
 
                 } catch (Exception e) {
                     System.err.println("❌ Erreur chargement photo: " + e.getMessage());
-                    // En cas d'erreur, afficher les initiales
                     profileImageView.setVisible(false);
                     if (initialsContainer != null) {
                         initialsContainer.setVisible(true);
                     }
                 }
             } else {
-                // Pas de photo, afficher les initiales
                 System.out.println("ℹ️ Aucune photo de profil, affichage des initiales: " + session.getInitials());
                 profileImageView.setVisible(false);
                 if (initialsContainer != null) {
@@ -337,29 +348,21 @@ public class ProfilController implements Initializable {
         File selectedImageFile = fileChooser.showOpenDialog(uploadImageButton.getScene().getWindow());
 
         if (selectedImageFile != null) {
-            // Vérifier la taille (max 5MB)
             if (selectedImageFile.length() > 5 * 1024 * 1024) {
                 showAlert("Fichier trop volumineux", "La taille maximale est de 5MB.");
                 return;
             }
 
             try {
-                // Charger l'image
                 Image image = new Image(selectedImageFile.toURI().toString(), 132, 132, true, true);
-
-                // Afficher l'image et cacher les initiales
                 profileImageView.setImage(image);
                 profileImageView.setVisible(true);
                 if (initialsContainer != null) {
                     initialsContainer.setVisible(false);
                 }
 
-                // Appliquer le clip circulaire
                 applyCircularClip(profileImageView, 66);
-
-                // Sauvegarder le chemin
                 currentUser.setProfilePictureUrl(selectedImageFile.toURI().toString());
-
                 System.out.println("✅ Image chargée: " + selectedImageFile.getName());
 
             } catch (Exception e) {
@@ -371,7 +374,6 @@ public class ProfilController implements Initializable {
 
     @FXML
     private void saveProfile() {
-        // Mettre à jour UserModel
         currentUser.setFirst_Name(firstNameField.getText().trim());
         currentUser.setLast_Name(lastNameField.getText().trim());
         currentUser.setEmail(emailField.getText().trim());
@@ -381,10 +383,8 @@ public class ProfilController implements Initializable {
 
         try {
             if (userService.updateUser(currentUser)) {
-                // Mettre à jour la session
                 UserSession.getInstance().updateUserInfo(currentUser);
 
-                // ✅ RAFRAÎCHIR LE HEADER - Appel au MainController
                 if (mainController != null) {
                     mainController.refreshHeaderProfile();
                     System.out.println("🔄 Header rafraîchi après modification du profil");
@@ -405,8 +405,7 @@ public class ProfilController implements Initializable {
     @FXML
     private void cancelChanges() {
         loadUserDataFromModel();
-        loadProfileImage(); // Recharger l'image (revient aux initiales si pas de photo)
-        // Re-sélectionner la faculté
+        loadProfileImage();
         if (currentUser.getFaculte() != null) {
             facultyComboBox.setValue(currentUser.getFaculte());
         }

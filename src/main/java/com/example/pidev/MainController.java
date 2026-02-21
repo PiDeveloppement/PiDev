@@ -33,12 +33,23 @@ import com.example.pidev.utils.UserSession;
 import com.example.pidev.model.user.UserModel;
 
 import java.io.IOException;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MainController {
+
+    private static MainController instance;
+
+    public MainController() {
+        instance = this;
+    }
+
+    public static MainController getInstance() {
+        return instance;
+    }
 
     @FXML
     private VBox pageContentContainer;
@@ -91,7 +102,8 @@ public class MainController {
     private Button sponsorsBtn;
     @FXML
     private Button budgetBtn;
-
+    @FXML
+    private Button settingsBtn;
     @FXML
     private Button logoutBtn;
 
@@ -193,62 +205,38 @@ public class MainController {
 
     @FXML
     private void toggleEvents() {
-        if (eventsSubmenu != null) {
-            boolean isVisible = eventsSubmenu.isVisible();
-            eventsSubmenu.setVisible(!isVisible);
-            eventsSubmenu.setManaged(!isVisible);
-            if (eventsArrow != null) {
-                eventsArrow.setText(!isVisible ? "▼" : "▶");
-            }
-        }
+        toggleSubmenu(eventsSubmenu, eventsArrow, eventsToggleBtn);
     }
 
     @FXML
     private void toggleUsers() {
-        if (usersSubmenu != null) {
-            boolean isVisible = usersSubmenu.isVisible();
-            usersSubmenu.setVisible(!isVisible);
-            usersSubmenu.setManaged(!isVisible);
-            if (usersArrow != null) {
-                usersArrow.setText(!isVisible ? "▼" : "▶");
-            }
-        }
+        toggleSubmenu(usersSubmenu, usersArrow, usersToggleBtn);
     }
 
     @FXML
     private void toggleSponsors() {
-        if (sponsorsSubmenu != null) {
-            boolean isVisible = sponsorsSubmenu.isVisible();
-            sponsorsSubmenu.setVisible(!isVisible);
-            sponsorsSubmenu.setManaged(!isVisible);
-            if (sponsorsArrow != null) {
-                sponsorsArrow.setText(!isVisible ? "▼" : "▶");
-            }
-        }
+        toggleSubmenu(sponsorsSubmenu, sponsorsArrow, sponsorsBtn);
     }
 
     @FXML
     private void toggleResources() {
-        if (resourcesSubmenu != null) {
-            boolean isVisible = resourcesSubmenu.isVisible();
-            resourcesSubmenu.setVisible(!isVisible);
-            resourcesSubmenu.setManaged(!isVisible);
-            if (resourcesArrow != null) {
-                resourcesArrow.setText(!isVisible ? "▼" : "▶");
-            }
-        }
+        toggleSubmenu(resourcesSubmenu, resourcesArrow, resourcesToggleBtn);
     }
 
     @FXML
     private void toggleQuestionnaires() {
-        if (questionnairesSubmenu != null) {
-            boolean isVisible = questionnairesSubmenu.isVisible();
-            questionnairesSubmenu.setVisible(!isVisible);
-            questionnairesSubmenu.setManaged(!isVisible);
-            if (questionnairesArrow != null) {
-                questionnairesArrow.setText(!isVisible ? "▼" : "▶");
-            }
-        }
+        toggleSubmenu(questionnairesSubmenu, questionnairesArrow, questionnairesToggleBtn);
+    }
+
+    private void toggleSubmenu(VBox submenu, Text arrow, Button active) {
+        if (submenu == null) return;
+
+        boolean isVisible = submenu.isVisible();
+        submenu.setVisible(!isVisible);
+        submenu.setManaged(!isVisible);
+
+        if (arrow != null) arrow.setText(!isVisible ? "▼" : "▶");
+        setActiveButton(active);
     }
 
     // ================= GESTION DU PROFIL =================
@@ -331,8 +319,14 @@ public class MainController {
         pageInfoMap.put("equipements", new PageInfo("Gestion des équipements", "Gérez le matériel"));
         pageInfoMap.put("reservations", new PageInfo("Gestion des réservations", "Gérez les réservations"));
         pageInfoMap.put("budget", new PageInfo("Gestion du budget", "Suivez vos finances"));
+
+        // Ajout des entrées pour les questionnaires
         pageInfoMap.put("questions", new PageInfo("Gestion des questions", "Gérez les questions"));
         pageInfoMap.put("reponses", new PageInfo("Gestion des réponses", "Consultez les réponses"));
+        pageInfoMap.put("resultats", new PageInfo("Résultats", "Statistiques et aperçu global"));
+        pageInfoMap.put("historique", new PageInfo("Historique", "Consultation des anciens scores"));
+        pageInfoMap.put("participantQuiz", new PageInfo("Passer le Quiz", "Interface d'examen"));
+
         pageInfoMap.put("settings", new PageInfo("Paramètres", "Configurez l'application"));
         pageInfoMap.put("profile", new PageInfo("Mon profil", "Consultez et modifiez vos informations"));
     }
@@ -340,6 +334,7 @@ public class MainController {
     // ================= CONFIGURATION SIDEBAR =================
 
     private void configureSidebarButtons() {
+        // Dashboard
         if (dashboardBtn != null) {
             dashboardBtn.setOnAction(e -> {
                 collapseAllSubmenus();
@@ -348,6 +343,7 @@ public class MainController {
             });
         }
 
+        // Événements toggle
         if (eventsToggleBtn != null) {
             eventsToggleBtn.setOnAction(e -> {
                 toggleEvents();
@@ -356,6 +352,7 @@ public class MainController {
             });
         }
 
+        // Participants toggle
         if (usersToggleBtn != null) {
             usersToggleBtn.setOnAction(e -> {
                 toggleUsers();
@@ -364,6 +361,7 @@ public class MainController {
             });
         }
 
+        // Sponsors toggle
         if (sponsorsBtn != null) {
             sponsorsBtn.setOnAction(e -> {
                 toggleSponsors();
@@ -372,6 +370,7 @@ public class MainController {
             });
         }
 
+        // Ressources toggle
         if (resourcesToggleBtn != null) {
             resourcesToggleBtn.setOnAction(e -> {
                 toggleResources();
@@ -380,8 +379,16 @@ public class MainController {
             });
         }
 
+        // Questionnaires toggle
+        if (questionnairesToggleBtn != null) {
+            questionnairesToggleBtn.setOnAction(e -> {
+                toggleQuestionnaires();
+                collapseOtherSubmenus("questionnaires");
+                setActiveButton(questionnairesToggleBtn);
+            });
+        }
 
-
+        // Sous-menus Événements
         if (eventsListBtn != null) {
             eventsListBtn.setOnAction(e -> {
                 collapseAllSubmenus();
@@ -406,6 +413,7 @@ public class MainController {
             });
         }
 
+        // Sous-menus Participants
         if (rolesBtn != null) {
             rolesBtn.setOnAction(e -> {
                 collapseAllSubmenus();
@@ -422,6 +430,7 @@ public class MainController {
             });
         }
 
+        // Sous-menus Sponsors
         if (sponsorsListBtn != null) {
             sponsorsListBtn.setOnAction(e -> {
                 collapseAllSubmenus();
@@ -438,6 +447,16 @@ public class MainController {
             });
         }
 
+        // Budget
+        if (budgetBtn != null) {
+            budgetBtn.setOnAction(e -> {
+                collapseAllSubmenus();
+                setActiveButton(budgetBtn);
+                loadBudgetView();
+            });
+        }
+
+        // Sous-menus Ressources
         if (sallesBtn != null) {
             sallesBtn.setOnAction(e -> {
                 collapseAllSubmenus();
@@ -462,11 +481,12 @@ public class MainController {
             });
         }
 
+        // ================= NOUVEAU: BOUTONS QUESTIONNAIRES =================
         if (questionsBtn != null) {
             questionsBtn.setOnAction(e -> {
                 collapseAllSubmenus();
                 setActiveButton(questionsBtn);
-                loadQuestionsView();
+                showQuestionEditor();
             });
         }
 
@@ -474,18 +494,20 @@ public class MainController {
             reponsesBtn.setOnAction(e -> {
                 collapseAllSubmenus();
                 setActiveButton(reponsesBtn);
-                loadReponsesView();
+                showResultats();
             });
         }
 
-        if (budgetBtn != null && budgetBtn.getText().equals("Budget")) {
-            budgetBtn.setOnAction(e -> {
+        // Settings
+        if (settingsBtn != null) {
+            settingsBtn.setOnAction(e -> {
                 collapseAllSubmenus();
-                setActiveButton(budgetBtn);
-                loadBudgetView();
+                setActiveButton(settingsBtn);
+                loadSettingsView();
             });
         }
 
+        // Logout
         if (logoutBtn != null) {
             logoutBtn.setOnAction(e -> logout());
         }
@@ -553,23 +575,21 @@ public class MainController {
                 usersToggleBtn, rolesBtn, inscriptionsBtn,
                 sponsorsBtn, sponsorsListBtn, contratsBtn,
                 resourcesToggleBtn, sallesBtn, equipementsBtn, reservationsBtn,
-                 questionsBtn, reponsesBtn,
-                budgetBtn
+                questionnairesToggleBtn, questionsBtn, reponsesBtn,
+                budgetBtn, settingsBtn
         };
 
         for (Button btn : allButtons) {
             if (btn != null) {
                 btn.getStyleClass().removeAll("main-menu-button", "submenu-button", "sidebar-button-active");
 
-                if (btn == eventsListBtn || btn == categoriesBtn || btn == ticketsBtn ||
+                boolean isSub = btn == eventsListBtn || btn == categoriesBtn || btn == ticketsBtn ||
                         btn == rolesBtn || btn == inscriptionsBtn ||
                         btn == sponsorsListBtn || btn == contratsBtn ||
                         btn == sallesBtn || btn == equipementsBtn || btn == reservationsBtn ||
-                        btn == questionsBtn || btn == reponsesBtn || btn == budgetBtn) {
-                    btn.getStyleClass().add("submenu-button");
-                } else {
-                    btn.getStyleClass().add("main-menu-button");
-                }
+                        btn == questionsBtn || btn == reponsesBtn || btn == budgetBtn;
+
+                btn.getStyleClass().add(isSub ? "submenu-button" : "main-menu-button");
             }
         }
 
@@ -639,6 +659,7 @@ public class MainController {
 
         } catch (IOException e) {
             e.printStackTrace();
+            showSimpleAlert("Erreur", "Impossible de charger la page: " + fxmlPath);
         }
     }
 
@@ -662,8 +683,15 @@ public class MainController {
         if (fxmlPath.contains("sponsorsList")) return "sponsorsList";
         if (fxmlPath.contains("contrat")) return "contrats";
         if (fxmlPath.contains("budget")) return "budget";
+
+        // Pour les questionnaires
+        if (fxmlPath.contains("form_question")) return "questions";
+        if (fxmlPath.contains("Resultat")) return "resultats";
+        if (fxmlPath.contains("Participant")) return "participantQuiz";
+        if (fxmlPath.contains("Historique")) return "historique";
         if (fxmlPath.contains("question")) return "questions";
         if (fxmlPath.contains("reponse")) return "reponses";
+
         if (fxmlPath.contains("settings")) return "settings";
         if (fxmlPath.contains("profil")) return "profile";
         if (fxmlPath.contains("editUser")) return "editUsers";
@@ -713,6 +741,7 @@ public class MainController {
             pageContentContainer.getChildren().setAll(root);
         } catch (Exception e) {
             e.printStackTrace();
+            showSimpleAlert("Erreur", "Impossible de charger la page des utilisateurs: " + e.getMessage());
         }
     }
 
@@ -755,24 +784,158 @@ public class MainController {
         loadPage("/com/example/pidev/fxml/budget/budget.fxml", "budget");
     }
 
+    // ================= MÉTHODES POUR LES RESSOURCES =================
+
     public void loadSallesView() {
-        loadPage("/com/example/pidev/fxml/reservationRessources/salle.fxml", "salles");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/resource/salle.fxml")
+            );
+            Parent root = loader.load();
+
+            pageContentContainer.getChildren().setAll(root);
+            updatePageHeader("salles");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showSimpleAlert("Erreur", "Impossible de charger la page des salles: " + e.getMessage());
+        }
     }
 
     public void loadEquipementsView() {
-        loadPage("/com/example/pidev/fxml/reservationRessources/equipement.fxml", "equipements");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/resource/equipement.fxml")
+            );
+            Parent root = loader.load();
+
+            pageContentContainer.getChildren().setAll(root);
+            updatePageHeader("equipements");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showSimpleAlert("Erreur", "Impossible de charger la page des équipements: " + e.getMessage());
+        }
     }
 
     public void loadReservationsView() {
-        loadPage("/com/example/pidev/fxml/reservationRessources/reservation.fxml", "reservations");
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/resource/reservation.fxml")
+            );
+            Parent root = loader.load();
+
+            pageContentContainer.getChildren().setAll(root);
+            updatePageHeader("reservations");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showSimpleAlert("Erreur", "Impossible de charger la page des réservations: " + e.getMessage());
+        }
     }
 
+    // ================= NOUVELLES MÉTHODES POUR LES QUESTIONNAIRES =================
+
+    /**
+     * Charge l'éditeur de questions
+     */
+    public void loadQuestionEditor() {
+        loadQuestionnairePage("form_question.fxml", "Gestion des questions", "Gestion de la banque de données");
+    }
+
+    /**
+     * Charge la page des résultats/statistiques
+     */
+    public void loadResultatsView() {
+        loadQuestionnairePage("Resultat.fxml", "Résultats", "Statistiques et aperçu global");
+    }
+
+    /**
+     * Charge la page du quiz participant
+     */
+    public void loadParticipantQuizView() {
+        loadQuestionnairePage("Participant.fxml", "Passer le Quiz", "Interface d'examen");
+    }
+
+    /**
+     * Charge la page d'historique
+     */
+    public void loadHistoriqueView() {
+        loadQuestionnairePage("Historique.fxml", "Historique", "Consultation des anciens scores");
+    }
+
+    /**
+     * Méthode générique pour charger les pages de questionnaire
+     */
+    private void loadQuestionnairePage(String fxmlFile, String title, String subtitle) {
+        try {
+            // Chemin vers les fichiers FXML du questionnaire
+            String path = "/com/example/pidev/fxml/questionnaire/" + fxmlFile;
+            URL fileUrl = getClass().getResource(path);
+
+            if (fileUrl == null) {
+                System.err.println("❌ Fichier FXML introuvable: " + path);
+                showSimpleAlert("Erreur", "Fichier introuvable: " + fxmlFile);
+                return;
+            }
+
+            FXMLLoader loader = new FXMLLoader(fileUrl);
+            Parent root = loader.load();
+
+            setContent(root);
+            if (pageTitle != null) pageTitle.setText(title);
+            if (pageSubtitle != null) pageSubtitle.setText(subtitle);
+
+            System.out.println("✅ Page chargée: " + title);
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur chargement " + fxmlFile + ": " + e.getMessage());
+            e.printStackTrace();
+            showSimpleAlert("Erreur", "Impossible de charger la page: " + e.getMessage());
+        }
+    }
+
+    // ================= ACTIONS FXML POUR QUESTIONNAIRES =================
+
+    @FXML
+    public void showQuestionEditor() {
+        System.out.println("📝 Affichage de l'éditeur de questions");
+        collapseAllSubmenus();
+        setActiveButton(questionsBtn);
+        loadQuestionEditor();
+    }
+
+    @FXML
+    public void showResultats() {
+        System.out.println("📊 Affichage des résultats");
+        collapseAllSubmenus();
+        setActiveButton(reponsesBtn);
+        loadResultatsView();
+    }
+
+    @FXML
+    public void showParticipantQuiz() {
+        System.out.println("🎯 Affichage du quiz participant");
+        collapseAllSubmenus();
+        // Note: Vous pouvez ajouter un bouton spécifique si nécessaire
+        loadParticipantQuizView();
+    }
+
+    @FXML
+    public void showHistorique() {
+        System.out.println("📜 Affichage de l'historique");
+        collapseAllSubmenus();
+        loadHistoriqueView();
+    }
+
+    // ================= MÉTHODES EXISTANTES =================
+
     public void loadQuestionsView() {
-        loadPage("/com/example/pidev/fxml/questionnaire/question.fxml", "questions");
+        showQuestionEditor();
     }
 
     public void loadReponsesView() {
-        loadPage("/com/example/pidev/fxml/questionnaire/reponse.fxml", "reponses");
+        showResultats();
     }
 
     public void loadSettingsView() {
@@ -834,7 +997,6 @@ public class MainController {
     @FXML
     public void logout() {
         try {
-            // Nettoyer le dashboard si nécessaire
             if (dashboardController != null) {
                 dashboardController.cleanup();
             }
@@ -901,11 +1063,14 @@ public class MainController {
             results.add("   💵 Budget");
             results.add("   💻 Équipements");
             results.add("   🏢 Salles");
+            results.add("   📅 Réservations");
         }
         if ("questionnaires".contains(lowerQuery)) {
             results.add("📝 Questionnaires");
             results.add("   ❓ Questions");
-            results.add("   📊 Réponses");
+            results.add("   📊 Résultats");
+            results.add("   📜 Historique");
+            results.add("   🎯 Passer le Quiz");
         }
         if ("paramètres".contains(lowerQuery) || "settings".contains(lowerQuery)) {
             results.add("⚙️ Paramètres");
@@ -973,10 +1138,13 @@ public class MainController {
         else if (selected.contains("Budget")) budgetBtn.fire();
         else if (selected.contains("Équipements")) equipementsBtn.fire();
         else if (selected.contains("Salles")) sallesBtn.fire();
+        else if (selected.contains("Réservations")) reservationsBtn.fire();
         else if (selected.contains("Questionnaires") && !selected.contains("  ")) questionnairesToggleBtn.fire();
         else if (selected.contains("Questions")) questionsBtn.fire();
-        else if (selected.contains("Réponses")) reponsesBtn.fire();
-
+        else if (selected.contains("Résultats")) reponsesBtn.fire();
+        else if (selected.contains("Historique")) showHistorique();
+        else if (selected.contains("Passer le Quiz")) showParticipantQuiz();
+        else if (selected.contains("Paramètres")) settingsBtn.fire();
     }
 
     private void showSimpleAlert(String title, String message) {
@@ -1083,7 +1251,7 @@ public class MainController {
         hideNode(sponsorsBtn);
         hideNode(resourcesToggleBtn);
         hideNode(questionnairesToggleBtn);
-
+        hideNode(settingsBtn);
         hideNode(budgetBtn);
         hideAllSubmenus();
         System.out.println("✅ Mode participant activé");
@@ -1110,7 +1278,7 @@ public class MainController {
         hideNode(usersToggleBtn);
         hideNode(resourcesToggleBtn);
         hideNode(questionnairesToggleBtn);
-
+        hideNode(settingsBtn);
         hideNode(budgetBtn);
     }
 
@@ -1118,7 +1286,7 @@ public class MainController {
         Node[] main = {
                 dashboardBtn, eventsToggleBtn, usersToggleBtn, sponsorsBtn,
                 resourcesToggleBtn, questionnairesToggleBtn,
-               budgetBtn
+                settingsBtn, budgetBtn
         };
         for (Node n : main) showNode(n);
         collapseAllSubmenus();
@@ -1132,7 +1300,7 @@ public class MainController {
         hideNode(usersToggleBtn);
         hideNode(resourcesToggleBtn);
         hideNode(questionnairesToggleBtn);
-
+        hideNode(settingsBtn);
         hideAllSubmenus();
     }
 
@@ -1338,28 +1506,8 @@ public class MainController {
         showTicketsList();
     }
 
-    // ================= MÉTHODES POUR LES RESSOURCES =================
-
-    public void showRooms() {
-        System.out.println("🏢 Navigation vers Salles");
-        loadPage("/com/example/pidev/fxml/reservationRessources/salle.fxml", "salles");
-    }
-
-    public void showEquipments() {
-        System.out.println("💻 Navigation vers Équipements");
-        loadPage("/com/example/pidev/fxml/reservationRessources/equipement.fxml", "equipements");
-    }
-
-    public void showReservations() {
-        System.out.println("📅 Navigation vers Réservations");
-        loadPage("/com/example/pidev/fxml/reservationRessources/reservation.fxml", "reservations");
-    }
-
     // ================= MÉTHODES DE RAFRAÎCHISSEMENT =================
 
-    /**
-     * Rafraîchit le dashboard si affiché
-     */
     public void refreshDashboard() {
         if (dashboardController != null) {
             System.out.println("🔄 Rafraîchissement du dashboard depuis MainController");
@@ -1367,33 +1515,78 @@ public class MainController {
         }
     }
 
-    /**
-     * Appelé après la sauvegarde d'un événement
-     */
     public void onEventSaved() {
         refreshDashboard();
     }
 
-    /**
-     * Appelé après la sauvegarde d'un participant
-     */
     public void onParticipantSaved() {
         refreshDashboard();
     }
 
-    /**
-     * Appelé après la sauvegarde d'une inscription
-     */
     public void onInscriptionSaved() {
         refreshDashboard();
     }
 
-    /**
-     * Nettoie les ressources avant fermeture
-     */
     public void cleanup() {
         if (dashboardController != null) {
             dashboardController.cleanup();
         }
+    }
+
+    /**
+     * Définit le contenu de la page centrale
+     */
+    public void setContent(Parent node) {
+        if (pageContentContainer != null) {
+            pageContentContainer.getChildren().setAll(node);
+        } else {
+            System.err.println("❌ pageContentContainer est null dans setContent()");
+        }
+    }
+
+    /**
+     * Définit le contenu avec titre (compatibilité)
+     */
+    public void setContent(Parent root, String title) {
+        setContent(root, title, "");
+    }
+
+    /**
+     * Définit le contenu avec titre et sous-titre
+     */
+    public void setContent(Parent root, String title, String subtitle) {
+        if (pageTitle != null) pageTitle.setText(title);
+        if (pageSubtitle != null) pageSubtitle.setText(subtitle);
+        setContent(root);
+    }
+
+    @FXML
+    public void showSalles() {
+        System.out.println("🏢 Affichage de la page des salles");
+        collapseAllSubmenus();
+        setActiveButton(sallesBtn);
+        loadSallesView();
+    }
+
+    @FXML
+    public void showEquipements() {
+        System.out.println("💻 Affichage de la page des équipements");
+        collapseAllSubmenus();
+        setActiveButton(equipementsBtn);
+        loadEquipementsView();
+    }
+
+    @FXML
+    public void showReservations() {
+        System.out.println("📅 Affichage de la page des réservations");
+        collapseAllSubmenus();
+        setActiveButton(reservationsBtn);
+        loadReservationsView();
+    }
+
+    @FXML
+    private void handleExit() {
+        System.out.println("🚪 Fermeture de l'application");
+        System.exit(0);
     }
 }

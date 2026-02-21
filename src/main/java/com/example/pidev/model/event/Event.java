@@ -216,6 +216,10 @@ public class Event {
                 startDate.isBefore(endDate) &&
                 categoryId > 0 && createdBy > 0;
     }
+    public Event(int id, String title) {
+        this.id = id;
+        this.title = title;
+    }
 
     /**
      * Vérifie si l'événement est complet

@@ -24,7 +24,7 @@ public class HelloApplication extends Application {
 
         stage.initStyle(StageStyle.DECORATED);
 
-        Scene scene = new Scene(root, 1400, 900);
+        Scene scene = new Scene(root, 1400, 700);
 
         // Votre CSS personnalisé
         scene.getStylesheets().add(getClass().getResource("/com/example/pidev/css/atlantafx-custom.css").toExternalForm());

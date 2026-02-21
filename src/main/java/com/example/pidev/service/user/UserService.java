@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 public class UserService {
 
-    private final Connection connection;
+    public final Connection connection;
 
     public UserService() throws SQLException {
         this.connection = new DBConnection().getConnection();
