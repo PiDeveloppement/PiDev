@@ -11,14 +11,25 @@ import java.time.LocalDateTime;
 
 public class UserService {
 
-    public final Connection connection;
+    public Connection connection; // Changé de final à non-final pour pouvoir gérer les exceptions
 
-    public UserService() throws SQLException {
-        this.connection = new DBConnection().getConnection();
+    public UserService() {
+        try {
+            this.connection = new DBConnection().getConnection();
+        } catch (Exception e) {
+            System.err.println("❌ Erreur de connexion à la base de données: " + e.getMessage());
+            e.printStackTrace();
+            this.connection = null;
+        }
     }
 
-    // 🔹 Créer un utilisateur (version originale préservée)
+    // 🔹 Créer un utilisateur avec gestion d'exceptions
     public boolean registerUser(UserModel user) {
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return false;
+        }
+
         String query = "INSERT INTO user_model(First_Name, Last_Name, Email, Faculte, Password, Role_Id, phone, profile_picture_url, registration_date, bio) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -60,27 +71,37 @@ public class UserService {
             return rowsInserted > 0;
 
         } catch (SQLException e) {
+            System.err.println("❌ Erreur lors de l'inscription: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    // 🔹 Supprimer un utilisateur (inchangé)
+    // 🔹 Supprimer un utilisateur
     public boolean deleteUser(long id) {
+        if (connection == null) return false;
+
         String query = "DELETE FROM user_model WHERE Id_User=?";
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setLong(1, id);
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
+            System.err.println("❌ Erreur lors de la suppression: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    // 🔹 Récupérer tous les utilisateurs (avec les nouveaux champs)
+    // 🔹 Récupérer tous les utilisateurs
     public ObservableList<UserModel> getAllUsers() {
         ObservableList<UserModel> users = FXCollections.observableArrayList();
+
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return users;
+        }
+
         String query = "SELECT u.*, r.RoleName " +
                 "FROM user_model u " +
                 "LEFT JOIN role r ON u.Role_Id = r.Id_Role";
@@ -122,13 +143,16 @@ public class UserService {
             }
 
         } catch (SQLException e) {
+            System.err.println("❌ Erreur lors de la récupération des utilisateurs: " + e.getMessage());
             e.printStackTrace();
         }
         return users;
     }
 
-    // 🔹 Modifier un utilisateur (avec les nouveaux champs)
+    // 🔹 Modifier un utilisateur
     public boolean updateUser(UserModel user) {
+        if (connection == null) return false;
+
         String query = "UPDATE user_model SET " +
                 "First_Name=?, Last_Name=?, Email=?, Faculte=?, Password=?, Role_Id=?, " +
                 "phone=?, profile_picture_url=?, bio=? " +
@@ -162,31 +186,88 @@ public class UserService {
                 stmt.setNull(9, Types.VARCHAR);
             }
 
-            stmt.setLong(10, user.getId_User()); // VERY IMPORTANT
+            stmt.setLong(10, user.getId_User());
 
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
+            System.err.println("❌ Erreur lors de la mise à jour: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    // 🔹 Méthode spécifique pour mettre à jour la photo de profil
-    public boolean updateProfilePicture(int userId, String pictureUrl) {
-        String query = "UPDATE user_model SET profile_picture_url=? WHERE Id_User=?";
+    // 🔹 Récupérer un utilisateur par email
+    public UserModel getUserByEmail(String email) {
+        if (connection == null) return null;
+
+        String query = "SELECT u.*, r.RoleName FROM user_model u " +
+                "LEFT JOIN role r ON u.Role_Id = r.Id_Role WHERE u.Email = ?";
+
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setString(1, pictureUrl);
-            stmt.setInt(2, userId);
-            return stmt.executeUpdate() > 0;
+            stmt.setString(1, email);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                Role role = new Role();
+                role.setId_Role(rs.getInt("Role_Id"));
+                role.setRoleName(rs.getString("RoleName"));
+
+                UserModel user = new UserModel(
+                        rs.getInt("Id_User"),
+                        rs.getString("First_Name"),
+                        rs.getString("Last_Name"),
+                        rs.getString("Email"),
+                        rs.getString("Faculte"),
+                        rs.getString("Password"),
+                        rs.getInt("Role_Id")
+                );
+
+                user.setPhone(rs.getString("phone"));
+                user.setProfilePictureUrl(rs.getString("profile_picture_url"));
+
+                Timestamp regDate = rs.getTimestamp("registration_date");
+                if (regDate != null) {
+                    user.setRegistrationDate(regDate.toLocalDateTime());
+                }
+
+                user.setBio(rs.getString("bio"));
+                user.setRole(role);
+
+                return user;
+            }
         } catch (SQLException e) {
+            System.err.println("❌ Erreur getUserByEmail: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    // 🔹 Mettre à jour le mot de passe
+    public boolean updateUserPassword(int userId, String newPassword) {
+        if (connection == null) return false;
+
+        String query = "UPDATE user_model SET password = ? WHERE Id_User = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, newPassword);
+            stmt.setInt(2, userId);
+
+            int rowsAffected = stmt.executeUpdate();
+            System.out.println("✅ Mot de passe mis à jour pour l'utilisateur ID: " + userId);
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur updateUserPassword: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    // 🔹 Méthode pour récupérer un utilisateur par son ID (avec tous les champs)
+    // 🔹 Récupérer un utilisateur par ID
     public UserModel getUserById(int id) {
+        if (connection == null) return null;
+
         String query = "SELECT u.*, r.RoleName FROM user_model u " +
                 "LEFT JOIN role r ON u.Role_Id = r.Id_Role WHERE u.Id_User=?";
 
@@ -223,70 +304,31 @@ public class UserService {
                 return user;
             }
         } catch (SQLException e) {
+            System.err.println("❌ Erreur getUserById: " + e.getMessage());
             e.printStackTrace();
         }
         return null;
     }
 
-    // 🔹 Rafraîchir la liste des utilisateurs (inchangé)
-    public void refreshUsers(ObservableList<UserModel> usersList) {
-        usersList.setAll(getAllUsers());
-    }
-
-    /**
-     * Récupère toutes les facultés uniques (inchangé)
-     */
-    public ObservableList<String> getAllFacultes() {
-        ObservableList<String> faculteList = FXCollections.observableArrayList();
-        String query = "SELECT DISTINCT faculte FROM user_model WHERE faculte IS NOT NULL AND faculte != '' ORDER BY faculte";
-
-        try (Statement st = connection.createStatement();
-             ResultSet rs = st.executeQuery(query)) {
-
-            while (rs.next()) {
-                faculteList.add(rs.getString("faculte"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return faculteList;
-    }
-
-    /**
-     * Vérifie si un email existe déjà (inchangé)
-     */
-    public boolean isEmailExists(String email) {
-        String query = "SELECT COUNT(*) FROM user_model WHERE Email = ?";
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
-            ps.setString(1, email);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1) > 0;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
+    // 🔹 Authentification
     public UserModel authenticate(String email, String password) {
-        String query = "SELECT u.*, r.RoleName, r.Id_Role as RoleId " +
-                "FROM user_model u " +
+        if (connection == null) return null;
+
+        String query = "SELECT u.*, r.RoleName FROM user_model u " +
                 "LEFT JOIN role r ON u.Role_Id = r.Id_Role " +
                 "WHERE u.Email = ? AND u.Password = ?";
 
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, email);
-            stmt.setString(2, password); // Note: Idéalement, le mot de passe devrait être hashé
+            stmt.setString(2, password);
 
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                // Créer le rôle
                 Role role = new Role();
                 role.setId_Role(rs.getInt("Role_Id"));
                 role.setRoleName(rs.getString("RoleName"));
 
-                // Créer l'utilisateur
                 UserModel user = new UserModel(
                         rs.getInt("Id_User"),
                         rs.getString("First_Name"),
@@ -297,7 +339,6 @@ public class UserService {
                         rs.getInt("Role_Id")
                 );
 
-                // Ajouter les nouveaux champs
                 user.setPhone(rs.getString("phone"));
                 user.setProfilePictureUrl(rs.getString("profile_picture_url"));
 
@@ -312,20 +353,65 @@ public class UserService {
                 return user;
             }
         } catch (SQLException e) {
+            System.err.println("❌ Erreur authenticate: " + e.getMessage());
             e.printStackTrace();
         }
         return null;
     }
-    public int getTotalParticipantsCount() throws SQLException {
+
+    // 🔹 Récupérer toutes les facultés
+    public ObservableList<String> getAllFacultes() {
+        ObservableList<String> faculteList = FXCollections.observableArrayList();
+
+        if (connection == null) return faculteList;
+
+        String query = "SELECT DISTINCT faculte FROM user_model WHERE faculte IS NOT NULL AND faculte != '' ORDER BY faculte";
+
+        try (Statement st = connection.createStatement();
+             ResultSet rs = st.executeQuery(query)) {
+
+            while (rs.next()) {
+                faculteList.add(rs.getString("faculte"));
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getAllFacultes: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return faculteList;
+    }
+
+    // 🔹 Vérifier si email existe
+    public boolean isEmailExists(String email) {
+        if (connection == null) return false;
+
+        String query = "SELECT COUNT(*) FROM user_model WHERE Email = ?";
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur isEmailExists: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // 🔹 Compter les participants
+    public int getTotalParticipantsCount() {
+        if (connection == null) return 0;
+
         String query = "SELECT COUNT(*) FROM user_model";
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return rs.getInt(1);
             }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getTotalParticipantsCount: " + e.getMessage());
+            e.printStackTrace();
         }
         return 0;
     }
-
-
 }

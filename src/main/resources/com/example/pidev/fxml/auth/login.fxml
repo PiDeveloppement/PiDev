@@ -126,6 +126,14 @@
                                       text="Se souvenir de moi"
                                       style="-fx-text-fill: #555555; -fx-font-size: 13px;"/>
 
+                            <!-- 🔥 NOUVEAU: Lien mot de passe oublié -->
+                            <HBox alignment="CENTER">
+                                <Hyperlink fx:id="forgotPasswordLink"
+                                           text="Mot de passe oublié ?"
+                                           onAction="#handleForgotPassword"
+                                           style="-fx-text-fill: #2196F3; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+                            </HBox>
+
                             <Button fx:id="submitButton" text="Se connecter"
                                     onAction="#loginButtonOnAction"
                                     style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;
@@ -146,8 +154,6 @@
                                                onAction="#goToSignup"
                                                style="-fx-text-fill: #2196F3; -fx-font-weight: bold; -fx-font-size: 12px;"/>
                                 </HBox>
-
-
                             </VBox>
                         </VBox>
                     </VBox>

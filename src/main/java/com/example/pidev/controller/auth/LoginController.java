@@ -40,6 +40,9 @@ public class LoginController implements Initializable {
     @FXML
     private Button cancelButton;
 
+    @FXML
+    private Hyperlink forgotPasswordLink;
+
     private UserService userService;
     private Preferences preferences;
 
@@ -54,7 +57,7 @@ public class LoginController implements Initializable {
             // Charger les identifiants sauvegardés
             loadSavedCredentials();
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             showAlert("Erreur", "Erreur de connexion à la base de données");
             e.printStackTrace();
         }
@@ -122,6 +125,50 @@ public class LoginController implements Initializable {
     }
 
     /**
+     * ✅ Méthode pour mot de passe oublié - CORRIGÉE
+     */
+    @FXML
+    private void handleForgotPassword(ActionEvent event) {
+        try {
+            System.out.println("🔑 Redirection vers la page mot de passe oublié");
+
+            // Vérifier plusieurs chemins possibles
+            URL fxmlLocation = null;
+            String[] possiblePaths = {
+                    "/com/example/pidev/fxml/user/forgot_password.fxml",
+                    "/fxml/auth/forgot_password.fxml",
+                    "/auth/forgot_password.fxml",
+                    "../fxml/auth/forgot_password.fxml"
+            };
+
+            for (String path : possiblePaths) {
+                fxmlLocation = getClass().getResource(path);
+                if (fxmlLocation != null) {
+                    System.out.println("✅ FXML trouvé à: " + path);
+                    break;
+                }
+            }
+
+            if (fxmlLocation == null) {
+                System.err.println("❌ FXML forgot_password.fxml introuvable!");
+                showAlert("Erreur", "Fichier de récupération de mot de passe introuvable");
+                return;
+            }
+
+            Parent root = FXMLLoader.load(fxmlLocation);
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle("Mot de passe oublié - EventFlow");
+            stage.show();
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur lors de la redirection: " + e.getMessage());
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible d'ouvrir la page de récupération de mot de passe");
+        }
+    }
+
+    /**
      * ✅ Méthode pour charger les identifiants sauvegardés
      */
     private void loadSavedCredentials() {
@@ -170,10 +217,19 @@ public class LoginController implements Initializable {
     private void goToSignup(ActionEvent event) {
         try {
             System.out.println("📝 Redirection vers la page d'inscription");
-            Parent root = FXMLLoader.load(getClass().getResource("/com/example/pidev/fxml/auth/signup.fxml"));
+
+            URL fxmlLocation = getClass().getResource("/com/example/pidev/fxml/auth/signup.fxml");
+            if (fxmlLocation == null) {
+                System.err.println("❌ FXML signup.fxml introuvable!");
+                showAlert("Erreur", "Fichier d'inscription introuvable");
+                return;
+            }
+
+            Parent root = FXMLLoader.load(fxmlLocation);
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.show();
+
         } catch (IOException e) {
             System.err.println("❌ Erreur lors de la redirection vers l'inscription");
             e.printStackTrace();
@@ -221,7 +277,7 @@ public class LoginController implements Initializable {
         alert.setContentText(message);
         alert.showAndWait();
     }
-    // Dans SignupController.java et LoginController.java
+
     @FXML
     private void goToLanding(ActionEvent event) {
         HelloApplication.loadLandingPage();

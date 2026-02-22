@@ -9,6 +9,7 @@ public class ReservationResource {
     private int quantity;
     private String resourceName; // Pour l'affichage
     private String imagePath;    // Pour l'affichage
+    private int userId;
 
     // Constructeurs, Getters et Setters...
     public ReservationResource() {}
@@ -28,4 +29,11 @@ public class ReservationResource {
     public LocalDateTime getStartTimedate() { return startTimedate; }
     public LocalDateTime getEndTime() { return endTime; }
     public int getQuantity() { return quantity; }
+    public int getUserId() {
+        return userId;
+    }
+
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
 }
