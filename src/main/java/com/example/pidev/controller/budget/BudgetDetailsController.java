@@ -1,25 +1,22 @@
 package com.example.pidev.controller.budget;
 
 import com.example.pidev.model.budget.Budget;
-import com.example.pidev.service.event.EventService;
+import com.example.pidev.service.budget.BudgetService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
 
 public class BudgetDetailsController {
 
-    @FXML private Label idLabel;       // si tu ne l'affiches plus, tu peux le supprimer du FXML
+    @FXML private Label idLabel;
     @FXML private Label eventIdLabel;
     @FXML private Label statusLabel;
-
     @FXML private Label initialLabel;
     @FXML private Label expensesLabel;
     @FXML private Label revenueLabel;
     @FXML private Label rentLabel;
 
-    private final EventService eventService = new EventService();
-
-    // ✅ callback si utilisé comme "page" dans le center
+    private final BudgetService budgetService = new BudgetService();
     private Runnable onCloseAction;
 
     public void setOnCloseAction(Runnable onCloseAction) {
@@ -33,7 +30,7 @@ public class BudgetDetailsController {
 
         if (eventIdLabel != null) {
             try {
-                String eventTitle = eventService.getEventTitleById(b.getEvent_id());
+                String eventTitle = budgetService.getEventTitleById(b.getEvent_id());
                 eventIdLabel.setText("Événement: " + eventTitle);
             } catch (Exception e) {
                 eventIdLabel.setText("Événement: (ID: " + b.getEvent_id() + ")");
@@ -64,13 +61,10 @@ public class BudgetDetailsController {
 
     @FXML
     private void onClose() {
-        // ✅ Si c'est une page dans le center
         if (onCloseAction != null) {
             onCloseAction.run();
             return;
         }
-
-        // ✅ Sinon fallback: fermer la fenêtre si c'est un popup
         try {
             if (eventIdLabel != null && eventIdLabel.getScene() != null) {
                 Stage st = (Stage) eventIdLabel.getScene().getWindow();

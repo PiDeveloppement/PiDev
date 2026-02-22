@@ -103,8 +103,11 @@
                             </Button>
 
                             <VBox fx:id="sponsorsSubmenu" visible="true" managed="true" spacing="6">
-                                <Button fx:id="sponsorsListBtn" text="   Sponsor"
+                                <Button fx:id="sponsorsListBtn" text="   Admin Sponsors"
                                         styleClass="submenu-button" onAction="#onSponsorsList"
+                                        maxWidth="1.7976931348623157E308"/>
+                                <Button fx:id="sponsorPortalBtn" text="   Portail Sponsor"
+                                        styleClass="submenu-button" onAction="#onSponsorPortal"
                                         maxWidth="1.7976931348623157E308"/>
                                 <Button fx:id="budgetBtn" text="   Budget"
                                         styleClass="submenu-button" onAction="#onBudget"

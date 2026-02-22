@@ -1,7 +1,7 @@
 package com.example.pidev.controller.sponsor;
 
 import com.example.pidev.model.sponsor.Sponsor;
-import com.example.pidev.service.event.EventService;
+import com.example.pidev.service.sponsor.SponsorService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -11,43 +11,30 @@ import javafx.scene.image.ImageView;
 public class SponsorCardController {
 
     @FXML private ImageView logoView;
-
     @FXML private Label companyLabel;
     @FXML private Label emailLabel;
     @FXML private Label contributionLabel;
     @FXML private Label eventLabel;
-
     @FXML private Button detailsBtn;
     @FXML private Button pdfBtn;
     @FXML private Button editBtn;
     @FXML private Button deleteBtn;
 
-    private final EventService eventService = new EventService();
+    private final SponsorService sponsorService = new SponsorService();
 
-    public void setData(
-            Sponsor s,
-            Runnable onDetails,
-            Runnable onPdf,
-            Runnable onEdit,
-            Runnable onDelete
-    ) {
+    public void setData(Sponsor s, Runnable onDetails, Runnable onPdf, Runnable onEdit, Runnable onDelete) {
         if (s == null) return;
 
-        // entreprise / email / contribution
         if (companyLabel != null) companyLabel.setText(nv(s.getCompany_name()));
         if (emailLabel != null) emailLabel.setText(nv(s.getContact_email()));
         if (contributionLabel != null) contributionLabel.setText(String.format("%,.2f DT", s.getContribution_name()));
 
-        // event title (sans ID affiché)
         if (eventLabel != null) {
-            String title = null;
-            try { title = eventService.getEventTitleById(s.getEvent_id()); }
-            catch (Exception ignored) {}
+            String title = sponsorService.getEventTitleById(s.getEvent_id());
             if (title == null || title.isBlank()) title = "—";
             eventLabel.setText("Événement: " + title);
         }
 
-        // logo
         try {
             if (logoView != null && s.getLogo_url() != null && !s.getLogo_url().isBlank()) {
                 logoView.setImage(new Image(s.getLogo_url(), true));
@@ -56,7 +43,6 @@ public class SponsorCardController {
             }
         } catch (Exception ignored) {}
 
-        // actions
         if (detailsBtn != null) detailsBtn.setOnAction(e -> { if (onDetails != null) onDetails.run(); });
         if (pdfBtn != null) pdfBtn.setOnAction(e -> { if (onPdf != null) onPdf.run(); });
         if (editBtn != null) editBtn.setOnAction(e -> { if (onEdit != null) onEdit.run(); });

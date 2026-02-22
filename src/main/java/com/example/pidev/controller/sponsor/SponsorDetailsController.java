@@ -17,9 +17,7 @@ public class SponsorDetailsController {
     @FXML private Label contributionLabel;
     @FXML private Label logoUrlLabel;
     @FXML private Label contractUrlLabel;
-
     @FXML private ImageView sponsorLogoView;
-
     @FXML private Button openContractBtn;
     @FXML private Button okBtn;
 
@@ -38,14 +36,12 @@ public class SponsorDetailsController {
         if (logoUrlLabel != null) logoUrlLabel.setText(nvl(sponsor.getLogo_url()));
         if (contractUrlLabel != null) contractUrlLabel.setText(nvl(sponsor.getContract_url()));
 
-        // logo
         try {
             if (sponsorLogoView != null && sponsor.getLogo_url() != null && !sponsor.getLogo_url().isBlank()) {
                 sponsorLogoView.setImage(new Image(sponsor.getLogo_url(), true));
             }
         } catch (Exception ignored) {}
 
-        // bouton contrat désactivé si pas de lien
         if (openContractBtn != null) {
             boolean has = sponsor.getContract_url() != null && !sponsor.getContract_url().isBlank();
             openContractBtn.setDisable(!has);
@@ -75,4 +71,5 @@ public class SponsorDetailsController {
     private String nvl(String s) {
         return (s == null || s.isBlank()) ? "—" : s;
     }
+
 }

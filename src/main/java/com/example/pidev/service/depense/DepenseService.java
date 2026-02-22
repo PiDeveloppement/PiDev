@@ -7,6 +7,8 @@ import javafx.collections.ObservableList;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class DepenseService {
 
@@ -130,6 +132,21 @@ public class DepenseService {
         } catch (SQLException e) {
             throw new RuntimeException("topCategorie failed", e);
         }
+    }
+
+    // ---------- CHART DATA ----------
+    public Map<String, Double> getSumByCategory() {
+        Map<String, Double> map = new LinkedHashMap<>();
+        String sql = "SELECT category, COALESCE(SUM(amount),0) FROM depense GROUP BY category ORDER BY category";
+        try (PreparedStatement ps = cnx().prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                map.put(rs.getString(1), rs.getDouble(2));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("getSumByCategory failed", e);
+        }
+        return map;
     }
 
     // ---------- CRUD ----------

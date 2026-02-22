@@ -1,9 +1,7 @@
 package com.example.pidev.controller.sponsor;
 
 import com.example.pidev.MainController;
-import com.example.pidev.model.Auth.AuthContext;
 import com.example.pidev.model.sponsor.Sponsor;
-import com.example.pidev.service.event.EventService;
 import com.example.pidev.service.sponsor.SponsorService;
 import com.example.pidev.service.pdf.LocalSponsorPdfService;
 import javafx.collections.FXCollections;
@@ -16,6 +14,10 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.TilePane;
@@ -25,29 +27,27 @@ import java.io.File;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 public class SponsorPortalController implements Initializable {
 
     @FXML private Label todayLabel;
-
     @FXML private ComboBox<String> emailAccount;
-
     @FXML private Label mySponsorsLabel;
     @FXML private Label myContributionLabel;
     @FXML private Label myEventsLabel;
-
     @FXML private TextField searchField;
     @FXML private ComboBox<String> companyFilter;
     @FXML private ComboBox<String> eventFilter;
-
     @FXML private Button addSponsorBtn;
     @FXML private Label statusLabel;
-
     @FXML private TilePane cardsPane;
+    @FXML private BarChart<String, Number> myContributionsChart;
+    @FXML private CategoryAxis xAxis;
+    @FXML private NumberAxis yAxis;
 
     private final SponsorService sponsorService = new SponsorService();
-    private final EventService eventService = new EventService();
     private final LocalSponsorPdfService pdfService = new LocalSponsorPdfService();
 
     private final ObservableList<Sponsor> baseList = FXCollections.observableArrayList();
@@ -62,16 +62,13 @@ public class SponsorPortalController implements Initializable {
     public void setInitialEmail(String email) {
         if (email == null || email.isBlank()) return;
         currentEmail = email;
-
         if (emailAccount != null) emailAccount.setValue(email);
-
         setPortalEnabled(true);
         reloadMine();
     }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-
         if (todayLabel != null) {
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd MMM yyyy");
             todayLabel.setText(LocalDate.now().format(fmt));
@@ -93,20 +90,7 @@ public class SponsorPortalController implements Initializable {
             cardsPane.setTileAlignment(Pos.TOP_LEFT);
         }
 
-        String sessionEmail = AuthContext.getCurrentEmail();
-        if (sessionEmail != null && !sessionEmail.isBlank()) {
-            currentEmail = sessionEmail;
-            MainController.getInstance().setLastSponsorPortalEmail(currentEmail);
-
-            if (emailAccount != null) {
-                emailAccount.setVisible(false);
-                emailAccount.setManaged(false);
-            }
-            setPortalEnabled(true);
-            reloadMine();
-            return;
-        }
-
+        // Charger les emails disponibles depuis la table sponsor
         try {
             if (emailAccount != null) {
                 emailAccount.getItems().setAll(sponsorService.getDemoEmailsFromSponsor());
@@ -130,13 +114,11 @@ public class SponsorPortalController implements Initializable {
     private void onAccountSelected(String email) {
         currentEmail = email;
         MainController.getInstance().setLastSponsorPortalEmail(currentEmail);
-
         if (currentEmail == null || currentEmail.isBlank()) {
             setPortalEnabled(false);
             clearPortal();
             return;
         }
-
         setPortalEnabled(true);
         reloadMine();
     }
@@ -158,6 +140,7 @@ public class SponsorPortalController implements Initializable {
         if (searchField != null) searchField.clear();
         if (companyFilter != null) companyFilter.getItems().clear();
         if (eventFilter != null) eventFilter.getItems().clear();
+        myContributionsChart.setData(FXCollections.observableArrayList());
     }
 
     private void reloadMine() {
@@ -167,6 +150,7 @@ public class SponsorPortalController implements Initializable {
             refreshFilterCombos();
             applyPredicate();
             if (statusLabel != null) statusLabel.setText("📊 " + filtered.size() + " sponsor(s)");
+            initMyChart();
         } catch (Exception e) {
             showError("DB", e.getMessage());
         }
@@ -192,18 +176,15 @@ public class SponsorPortalController implements Initializable {
                 companyFilter.getItems().setAll(sponsorService.getCompanyNamesByContactEmail(currentEmail));
                 companyFilter.setValue(null);
             }
-
             if (eventFilter != null) {
                 ObservableList<Integer> eventIds = sponsorService.getEventIdsByContactEmail(currentEmail);
                 ObservableList<String> titles = FXCollections.observableArrayList();
-
                 for (Integer id : eventIds) {
                     try {
-                        String title = eventService.getEventTitleById(id);
+                        String title = sponsorService.getEventTitleById(id);
                         if (title != null && !title.isBlank()) titles.add(title);
                     } catch (Exception ignored) {}
                 }
-
                 eventFilter.getItems().setAll(titles);
                 eventFilter.setValue(null);
             }
@@ -215,16 +196,15 @@ public class SponsorPortalController implements Initializable {
     private void applyPredicate() {
         if (filtered == null) return;
 
-        String q = (searchField == null || searchField.getText() == null)
-                ? "" : searchField.getText().trim().toLowerCase();
-
+        String q = (searchField == null || searchField.getText() == null) ? "" : searchField.getText().trim().toLowerCase();
         String comp = (companyFilter == null) ? null : companyFilter.getValue();
         String eventTitle = (eventFilter == null) ? null : eventFilter.getValue();
 
         Integer eventId = null;
         if (eventTitle != null && !eventTitle.isBlank()) {
-            try { eventId = eventService.getEventIdByTitle(eventTitle); }
-            catch (Exception ignored) {}
+            try {
+                eventId = sponsorService.getEventIdByTitle(eventTitle);
+            } catch (Exception ignored) {}
         }
         Integer finalEventId = eventId;
 
@@ -234,9 +214,7 @@ public class SponsorPortalController implements Initializable {
                     || (s.getCompany_name() != null && s.getCompany_name().toLowerCase().contains(q))
                     || (s.getContact_email() != null && s.getContact_email().toLowerCase().contains(q));
 
-            boolean okComp = (comp == null)
-                    || (s.getCompany_name() != null && s.getCompany_name().equalsIgnoreCase(comp));
-
+            boolean okComp = (comp == null) || (s.getCompany_name() != null && s.getCompany_name().equalsIgnoreCase(comp));
             boolean okEv = (finalEventId == null) || s.getEvent_id() == finalEventId;
 
             return okQ && okComp && okEv;
@@ -254,7 +232,6 @@ public class SponsorPortalController implements Initializable {
             try {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource(CARD_FXML));
                 Parent root = loader.load();
-
                 if (root instanceof Region r) {
                     r.setPrefWidth(440);
                     r.setMaxWidth(Double.MAX_VALUE);
@@ -271,6 +248,21 @@ public class SponsorPortalController implements Initializable {
 
                 cardsPane.getChildren().add(root);
             } catch (Exception ignored) {}
+        }
+    }
+
+    private void initMyChart() {
+        try {
+            Map<String, Double> data = sponsorService.getMyContributionsByCompany(currentEmail);
+            XYChart.Series<String, Number> series = new XYChart.Series<>();
+            series.setName("Contributions");
+            for (Map.Entry<String, Double> entry : data.entrySet()) {
+                series.getData().add(new XYChart.Data<>(entry.getKey(), entry.getValue()));
+            }
+            myContributionsChart.setData(FXCollections.observableArrayList(series));
+            myContributionsChart.setTitle("Mes contributions par sponsor");
+        } catch (Exception e) {
+            showError("Chart", "Erreur chargement graphique : " + e.getMessage());
         }
     }
 
@@ -294,7 +286,7 @@ public class SponsorPortalController implements Initializable {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Suppression");
         confirm.setHeaderText("Supprimer sponsor");
-        confirm.setContentText("Supprimer: " + s.getCompany_name() + " (id=" + s.getId() + ") ?");
+        confirm.setContentText("Supprimer: " + s.getCompany_name() + " ?");
 
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
@@ -308,23 +300,16 @@ public class SponsorPortalController implements Initializable {
         });
     }
 
-    // ✅ PDF local basé sur Details (sans ID/URL dans le PDF)
     private void onGeneratePdfFromDetails(Sponsor s) {
         try {
             if (s == null) return;
-
-            String eventTitle = "—";
-            try { eventTitle = eventService.getEventTitleById(s.getEvent_id()); }
-            catch (Exception ignored) {}
-
+            String eventTitle = sponsorService.getEventTitleById(s.getEvent_id());
             File pdf = pdfService.generateSponsorContractPdf(s, eventTitle);
-
             if (!Desktop.isDesktopSupported()) {
                 showError("PDF", "Desktop non supporté sur cette machine.");
                 return;
             }
             Desktop.getDesktop().open(pdf);
-
         } catch (Exception ex) {
             showError("PDF", ex.getMessage());
         }
@@ -335,15 +320,12 @@ public class SponsorPortalController implements Initializable {
                 FORM_FXML,
                 (SponsorFormController ctrl) -> {
                     ctrl.setFixedEmail(fixedEmail);
-
                     if (existing == null) ctrl.setModeAdd();
                     else ctrl.setModeEdit(existing);
-
                     ctrl.setOnSaved(saved -> {
                         reloadMine();
                         openDetailsAsPage(saved);
                     });
-
                     ctrl.setOnFormDone(() -> {
                         reloadMine();
                         MainController.getInstance().showSponsorPortal(currentEmail);

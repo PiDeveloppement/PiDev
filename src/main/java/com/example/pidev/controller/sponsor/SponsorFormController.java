@@ -1,7 +1,6 @@
 package com.example.pidev.controller.sponsor;
 
 import com.example.pidev.model.sponsor.Sponsor;
-import com.example.pidev.service.event.EventService;
 import com.example.pidev.service.sponsor.SponsorService;
 import com.example.pidev.service.upload.CloudinaryUploadService;
 import javafx.fxml.FXML;
@@ -23,34 +22,27 @@ public class SponsorFormController {
     @FXML private ComboBox<String> eventComboBox;
     @FXML private TextField companyField;
     @FXML private TextField emailField;
-
     @FXML private TextField logoField;
     @FXML private Label logoFileLabel;
     @FXML private ImageView logoPreview;
-
     @FXML private TextField contributionField;
     @FXML private Label errorLabel;
 
     private Sponsor editing;
     private Sponsor result;
-
     private String fixedEmail;
     private File selectedLogoFile;
 
-    // ✅ callbacks
     private Runnable onFormDone;
-    private Consumer<Sponsor> onSaved; // <-- NEW: pour ouvrir détails après save/update
+    private Consumer<Sponsor> onSaved;
 
     private final CloudinaryUploadService cloud = new CloudinaryUploadService();
-    private final EventService eventService = new EventService();
     private final SponsorService sponsorService = new SponsorService();
 
-    private static final Pattern EMAIL_RX =
-            Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+    private static final Pattern EMAIL_RX = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
 
     public void setOnFormDone(Runnable callback) { this.onFormDone = callback; }
     public void setOnSaved(Consumer<Sponsor> callback) { this.onSaved = callback; }
-
     public Sponsor getResult() { return result; }
 
     @FXML
@@ -69,7 +61,7 @@ public class SponsorFormController {
 
     private void loadEventTitles() {
         try {
-            eventComboBox.setItems(eventService.getAllEventTitles());
+            eventComboBox.setItems(sponsorService.getAllEventTitles());
         } catch (Exception e) {
             error("Erreur chargement événements: " + e.getMessage());
         }
@@ -119,7 +111,7 @@ public class SponsorFormController {
         loadEventTitles();
 
         try {
-            String eventTitle = eventService.getEventTitleById(s.getEvent_id());
+            String eventTitle = sponsorService.getEventTitleById(s.getEvent_id());
             eventComboBox.setValue(eventTitle);
         } catch (Exception e) {
             // ignore
@@ -188,7 +180,7 @@ public class SponsorFormController {
                 error("Veuillez sélectionner un événement");
                 return;
             }
-            eventId = eventService.getEventIdByTitle(selectedEventTitle);
+            eventId = sponsorService.getEventIdByTitle(selectedEventTitle);
         } catch (Exception e) {
             error("Événement invalide: " + e.getMessage());
             return;
@@ -230,7 +222,6 @@ public class SponsorFormController {
         out.setContribution_name(contribution);
         out.setLogo_url(logoUrlFinal.isEmpty() ? null : logoUrlFinal);
 
-        // garde contrat/access/user_id si edit
         out.setContract_url(editing == null ? null : editing.getContract_url());
         out.setAccess_code(editing == null ? null : editing.getAccess_code());
         out.setUser_id(editing == null ? null : editing.getUser_id());
@@ -239,17 +230,12 @@ public class SponsorFormController {
             if (editing == null) sponsorService.addSponsor(out);
             else sponsorService.updateSponsor(out);
 
-            // ✅ re-fetch depuis DB (important)
             Sponsor saved = sponsorService.getSponsorById(out.getId());
             result = saved != null ? saved : out;
 
-            // ✅ navigation: ouvrir details via callback
             if (onSaved != null) onSaved.accept(result);
-
-            // ✅ si tu veux aussi refresh parent
             if (onFormDone != null) onFormDone.run();
 
-            // si popup modal => fermer
             closeWindowIfModal();
 
         } catch (Exception ex) {
@@ -265,9 +251,7 @@ public class SponsorFormController {
     }
 
     private void closeWindowIfModal() {
-        // si c'est une page, on ne ferme pas
-        if (onSaved != null) return;
-
+        if (onSaved != null) return; // On est en mode page, ne pas fermer la fenêtre
         try {
             Stage stage = getStage();
             if (stage != null && stage.isShowing()) stage.close();

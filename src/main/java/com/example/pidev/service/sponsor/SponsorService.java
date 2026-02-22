@@ -7,21 +7,56 @@ import javafx.collections.ObservableList;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SponsorService {
 
     private final Connection cnx;
 
     public SponsorService() {
-        // ✅ ton MyDatabase expose getConnection()
         cnx = MyDatabase.getInstance().getConnection();
     }
 
-    // =========================
-    // CRUD BASIC (ADMIN/DEMO)
-    // =========================
+    // ===================== ACCÈS DIRECT À LA TABLE EVENT =====================
+    public String getEventTitleById(int eventId) {
+        String sql = "SELECT title FROM event WHERE id = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, eventId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString("title");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur récupération titre événement", e);
+        }
+        return "Événement inconnu";
+    }
 
+    public ObservableList<String> getAllEventTitles() {
+        ObservableList<String> list = FXCollections.observableArrayList();
+        String sql = "SELECT title FROM event ORDER BY title";
+        try (PreparedStatement ps = cnx.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(rs.getString("title"));
+        } catch (SQLException e) {
+            throw new RuntimeException("getAllEventTitles failed", e);
+        }
+        return list;
+    }
+
+    public int getEventIdByTitle(String title) throws SQLException {
+        String sql = "SELECT id FROM event WHERE title = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setString(1, title);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("id");
+            }
+        }
+        throw new SQLException("Événement introuvable : " + title);
+    }
+
+    // ===================== CRUD SPONSOR =====================
     public void addSponsor(Sponsor s) throws SQLException {
         String sql = """
             INSERT INTO sponsor(event_id, company_name, contact_email, logo_url, contribution_name, contract_url, access_code, user_id)
@@ -36,16 +71,13 @@ public class SponsorService {
             ps.setDouble(5, s.getContribution_name());
             ps.setString(6, s.getContract_url());
             ps.setString(7, s.getAccess_code());
-
             if (s.getUser_id() == null) ps.setNull(8, Types.INTEGER);
             else ps.setInt(8, s.getUser_id());
 
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) {
-                    s.setId(rs.getInt(1));
-                }
+                if (rs.next()) s.setId(rs.getInt(1));
             }
         }
     }
@@ -65,10 +97,8 @@ public class SponsorService {
             ps.setDouble(5, s.getContribution_name());
             ps.setString(6, s.getContract_url());
             ps.setString(7, s.getAccess_code());
-
             if (s.getUser_id() == null) ps.setNull(8, Types.INTEGER);
             else ps.setInt(8, s.getUser_id());
-
             ps.setInt(9, s.getId());
 
             ps.executeUpdate();
@@ -113,10 +143,7 @@ public class SponsorService {
         }
     }
 
-    // =========================
-    // ADMIN FILTERS (SponsorAdminController)
-    // =========================
-
+    // ===================== ADMIN FILTERS =====================
     public ObservableList<String> getCompanyNamesAll() throws SQLException {
         String sql = """
             SELECT DISTINCT company_name
@@ -148,10 +175,7 @@ public class SponsorService {
         return ids;
     }
 
-    // =========================
-    // ADMIN STATS
-    // =========================
-
+    // ===================== ADMIN STATS =====================
     public int getTotalSponsors() throws SQLException {
         String sql = "SELECT COUNT(*) FROM sponsor";
         try (PreparedStatement ps = cnx.prepareStatement(sql);
@@ -179,10 +203,36 @@ public class SponsorService {
         }
     }
 
-    // =========================
-    // MODE DEMO (SponsorPortalController)
-    // =========================
+    // ===================== CHART DATA =====================
+    public Map<String, Double> getTotalContributionByEvent() throws SQLException {
+        Map<String, Double> map = new LinkedHashMap<>();
+        String sql = "SELECT e.title, COALESCE(SUM(s.contribution_name),0) " +
+                "FROM sponsor s JOIN event e ON s.event_id = e.id " +
+                "GROUP BY e.id, e.title ORDER BY e.title";
+        try (PreparedStatement ps = cnx.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                map.put(rs.getString(1), rs.getDouble(2));
+            }
+        }
+        return map;
+    }
 
+    public Map<String, Double> getMyContributionsByCompany(String email) throws SQLException {
+        Map<String, Double> map = new LinkedHashMap<>();
+        String sql = "SELECT company_name, contribution_name FROM sponsor WHERE LOWER(contact_email)=LOWER(?) ORDER BY company_name";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    map.put(rs.getString("company_name"), rs.getDouble("contribution_name"));
+                }
+            }
+        }
+        return map;
+    }
+
+    // ===================== MODE DEMO (SponsorPortalController) =====================
     public ObservableList<String> getDemoEmailsFromSponsor() throws SQLException {
         String sql = """
             SELECT DISTINCT contact_email
@@ -291,10 +341,7 @@ public class SponsorService {
         return ids;
     }
 
-    // =========================
-    // MAPPING
-    // =========================
-
+    // ===================== MAPPING =====================
     private Sponsor map(ResultSet rs) throws SQLException {
         Sponsor s = new Sponsor();
         s.setId(rs.getInt("id"));
@@ -306,7 +353,6 @@ public class SponsorService {
         s.setContract_url(rs.getString("contract_url"));
         s.setAccess_code(rs.getString("access_code"));
 
-        // user_id nullable
         int uid = rs.getInt("user_id");
         s.setUser_id(rs.wasNull() ? null : uid);
 

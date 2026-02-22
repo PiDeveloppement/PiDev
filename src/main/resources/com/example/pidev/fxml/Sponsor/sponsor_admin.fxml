@@ -2,6 +2,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.*?>
+<?import javafx.scene.chart.PieChart?>
 
 <BorderPane prefHeight="900" prefWidth="1600" stylesheets="@../../css/design-system.css"
             style="-fx-background-color: #f1f5f9;"
@@ -10,7 +11,9 @@
             fx:controller="com.example.pidev.controller.sponsor.SponsorAdminController">
 
     <center>
-        <ScrollPane fitToHeight="true" fitToWidth="true"
+        <!-- ScrollPane principal : fitToWidth true, fitToHeight false pour que le contenu prenne sa hauteur naturelle -->
+        <ScrollPane fitToWidth="true" fitToHeight="false"
+                    hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
                     style="-fx-background-color: transparent; -fx-border-color: transparent;">
             <VBox spacing="0">
 
@@ -31,7 +34,7 @@
                     </VBox>
                 </HBox>
 
-                <!-- STATS (3 cards seulement) -->
+                <!-- STATS (3 cards) -->
                 <HBox spacing="14" style="-fx-padding: 24 35; -fx-background-color: #f1f5f9; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
 
                     <VBox styleClass="stat-card stat-card-purple" HBox.hgrow="ALWAYS" spacing="10">
@@ -66,7 +69,14 @@
                         </HBox>
                         <Label text="📈 Performance" style="-fx-text-fill: #2563eb; -fx-font-size: 12px; -fx-font-weight: bold;"/>
                     </VBox>
+                </HBox>
 
+                <!-- Graphique circulaire -->
+                <HBox alignment="CENTER" style="-fx-padding: 20 35;">
+                    <PieChart fx:id="contributionsChart" prefWidth="800" prefHeight="450"
+                              title="Répartition des contributions par événement"
+                              labelsVisible="true" legendVisible="true"
+                              style="-fx-font-size: 14px;"/>
                 </HBox>
 
                 <!-- FILTRES -->
@@ -88,15 +98,14 @@
                             styleClass="btn-success" minHeight="40" minWidth="180"/>
                 </HBox>
 
-                <!-- LIST -->
+                <!-- LISTE -->
                 <VBox spacing="20" style="-fx-padding: 28 35;" VBox.vgrow="ALWAYS">
                     <Label text="📋 Sponsors Enregistrés" styleClass="label-subtitle"/>
 
+                    <!-- ScrollPane interne pour les cartes uniquement -->
                     <ScrollPane fx:id="cardsScroll" fitToWidth="true"
                                 style="-fx-background-color: transparent; -fx-border-color: transparent;">
-                        <VBox>
-                            <TilePane fx:id="cardsPane" prefColumns="3" hgap="16" vgap="16" style="-fx-padding: 10;"/>
-                        </VBox>
+                        <TilePane fx:id="cardsPane" prefColumns="3" hgap="16" vgap="16" style="-fx-padding: 10;"/>
                     </ScrollPane>
 
                     <Label fx:id="statusLabel" text="..." styleClass="label-description"/>

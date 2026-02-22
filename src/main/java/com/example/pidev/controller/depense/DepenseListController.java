@@ -12,6 +12,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
+import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.TilePane;
@@ -19,29 +20,24 @@ import javafx.scene.layout.TilePane;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 public class DepenseListController implements Initializable {
 
-    // KPI (fx:id du depense-modern.fxml)
     @FXML private Label totalDepensesLabel;
     @FXML private Label countDepensesLabel;
     @FXML private Label avgDepenseLabel;
     @FXML private Label categoriesLabel;
-
-    // Filters
     @FXML private ComboBox<String> filtreCategorie;
     @FXML private ComboBox<String> filtrePeriode;
     @FXML private ComboBox<String> filtreEtatFinancier;
     @FXML private Button addBtn;
-
     @FXML private Label statusLabel;
-
-    // Cards
     @FXML private TilePane cardsPane;
+    @FXML private PieChart categoryPieChart;
 
     private final DepenseService depenseService = new DepenseService();
-
     private final ObservableList<Depense> baseList = FXCollections.observableArrayList();
     private FilteredList<Depense> filtered;
 
@@ -74,13 +70,11 @@ public class DepenseListController implements Initializable {
     }
 
     private void setupFilters() {
-        // ✅ Période
         if (filtrePeriode != null) {
             filtrePeriode.getItems().setAll("Toutes", "Ce mois", "Ce trimestre", "Cette année");
             filtrePeriode.setValue("Toutes");
         }
 
-        // ✅ Catégorie (avec "Toutes" en haut)
         if (filtreCategorie != null) {
             filtreCategorie.getItems().clear();
             filtreCategorie.getItems().add("Toutes");
@@ -90,7 +84,6 @@ public class DepenseListController implements Initializable {
             filtreCategorie.setValue("Toutes");
         }
 
-        // ✅ Etat financier (Option 2)
         if (filtreEtatFinancier != null) {
             filtreEtatFinancier.getItems().setAll(
                     "Tous",
@@ -106,6 +99,8 @@ public class DepenseListController implements Initializable {
         try {
             baseList.setAll(depenseService.getAllDepenses());
             updateKpis();
+            initCategoryChart();
+
             if (statusLabel != null) statusLabel.setText("📊 " + baseList.size() + " dépense(s) • Mise à jour: Maintenant");
             renderCards();
         } catch (Exception e) {
@@ -136,11 +131,27 @@ public class DepenseListController implements Initializable {
         if (categoriesLabel != null) categoriesLabel.setText(String.valueOf(cats));
     }
 
-    // ✅ Option 2: calcul état financier
+    private void initCategoryChart() {
+        try {
+            Map<String, Double> data = depenseService.getSumByCategory();
+            ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
+            for (Map.Entry<String, Double> entry : data.entrySet()) {
+                if (entry.getValue() > 0) {
+                    pieData.add(new PieChart.Data(entry.getKey(), entry.getValue()));
+                }
+            }
+            categoryPieChart.setData(pieData);
+            categoryPieChart.setTitle("Répartition des dépenses par catégorie");
+            categoryPieChart.setLabelsVisible(true);
+            categoryPieChart.setLegendVisible(true);
+        } catch (Exception e) {
+            showError("Chart", "Erreur chargement graphique : " + e.getMessage());
+        }
+    }
+
     private String getEtatFinancier(Depense d) {
         if (d == null) return "Tous";
         double a = d.getAmount();
-
         if (a < 100) return "🟢 Faible";
         if (a <= 1000) return "🟡 Moyen";
         return "🔴 Élevé";
@@ -202,7 +213,6 @@ public class DepenseListController implements Initializable {
 
     private void renderCards() {
         if (cardsPane == null || filtered == null) return;
-
         cardsPane.getChildren().clear();
 
         for (Depense d : filtered) {
@@ -240,7 +250,6 @@ public class DepenseListController implements Initializable {
         openFormAsPage(existing);
     }
 
-    // ✅ suppression sans ID
     private void onDeleteNoIdText(Depense d) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Suppression");
@@ -260,7 +269,6 @@ public class DepenseListController implements Initializable {
         });
     }
 
-    // ✅ FORM en PAGE (Option B)
     private void openFormAsPage(Depense existing) {
         try {
             MainController.getInstance().loadIntoCenter(
@@ -269,7 +277,6 @@ public class DepenseListController implements Initializable {
                         ctrl.setDepense(existing);
 
                         ctrl.setOnFormDone(() -> {
-                            // refresh liste
                             setupFilters();
                             loadData();
 
@@ -286,7 +293,6 @@ public class DepenseListController implements Initializable {
         }
     }
 
-    // ✅ DETAILS en PAGE (Option B)
     private void openDetailsAsPage(Depense d) {
         try {
             MainController.getInstance().loadIntoCenter(
@@ -305,7 +311,6 @@ public class DepenseListController implements Initializable {
         try {
             MainController.getInstance().loadIntoCenter(LIST_FXML, (DepenseListController ctrl) -> {});
         } catch (Exception e) {
-            // fallback: au moins reload local
             setupFilters();
             loadData();
         }

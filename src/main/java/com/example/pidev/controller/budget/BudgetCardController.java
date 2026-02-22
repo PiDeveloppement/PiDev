@@ -1,7 +1,7 @@
 package com.example.pidev.controller.budget;
 
 import com.example.pidev.model.budget.Budget;
-import com.example.pidev.service.event.EventService;
+import com.example.pidev.service.budget.BudgetService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -10,35 +10,26 @@ public class BudgetCardController {
 
     @FXML private Label titleLabel;
     @FXML private Label rentLabel;
-
-    // ✅ ID supprimé
-    // @FXML private Label idLabel;
-
     @FXML private Label eventLabel;
-
     @FXML private Label initialLabel;
     @FXML private Label expensesLabel;
     @FXML private Label revenueLabel;
-
     @FXML private Label statusLabel;
-
     @FXML private Label rent2Label;
-
     @FXML private Button detailsBtn;
     @FXML private Button editBtn;
     @FXML private Button deleteBtn;
 
-    private final EventService eventService = new EventService();
+    private final BudgetService budgetService = new BudgetService();
 
     public void setData(Budget b, Runnable onDetails, Runnable onEdit, Runnable onDelete) {
         if (b == null) return;
 
         if (titleLabel != null) titleLabel.setText("Budget");
 
-        // ✅ plus d'affichage ID
         if (eventLabel != null) {
             try {
-                String eventTitle = eventService.getEventTitleById(b.getEvent_id());
+                String eventTitle = budgetService.getEventTitleById(b.getEvent_id());
                 eventLabel.setText("Événement: " + eventTitle);
             } catch (Exception e) {
                 eventLabel.setText("Événement: (ID: " + b.getEvent_id() + ")");

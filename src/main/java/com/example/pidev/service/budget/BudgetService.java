@@ -6,6 +6,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BudgetService {
 
@@ -13,6 +15,44 @@ public class BudgetService {
         return MyDatabase.getInstance().getConnection();
     }
 
+    // ===================== ACCÈS DIRECT À LA TABLE EVENT =====================
+    public String getEventTitleById(int eventId) {
+        String sql = "SELECT title FROM event WHERE id = ?";
+        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
+            ps.setInt(1, eventId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString("title");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erreur récupération titre événement", e);
+        }
+        return "Événement inconnu";
+    }
+
+    public ObservableList<String> getAllEventTitles() {
+        ObservableList<String> list = FXCollections.observableArrayList();
+        String sql = "SELECT title FROM event ORDER BY title";
+        try (PreparedStatement ps = cnx().prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(rs.getString("title"));
+        } catch (SQLException e) {
+            throw new RuntimeException("getAllEventTitles failed", e);
+        }
+        return list;
+    }
+
+    public int getEventIdByTitle(String title) throws SQLException {
+        String sql = "SELECT id FROM event WHERE title = ?";
+        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
+            ps.setString(1, title);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("id");
+            }
+        }
+        throw new SQLException("Événement introuvable : " + title);
+    }
+
+    // ===================== CRUD BUDGET =====================
     public boolean eventExists(int eventId) {
         String sql = "SELECT 1 FROM event WHERE id=? LIMIT 1";
         try (PreparedStatement ps = cnx().prepareStatement(sql)) {
@@ -47,6 +87,28 @@ public class BudgetService {
         } catch (SQLException e) {
             throw new RuntimeException("getAllBudgets failed", e);
         }
+    }
+
+    public List<Budget> getTop5Budgets() {
+        List<Budget> list = new ArrayList<>();
+        String sql = "SELECT b.id, b.event_id, b.initial_budget, b.total_expenses, b.total_revenue, b.rentabilite " +
+                "FROM budget b ORDER BY b.id DESC LIMIT 5";
+        try (PreparedStatement ps = cnx().prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new Budget(
+                        rs.getInt("id"),
+                        rs.getInt("event_id"),
+                        rs.getDouble("initial_budget"),
+                        rs.getDouble("total_expenses"),
+                        rs.getDouble("total_revenue"),
+                        rs.getDouble("rentabilite")
+                ));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("getTop5Budgets failed", e);
+        }
+        return list;
     }
 
     public ObservableList<Integer> getEventIdsFromBudgets() {
@@ -176,7 +238,7 @@ public class BudgetService {
         }
     }
 
-    // New methods for Depense form - budget selection by name
+    // Methods for Depense form - budget selection by name
     public ObservableList<String> getAllBudgetNames() {
         ObservableList<String> list = FXCollections.observableArrayList();
         String sql = "SELECT id, initial_budget FROM budget ORDER BY id DESC";
@@ -198,13 +260,10 @@ public class BudgetService {
 
     public int getBudgetIdByName(String name) {
         if (name == null || name.isEmpty()) return -1;
-
         try {
-            // Extract "Budget N°123" from "Budget N°123 (1500.00 DT)"
             int startIdx = name.indexOf("°") + 1;
             int endIdx = name.indexOf("(");
             if (startIdx <= 0 || endIdx <= 0) return -1;
-
             String idStr = name.substring(startIdx, endIdx).trim();
             return Integer.parseInt(idStr);
         } catch (Exception e) {
@@ -215,7 +274,6 @@ public class BudgetService {
 
     public String getBudgetNameById(int budgetId) {
         String sql = "SELECT initial_budget FROM budget WHERE id=?";
-
         try (PreparedStatement ps = cnx().prepareStatement(sql)) {
             ps.setInt(1, budgetId);
             try (ResultSet rs = ps.executeQuery()) {
