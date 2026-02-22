@@ -7,6 +7,7 @@
 <?import javafx.scene.text.*?>
 <?import javafx.scene.shape.*?>
 
+
 <!-- SCROLLPANE PRINCIPAL -->
 <ScrollPane fitToWidth="true" fitToHeight="true"
             xmlns="http://javafx.com/javafx"
@@ -162,3 +163,6 @@
         </center>
     </BorderPane>
 </ScrollPane>
+
+
+
