@@ -13,6 +13,8 @@ module com.example.pidev {
     requires kernel;
     requires layout;
     requires itextpdf;
+    requires java.mail;
+    requires org.apache.pdfbox;
 
 
     // Exportez tous les packages nécessaires
@@ -21,12 +23,14 @@ module com.example.pidev {
     exports com.example.pidev.model.resource;
     exports com.example.pidev.model.user;
     exports com.example.pidev.model.role;
+    exports com.example.pidev.model.sponsor;
     exports com.example.pidev.controller.event;
+    exports com.example.pidev.controller.sponsor;
     exports com.example.pidev.controller.auth;
     exports com.example.pidev.controller.user;
     exports com.example.pidev.controller.role;
     exports com.example.pidev.controller.questionnaire;
-
+    exports com.example.pidev.service.user;
     // Ouvrez tous les packages à javafx.fxml
 
     opens com.example.pidev to javafx.fxml;
@@ -37,4 +41,8 @@ module com.example.pidev {
     opens com.example.pidev.controller.role to javafx.fxml;
     opens com.example.pidev.controller.resource to javafx.fxml;
     opens com.example.pidev.controller.questionnaire to javafx.fxml;
+    opens com.example.pidev.controller.sponsor to javafx.fxml;
+    opens com.example.pidev.controller.budget to javafx.fxml;
+    opens com.example.pidev.controller.depense to javafx.fxml;
+    opens com.example.pidev.service.user to javafx.fxml;
 }

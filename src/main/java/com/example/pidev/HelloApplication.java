@@ -6,6 +6,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+
 import javafx.stage.StageStyle;
 
 public class HelloApplication extends Application {
@@ -181,9 +182,6 @@ public class HelloApplication extends Application {
             System.err.println("❌ Erreur lors du chargement de la page d'inscription");
             e.printStackTrace();
         }
-    }
 
-    public static void main(String[] args) {
-        launch(args);
-    }
-}
+
+    }}

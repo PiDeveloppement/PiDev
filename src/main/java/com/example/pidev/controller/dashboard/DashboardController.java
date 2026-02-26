@@ -98,7 +98,7 @@ public class DashboardController implements Initializable {
         eventService = new EventService();
         try {
             userService = new UserService();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             System.err.println("❌ Erreur de connexion au service utilisateur: " + e.getMessage());
             e.printStackTrace();
         }
