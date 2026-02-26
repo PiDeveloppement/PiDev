@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pidev.controller.front.MyTicketsListController"
+      spacing="0" style="-fx-background-color: #f3f4f6;">
+
+    <!-- NAVBAR -->
+    <HBox spacing="20" style="-fx-background-color: white; -fx-padding: 15 20;" alignment="CENTER_LEFT">
+        <Button fx:id="backBtn" text="← Retour aux événements"
+                style="-fx-font-size: 12; -fx-padding: 8 16; -fx-background-radius: 6;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="userNameLabel" text="Nom Utilisateur" style="-fx-font-size: 14; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <!-- CONTENU PRINCIPAL -->
+    <ScrollPane style="-fx-background-color: #f3f4f6;" VBox.vgrow="ALWAYS">
+        <VBox spacing="20" style="-fx-padding: 30; -fx-background-color: #f3f4f6;">
+
+            <!-- TITRE -->
+            <Label text="Mes billets d'événements" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #1f2937;"/>
+            <Label fx:id="ticketCountLabel" text="0 billet(s) trouvé(s)" style="-fx-font-size: 12; -fx-text-fill: #6b7280;"/>
+
+            <!-- LISTE DES BILLETS -->
+            <VBox fx:id="ticketsContainer" spacing="15"/>
+
+            <!-- MESSAGE VIDE -->
+            <VBox fx:id="emptyStateBox" spacing="10" alignment="CENTER" style="-fx-padding: 60 20;">
+                <Label text="Aucun billet trouvé" style="-fx-font-size: 18; -fx-text-fill: #9ca3af;"/>
+                <Label text="Vous n'avez encore participé à aucun événement" style="-fx-font-size: 12; -fx-text-fill: #d1d5db;"/>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+</VBox>
+

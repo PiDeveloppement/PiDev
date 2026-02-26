@@ -107,14 +107,17 @@ public class LoginController implements Initializable {
                 // Vérifier s'il y a un événement en attente de participation
                 handlePendingEventParticipation();
 
-                // Charger le dashboard ou la page des événements selon le contexte
+                // Redirection: pendingEvent -> vitrine, sinon selon rôle
                 if (UserSession.getInstance().hasPendingEvent()) {
-                    // Il y avait un événement en attente, on a créé le ticket
-                    // Rediriger vers la page des événements
                     HelloApplication.loadPublicEventsPage();
                 } else {
-                    // Connexion normale, charger le dashboard
-                    HelloApplication.loadDashboard();
+                    String roleName = user.getRoleName() != null ? user.getRoleName().trim().toLowerCase() : "";
+                    boolean isOrganizer = user.getRole_Id() == 2 || roleName.equals("organisateur");
+                    if (isOrganizer) {
+                        HelloApplication.loadDashboard();
+                    } else {
+                        HelloApplication.loadPublicEventsPage();
+                    }
                 }
 
             } else {
@@ -317,9 +320,11 @@ public class LoginController implements Initializable {
         alert.setContentText(message);
         alert.showAndWait();
     }
+
     // Dans SignupController.java et LoginController.java
     @FXML
     private void goToLanding(ActionEvent event) {
         HelloApplication.loadLandingPage();
     }
 }
+

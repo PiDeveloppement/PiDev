@@ -16,10 +16,10 @@
           alignment="CENTER_LEFT" prefHeight="80">
         <!-- Logo -->
         <HBox spacing="10" alignment="CENTER_LEFT">
-            <ImageView fitHeight="40" fitWidth="40" preserveRatio="true">
+            <ImageView fitHeight="140" fitWidth="140" preserveRatio="true">
                 <Image url="@../images/logo.png" />
             </ImageView>
-            <Label text="EventFlow" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #0D47A1;"/>
+
         </HBox>
 
         <Region HBox.hgrow="ALWAYS"/>
@@ -38,6 +38,10 @@
 
         <!-- Boutons d'action -->
         <HBox spacing="15">
+            <Button fx:id="myTicketsBtn" text="Mes billets" onAction="#handleMyTickets"
+                    style="-fx-background-color: transparent; -fx-text-fill: #059669; -fx-font-weight: bold;
+                           -fx-border-color: #059669; -fx-border-width: 1.5; -fx-border-radius: 8;
+                           -fx-padding: 8 24; -fx-cursor: hand; -fx-font-size: 14px;"/>
             <Button text="Connexion" onAction="#handleLogin"
                     style="-fx-background-color: transparent; -fx-text-fill: #0D47A1; -fx-font-weight: bold;
                            -fx-border-color: #0D47A1; -fx-border-width: 1.5; -fx-border-radius: 8;

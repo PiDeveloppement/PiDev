@@ -487,10 +487,10 @@ public class CategoryListController {
 
         List<EventCategory> filtered = allCategories.stream()
                 .filter(cat -> {
-                    // RECHERCHE - version ancienne qui fonctionnait
+                    // RECHERCHE - cherche au DÉBUT du nom (startsWith) et dans la description
                     boolean matchSearch = searchText.isEmpty() ||
-                            cat.getName().toLowerCase().contains(searchText) ||
-                            (cat.getDescription() != null && cat.getDescription().toLowerCase().contains(searchText));
+                            cat.getName().toLowerCase().startsWith(searchText) ||
+                            (cat.getDescription() != null && cat.getDescription().toLowerCase().startsWith(searchText));
 
                     boolean matchStatus = status == null || "Tous les statuts".equals(status) ||
                             (status.equals("Actif") && cat.isActive()) ||
@@ -502,9 +502,9 @@ public class CategoryListController {
 
                     // Log détaillé pour chaque catégorie
                     if (!searchText.isEmpty()) {
-                        boolean nameMatch = cat.getName().toLowerCase().contains(searchText);
+                        boolean nameMatch = cat.getName().toLowerCase().startsWith(searchText);
                         boolean descMatch = cat.getDescription() != null &&
-                                cat.getDescription().toLowerCase().contains(searchText);
+                                cat.getDescription().toLowerCase().startsWith(searchText);
                         if (matchSearch) {
                             String source = nameMatch ? "(nom)" : descMatch ? "(desc)" : "(vide)";
                             System.out.println("   ✅ '" + cat.getName() + "' " + source);

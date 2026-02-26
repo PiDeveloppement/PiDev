@@ -242,6 +242,33 @@ public class HelloApplication extends Application {
         }
     }
 
+    // ✅ NOUVELLE MÉTHODE: Page des billets du participant (front office)
+    public static void loadMyTicketsPage() {
+        try {
+            System.out.println("📂 Chargement de la page 'Mes billets'");
+
+            Parent root = FXMLLoader.load(
+                    HelloApplication.class.getResource("/com/example/pidev/fxml/front/my-tickets-list.fxml")
+            );
+
+            Scene scene = new Scene(root, 1400, 900);
+            scene.getStylesheets().add(
+                    HelloApplication.class.getResource("/com/example/pidev/css/atlantafx-custom.css").toExternalForm()
+            );
+
+            primaryStage.setTitle("EventFlow - Mes billets");
+            primaryStage.setScene(scene);
+            primaryStage.setMinWidth(1200);
+            primaryStage.setMinHeight(800);
+            primaryStage.centerOnScreen();
+            primaryStage.show();
+
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors du chargement de la page 'Mes billets'");
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) {
         launch(args);
     }

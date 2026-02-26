@@ -16,10 +16,10 @@
           alignment="CENTER_LEFT" prefHeight="80">
         <!-- Logo -->
         <HBox spacing="10" alignment="CENTER_LEFT">
-            <ImageView fitHeight="40" fitWidth="40" preserveRatio="true">
+            <ImageView fitHeight="140" fitWidth="140" preserveRatio="true">
                 <Image url="@../images/logo.png" />
             </ImageView>
-            <Label text="EventFlow" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #0D47A1;"/>
+
         </HBox>
 
         <Region HBox.hgrow="ALWAYS"/>

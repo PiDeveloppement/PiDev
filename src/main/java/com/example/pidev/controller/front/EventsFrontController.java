@@ -485,6 +485,16 @@ public class EventsFrontController {
         HelloApplication.loadSignupPage();
     }
 
+    @FXML
+    private void handleMyTickets() {
+        if (UserSession.getInstance().getCurrentUser() != null) {
+            HelloApplication.loadMyTicketsPage();
+        } else {
+            showAlert("Accès refusé", "Vous devez être connecté pour voir vos billets", Alert.AlertType.WARNING);
+            handleLogin();
+        }
+    }
+
     private void showAlert(String title, String content, Alert.AlertType type) {
         Alert alert = new Alert(type);
         alert.setTitle(title);
