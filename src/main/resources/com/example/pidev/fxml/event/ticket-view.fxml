@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.image.ImageView?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pidev.controller.event.EventTicketViewController"
+      spacing="0"
+      styleClass="page-background"
+      stylesheets="@../../css/atlantafx-custom.css"
+      VBox.vgrow="ALWAYS">
+
+    <!-- ===================== NAVBAR DYNAMIQUE ===================== -->
+    <HBox style="-fx-background-color: linear-gradient(to right, #1e88e5, #0d47a1);
+                 -fx-padding: 15 30; -fx-spacing: 20;"
+          alignment="CENTER_LEFT">
+
+        <HBox spacing="8" alignment="CENTER_LEFT"
+              style="-fx-background-color: rgba(255,255,255,0.15);
+                     -fx-background-radius: 20; -fx-padding: 8 15;"
+              prefWidth="350">
+            <Label text="🔍" style="-fx-text-fill: white; -fx-font-size: 16px;"/>
+            <TextField promptText="Recherche globale..."
+                       style="-fx-background-color: transparent;
+                              -fx-text-fill: white;
+                              -fx-prompt-text-fill: rgba(255,255,255,0.6);
+                              -fx-border-width: 0;"
+                       HBox.hgrow="ALWAYS"/>
+        </HBox>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <VBox spacing="2" alignment="CENTER_RIGHT">
+            <Label fx:id="dateLabel" text=""
+                   style="-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: 600;"/>
+            <Label fx:id="timeLabel" text=""
+                   style="-fx-text-fill: rgba(255,255,255,0.8); -fx-font-size: 12px;"/>
+        </VBox>
+
+        <Separator orientation="VERTICAL"
+                   style="-fx-background-color: transparent; -fx-pref-height: 40;"/>
+
+        <HBox spacing="10" alignment="CENTER"
+              style="-fx-background-color: rgba(255,255,255,0.1);
+                     -fx-background-radius: 20; -fx-padding: 8 15;">
+            <Label text="👤" style="-fx-text-fill: white; -fx-font-size: 18px;"/>
+            <VBox spacing="1">
+                <Label text="Ons Abdesslem"
+                       style="-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: 600;"/>
+                <Label text="Administrateur"
+                       style="-fx-text-fill: rgba(255,255,255,0.7); -fx-font-size: 11px;"/>
+            </VBox>
+        </HBox>
+    </HBox>
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background-color: transparent; -fx-border-color: transparent;">
+
+        <VBox spacing="0">
+
+            <HBox style="-fx-background-color: white; -fx-padding: 20 30; -fx-border-color: #e9ecef; -fx-border-width: 0 0 1 0;"
+                  alignment="CENTER_LEFT" spacing="20">
+
+                <Button fx:id="backBtn" text="← Retour à la liste" onAction="#handleBack"
+                        style="-fx-background-color: #f8f9fa; -fx-text-fill: #495057; -fx-font-size: 14px;
+                               -fx-background-radius: 8; -fx-padding: 10 20; -fx-border-color: #dee2e6;
+                               -fx-border-width: 1; -fx-cursor: hand; -fx-font-weight: 500;"/>
+
+                <VBox spacing="5">
+                    <Label text="Détails du Ticket"
+                           style="-fx-font-size: 24px; -fx-font-weight: 700; -fx-text-fill: #1e293b;"/>
+                    <Label text="Consultation des informations du ticket"
+                           style="-fx-text-fill: #6c757d; -fx-font-size: 13px;"/>
+                </VBox>
+            </HBox>
+
+            <VBox style="-fx-padding: 30; -fx-spacing: 25;">
+
+                <VBox spacing="25" style="-fx-background-color: white; -fx-padding: 25; -fx-background-radius: 16;
+                                          -fx-border-color: #e9ecef; -fx-border-width: 1; -fx-border-radius: 16;
+                                          -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.03), 10, 0, 0, 2);">
+
+                    <!-- EN-TÊTE -->
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="🎫" style="-fx-font-size: 40px; -fx-background-color: #f8f9fa; -fx-padding: 10;
+                                                -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-width: 1;
+                                                -fx-border-radius: 12;"/>
+                        <VBox spacing="5">
+                            <Label fx:id="ticketCodeLabel" text=""
+                                   style="-fx-font-size: 24px; -fx-font-weight: 700; -fx-text-fill: #1e293b;"/>
+                        </VBox>
+                    </HBox>
+
+                    <Separator style="-fx-background-color: #e9ecef;"/>
+
+                    <!-- INFORMATIONS -->
+                    <GridPane hgap="30" vgap="20">
+                        <columnConstraints>
+                            <ColumnConstraints hgrow="ALWAYS" percentWidth="50"/>
+                            <ColumnConstraints hgrow="ALWAYS" percentWidth="50"/>
+                        </columnConstraints>
+
+                        <VBox spacing="8" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                            <Label text="ÉVÉNEMENT" style="-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #64748b;"/>
+                            <Label fx:id="eventNameLabel" text=""
+                                   style="-fx-font-size: 16px; -fx-font-weight: 500; -fx-text-fill: #1e293b;"/>
+                        </VBox>
+
+                        <VBox spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                            <Label text="STATUT" style="-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #64748b;"/>
+                            <Label fx:id="statusLabel" text=""
+                                   style="-fx-padding: 4 12; -fx-background-radius: 20; -fx-font-size: 13px; -fx-font-weight: 600;"/>
+                        </VBox>
+
+                        <VBox spacing="8" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                            <Label text="PARTICIPANT" style="-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #64748b;"/>
+                            <Label fx:id="userNameLabel" text=""
+                                   style="-fx-font-size: 16px; -fx-font-weight: 500; -fx-text-fill: #1e293b;"/>
+                            <Label fx:id="userEmailLabel" text=""
+                                   style="-fx-font-size: 14px; -fx-text-fill: #64748b;"/>
+                        </VBox>
+
+                        <VBox spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                            <Label text="DATE DE CRÉATION" style="-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #64748b;"/>
+                            <Label fx:id="createdAtLabel" text=""
+                                   style="-fx-font-size: 14px; -fx-text-fill: #334155;"/>
+                        </VBox>
+                    </GridPane>
+
+                    <Separator style="-fx-background-color: #e9ecef;"/>
+
+                    <!-- QR CODE -->
+                    <VBox spacing="15" alignment="CENTER">
+                        <Label text="QR CODE" style="-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #64748b;"/>
+                        <ImageView fx:id="qrCodeImage" fitHeight="200" fitWidth="200" preserveRatio="true"/>
+                    </VBox>
+
+                </VBox>
+
+                <!-- BOUTONS D'ACTION -->
+                <HBox spacing="15" alignment="CENTER_RIGHT" style="-fx-padding: 10 0 20 0;">
+                    <Button fx:id="scanBtn" text="📱 Scanner (Check-in)" onAction="#handleScan"
+                            style="-fx-background-color: #0d47a1; -fx-text-fill: white; -fx-font-size: 14px;
+                                   -fx-background-radius: 8; -fx-padding: 12 24; -fx-cursor: hand;
+                                   -fx-font-weight: 600;"/>
+                    <Button fx:id="deleteBtn" text="🗑️ Supprimer" onAction="#handleDelete"
+                            style="-fx-background-color: #dc3545; -fx-text-fill: white; -fx-font-size: 14px;
+                                   -fx-background-radius: 8; -fx-padding: 12 24; -fx-cursor: hand;
+                                   -fx-font-weight: 600;"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+</VBox>
