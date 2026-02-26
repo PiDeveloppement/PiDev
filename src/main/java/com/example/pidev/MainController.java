@@ -98,4 +98,10 @@ public class MainController {
     }
 
     @FXML private void handleLogout() { System.exit(0); }
+
+    // Ajoutez ou vérifiez ces méthodes dans MainController.java
+    public void updateHeader(String title, String subtitle) {
+        if (pageTitle != null) pageTitle.setText(title);
+        if (pageSubtitle != null) pageSubtitle.setText(subtitle);
+    }
 }

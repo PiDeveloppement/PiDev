@@ -11,7 +11,8 @@ public class ReservationService {
     private Connection connection = DBConnection.getConnection();
 
     public void ajouter(ReservationResource r) throws SQLException {
-        String query = "INSERT INTO reservation_resource (resource_type, salle_id, equipement_id, reservation_date_start_time, end_time, quantity) VALUES (?,?,?,?,?,?)";
+        // Ajout de user_id dans la requête
+        String query = "INSERT INTO reservation_resource (resource_type, salle_id, equipement_id, reservation_date_start_time, end_time, quantity, user_id) VALUES (?,?,?,?,?,?,?)";
         save(r, query, false);
     }
 
@@ -23,15 +24,30 @@ public class ReservationService {
     private void save(ReservationResource r, String query, boolean isUpdate) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1, r.getResourceType());
-            if (r.getSalleId() != null) ps.setInt(2, r.getSalleId()); else ps.setNull(2, Types.INTEGER);
-            if (r.getEquipementId() != null) ps.setInt(3, r.getEquipementId()); else ps.setNull(3, Types.INTEGER);
+
+            if (r.getSalleId() != null) ps.setInt(2, r.getSalleId());
+            else ps.setNull(2, Types.INTEGER);
+
+            if (r.getEquipementId() != null) ps.setInt(3, r.getEquipementId());
+            else ps.setNull(3, Types.INTEGER);
+
             ps.setTimestamp(4, Timestamp.valueOf(r.getStartTimedate()));
             ps.setTimestamp(5, Timestamp.valueOf(r.getEndTime()));
             ps.setInt(6, r.getQuantity());
-            if (isUpdate) ps.setInt(7, r.getId());
+
+            if (isUpdate) {
+                ps.setInt(7, r.getId());
+            } else {
+                // IMPORTANT: On envoie l'ID de l'utilisateur (1 par défaut ici)
+                // Si tu as un système de session, remplace 1 par l'ID de l'utilisateur connecté
+                ps.setInt(7, 1);
+            }
+
             ps.executeUpdate();
         }
     }
+
+    // ... (Le reste de tes méthodes supprimer, afficher, etc. restent inchangées)
 
     public void supprimer(int id) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement("DELETE FROM reservation_resource WHERE id = ?")) {
