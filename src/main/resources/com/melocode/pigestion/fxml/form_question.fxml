@@ -52,7 +52,7 @@
                                     <children>
                                         <Label style="-fx-font-weight: bold;" text="Énoncé de la Question" textFill="#475569" />
                                         <TextArea fx:id="txtTexte" prefHeight="100.0" promptText="Saisissez l'énoncé ici..." style="-fx-background-radius: 10; -fx-background-color: #f1f5f9; -fx-border-color: #e2e8f0; -fx-border-radius: 10;" wrapText="true" />
-                                        <Label fx:id="lblSuggestionIA" style="-fx-font-size: 11px; -fx-italic: true;" text="" />
+                                        <Label fx:id="lblSuggestionIA" style="-fx-font-size: 13px;" text="" />
                                     </children>
                                 </VBox>
                             </children>
@@ -69,8 +69,8 @@
 
                         <HBox alignment="CENTER_RIGHT" spacing="15.0">
                             <children>
-                                <Button onAction="#viderChamps" prefHeight="45.0" prefWidth="150.0" style="-fx-background-color: white; -fx-text-fill: #64748b; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-cursor: hand;" text="Réinitialiser" />
-                                <Button onAction="#handleSave" prefHeight="45.0" prefWidth="200.0" style="-fx-background-color: #4f46e5; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-cursor: hand; -fx-effect: dropshadow(three-pass-box, rgba(79, 70, 229, 0.3), 10, 0, 0, 5);" text="ENREGISTRER" />
+                                <Button onAction="#viderChampsSaufCombo" prefHeight="45.0" prefWidth="150.0" style="-fx-background-color: white; -fx-text-fill: #64748b; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-cursor: hand;" text="Réinitialiser" />
+                                <Button onAction="#handleSave" prefHeight="45.0" prefWidth="200.0" style="-fx-background-color: #4f46e5; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-cursor: hand;" text="ENREGISTRER" />
                             </children>
                         </HBox>
                     </children>

@@ -22,12 +22,13 @@ public class ParticipantController {
     @FXML private Button btnSuivant;
 
     private List<Question> listeQuestions = new ArrayList<>();
-    private List<String> reponsesUtilisateur = new ArrayList<>();
+    private final List<String> reponsesUtilisateur = new ArrayList<>();
     private int indexActuel = 0;
     private int etoilesSelectionnees = 0;
 
-    private int idParticipantConnecte = 3; // Simulation Souhail
-    private int idEventActuel = 1;
+    // Simulation de l'utilisateur connecté (A remplacer par votre session utilisateur)
+    private final int idParticipantConnecte = 3;
+    private final int idEventActuel = 1;
 
     private final FeedbackService fs = new FeedbackService();
 
@@ -36,17 +37,19 @@ public class ParticipantController {
         try {
             listeQuestions = fs.chargerQuestionsAleatoires(idEventActuel);
 
-            if (starContainer == null) return;
-
             if (listeQuestions.isEmpty()) {
-                lblQuestion.setText("Aucune question disponible.");
+                lblQuestion.setText("Désolé, aucune question n'est configurée pour cet événement.");
                 btnSuivant.setDisable(true);
                 return;
             }
 
             setupStars();
-            vboxEvaluation.setVisible(false);
-            vboxEvaluation.setManaged(false);
+
+            // Cacher la section évaluation (étoiles + commentaire) au début
+            if (vboxEvaluation != null) {
+                vboxEvaluation.setVisible(false);
+                vboxEvaluation.setManaged(false);
+            }
 
             afficherQuestion();
         } catch (SQLException e) {
@@ -55,9 +58,12 @@ public class ParticipantController {
     }
 
     private void setupStars() {
+        if (starContainer == null) return;
+
         for (int i = 0; i < starContainer.getChildren().size(); i++) {
             final int val = i + 1;
             if (starContainer.getChildren().get(i) instanceof Button b) {
+                b.setCursor(javafx.scene.Cursor.HAND);
                 b.setOnAction(e -> {
                     etoilesSelectionnees = val;
                     actualiserEtoiles();
@@ -69,9 +75,10 @@ public class ParticipantController {
     private void actualiserEtoiles() {
         for (int j = 0; j < starContainer.getChildren().size(); j++) {
             if (starContainer.getChildren().get(j) instanceof Button b) {
+                // Style Or pour sélectionné, Gris pour vide
                 b.setStyle(j < etoilesSelectionnees
-                        ? "-fx-text-fill: #f1c40f; -fx-background-color: transparent; -fx-font-size: 30;"
-                        : "-fx-text-fill: #bdc3c7; -fx-background-color: transparent; -fx-font-size: 30;");
+                        ? "-fx-text-fill: #f1c40f; -fx-background-color: transparent; -fx-font-size: 30; -fx-padding: 0;"
+                        : "-fx-text-fill: #bdc3c7; -f++++++++++x-background-color: transparent; -fx-font-size: 30; -fx-padding: 0;");
             }
         }
     }
@@ -81,10 +88,14 @@ public class ParticipantController {
         lblProgression.setText("Question " + (indexActuel + 1) + " / " + listeQuestions.size());
         lblQuestion.setText(q.getTexteQuestion());
 
+        // Si c'est la dernière question, on affiche le formulaire d'évaluation finale
         if (indexActuel == listeQuestions.size() - 1) {
-            vboxEvaluation.setVisible(true);
-            vboxEvaluation.setManaged(true);
-            btnSuivant.setText("TERMINER");
+            if (vboxEvaluation != null) {
+                vboxEvaluation.setVisible(true);
+                vboxEvaluation.setManaged(true);
+            }
+            btnSuivant.setText("TERMINER ET VOIR LE RÉSULTAT");
+            btnSuivant.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold;");
         }
     }
 
@@ -92,10 +103,11 @@ public class ParticipantController {
     private void handleSuivant() {
         String rep = txtReponseParticipant.getText().trim();
         if (rep.isEmpty()) {
-            new Alert(Alert.AlertType.WARNING, "Réponse requise.").show();
+            afficherAlerte("Champ requis", "Veuillez saisir une réponse avant de continuer.");
             return;
         }
 
+        // On enregistre la réponse localement pour l'instant
         reponsesUtilisateur.add(rep);
 
         if (indexActuel < listeQuestions.size() - 1) {
@@ -103,8 +115,9 @@ public class ParticipantController {
             txtReponseParticipant.clear();
             afficherQuestion();
         } else {
+            // Validation finale des étoiles
             if (etoilesSelectionnees == 0) {
-                new Alert(Alert.AlertType.WARNING, "Notez l'événement.").show();
+                afficherAlerte("Note requise", "Merci de donner une note à l'événement (étoiles).");
                 return;
             }
             sauvegarderEtChangerPage();
@@ -113,37 +126,56 @@ public class ParticipantController {
 
     private void sauvegarderEtChangerPage() {
         try {
-            // 1. Sauvegarde SQL
+            int dernierIdFeedback = 0; // Pour stocker l'ID généré
+
+            // 1. Sauvegarde en base de données
             for (int i = 0; i < listeQuestions.size(); i++) {
-                fs.enregistrerFeedbackComplet(idParticipantConnecte,
+                // On récupère l'ID retourné par la nouvelle méthode du service
+                dernierIdFeedback = fs.enregistrerFeedbackComplet(
+                        idParticipantConnecte,
                         listeQuestions.get(i).getIdQuestion(),
                         reponsesUtilisateur.get(i),
                         txtCommentaire.getText(),
-                        etoilesSelectionnees);
+                        etoilesSelectionnees
+                );
             }
 
-            // 2. Chargement du FXML Resultat
+            // 2. Préparation du changement de vue
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/melocode/pigestion/fxml/Resultat.fxml"));
             Parent root = loader.load();
 
-            // 3. Init Data
+            // 3. Injection des données (CORRIGÉ ICI)
             ResultatController resCtrl = loader.getController();
             resCtrl.setParticipantId(idParticipantConnecte);
-            resCtrl.initData(listeQuestions, reponsesUtilisateur, txtCommentaire.getText(), etoilesSelectionnees);
 
-            // 4. NAVIGATION CORRECTE : On remplace le contenu du Dashboard
-            // On cherche le StackPane 'contentArea' définit dans main_layout.fxml
+            // On passe dernierIdFeedback en premier argument !
+            resCtrl.initData(
+                    dernierIdFeedback,
+                    listeQuestions,
+                    reponsesUtilisateur,
+                    txtCommentaire.getText(),
+                    etoilesSelectionnees
+            );
+
+            // 4. Navigation
             StackPane contentArea = (StackPane) btnSuivant.getScene().lookup("#contentArea");
-
             if (contentArea != null) {
                 contentArea.getChildren().clear();
                 contentArea.getChildren().add(root);
             } else {
-                // Secours si le Dashboard n'est pas trouvé
                 btnSuivant.getScene().setRoot(root);
             }
         } catch (Exception e) {
             e.printStackTrace();
+            afficherAlerte("Erreur", "Une erreur est survenue : " + e.getMessage());
         }
+    }
+
+    private void afficherAlerte(String titre, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(titre);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.show();
     }
 }

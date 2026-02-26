@@ -22,7 +22,7 @@ public class HelloApplication extends Application {
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
 
         // 2. Charger le Main Layout (Chemin corrigé pour ton projet)
-        FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("/com/melocode/pigestion/fxml/main_layout.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("/com/melocode/pigestion/main_layout.fxml"));
         Parent root = fxmlLoader.load();
 
         // 3. Configurer la scène avec ton CSS personnalisé
@@ -53,7 +53,7 @@ public class HelloApplication extends Application {
     // Méthode pour recharger le layout principal si besoin (ex: après une connexion)
     public static void loadMainLayout() {
         try {
-            FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource("/com/melocode/pigestion/fxml/main_layout.fxml"));
+            FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource("/com/melocode/pigestion/main_layout.fxml"));
             Parent root = loader.load();
 
             Scene scene = new Scene(root, 1400, 900);
@@ -70,5 +70,15 @@ public class HelloApplication extends Application {
 
     public static void main(String[] args) {
         launch();
+    }
+    // Ces méthodes permettent au contrôleur de changer de page
+    public static void loadLoginPage() {
+        System.out.println("Tentative de chargement de la page de connexion...");
+        // Plus tard, tu mettras ici le code pour changer de scène vers Login.fxml
+    }
+
+    public static void loadSignupPage() {
+        System.out.println("Tentative de chargement de la page d'inscription...");
+        // Plus tard, tu mettras ici le code pour changer de scène vers Signup.fxml
     }
 }

@@ -8,78 +8,95 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FeedbackService {
-    private Connection conn = MyConnection.getInstance().getCnx();
+    // Utilisation du nom 'conn' comme défini ici
+    private final Connection conn = MyConnection.getInstance().getCnx();
 
-    /**
-     * Charge les questions (Inchangé)
-     */
     public List<Question> chargerQuestionsAleatoires(int idEvent) throws SQLException {
         List<Question> questions = new ArrayList<>();
-        String req = "SELECT * FROM questions WHERE id_event = ? ORDER BY RAND() LIMIT 10";
-        PreparedStatement pst = conn.prepareStatement(req);
-        pst.setInt(1, idEvent);
-        ResultSet rs = pst.executeQuery();
-        while (rs.next()) {
-            questions.add(new Question(rs.getInt(1), rs.getInt(2), rs.getString(3), rs.getString(4), rs.getInt(5)));
+        String req = "SELECT id_question, id_event, texte_question, bonne_reponse, points FROM questions WHERE id_event = ? ORDER BY RAND() LIMIT 10";
+
+        try (PreparedStatement pst = conn.prepareStatement(req)) {
+            pst.setInt(1, idEvent);
+            try (ResultSet rs = pst.executeQuery()) {
+                while (rs.next()) {
+                    questions.add(new Question(
+                            rs.getInt("id_question"),
+                            rs.getInt("id_event"),
+                            rs.getString("texte_question"),
+                            rs.getString("bonne_reponse"),
+                            rs.getInt("points")
+                    ));
+                }
+            }
         }
         return questions;
     }
 
-    /**
-     * Enregistre le feedback (Inchangé)
-     */
-    public void enregistrerFeedbackComplet(int idUser, int idQuest, String rep, String comm, int stars) throws SQLException {
+    public int enregistrerFeedbackComplet(int idUser, int idQuest, String rep, String comm, int stars) throws SQLException {
         String req = "INSERT INTO feedbacks (id_user, id_question, reponse_donnee, comments, etoiles) VALUES (?, ?, ?, ?, ?)";
-        PreparedStatement pst = conn.prepareStatement(req);
-        pst.setInt(1, idUser);
-        pst.setInt(2, idQuest);
-        pst.setString(3, rep);
-        pst.setString(4, comm);
-        pst.setInt(5, stars);
-        pst.executeUpdate();
+        // On ajoute Statement.RETURN_GENERATED_KEYS pour récupérer l'ID
+        try (PreparedStatement pst = conn.prepareStatement(req, Statement.RETURN_GENERATED_KEYS)) {
+            pst.setInt(1, idUser);
+            pst.setInt(2, idQuest);
+            pst.setString(3, rep);
+            pst.setString(4, comm);
+            pst.setInt(5, stars);
+            pst.executeUpdate();
+
+            // Récupération de l'ID auto-incrémenté
+            try (ResultSet rs = pst.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
     }
 
-    /**
-     * RÉCUPÈRE UN SEUL TÉMOIGNAGE PAR UTILISATEUR
-     * Correction pour SQL_MODE = only_full_group_by
-     */
     public List<FeedbackStats> recupererHistorique() throws SQLException {
         List<FeedbackStats> historique = new ArrayList<>();
-
-        // On utilise MAX() sur id_feedback et comments pour satisfaire la rigueur de MySQL
-        String req = "SELECT MAX(f.id_feedback) as id_f, MAX(f.comments) as comm, MAX(f.etoiles) as stars, u.username " +
+        String req = "SELECT f.id_feedback, f.comments, f.etoiles, u.username " +
                 "FROM feedbacks f " +
-                "JOIN users u ON f.id_user = u.id_user " +
-                "GROUP BY u.username";
+                "JOIN users u ON f.id_user = u.id_user";
 
-        PreparedStatement pst = conn.prepareStatement(req);
-        ResultSet rs = pst.executeQuery();
-
-        while (rs.next()) {
-            historique.add(new FeedbackStats(
-                    rs.getInt("id_f"),
-                    rs.getString("username"),
-                    rs.getString("comm") != null ? rs.getString("comm") : "Pas de commentaire",
-                    "N/A",
-                    rs.getInt("stars")
-            ));
+        try (Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(req)) {
+            while (rs.next()) {
+                historique.add(new FeedbackStats(
+                        rs.getInt("id_feedback"),
+                        rs.getString("username"),
+                        rs.getString("comments") != null ? rs.getString("comments") : "Pas de commentaire",
+                        "N/A",
+                        rs.getInt("etoiles")
+                ));
+            }
         }
         return historique;
     }
 
-    public void modifierFeedback(int idUser, String comm, int stars) throws SQLException {
-        String req = "UPDATE feedbacks SET comments = ?, etoiles = ? WHERE id_user = ?";
-        PreparedStatement pst = conn.prepareStatement(req);
-        pst.setString(1, comm);
-        pst.setInt(2, stars);
-        pst.setInt(3, idUser);
-        pst.executeUpdate();
+    /**
+     * CORRECTION : Modification par ID de feedback
+     * Table harmonisée sur 'feedbacks' et variable 'conn' utilisée
+     */
+    public void modifierFeedback(int idFeedback, String comment, int stars) throws SQLException {
+        // Utilisation de 'conn' (la variable de la ligne 11) et de la table 'feedbacks'
+        String query = "UPDATE feedbacks SET comments = ?, etoiles = ? WHERE id_feedback = ?";
+        try (PreparedStatement pst = conn.prepareStatement(query)) {
+            pst.setString(1, comment);
+            pst.setInt(2, stars);
+            pst.setInt(3, idFeedback);
+            pst.executeUpdate();
+        }
     }
 
-    public void supprimerFeedback(int idUser) throws SQLException {
-        String req = "DELETE FROM feedbacks WHERE id_user = ?";
-        PreparedStatement pst = conn.prepareStatement(req);
-        pst.setInt(1, idUser);
-        pst.executeUpdate();
+    /**
+     * CORRECTION : Suppression par ID de feedback
+     */
+    public void supprimerFeedback(int idFeedback) throws SQLException {
+        String query = "DELETE FROM feedbacks WHERE id_feedback = ?";
+        try (PreparedStatement pst = conn.prepareStatement(query)) {
+            pst.setInt(1, idFeedback);
+            pst.executeUpdate();
+        }
     }
 }

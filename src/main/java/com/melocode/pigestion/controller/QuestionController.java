@@ -1,7 +1,6 @@
 package com.melocode.pigestion.controller;
 
 import com.itextpdf.text.*;
-import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.melocode.pigestion.main_layout;
@@ -23,15 +22,15 @@ import javafx.stage.FileChooser;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.net.URL;//
+import java.net.URLEncoder;//
+import java.nio.charset.StandardCharsets;//
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
+import java.util.Scanner;//
 import java.util.stream.Collectors;
 
 public class QuestionController {
@@ -41,22 +40,20 @@ public class QuestionController {
     @FXML private TextField txtReponse, txtPoints, txtSearch;
     @FXML private TextArea txtTexte;
     @FXML private FlowPane cardsContainer;
-    @FXML private Label lblPagination;
-    @FXML private Label lblSuggestionIA;
+    @FXML private Label lblPagination, lblSuggestionIA;
     @FXML private PieChart pieChartQuestions;
 
     private final QuestionService qs = new QuestionService();
     private static Question questionEnCours = null;
-
     private List<Question> toutesLesQuestions = new ArrayList<>();
     private List<Question> questionsFiltrees = new ArrayList<>();
     private int pageActuelle = 0;
     private final int ITEMS_PER_PAGE = 6;
+// Initialise l’interface : charge les événements, les questions, la pagination, les stats et les listeners
 
     @FXML
     public void initialize() {
         try {
-            // Configuration initiale du tri
             if (comboSort != null) {
                 comboSort.setItems(FXCollections.observableArrayList(
                         "Points (Croissant)", "Points (Décroissant)", "Texte (A-Z)"
@@ -65,30 +62,28 @@ public class QuestionController {
 
             List<Evenement> events = qs.chargerEvenements();
 
-            // Mode Formulaire (Ajout/Edition)
             if (comboEvent != null) {
                 comboEvent.setItems(FXCollections.observableArrayList(events));
-                if (questionEnCours != null) remplirChamps(questionEnCours);
+                if (questionEnCours != null) {
+                    remplirChamps(questionEnCours);
+                }
 
-                // Smart Points IA listener
                 txtTexte.focusedProperty().addListener((obs, oldVal, newVal) -> {
                     if (!newVal) analyserDifficulteIA(txtTexte.getText());
                 });
             }
 
-            // Mode Liste
             if (comboEventList != null) {
                 comboEventList.setItems(FXCollections.observableArrayList(events));
-                if (!events.isEmpty()) {
-                    comboEventList.getSelectionModel().selectFirst();
-                    chargerQuestionsParEvent(comboEventList.getSelectionModel().getSelectedItem().getId());
-                }
+                toutesLesQuestions = qs.afficherTout();
+                questionsFiltrees = new ArrayList<>(toutesLesQuestions);
+                afficherPage();
+
                 comboEventList.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
-                    if (newV != null) chargerQuestionsParEvent(newV.getId());
+                    if (newV != null) chargerQuestionsParEvent(newV.getIdEvent());
                 });
             }
 
-            // Mode Statistiques
             if (pieChartQuestions != null) {
                 afficherStatistiques();
             }
@@ -97,44 +92,9 @@ public class QuestionController {
             e.printStackTrace();
         }
     }
-
-    // --- MÉTHODE IMPORTANTE : STATISTIQUES ---
-    public void afficherStatistiques() {
-        try {
-            List<Evenement> events = qs.chargerEvenements();
-            List<Question> questionsPourStats = new ArrayList<>();
-
-            for (Evenement e : events) {
-                questionsPourStats.addAll(qs.afficherParEvenement(e.getId()));
-            }
-
-            Map<String, Long> statsMap = questionsPourStats.stream()
-                    .collect(Collectors.groupingBy(q -> {
-                        return events.stream()
-                                .filter(e -> e.getId() == q.getIdEvent())
-                                .map(Evenement::getNom)
-                                .findFirst()
-                                .orElse("Inconnu");
-                    }, Collectors.counting()));
-
-            ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
-            statsMap.forEach((nom, count) -> pieData.add(new PieChart.Data(nom + " (" + count + ")", count)));
-
-            pieChartQuestions.setData(pieData);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // --- MÉTHODE AJOUTÉE POUR CORRIGER L'ERREUR FXML ---
-    @FXML
-    private void ouvrirPopupStats() {
-        switchToStats();
-    }
-
-    // --- MÉTHODE IMPORTANTE : ANALYSE IA ---
+    // Analyse automatiquement la difficulté d’une question et propose un niveau + points
     private void analyserDifficulteIA(String texte) {
-        if (texte == null || texte.trim().length() < 5) return;
+        if (texte == null || texte.trim().length() < 5 || lblSuggestionIA == null) return;
 
         String t = texte.toLowerCase();
         int points = 5;
@@ -153,83 +113,69 @@ public class QuestionController {
         final String colFinal = color;
 
         Platform.runLater(() -> {
-            if (lblSuggestionIA != null) {
-                lblSuggestionIA.setText("✨ Suggestion IA : " + nivFinal + " (" + ptsFinal + " pts)");
-                lblSuggestionIA.setStyle("-fx-text-fill: " + colFinal + "; -fx-font-weight: bold;");
-            }
+            lblSuggestionIA.setText("✨ Suggestion IA : " + nivFinal + " (" + ptsFinal + " pts)");
+            lblSuggestionIA.setStyle("-fx-text-fill: " + colFinal + "; -fx-font-weight: bold;");
             if (txtPoints != null) txtPoints.setText(String.valueOf(ptsFinal));
         });
     }
-
-    // --- MÉTHODE IMPORTANTE : EXPORT PDF ---
+    // Ajoute une nouvelle question ou modifie une question existante
     @FXML
-    private void handleExportPDF() {
-        Evenement ev = comboEventList.getValue();
-        if (ev == null || questionsFiltrees.isEmpty()) {
-            afficherAlerte("Export impossible", "Veuillez sélectionner un événement avec des questions.");
-            return;
-        }
-
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Enregistrer le PDF");
-        fileChooser.setInitialFileName("Questions_" + ev.getNom().replace(" ", "_") + ".pdf");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
-        File file = fileChooser.showSaveDialog(null);
-
-        if (file != null) {
-            try {
-                Document document = new Document();
-                PdfWriter.getInstance(document, new FileOutputStream(file));
-                document.open();
-
-                Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20);
-                Paragraph title = new Paragraph("EventFlow - Liste des Questions\n\n", titleFont);
-                title.setAlignment(Element.ALIGN_CENTER);
-                document.add(title);
-                document.add(new Paragraph("Événement : " + ev.getNom()));
-                document.add(new Paragraph(" "));
-
-                PdfPTable table = new PdfPTable(3);
-                table.setWidthPercentage(100);
-                table.addCell("Question"); table.addCell("Réponse"); table.addCell("Points");
-
-                for (Question q : questionsFiltrees) {
-                    table.addCell(q.getTexteQuestion());
-                    table.addCell(q.getBonneReponse());
-                    table.addCell(String.valueOf(q.getPoints()));
-                }
-
-                document.add(table);
-                document.close();
-                new Alert(Alert.AlertType.INFORMATION, "PDF généré avec succès !").show();
-            } catch (Exception e) {
-                afficherAlerte("Erreur PDF", e.getMessage());
+    private void handleSave() {
+        try {
+            Evenement ev = comboEvent.getValue();
+            // Vérification rigoureuse des champs
+            if (ev == null || txtTexte.getText().trim().isEmpty() || txtReponse.getText().trim().isEmpty()) {
+                afficherAlerte("Champs manquants", "Veuillez sélectionner un événement et remplir l'énoncé et la réponse.");
+                return;
             }
+
+            // Conversion sécurisée des points
+            int points;
+            try {
+                points = Integer.parseInt(txtPoints.getText().trim());
+            } catch (NumberFormatException e) {
+                afficherAlerte("Format invalide", "Le champ 'Points' doit être un nombre entier.");
+                return;
+            }
+
+            if (questionEnCours == null) {
+                // AJOUT
+                Question nouvelleQ = new Question(0, ev.getIdEvent(), txtTexte.getText(), txtReponse.getText(), points);
+                qs.ajouter(nouvelleQ);
+                System.out.println("✅ Question ajoutée avec succès !");
+            } else {
+                // MODIFICATION
+                questionEnCours.setIdEvent(ev.getIdEvent());
+                questionEnCours.setTexte(txtTexte.getText());
+                questionEnCours.setReponse(txtReponse.getText());
+                questionEnCours.setPoints(points);
+                qs.modifier(questionEnCours);
+                System.out.println("✅ Question modifiée avec succès !");
+                questionEnCours = null; // Reset après modification
+            }
+
+            switchToList(); // Retour à la liste
+
+        } catch (SQLException e) {
+            e.printStackTrace(); // Affiche l'erreur SQL exacte dans la console
+            afficherAlerte("Erreur SQL", "Impossible d'enregistrer : " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            afficherAlerte("Erreur", "Une erreur inattendue est survenue.");
         }
     }
-
-    // --- MÉTHODE IMPORTANTE : TRADUCTION ---
-    private void traduireTexte(Label labelAtraduire) {
-        String texte = labelAtraduire.getText();
-        labelAtraduire.setText("⌛...");
-        new Thread(() -> {
-            try {
-                String encodedText = URLEncoder.encode(texte, StandardCharsets.UTF_8.toString());
-                String urlStr = "https://api.mymemory.translated.net/get?q=" + encodedText + "&langpair=fr|en";
-                URL url = new URL(urlStr);
-                Scanner s = new Scanner(url.openStream(), "UTF-8").useDelimiter("\\A");
-                String response = s.hasNext() ? s.next() : "";
-                String translatedText = response.split("\"translatedText\":\"")[1].split("\"")[0];
-                Platform.runLater(() -> {
-                    labelAtraduire.setText(translatedText);
-                    labelAtraduire.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #4f46e5;");
-                });
-            } catch (Exception e) {
-                Platform.runLater(() -> labelAtraduire.setText(texte));
-            }
-        }).start();
+    // Recherche des questions par mot-clé (texte ou réponse)
+    @FXML
+    private void handleSearch() {
+        if (txtSearch == null) return;
+        String query = txtSearch.getText().toLowerCase().trim();
+        questionsFiltrees = toutesLesQuestions.stream()
+                .filter(q -> q.getTexte().toLowerCase().contains(query) || q.getReponse().toLowerCase().contains(query))
+                .collect(Collectors.toList());
+        pageActuelle = 0;
+        afficherPage();
     }
-
+    // Trie les questions selon le critère choisi (points ou texte)
     @FXML
     private void handleSort() {
         String criteria = comboSort.getValue();
@@ -237,23 +183,12 @@ public class QuestionController {
         switch (criteria) {
             case "Points (Croissant)": questionsFiltrees.sort(Comparator.comparingInt(Question::getPoints)); break;
             case "Points (Décroissant)": questionsFiltrees.sort((q1, q2) -> Integer.compare(q2.getPoints(), q1.getPoints())); break;
-            case "Texte (A-Z)": questionsFiltrees.sort(Comparator.comparing(q -> q.getTexteQuestion().toLowerCase())); break;
+            case "Texte (A-Z)": questionsFiltrees.sort(Comparator.comparing(q -> q.getTexte().toLowerCase())); break;
         }
         pageActuelle = 0;
         afficherPage();
     }
-
-    @FXML
-    private void handleSearch() {
-        if (txtSearch == null) return;
-        String query = txtSearch.getText().toLowerCase().trim();
-        questionsFiltrees = toutesLesQuestions.stream()
-                .filter(q -> q.getTexteQuestion().toLowerCase().contains(query) || q.getBonneReponse().toLowerCase().contains(query))
-                .collect(Collectors.toList());
-        pageActuelle = 0;
-        afficherPage();
-    }
-
+    // Charge uniquement les questions liées à un événement précis
     private void chargerQuestionsParEvent(int idEvent) {
         try {
             toutesLesQuestions = qs.afficherParEvenement(idEvent);
@@ -262,7 +197,7 @@ public class QuestionController {
             afficherPage();
         } catch (SQLException e) { e.printStackTrace(); }
     }
-
+    // Affiche les questions page par page (pagination)
     private void afficherPage() {
         if (cardsContainer == null) return;
         cardsContainer.getChildren().clear();
@@ -279,19 +214,16 @@ public class QuestionController {
             lblPagination.setText("Page " + (totalPages == 0 ? 0 : pageActuelle + 1) + " / " + totalPages);
         }
     }
-
+    // Crée une carte graphique (UI) pour afficher une question
     private VBox createPinterestCard(Question q) {
         VBox card = new VBox(12);
         card.setPrefSize(300, 180);
         card.setStyle("-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 12, 0, 0, 5);");
 
-        Label lblTxt = new Label(q.getTexteQuestion());
-        lblTxt.setStyle("-fx-font-weight: bold; -fx-font-size: 15px; -fx-text-fill: #1e293b;");
+        Label lblTxt = new Label(q.getTexte());
+        lblTxt.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #1e293b;");
         lblTxt.setWrapText(true);
         lblTxt.setMinHeight(50);
-
-        Label lblRep = new Label("💡 " + q.getBonneReponse());
-        lblRep.setStyle("-fx-text-fill: #64748b; -fx-font-style: italic;");
 
         HBox footer = new HBox(10);
         footer.setAlignment(Pos.CENTER_LEFT);
@@ -300,81 +232,114 @@ public class QuestionController {
         pts.setStyle("-fx-background-color: #e0e7ff; -fx-text-fill: #4338ca; -fx-padding: 4 10; -fx-background-radius: 8; -fx-font-weight: bold;");
 
         Button btnTranslate = new Button("🌐");
-        btnTranslate.setStyle("-fx-background-color: #f1f5f9; -fx-cursor: hand; -fx-background-radius: 8;");
         btnTranslate.setOnAction(e -> traduireTexte(lblTxt));
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Button btnEdit = new Button("✏️");
-        btnEdit.setStyle("-fx-background-color: #fef9c3; -fx-cursor: hand; -fx-background-radius: 8;");
-        btnEdit.setOnAction(e -> { questionEnCours = q; switchToForm(); });
+        btnEdit.setOnAction(e -> {
+            questionEnCours = q;
+            switchToForm();
+        });
 
         Button btnDel = new Button("🗑️");
-        btnDel.setStyle("-fx-background-color: #fee2e2; -fx-cursor: hand; -fx-background-radius: 8;");
+        btnDel.setStyle("-fx-background-color: #fee2e2;");
         btnDel.setOnAction(e -> {
             try {
                 qs.supprimer(q.getIdQuestion());
-                chargerQuestionsParEvent(q.getIdEvent());
+                refreshData();
             } catch (SQLException ex) { ex.printStackTrace(); }
         });
 
         footer.getChildren().addAll(pts, btnTranslate, spacer, btnEdit, btnDel);
-        card.getChildren().addAll(lblTxt, lblRep, footer);
+        card.getChildren().addAll(lblTxt, new Label("💡 " + q.getReponse()), footer);
         return card;
+    }
+    // Recharge les données depuis la base de données
+    private void refreshData() throws SQLException {
+        if(comboEventList != null && comboEventList.getValue() != null)
+            chargerQuestionsParEvent(comboEventList.getValue().getIdEvent());
+        else {
+            toutesLesQuestions = qs.afficherTout();
+            questionsFiltrees = new ArrayList<>(toutesLesQuestions);
+            afficherPage();
+        }
     }
 
     @FXML
-    private void handleSave() {
+    // Affiche les statistiques des questions dans un graphique circulaire
+    public void afficherStatistiques() {
         try {
-            Evenement ev = comboEvent.getValue();
-            if (ev == null || txtTexte.getText().isEmpty() || txtReponse.getText().isEmpty() || txtPoints.getText().isEmpty()) {
-                afficherAlerte("Erreur", "Tous les champs sont obligatoires !");
-                return;
+            Map<String, Integer> statsMap = qs.obtenirStats();
+            ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
+            statsMap.forEach((nom, count) -> pieData.add(new PieChart.Data(nom + " (" + count + ")", count)));
+            pieChartQuestions.setData(pieData);
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+    // Ouvre la vue/statistiques des questions
+    @FXML private void ouvrirPopupStats() { switchToStats(); }
+// Traduit le texte d’une question du français vers l’anglais via une API web
+
+    private void traduireTexte(Label labelAtraduire) {
+        String texte = labelAtraduire.getText();
+        labelAtraduire.setText("⌛...");
+        new Thread(() -> {
+            try {
+                String encodedText = URLEncoder.encode(texte, StandardCharsets.UTF_8.toString());
+                String urlStr = "https://api.mymemory.translated.net/get?q=" + encodedText + "&langpair=fr|en";
+                URL url = new URL(urlStr);
+                Scanner s = new Scanner(url.openStream(), "UTF-8").useDelimiter("\\A");
+                String response = s.hasNext() ? s.next() : "";
+                String translatedText = response.split("\"translatedText\":\"")[1].split("\"")[0];
+                Platform.runLater(() -> {
+                    labelAtraduire.setText(translatedText);
+                    labelAtraduire.setStyle("-fx-text-fill: #4f46e5; -fx-font-weight: bold;");
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> labelAtraduire.setText(texte));
             }
-            if (questionEnCours == null) {
-                qs.ajouter(new Question(0, ev.getId(), txtTexte.getText(), txtReponse.getText(), Integer.parseInt(txtPoints.getText())));
-            } else {
-                questionEnCours.setIdEvent(ev.getId());
-                questionEnCours.setTexteQuestion(txtTexte.getText());
-                questionEnCours.setBonneReponse(txtReponse.getText());
-                questionEnCours.setPoints(Integer.parseInt(txtPoints.getText()));
-                qs.modifier(questionEnCours);
-                questionEnCours = null;
-            }
-            switchToList();
-        } catch (Exception e) {
-            afficherAlerte("Erreur", "Veuillez vérifier le format des points (nombre entier).");
+        }).start();
+    }
+// Exporte la liste des questions dans un fichier PDF
+
+    @FXML
+    private void handleExportPDF() {
+        if (questionsFiltrees.isEmpty()) {
+            afficherAlerte("Export impossible", "La liste est vide.");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialFileName("Questions_Export.pdf");
+        File file = fileChooser.showSaveDialog(null);
+
+        if (file != null) {
+            try {
+                Document document = new Document();
+                PdfWriter.getInstance(document, new FileOutputStream(file));
+                document.open();
+                document.add(new Paragraph("LISTE DES QUESTIONS\n\n"));
+                PdfPTable table = new PdfPTable(3);
+                table.addCell("Question"); table.addCell("Réponse"); table.addCell("Points");
+                for (Question q : questionsFiltrees) {
+                    table.addCell(q.getTexte());
+                    table.addCell(q.getReponse());
+                    table.addCell(String.valueOf(q.getPoints()));
+                }
+                document.add(table);
+                document.close();
+                afficherAlerte("Succès", "PDF généré !");
+            } catch (Exception e) { e.printStackTrace(); }
         }
     }
-
-    @FXML private void viderChamps() {
-        if(txtTexte != null) txtTexte.clear();
-        if(txtReponse != null) txtReponse.clear();
-        if(txtPoints != null) txtPoints.clear();
-        if(lblSuggestionIA != null) lblSuggestionIA.setText("");
-        questionEnCours = null;
-    }
-
-    private void remplirChamps(Question q) {
-        txtTexte.setText(q.getTexteQuestion());
-        txtReponse.setText(q.getBonneReponse());
-        txtPoints.setText(String.valueOf(q.getPoints()));
-        if(comboEvent != null) {
-            comboEvent.getItems().stream()
-                    .filter(e -> e.getId() == q.getIdEvent())
-                    .findFirst()
-                    .ifPresent(e -> comboEvent.setValue(e));
-        }
-    }
-
-    // --- LOGIQUE DE NAVIGATION ---
+// Change la vue vers la liste des questions
     @FXML private void switchToList() { changeScene("/com/melocode/pigestion/fxml/list_question.fxml", "📋 LISTE DES QUESTIONS"); }
-    @FXML private void switchToForm() {
-        questionEnCours = null;
-        changeScene("/com/melocode/pigestion/fxml/form_question.fxml", "⚙️ ÉDITEUR DE QUESTION");
-    }
+    // Change la vue vers le formulaire d’ajout/modification
+    @FXML private void switchToForm() { changeScene("/com/melocode/pigestion/fxml/form_question.fxml", "⚙️ ÉDITEUR"); }
+    // Change la vue vers la page des statistiques
     @FXML private void switchToStats() { changeScene("/com/melocode/pigestion/fxml/stats_question.fxml", "📊 STATISTIQUES"); }
+// Change dynamiquement le contenu principal de l’interface
 
     private void changeScene(String fxmlPath, String title) {
         Platform.runLater(() -> {
@@ -384,29 +349,52 @@ public class QuestionController {
                 if (main_layout.getInstance() != null) {
                     main_layout.getInstance().setContent(root, title);
                 }
-            } catch (IOException e) {
-                System.err.println("Erreur de chargement FXML : " + fxmlPath);
-                e.printStackTrace();
-            }
+            } catch (IOException e) { e.printStackTrace(); }
         });
     }
+// Vide les champs du formulaire sans toucher à l’événement sélectionné
+
+    @FXML
+    private void viderChampsSaufCombo() {
+        if(txtTexte != null) txtTexte.clear();
+        if(txtReponse != null) txtReponse.clear();
+        if(txtPoints != null) txtPoints.clear();
+        if(lblSuggestionIA != null) lblSuggestionIA.setText("");
+        // On ne touche pas à comboEvent pour permettre l'ajout rapide
+        // de plusieurs questions pour le même événement.
+        questionEnCours = null;
+    }
+// Passe à la page suivante de la pagination
 
     @FXML private void pageSuivante() {
         if ((pageActuelle + 1) * ITEMS_PER_PAGE < questionsFiltrees.size()) {
-            pageActuelle++;
-            afficherPage();
+            pageActuelle++; afficherPage();
         }
     }
+// Revient à la page précédente de la pagination
 
     @FXML private void pagePrecedente() {
         if (pageActuelle > 0) {
-            pageActuelle--;
-            afficherPage();
+            pageActuelle--; afficherPage();
         }
     }
+// Remplit le formulaire avec les données d’une question existante
+
+    private void remplirChamps(Question q) {
+        txtTexte.setText(q.getTexte());
+        txtReponse.setText(q.getReponse());
+        txtPoints.setText(String.valueOf(q.getPoints()));
+        if (comboEvent != null) {
+            comboEvent.getItems().stream()
+                    .filter(e -> e.getIdEvent() == q.getIdEvent())
+                    .findFirst()
+                    .ifPresent(e -> comboEvent.setValue(e));
+        }
+    }
+// Affiche une fenêtre d’alerte avec un message
 
     private void afficherAlerte(String t, String m) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(t);
         alert.setHeaderText(null);
         alert.setContentText(m);

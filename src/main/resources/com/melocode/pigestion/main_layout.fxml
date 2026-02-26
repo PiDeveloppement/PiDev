@@ -6,7 +6,7 @@
 <?import javafx.scene.image.*?>
 
 <StackPane fx:id="mainStackPane" prefHeight="900" prefWidth="1400"
-           stylesheets="@../css/atlantafx-custom.css"
+           stylesheets="@css/atlantafx-custom.css"
            xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="com.melocode.pigestion.main_layout">
 
@@ -15,7 +15,7 @@
 
             <VBox alignment="CENTER" spacing="8" style="-fx-background-color: #0D47A1; -fx-padding: 25 15;">
                 <ImageView fitHeight="90" fitWidth="90" preserveRatio="true">
-                    <Image url="@../images/logo.png" />
+                    <Image url="@images/logo.png" />
                 </ImageView>
                 <VBox alignment="CENTER" spacing="1">
                     <Label text="EventFlow" style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;"/>

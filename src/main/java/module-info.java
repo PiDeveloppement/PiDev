@@ -19,6 +19,7 @@ module com.melocode.pigestion {
     opens com.melocode.pigestion.controller to javafx.fxml;
     opens com.melocode.pigestion.model to javafx.base;
     opens com.melocode.pigestion.service to javafx.fxml;
+    opens com.melocode.pigestion.controller.auth to javafx.fxml;
 
     // Exportation des packages pour les rendre accessibles
     exports com.melocode.pigestion;

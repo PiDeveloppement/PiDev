@@ -9,11 +9,21 @@ public class Evenement {
         this.nom = nom;
     }
 
-    public int getId() { return id; }
-    public String getNom() { return nom; }
+    // AJOUTEZ BIEN CETTE MÉTHODE :
+    public int getIdEvent() {
+        return id;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getNom() {
+        return nom;
+    }
 
     @Override
     public String toString() {
-        return nom; // Affiche le nom dans la ComboBox
+        return nom;
     }
 }

@@ -3,60 +3,36 @@ package com.melocode.pigestion.model;
 public class Question {
     private int idQuestion;
     private int idEvent;
-    private String texteQuestion;
-    private String bonneReponse;
+    private String texte;
+    private String reponse;
     private int points;
+    private String nomEvent; // Harmonisé avec le service
 
-    // Constructeur complet
-    public Question(int idQuestion, int idEvent, String texteQuestion, String bonneReponse, int points) {
+    public Question(int idQuestion, int idEvent, String texte, String reponse, int points) {
         this.idQuestion = idQuestion;
         this.idEvent = idEvent;
-        this.texteQuestion = texteQuestion;
-        this.bonneReponse = bonneReponse;
+        this.texte = texte;
+        this.reponse = reponse;
         this.points = points;
     }
 
-    // --- GETTERS (Indispensables pour QuestionService et les contrôleurs) ---
+    // Getters
+    public int getIdQuestion() { return idQuestion; }
+    public int getIdEvent() { return idEvent; }
+    public String getTexte() { return texte; } // Utilisé par les getters ci-dessous si nécessaire
+    public String getReponse() { return reponse; }
+    public int getPoints() { return points; }
+    public String getNomEvent() { return nomEvent; }
 
-    public int getIdQuestion() {
-        return idQuestion;
-    }
+    // Setters
+    public void setIdQuestion(int idQuestion) { this.idQuestion = idQuestion; }
+    public void setIdEvent(int idEvent) { this.idEvent = idEvent; }
+    public void setTexte(String texte) { this.texte = texte; }
+    public void setReponse(String reponse) { this.reponse = reponse; }
+    public void setPoints(int points) { this.points = points; }
+    public void setNomEvent(String nomEvent) { this.nomEvent = nomEvent; }
 
-    public int getIdEvent() {
-        return idEvent;
-    }
-
-    public String getTexteQuestion() {
-        return texteQuestion;
-    }
-
-    public String getBonneReponse() {
-        return bonneReponse;
-    }
-
-    public int getPoints() {
-        return points;
-    }
-
-    // --- SETTERS (Indispensables pour la modification côté organisateur) ---
-
-    public void setIdQuestion(int idQuestion) {
-        this.idQuestion = idQuestion;
-    }
-
-    public void setIdEvent(int idEvent) {
-        this.idEvent = idEvent;
-    }
-
-    public void setTexteQuestion(String texteQuestion) {
-        this.texteQuestion = texteQuestion;
-    }
-
-    public void setBonneReponse(String bonneReponse) {
-        this.bonneReponse = bonneReponse;
-    }
-
-    public void setPoints(int points) {
-        this.points = points;
-    }
+    // Méthodes de compatibilité pour le Service (getTexteQuestion et getBonneReponse)
+    public String getTexteQuestion() { return texte; }
+    public String getBonneReponse() { return reponse; }
 }
