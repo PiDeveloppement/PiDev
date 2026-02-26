@@ -4,6 +4,7 @@ import com.example.pidev.model.depense.Depense;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 
 import java.time.format.DateTimeFormatter;
 
@@ -11,10 +12,8 @@ public class DepenseCardController {
 
     @FXML private Label descLabel;
     @FXML private Label amountLabel;
-
     @FXML private Label categoryLabel;
     @FXML private Label dateLabel;
-
     @FXML private Button detailsBtn;
     @FXML private Button editBtn;
     @FXML private Button deleteBtn;
@@ -25,7 +24,19 @@ public class DepenseCardController {
         if (d == null) return;
 
         if (descLabel != null) descLabel.setText(nvl(d.getDescription(), "—"));
-        if (amountLabel != null) amountLabel.setText(String.format("%,.2f DT", d.getAmount()));
+
+        String amountText = String.format("%,.2f DT", d.getAmount());
+        if (amountLabel != null) {
+            amountLabel.setText(amountText);
+            if (d.isAnomaly()) {
+                amountLabel.setStyle("-fx-background-color: #fee2e2; -fx-padding: 2 5; -fx-background-radius: 5; " +
+                        "-fx-font-weight: 900; -fx-text-fill: #b91c1c;");
+                amountLabel.setTooltip(new Tooltip("Dépense anormale (Isolation Forest)"));
+            } else {
+                amountLabel.setStyle("-fx-font-weight: 900; -fx-text-fill: #0f172a;");
+                amountLabel.setTooltip(null);
+            }
+        }
 
         if (categoryLabel != null) categoryLabel.setText(nvl(d.getCategory(), "—"));
         if (dateLabel != null) {

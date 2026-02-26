@@ -3,16 +3,21 @@ package com.example.pidev.controller.sponsor;
 import com.example.pidev.model.sponsor.Sponsor;
 import com.example.pidev.service.sponsor.SponsorService;
 import com.example.pidev.service.upload.CloudinaryUploadService;
+import com.example.pidev.service.imagga.ImaggaService;
+import com.example.pidev.service.currency.CurrencyService;
+import com.example.pidev.service.whatsapp.WhatsAppService;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
@@ -27,6 +32,11 @@ public class SponsorFormController {
     @FXML private ImageView logoPreview;
     @FXML private TextField contributionField;
     @FXML private Label errorLabel;
+    @FXML private Button analyzeLogoBtn;
+    @FXML private TextArea visionResultArea;
+    @FXML private ComboBox<String> currencyComboBox;
+    @FXML private Label convertedAmountLabel;
+    @FXML private TextField phoneField;
 
     private Sponsor editing;
     private Sponsor result;
@@ -56,6 +66,60 @@ public class SponsorFormController {
                 if (filtered.length() > 150) filtered = filtered.substring(0, 150);
                 if (!filtered.equals(n)) companyField.setText(filtered);
             });
+        }
+
+        if (analyzeLogoBtn != null) {
+            analyzeLogoBtn.setOnAction(e -> onAnalyzeLogo());
+        }
+
+        // Devise
+        if (currencyComboBox != null) {
+            currencyComboBox.getItems().addAll(
+                    "TND", "USD", "EUR", "GBP", "CHF", "CAD", "JPY", "CNY", "AUD", "NZD",
+                    "DKK", "NOK", "SEK", "TRY", "SAR", "AED", "KWD", "BHD", "QAR", "MAD",
+                    "EGP", "ZAR", "INR", "PKR", "BDT", "LKR", "MYR", "SGD", "HKD", "KRW",
+                    "RUB", "BRL", "MXN", "PLN", "CZK", "HUF", "ILS", "THB", "VND", "PHP"
+            );
+            currencyComboBox.setValue("TND");
+            currencyComboBox.valueProperty().addListener((obs, old, n) -> updateConvertedAmount());
+        }
+
+        if (contributionField != null) {
+            contributionField.textProperty().addListener((obs, old, n) -> updateConvertedAmount());
+        }
+
+        // Téléphone (uniquement chiffres)
+        if (phoneField != null) {
+            phoneField.textProperty().addListener((obs, old, n) -> {
+                if (n == null) return;
+                String filtered = n.replaceAll("[^0-9]", "");
+                if (!filtered.equals(n)) phoneField.setText(filtered);
+            });
+        }
+    }
+
+    private void updateConvertedAmount() {
+        if (currencyComboBox == null || contributionField == null || convertedAmountLabel == null) return;
+        String currency = currencyComboBox.getValue();
+        String amountText = contributionField.getText().trim().replace(",", ".");
+        if (amountText.isEmpty()) {
+            convertedAmountLabel.setText("");
+            return;
+        }
+        try {
+            double amount = Double.parseDouble(amountText);
+            if (currency == null || currency.equals("TND")) {
+                convertedAmountLabel.setText(String.format("= %,.2f TND", amount));
+            } else {
+                double converted = CurrencyService.convert(amount, currency, "TND");
+                if (converted >= 0) {
+                    convertedAmountLabel.setText(String.format("≈ %,.2f TND", converted));
+                } else {
+                    convertedAmountLabel.setText("Erreur conversion");
+                }
+            }
+        } catch (NumberFormatException e) {
+            convertedAmountLabel.setText("Montant invalide");
         }
     }
 
@@ -91,6 +155,10 @@ public class SponsorFormController {
         selectedLogoFile = null;
         logoField.clear();
         logoPreview.setImage(null);
+        if (visionResultArea != null) visionResultArea.clear();
+        if (currencyComboBox != null) currencyComboBox.setValue("TND");
+        if (convertedAmountLabel != null) convertedAmountLabel.setText("");
+        if (phoneField != null) phoneField.clear();
 
         if (logoFileLabel != null) logoFileLabel.setText("Aucun fichier choisi");
 
@@ -134,6 +202,10 @@ public class SponsorFormController {
         }
 
         if (logoFileLabel != null) logoFileLabel.setText("Garder logo actuel (ou choisir nouveau)");
+        if (visionResultArea != null) visionResultArea.clear();
+        if (currencyComboBox != null) currencyComboBox.setValue("TND");
+        if (convertedAmountLabel != null) convertedAmountLabel.setText("");
+        if (phoneField != null) phoneField.clear();
 
         if (fixedEmail != null) {
             emailField.setText(fixedEmail);
@@ -158,9 +230,92 @@ public class SponsorFormController {
         if (f != null) {
             selectedLogoFile = f;
             if (logoFileLabel != null) logoFileLabel.setText(f.getName());
-            try { logoPreview.setImage(new Image(f.toURI().toString(), true)); }
-            catch (Exception ignored) {}
+            try {
+                Image img = new Image(f.toURI().toString(), true);
+                logoPreview.setImage(img);
+                logoField.clear();
+            } catch (Exception ignored) {}
         }
+    }
+
+    @FXML
+    private void onAnalyzeLogo() {
+        if (selectedLogoFile == null) {
+            showError("Veuillez d'abord sélectionner un fichier logo.");
+            return;
+        }
+
+        analyzeLogoBtn.setDisable(true);
+        if (visionResultArea != null) visionResultArea.setText("Analyse en cours...");
+
+        new Thread(() -> {
+            try {
+                JsonArray tags = ImaggaService.analyzeImageFromFile(selectedLogoFile);
+
+                Platform.runLater(() -> {
+                    analyzeLogoBtn.setDisable(false);
+                    if (tags == null) {
+                        visionResultArea.setText("Erreur : l'API n'a pas retourné de résultats. Vérifiez la console pour les détails.");
+                        return;
+                    }
+                    if (tags.isEmpty()) {
+                        visionResultArea.setText("Aucun tag détecté. L'image n'est peut-être pas valide.");
+                        return;
+                    }
+
+                    StringBuilder sb = new StringBuilder("Résultats de l'analyse (Imagga) :\n");
+                    double bestConfidence = 0.0;
+                    String bestTag = "";
+                    int displayed = 0;
+                    for (int i = 0; i < tags.size() && displayed < 20; i++) {
+                        JsonObject tag = tags.get(i).getAsJsonObject();
+                        double confidence = tag.get("confidence").getAsDouble();
+                        JsonObject tagInfo = tag.getAsJsonObject("tag");
+                        String tagName = tagInfo.get("en").getAsString();
+                        sb.append(String.format("- %s : %.2f%%\n", tagName, confidence));
+                        displayed++;
+
+                        String lower = tagName.toLowerCase();
+                        if (lower.contains("logo") || lower.contains("brand") || lower.contains("emblem") ||
+                                lower.contains("icon") || lower.contains("symbol") || lower.contains("trademark") ||
+                                lower.contains("logotype") || lower.contains("insignia") || lower.contains("company") ||
+                                lower.contains("corporate")) {
+                            if (confidence > bestConfidence) {
+                                bestConfidence = confidence;
+                                bestTag = tagName;
+                            }
+                        }
+                    }
+
+                    if (bestConfidence > 0) {
+                        sb.append(String.format("\n🔍 Meilleur indicateur : '%s' avec %.2f%%", bestTag, bestConfidence));
+                        sb.append(String.format("\n📊 Confiance que c'est un logo : %.2f%%", bestConfidence));
+                    } else {
+                        sb.append("\n📊 Confiance que c'est un logo : 0.00% (aucun tag spécifique détecté)");
+                    }
+
+                    if (bestConfidence >= 40.0) {
+                        sb.append("\n✅ Forte probabilité que ce soit un logo !");
+                    } else if (bestConfidence >= 25.0) {
+                        sb.append("\n⚠️ Probabilité moyenne que ce soit un logo");
+                    } else if (bestConfidence >= 15.0) {
+                        sb.append("\n❓ Faible probabilité que ce soit un logo");
+                    } else if (bestConfidence > 0) {
+                        sb.append("\n❓ Très faible probabilité que ce soit un logo");
+                    } else {
+                        sb.append("\n❌ Ne ressemble pas à un logo");
+                    }
+
+                    visionResultArea.setText(sb.toString());
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    analyzeLogoBtn.setDisable(false);
+                    visionResultArea.setText("Erreur lors de l'analyse : " + e.getMessage());
+                    e.printStackTrace();
+                });
+            }
+        }).start();
     }
 
     @FXML
@@ -193,13 +348,26 @@ public class SponsorFormController {
         if (email.isEmpty()) { error("Email obligatoire"); return; }
         if (!EMAIL_RX.matcher(email).matches()) { error("Email invalide"); return; }
 
-        double contribution;
+        // Gestion de la devise
+        String currency = (currencyComboBox == null) ? "TND" : currencyComboBox.getValue();
+        double originalAmount;
         try {
-            contribution = Double.parseDouble(contribTxt);
-            if (contribution < 0) { error("Contribution doit être >= 0"); return; }
+            originalAmount = Double.parseDouble(contribTxt);
+            if (originalAmount <= 0) { error("Contribution doit être > 0"); return; }
         } catch (NumberFormatException e) {
             error("Contribution invalide (ex: 5000.00)");
             return;
+        }
+
+        double contributionInTND;
+        if (currency.equals("TND")) {
+            contributionInTND = originalAmount;
+        } else {
+            contributionInTND = CurrencyService.convert(originalAmount, currency, "TND");
+            if (contributionInTND < 0) {
+                error("Erreur de conversion de devise. Vérifiez votre connexion ou les codes.");
+                return;
+            }
         }
 
         String logoUrlFinal = safe(logoField.getText());
@@ -219,7 +387,7 @@ public class SponsorFormController {
         out.setEvent_id(eventId);
         out.setCompany_name(company);
         out.setContact_email(email);
-        out.setContribution_name(contribution);
+        out.setContribution_name(contributionInTND);
         out.setLogo_url(logoUrlFinal.isEmpty() ? null : logoUrlFinal);
 
         out.setContract_url(editing == null ? null : editing.getContract_url());
@@ -232,6 +400,19 @@ public class SponsorFormController {
 
             Sponsor saved = sponsorService.getSponsorById(out.getId());
             result = saved != null ? saved : out;
+
+            // Envoi WhatsApp si numéro fourni
+            String phone = phoneField.getText().trim();
+            if (!phone.isEmpty()) {
+                new Thread(() -> {
+                    boolean sent = WhatsAppService.sendConfirmation(phone, company, contributionInTND);
+                    if (sent) {
+                        System.out.println("Message WhatsApp envoyé à " + phone);
+                    } else {
+                        System.err.println("Échec de l'envoi WhatsApp");
+                    }
+                }).start();
+            }
 
             if (onSaved != null) onSaved.accept(result);
             if (onFormDone != null) onFormDone.run();
@@ -246,12 +427,15 @@ public class SponsorFormController {
     @FXML
     private void onCancel() {
         result = null;
-        if (onFormDone != null) onFormDone.run();
-        closeWindowIfModal();
+        if (onFormDone != null) {
+            onFormDone.run(); // Retour à la liste via le callback
+        } else {
+            closeWindowIfModal();
+        }
     }
 
     private void closeWindowIfModal() {
-        if (onSaved != null) return; // On est en mode page, ne pas fermer la fenêtre
+        if (onSaved != null) return;
         try {
             Stage stage = getStage();
             if (stage != null && stage.isShowing()) stage.close();
@@ -261,6 +445,7 @@ public class SponsorFormController {
     private String safe(String s) { return s == null ? "" : s.trim(); }
     private void error(String msg) { if (errorLabel != null) errorLabel.setText("❌ " + msg); }
     private void clearErrors() { if (errorLabel != null) errorLabel.setText(""); }
+    private void showError(String msg) { if (errorLabel != null) errorLabel.setText("❌ " + msg); }
 
     private Stage getStage() {
         try { return (Stage) eventComboBox.getScene().getWindow(); }

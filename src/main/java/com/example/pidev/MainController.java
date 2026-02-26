@@ -29,7 +29,6 @@ public class MainController {
     public void setLastSponsorPortalEmail(String email) { this.lastSponsorPortalEmail = email; }
     public String getLastSponsorPortalEmail() { return lastSponsorPortalEmail; }
 
-    // Chemins FXML
     private static final String SPONSOR_PORTAL_FXML = "/com/example/pidev/fxml/Sponsor/sponsor_portal.fxml";
     private static final String SPONSOR_ADMIN_FXML  = "/com/example/pidev/fxml/Sponsor/sponsor_admin.fxml";
     private static final String BUDGET_LIST_FXML    = "/com/example/pidev/fxml/Budget/budget.fxml";
@@ -72,10 +71,10 @@ public class MainController {
     @FXML private Button sponsorsBtn;
     @FXML private VBox sponsorsSubmenu;
     @FXML private Text sponsorsArrow;
-    @FXML private Button sponsorsListBtn;       // Admin Sponsors
-    @FXML private Button sponsorPortalBtn;      // Portail Sponsor (nouveau)
-    @FXML private Button budgetBtn;              // Budget
-    @FXML private Button contratsBtn;            // Dépenses
+    @FXML private Button sponsorsListBtn;
+    @FXML private Button sponsorPortalBtn;
+    @FXML private Button budgetBtn;
+    @FXML private Button contratsBtn;
 
     // Ressources
     @FXML private Button resourcesToggleBtn;
@@ -99,6 +98,7 @@ public class MainController {
     @FXML
     public void initialize() {
         instance = this;
+
         configureDateTime();
         loadSessionUserInHeader();
 
@@ -108,7 +108,6 @@ public class MainController {
 
     // ===================== HEADER USER =====================
     private void loadSessionUserInHeader() {
-        // À remplacer par les données de session réelles
         String fullName = "Maryem Manai";
         String role = "Sponsor";
         String initials = "MM";
@@ -169,23 +168,20 @@ public class MainController {
         if (sponsorsArrow != null) sponsorsArrow.setText("▼");
     }
 
-    // ===================== NAVIGATION =====================
+    // ===================== NAV =====================
     @FXML
     public void onDashboard() {
         setActiveButton(dashboardBtn);
         loadIntoCenter(DASHBOARD_FXML, null);
     }
 
-    // Events (placeholders)
     @FXML public void onEventsList()   { setActiveButton(eventsListBtn);   showEmptyPage("Événements", "Page non branchée pour le moment."); }
     @FXML public void onCategories()   { setActiveButton(categoriesBtn);   showEmptyPage("Catégories", "Page non branchée pour le moment."); }
     @FXML public void onTickets()      { setActiveButton(ticketsBtn);      showEmptyPage("Billets", "Page non branchée pour le moment."); }
 
-    // Participants (placeholders)
     @FXML public void onRoles()        { setActiveButton(rolesBtn);        showEmptyPage("Rôles", "Page non branchée pour le moment."); }
     @FXML public void onInscriptions() { setActiveButton(inscriptionsBtn); showEmptyPage("Inscriptions", "Page non branchée pour le moment."); }
 
-    // Sponsors
     @FXML
     public void onSponsorsList() {
         showSponsorsAdmin();
@@ -212,12 +208,10 @@ public class MainController {
         loadIntoCenter(DEPENSE_LIST_FXML, null);
     }
 
-    // Ressources (placeholders)
     @FXML public void onSalles()       { setActiveButton(sallesBtn);       showEmptyPage("Salles", "Page non branchée pour le moment."); }
     @FXML public void onEquipements()  { setActiveButton(equipementsBtn);  showEmptyPage("Équipements", "Page non branchée pour le moment."); }
     @FXML public void onReservations() { setActiveButton(reservationsBtn); showEmptyPage("Réservations", "Page non branchée pour le moment."); }
 
-    // Questionnaires (placeholders)
     @FXML public void onQuestions()    { setActiveButton(questionsBtn);    showEmptyPage("Questions", "Page non branchée pour le moment."); }
     @FXML public void onReponses()     { setActiveButton(reponsesBtn);     showEmptyPage("Réponses", "Page non branchée pour le moment."); }
 
@@ -227,15 +221,13 @@ public class MainController {
     @FXML
     public void logout() {
         System.out.println("Déconnexion...");
-        // Ajoutez ici la logique de déconnexion
     }
 
-    // ===================== PAGES SPONSOR =====================
+    // ===================== PAGES =====================
     public void showSponsorPortal(String email) {
         openSponsorsSubmenu();
         setActiveButton(sponsorPortalBtn);
         if (email != null && !email.isBlank()) setLastSponsorPortalEmail(email);
-
         loadIntoCenter(SPONSOR_PORTAL_FXML, (SponsorPortalController ctrl) -> {
             String e = getLastSponsorPortalEmail();
             if (e != null && !e.isBlank()) ctrl.setInitialEmail(e);
@@ -248,12 +240,11 @@ public class MainController {
         loadIntoCenter(SPONSOR_ADMIN_FXML, (SponsorAdminController ctrl) -> {});
     }
 
-    // Méthodes de compatibilité
     public void showSponsors() { showSponsorsAdmin(); }
     public void showBudget()   { onBudget(); }
     public void showDepenses() { onDepenses(); }
 
-    // ===================== CHARGEMENT DYNAMIQUE =====================
+    // ===================== LOAD INTO CENTER =====================
     public <T> void loadIntoCenter(String fxmlPath, Consumer<T> controllerConsumer) {
         try {
             if (pageContentContainer == null) {
@@ -276,7 +267,7 @@ public class MainController {
         }
     }
 
-    // ===================== PAGE DE SECOURS =====================
+    // ===================== SAFE EMPTY PAGE =====================
     private void showEmptyPage(String title, String subtitle) {
         if (pageContentContainer == null) return;
 
@@ -301,7 +292,7 @@ public class MainController {
         pageContentContainer.getChildren().setAll(box);
     }
 
-    // ===================== GESTION DU BOUTON ACTIF =====================
+    // ===================== ACTIVE BUTTON CSS =====================
     private void setActiveButton(Button button) {
         Button[] all = {
                 dashboardBtn,

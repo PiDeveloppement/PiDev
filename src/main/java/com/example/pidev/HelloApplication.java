@@ -22,10 +22,6 @@ public class HelloApplication extends Application {
         FXMLLoader loader = new FXMLLoader(fxml);
         Parent root = loader.load();
 
-        // ✅ Stocker MainController dans root.userData (pour y accéder depuis tous les controllers)
-        MainController mainController = loader.getController();
-        root.setUserData(mainController);
-
         Scene scene = new Scene(root, 1200, 800);
         scene.getStylesheets().add(
                 Objects.requireNonNull(getClass().getResource("/com/example/pidev/css/atlantafx-custom.css"))
@@ -37,9 +33,6 @@ public class HelloApplication extends Application {
         stage.setMinWidth(1000);
         stage.setMinHeight(700);
         stage.show();
-
-        // ✅ optionnel : charger une page par défaut (ex: sponsors)
-        // mainController.onSponsorsList();
     }
 
     public static void main(String[] args) {

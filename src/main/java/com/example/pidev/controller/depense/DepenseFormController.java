@@ -3,6 +3,7 @@ package com.example.pidev.controller.depense;
 import com.example.pidev.model.depense.Depense;
 import com.example.pidev.service.budget.BudgetService;
 import com.example.pidev.service.depense.DepenseService;
+import com.example.pidev.service.currency.CurrencyService;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
@@ -20,6 +21,8 @@ public class DepenseFormController {
     @FXML private TextField amountField;
     @FXML private DatePicker datePicker;
     @FXML private Label errorLabel;
+    @FXML private ComboBox<String> currencyComboBox;
+    @FXML private Label convertedAmountLabel;
 
     private Depense depense;
     private boolean saved = false;
@@ -27,7 +30,6 @@ public class DepenseFormController {
     private final BudgetService budgetService = new BudgetService();
     private final DepenseService depenseService = new DepenseService();
 
-    // ✅ si chargé en page (Option B)
     private Runnable onFormDone;
 
     private static final DateTimeFormatter DB_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -62,7 +64,23 @@ public class DepenseFormController {
             }
         }
 
-        // validations light
+        // Initialisation de la devise avec une large sélection
+        if (currencyComboBox != null) {
+            currencyComboBox.getItems().addAll(
+                    "TND", "USD", "EUR", "GBP", "CHF", "CAD", "JPY", "CNY", "AUD", "NZD",
+                    "DKK", "NOK", "SEK", "TRY", "SAR", "AED", "KWD", "BHD", "QAR", "MAD",
+                    "EGP", "ZAR", "INR", "PKR", "BDT", "LKR", "MYR", "SGD", "HKD", "KRW",
+                    "RUB", "BRL", "MXN", "PLN", "CZK", "HUF", "ILS", "THB", "VND", "PHP"
+            );
+            currencyComboBox.setValue("TND");
+            currencyComboBox.valueProperty().addListener((obs, old, n) -> updateConvertedAmount());
+        }
+
+        if (amountField != null) {
+            amountField.textProperty().addListener((obs, old, n) -> updateConvertedAmount());
+        }
+
+        // Validations
         if (descField != null) {
             descField.textProperty().addListener((obs, old, n) -> {
                 if (n == null) return;
@@ -90,6 +108,32 @@ public class DepenseFormController {
         }
     }
 
+    private void updateConvertedAmount() {
+        if (currencyComboBox == null || amountField == null || convertedAmountLabel == null) return;
+        String currency = currencyComboBox.getValue();
+        String amountText = amountField.getText().trim().replace(",", ".");
+        if (amountText.isEmpty()) {
+            convertedAmountLabel.setText("");
+            return;
+        }
+        try {
+            double amount = Double.parseDouble(amountText);
+            if (currency == null || currency.equals("TND")) {
+                // Afficher le montant en TND sans conversion
+                convertedAmountLabel.setText(String.format("= %,.2f TND", amount));
+            } else {
+                double converted = CurrencyService.convert(amount, currency, "TND");
+                if (converted >= 0) {
+                    convertedAmountLabel.setText(String.format("≈ %,.2f TND", converted));
+                } else {
+                    convertedAmountLabel.setText("Erreur conversion");
+                }
+            }
+        } catch (NumberFormatException e) {
+            convertedAmountLabel.setText("Montant invalide");
+        }
+    }
+
     public void setDepense(Depense existing) {
         this.depense = existing;
 
@@ -100,10 +144,11 @@ public class DepenseFormController {
             if (categoryField != null) categoryField.clear();
             if (amountField != null) amountField.clear();
             if (datePicker != null) datePicker.setValue(LocalDate.now());
+            if (currencyComboBox != null) currencyComboBox.setValue("TND");
+            if (convertedAmountLabel != null) convertedAmountLabel.setText("");
             return;
         }
 
-        // ✅ pas d'ID dans le titre
         if (titleLabel != null) titleLabel.setText("✏ Modifier Dépense");
 
         if (budgetComboBox != null) {
@@ -114,6 +159,8 @@ public class DepenseFormController {
         if (categoryField != null) categoryField.setText(existing.getCategory());
         if (amountField != null) amountField.setText(String.valueOf(existing.getAmount()));
         if (datePicker != null) datePicker.setValue(existing.getExpense_date());
+        if (currencyComboBox != null) currencyComboBox.setValue("TND");
+        if (convertedAmountLabel != null) convertedAmountLabel.setText("");
     }
 
     @FXML
@@ -140,6 +187,7 @@ public class DepenseFormController {
         if (cat.isEmpty()) { showError("Catégorie obligatoire"); return; }
         if (cat.length() > 100) { showError("Catégorie trop longue (max 100)"); return; }
 
+        String currency = (currencyComboBox == null) ? "TND" : currencyComboBox.getValue();
         double amount;
         try {
             String raw = amountField.getText() == null ? "" : amountField.getText().trim().replace(',', '.');
@@ -149,6 +197,17 @@ public class DepenseFormController {
         } catch (NumberFormatException e) {
             showError("Montant invalide (ex: 150.50)");
             return;
+        }
+
+        double amountInTND;
+        if (currency.equals("TND")) {
+            amountInTND = amount;
+        } else {
+            amountInTND = CurrencyService.convert(amount, currency, "TND");
+            if (amountInTND < 0) {
+                showError("Erreur de conversion de devise. Vérifiez votre connexion ou les codes.");
+                return;
+            }
         }
 
         LocalDate dt = (datePicker == null) ? null : datePicker.getValue();
@@ -163,7 +222,7 @@ public class DepenseFormController {
         depense.setBudget_id(budgetId);
         depense.setDescription(desc);
         depense.setCategory(cat);
-        depense.setAmount(amount);
+        depense.setAmount(amountInTND);
         depense.setExpense_date(dt);
 
         try {
@@ -178,10 +237,7 @@ public class DepenseFormController {
     }
 
     private void closeWindow() {
-        // ✅ page mode
         if (onFormDone != null) { onFormDone.run(); return; }
-
-        // ✅ modal mode (si jamais)
         try {
             if (budgetComboBox != null && budgetComboBox.getScene() != null) {
                 Stage stage = (Stage) budgetComboBox.getScene().getWindow();

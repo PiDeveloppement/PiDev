@@ -20,8 +20,8 @@ import javafx.scene.layout.TilePane;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class DepenseListController implements Initializable {
 
@@ -29,6 +29,7 @@ public class DepenseListController implements Initializable {
     @FXML private Label countDepensesLabel;
     @FXML private Label avgDepenseLabel;
     @FXML private Label categoriesLabel;
+    // @FXML private Label anomaliesLabel;  // Supprimé car plus utilisé
     @FXML private ComboBox<String> filtreCategorie;
     @FXML private ComboBox<String> filtrePeriode;
     @FXML private ComboBox<String> filtreEtatFinancier;
@@ -98,6 +99,10 @@ public class DepenseListController implements Initializable {
     private void loadData() {
         try {
             baseList.setAll(depenseService.getAllDepenses());
+
+            // Plus de détection d'anomalies
+            // for (Depense d : baseList) { d.setAnomaly(...); }
+
             updateKpis();
             initCategoryChart();
 
@@ -105,6 +110,7 @@ public class DepenseListController implements Initializable {
             renderCards();
         } catch (Exception e) {
             if (statusLabel != null) statusLabel.setText("❌ Erreur chargement dépenses: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -115,20 +121,21 @@ public class DepenseListController implements Initializable {
         YearMonth now = YearMonth.now();
         LocalDate from = now.atDay(1);
         LocalDate to = now.atEndOfMonth();
-        double monthTotal = depenseService.sumDepensesBetween(from, to);
+        // double monthTotal = depenseService.sumDepensesBetween(from, to); // non utilisé, commenté
 
         int cats = 0;
         try { cats = depenseService.getCategories().size(); } catch (Exception ignored) {}
 
+        // long anomalies = baseList.stream().filter(Depense::isAnomaly).count(); // supprimé
+
         if (countDepensesLabel != null) countDepensesLabel.setText(String.valueOf(count));
         if (totalDepensesLabel != null) totalDepensesLabel.setText(String.format("%,.2f DT", total));
-
         if (avgDepenseLabel != null) {
             double avg = count == 0 ? 0 : total / count;
             avgDepenseLabel.setText(String.format("%,.2f DT", avg));
         }
-
         if (categoriesLabel != null) categoriesLabel.setText(String.valueOf(cats));
+        // if (anomaliesLabel != null) anomaliesLabel.setText(String.valueOf(anomalies));
     }
 
     private void initCategoryChart() {

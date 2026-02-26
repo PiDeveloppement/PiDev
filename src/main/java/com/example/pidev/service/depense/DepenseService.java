@@ -16,7 +16,6 @@ public class DepenseService {
         return MyDatabase.getInstance().getConnection();
     }
 
-    // ---------- validations ----------
     public boolean budgetExists(int budgetId) {
         String sql = "SELECT 1 FROM budget WHERE id=? LIMIT 1";
         try (PreparedStatement ps = cnx().prepareStatement(sql)) {
@@ -29,7 +28,6 @@ public class DepenseService {
         }
     }
 
-    // ---------- list ----------
     public ObservableList<Depense> getAllDepenses() {
         ObservableList<Depense> list = FXCollections.observableArrayList();
         String sql = "SELECT id, budget_id, description, amount, category, expense_date " +
@@ -58,7 +56,6 @@ public class DepenseService {
         }
     }
 
-    // ---------- filtres (combobox) ----------
     public ObservableList<Integer> getBudgetIdsFromDepenses() {
         ObservableList<Integer> list = FXCollections.observableArrayList();
         String sql = "SELECT DISTINCT budget_id FROM depense ORDER BY budget_id";
@@ -84,7 +81,6 @@ public class DepenseService {
         }
     }
 
-    // ---------- KPI ----------
     public int countDepenses() {
         String sql = "SELECT COUNT(*) FROM depense";
         try (PreparedStatement ps = cnx().prepareStatement(sql);
@@ -134,7 +130,6 @@ public class DepenseService {
         }
     }
 
-    // ---------- CHART DATA ----------
     public Map<String, Double> getSumByCategory() {
         Map<String, Double> map = new LinkedHashMap<>();
         String sql = "SELECT category, COALESCE(SUM(amount),0) FROM depense GROUP BY category ORDER BY category";
@@ -149,7 +144,6 @@ public class DepenseService {
         return map;
     }
 
-    // ---------- CRUD ----------
     public void addDepense(Depense d) {
         if (!budgetExists(d.getBudget_id())) {
             throw new IllegalArgumentException("budget_id n'existe pas: " + d.getBudget_id());
@@ -215,7 +209,6 @@ public class DepenseService {
         }
     }
 
-    // ---------- recalcul Budget ----------
     private void recomputeBudget(int budgetId) {
         String sumSql = "SELECT COALESCE(SUM(amount),0) FROM depense WHERE budget_id=?";
         String revSql = "SELECT COALESCE(total_revenue,0) FROM budget WHERE id=?";

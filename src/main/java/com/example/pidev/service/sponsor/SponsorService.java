@@ -2,6 +2,7 @@ package com.example.pidev.service.sponsor;
 
 import com.example.pidev.model.sponsor.Sponsor;
 import com.example.pidev.utils.MyDatabase;
+import com.example.pidev.service.search.LuceneSearchService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -77,7 +78,16 @@ public class SponsorService {
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) s.setId(rs.getInt(1));
+                if (rs.next()) {
+                    s.setId(rs.getInt(1));
+                }
+            }
+
+            // Indexation Lucene
+            try {
+                LuceneSearchService.indexSponsor(s.getId(), s.getCompany_name(), s.getContact_email(), s.getContribution_name(), s.getEvent_id());
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -102,6 +112,13 @@ public class SponsorService {
             ps.setInt(9, s.getId());
 
             ps.executeUpdate();
+
+            // Réindexation Lucene
+            try {
+                LuceneSearchService.indexSponsor(s.getId(), s.getCompany_name(), s.getContact_email(), s.getContribution_name(), s.getEvent_id());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -110,6 +127,13 @@ public class SponsorService {
         try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setInt(1, sponsorId);
             ps.executeUpdate();
+
+            // Suppression de l'index Lucene
+            try {
+                LuceneSearchService.deleteSponsor(sponsorId);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -232,7 +256,7 @@ public class SponsorService {
         return map;
     }
 
-    // ===================== MODE DEMO (SponsorPortalController) =====================
+    // ===================== MODE DEMO =====================
     public ObservableList<String> getDemoEmailsFromSponsor() throws SQLException {
         String sql = """
             SELECT DISTINCT contact_email

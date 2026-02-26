@@ -4,6 +4,7 @@ import com.example.pidev.MainController;
 import com.example.pidev.model.sponsor.Sponsor;
 import com.example.pidev.service.sponsor.SponsorService;
 import com.example.pidev.service.pdf.LocalSponsorPdfService;
+import com.example.pidev.service.search.LuceneSearchService;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -21,6 +22,8 @@ import javafx.scene.layout.TilePane;
 import java.awt.Desktop;
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
@@ -55,7 +58,16 @@ public class SponsorAdminController implements Initializable {
         filtered = new FilteredList<>(baseList, s -> true);
         filtered.addListener((ListChangeListener<Sponsor>) c -> renderCards());
 
-        if (searchField != null) searchField.textProperty().addListener((obs, o, n) -> applyPredicate());
+        if (searchField != null) {
+            searchField.textProperty().addListener((obs, o, n) -> {
+                if (n == null || n.trim().isEmpty()) {
+                    loadData();
+                } else {
+                    searchSponsors(n.trim());
+                }
+            });
+        }
+
         if (companyFilter != null) companyFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
         if (eventFilter != null) eventFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
         if (addSponsorBtn != null) addSponsorBtn.setOnAction(e -> onAdd());
@@ -72,6 +84,41 @@ public class SponsorAdminController implements Initializable {
         loadData();
         applyPredicate();
         initCharts();
+
+        // Réindexation au démarrage
+        reindexAllSponsors();
+    }
+
+    private void searchSponsors(String query) {
+        try {
+            List<Integer> ids = LuceneSearchService.searchSponsors(query);
+            List<Sponsor> found = new ArrayList<>();
+            for (Integer id : ids) {
+                Sponsor s = sponsorService.getSponsorById(id);
+                if (s != null) found.add(s);
+            }
+            baseList.setAll(found);
+            updateGlobalStats();
+            if (statusLabel != null) {
+                statusLabel.setText("🔍 " + found.size() + " résultat(s) pour \"" + query + "\"");
+            }
+            renderCards();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Recherche", "Erreur lors de la recherche : " + e.getMessage());
+        }
+    }
+
+    private void reindexAllSponsors() {
+        try {
+            List<Sponsor> all = sponsorService.getAllSponsors();
+            for (Sponsor s : all) {
+                LuceneSearchService.indexSponsor(s.getId(), s.getCompany_name(), s.getContact_email(), s.getContribution_name(), s.getEvent_id());
+            }
+            System.out.println("Indexation terminée : " + all.size() + " sponsors");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private int computeCols(double width) {
@@ -221,7 +268,7 @@ public class SponsorAdminController implements Initializable {
                         openDetailsAsPage(saved);
                     });
                     ctrl.setOnFormDone(() -> {
-                        // Annuler ou fermeture sans sauvegarde : retour à la liste
+                        // Annulation : retour à la liste
                         MainController.getInstance().showSponsorsAdmin();
                     });
                 }
@@ -269,7 +316,8 @@ public class SponsorAdminController implements Initializable {
                     (SponsorDetailsController ctrl) -> {
                         ctrl.setSponsor(sponsor);
                         ctrl.setOnBack(() -> {
-                            // Retour à la liste après OK
+                            setupFiltersCombos();
+                            loadData();
                             MainController.getInstance().showSponsorsAdmin();
                         });
                     }
