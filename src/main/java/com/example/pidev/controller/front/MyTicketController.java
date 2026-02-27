@@ -13,8 +13,8 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Contrôleur pour la page "Mon Billet" (front office)
@@ -106,30 +106,44 @@ public class MyTicketController {
      * Charger le QR code
      */
     private void loadQRCode() {
-        String qrPath = currentTicket.getQrCode();
+        String qrUrl = normalizeQrUrl(currentTicket.getQrCode(), currentTicket.getTicketCode());
 
-        if (qrPath != null && !qrPath.trim().isEmpty()) {
+        if (qrUrl != null && !qrUrl.trim().isEmpty()) {
             try {
-                // Résoudre le chemin (relatif → absolu)
-                Path resolvedPath = Paths.get(qrPath);
-                if (!resolvedPath.isAbsolute()) {
-                    resolvedPath = Paths.get(System.getProperty("user.dir")).resolve(resolvedPath);
+                Image qrImage = new Image(qrUrl, 250, 250, true, true);
+                if (qrImage.isError()) {
+                    System.err.println("❌ QR code non charge: " + qrImage.getException());
+                    qrCodeImageView.setImage(createPlaceholderImage());
+                } else {
+                    qrCodeImageView.setImage(qrImage);
                 }
-
-                System.out.println("🔍 Chargement QR depuis: " + resolvedPath.toString());
-
-                Image qrImage = new Image("file:" + resolvedPath.toString(), true);
-                qrCodeImageView.setImage(qrImage);
-
             } catch (Exception e) {
                 System.err.println("❌ Erreur chargement QR: " + e.getMessage());
-                e.printStackTrace();
                 qrCodeImageView.setImage(createPlaceholderImage());
             }
         } else {
-            System.out.println("⚠️ Pas de QR code pour ce ticket");
             qrCodeImageView.setImage(createPlaceholderImage());
         }
+    }
+
+    /**
+     * Normaliser l'URL du QR code
+     */
+    private String normalizeQrUrl(String rawQr, String ticketCode) {
+        if (rawQr != null && !rawQr.isBlank()) {
+            String trimmed = rawQr.trim();
+            if (trimmed.contains("quickchart.io/qr-code-api")) {
+                return trimmed.replace("/qr-code-api/", "/qr");
+            }
+            if (trimmed.startsWith("http")) {
+                return trimmed;
+            }
+        }
+        if (ticketCode == null || ticketCode.isBlank()) {
+            return null;
+        }
+        String encoded = URLEncoder.encode(ticketCode, StandardCharsets.UTF_8);
+        return "https://quickchart.io/qr?text=" + encoded + "&size=250";
     }
 
     /**
@@ -183,4 +197,3 @@ public class MyTicketController {
         alert.showAndWait();
     }
 }
-

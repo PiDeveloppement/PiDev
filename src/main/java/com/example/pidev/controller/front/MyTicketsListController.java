@@ -52,10 +52,12 @@ public class MyTicketsListController {
 
         if (tickets.isEmpty()) {
             emptyStateBox.setVisible(true);
-            ticketCountLabel.setText("0 billet(s) trouvé(s)");
+            emptyStateBox.setManaged(true);
+            ticketCountLabel.setText("Aucun billet pour le moment");
         } else {
             emptyStateBox.setVisible(false);
-            ticketCountLabel.setText(tickets.size() + " billet(s) trouvé(s)");
+            emptyStateBox.setManaged(false);
+            ticketCountLabel.setText(tickets.size() + " billet" + (tickets.size() > 1 ? "s" : ""));
 
             for (EventTicket ticket : tickets) {
                 ticketsContainer.getChildren().add(createTicketCard(ticket));
@@ -64,55 +66,122 @@ public class MyTicketsListController {
     }
 
     private HBox createTicketCard(EventTicket ticket) {
-        HBox card = new HBox(20);
-        card.setStyle("-fx-background-color: white; -fx-border-radius: 8; -fx-background-radius: 8; " +
-                "-fx-padding: 20; -fx-border-color: #e5e7eb; -fx-border-width: 1;");
-        card.setPrefHeight(200);
+        HBox card = new HBox(25);
+        card.setStyle("-fx-background-color: white; -fx-border-radius: 12; -fx-background-radius: 12; " +
+                "-fx-padding: 25; -fx-border-color: #e2e8f0; -fx-border-width: 1; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 2);");
+        card.setPrefHeight(220);
+        card.setStyle(card.getStyle() + " -fx-cursor: hand;");
 
-        // QR Code
+        // Effet hover
+        card.setOnMouseEntered(e -> card.setStyle(
+            "-fx-background-color: white; -fx-border-radius: 12; -fx-background-radius: 12; " +
+            "-fx-padding: 25; -fx-border-color: #0D47A1; -fx-border-width: 2; " +
+            "-fx-effect: dropshadow(gaussian, rgba(13,71,161,0.15), 16, 0, 0, 4); -fx-cursor: hand;"
+        ));
+        card.setOnMouseExited(e -> card.setStyle(
+            "-fx-background-color: white; -fx-border-radius: 12; -fx-background-radius: 12; " +
+            "-fx-padding: 25; -fx-border-color: #e2e8f0; -fx-border-width: 1; " +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 12, 0, 0, 2); -fx-cursor: hand;"
+        ));
+
+        // QR Code Section
         VBox qrContainer = new VBox();
-        qrContainer.setPrefWidth(180);
-        qrContainer.setStyle("-fx-alignment: center; -fx-background-color: #f9fafb; -fx-border-radius: 6; -fx-padding: 10;");
+        qrContainer.setPrefWidth(200);
+        qrContainer.setStyle("-fx-alignment: center; -fx-background-color: #f8fafc; -fx-border-radius: 10; -fx-padding: 15; -fx-border-color: #e2e8f0; -fx-border-width: 1;");
 
         String qrUrl = ticket.getQrCode();
         if (qrUrl != null && !qrUrl.isBlank()) {
-            ImageView qrImage = new ImageView();
-            qrImage.setFitWidth(160.0);
-            qrImage.setFitHeight(160.0);
-            qrImage.setImage(new Image(qrUrl, true));
-            qrImage.setPreserveRatio(true);
-            qrContainer.getChildren().add(qrImage);
+            try {
+                System.out.println("📥 Chargement QR URL: " + qrUrl);
+                ImageView qrImage = new ImageView();
+                qrImage.setFitWidth(170.0);
+                qrImage.setFitHeight(170.0);
+
+                Image qrImg = new Image(qrUrl, 170, 170, true, true);
+                qrImage.setImage(qrImg);
+
+                System.out.println("✅ QR code chargé");
+                qrContainer.getChildren().add(qrImage);
+            } catch (Exception e) {
+                System.err.println("❌ Erreur chargement QR: " + e.getMessage());
+                Label errorLabel = new Label("⚠️ QR non disponible");
+                errorLabel.setStyle("-fx-text-fill: #ef4444; -fx-font-size: 12px;");
+                qrContainer.getChildren().add(errorLabel);
+            }
         } else {
-            Label noQrLabel = new Label("Pas de QR");
-            noQrLabel.setStyle("-fx-text-fill: #9ca3af;");
+            System.out.println("⚠️ URL QR null ou vide");
+            Label noQrLabel = new Label("❌ Pas de QR");
+            noQrLabel.setStyle("-fx-text-fill: #ef4444; -fx-font-size: 14px; -fx-font-weight: bold;");
             qrContainer.getChildren().add(noQrLabel);
         }
 
         // Infos du billet
-        VBox infoContainer = new VBox(12);
-        infoContainer.setStyle("-fx-spacing: 12;");
+        VBox infoContainer = new VBox(16);
+        infoContainer.setStyle("-fx-spacing: 16; -fx-padding: 5;");
 
-        Label codeLabel = new Label("Code : " + ticket.getTicketCode());
-        codeLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1f2937;");
+        // Code ticket
+        HBox codeBox = new HBox(10);
+        Label codeLabel = new Label("🎫");
+        codeLabel.setStyle("-fx-font-size: 14px;");
+        Label codeValue = new Label(ticket.getTicketCode());
+        codeValue.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0D47A1;");
+        codeBox.getChildren().addAll(codeLabel, codeValue);
 
-        Label eventLabel = new Label("Événement #" + ticket.getEventId());
-        eventLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #6b7280;");
+        // Événement
+        HBox eventBox = new HBox(10);
+        Label eventIcon = new Label("📅");
+        eventIcon.setStyle("-fx-font-size: 14px;");
+        Label eventValue = new Label("Événement #" + ticket.getEventId());
+        eventValue.setStyle("-fx-font-size: 13px; -fx-text-fill: #475569;");
+        eventBox.getChildren().addAll(eventIcon, eventValue);
 
-        Label createdLabel = new Label("Créé : " + ticket.getFormattedCreatedAt());
-        createdLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #9ca3af;");
+        // Date de création
+        HBox dateBox = new HBox(10);
+        Label dateIcon = new Label("📆");
+        dateIcon.setStyle("-fx-font-size: 14px;");
+        Label dateValue = new Label(ticket.getFormattedCreatedAt());
+        dateValue.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b;");
+        dateBox.getChildren().addAll(dateIcon, dateValue);
 
-        Label statusLabel = new Label(ticket.isUsed() ? "✓ Utilisé" : "Valide");
-        statusLabel.setStyle("-fx-font-size: 12; -fx-font-weight: bold; " +
-                (ticket.isUsed() ? "-fx-text-fill: #dc2626;" : "-fx-text-fill: #059669;"));
+        // Statut
+        HBox statusBox = new HBox(10);
+        Label statusIcon = new Label(ticket.isUsed() ? "✅" : "⏳");
+        statusIcon.setStyle("-fx-font-size: 14px;");
+        Label statusValue = new Label(ticket.isUsed() ? "Utilisé" : "Valide");
+        statusValue.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; " +
+                (ticket.isUsed() ? "-fx-text-fill: #7c3aed;" : "-fx-text-fill: #059669;"));
+        statusBox.getChildren().addAll(statusIcon, statusValue);
 
-        Button viewBtn = new Button("Voir détail");
-        viewBtn.setStyle("-fx-padding: 8 16; -fx-font-size: 12; -fx-background-radius: 6;");
+        // Buttons
+        HBox buttonsBox = new HBox(12);
+        buttonsBox.setPadding(new Insets(10, 0, 0, 0));
+
+        Button viewBtn = new Button("Voir détails");
+        viewBtn.setStyle("-fx-padding: 10 18; -fx-font-size: 12px; -fx-background-color: #dbeafe; " +
+                "-fx-text-fill: #0D47A1; -fx-background-radius: 6; -fx-font-weight: bold; -fx-cursor: hand;");
         viewBtn.setOnAction(e -> showTicketDetail(ticket));
 
-        infoContainer.getChildren().addAll(codeLabel, eventLabel, createdLabel, statusLabel, viewBtn);
+        Button printBtn = new Button("Imprimer");
+        printBtn.setStyle("-fx-padding: 10 18; -fx-font-size: 12px; -fx-background-color: #f3f4f6; " +
+                "-fx-text-fill: #475569; -fx-background-radius: 6; -fx-font-weight: bold; -fx-cursor: hand;");
+        printBtn.setOnAction(e -> printTicket(ticket));
+
+        buttonsBox.getChildren().addAll(viewBtn, printBtn);
+
+        infoContainer.getChildren().addAll(codeBox, eventBox, dateBox, statusBox, buttonsBox);
 
         card.getChildren().addAll(qrContainer, infoContainer);
         return card;
+    }
+
+    private void printTicket(EventTicket ticket) {
+        System.out.println("🖨️ Impression du billet : " + ticket.getTicketCode());
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Impression");
+        alert.setHeaderText("Billet prêt à imprimer");
+        alert.setContentText("Billet : " + ticket.getTicketCode() + "\n\nFonctionnalité d'impression en développement...");
+        alert.showAndWait();
     }
 
     private void showTicketDetail(EventTicket ticket) {

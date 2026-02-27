@@ -84,7 +84,8 @@ public class EventTicketService {
 
     private String buildQrUrl(String ticketCode) {
         String encoded = URLEncoder.encode(ticketCode, StandardCharsets.UTF_8);
-        return "https://quickchart.io/qr-code-api/?text=" + encoded + "&size=200";
+        // QuickChart QR API (image directe)
+        return "https://quickchart.io/qr?text=" + encoded + "&size=200";
     }
 
     // ==================== READ ====================

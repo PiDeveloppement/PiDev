@@ -86,10 +86,8 @@ public class EventsFrontController {
      */
     private void loadEvents() {
         try {
-            // Charger tous les événements publiés
-            allEvents = eventService.getAllEvents().stream()
-                .filter(event -> event.getStatus() == Event.EventStatus.PUBLISHED)
-                .collect(Collectors.toList());
+            // Charger tous les événements (sans filtre de statut)
+            allEvents = eventService.getAllEvents();
 
             // Charger les catégories pour le filtre
             allCategories = categoryService.getAllCategories();
