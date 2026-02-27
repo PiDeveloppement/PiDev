@@ -2,8 +2,11 @@ package com.example.pidev.controller.user;
 
 import com.example.pidev.MainController;
 import com.example.pidev.model.role.Role;
+import com.example.pidev.model.user.PasswordResetToken;
 import com.example.pidev.model.user.UserModel;
 import com.example.pidev.service.role.RoleService;
+import com.example.pidev.service.user.EmailService;
+import com.example.pidev.service.user.PasswordResetService;
 import com.example.pidev.service.user.UserService;
 
 import javafx.beans.binding.Bindings;
@@ -476,5 +479,40 @@ public class UserController implements Initializable {
     }
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
+    }
+    @FXML
+    private void handleForgotPassword() {
+        // Créer une boîte de dialogue pour entrer l'email
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Mot de passe oublié");
+        dialog.setHeaderText("Réinitialisation de mot de passe");
+        dialog.setContentText("Entrez votre adresse email :");
+
+        dialog.showAndWait().ifPresent(email -> {
+            try {
+                // Vérifier si l'email existe
+                UserModel user = userService.getUserByEmail(email);
+                if (user == null) {
+                    showAlert("Erreur", "Aucun compte trouvé avec cet email");
+                    return;
+                }
+
+                // Créer un token
+                PasswordResetToken token = new PasswordResetToken(user.getId_User());
+
+                // Sauvegarder le token
+                PasswordResetService tokenService = new PasswordResetService();
+                tokenService.createToken(token);
+
+                // Envoyer l'email avec le lien
+                EmailService.sendResetPasswordEmail(email, user.getFirst_Name(), token.getToken());
+
+                showAlert("Succès", "Un lien de réinitialisation a été envoyé à votre adresse email.\nVérifiez votre boîte de réception (ou MailDev sur http://localhost:1080)");
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                showAlert("Erreur", "Erreur lors de l'envoi de l'email: " + e.getMessage());
+            }
+        });
     }
 }

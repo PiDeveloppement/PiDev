@@ -15,6 +15,7 @@ module com.example.pidev {
     requires itextpdf;
     requires java.mail;
     requires org.apache.pdfbox;
+    requires jdk.httpserver;
 
 
     // Exportez tous les packages nécessaires

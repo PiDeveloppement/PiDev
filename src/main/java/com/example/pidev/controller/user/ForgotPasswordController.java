@@ -4,6 +4,7 @@ import com.example.pidev.model.user.PasswordResetToken;
 import com.example.pidev.model.user.UserModel;
 import com.example.pidev.service.user.EmailService;
 import com.example.pidev.service.user.PasswordResetService;
+import com.example.pidev.service.user.UserService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -19,30 +20,36 @@ public class ForgotPasswordController {
     @FXML private Label statusLabel;
     @FXML private ProgressIndicator loadingIndicator;
 
+    // 👇 NOUVEAU : Bouton pour tester le lien (optionnel)
+    @FXML private Button testLinkButton;
+
     private PasswordResetService resetService;
+    private UserService userService;
+
+    // 👇 Stocker le dernier token pour le test
+    private String lastToken;
 
     @FXML
     public void initialize() {
         resetService = new PasswordResetService();
+        userService = new UserService();
 
         if (loadingIndicator != null) {
             loadingIndicator.setVisible(false);
         }
 
-        // ✅ AJOUTEZ LE TEST ICI - Test de configuration email au démarrage
+        // 👇 Cacher le bouton de test par défaut
+        if (testLinkButton != null) {
+            testLinkButton.setVisible(false);
+        }
+
         testEmailConfiguration();
     }
 
-    // ✅ NOUVELLE MÉTHODE pour tester la configuration email
     private void testEmailConfiguration() {
         System.out.println("=== TEST CONFIGURATION EMAIL AU DÉMARRAGE ===");
         try {
-            // Test de la configuration sans envoyer d'email
-
-
-            // Afficher un message dans l'interface si la configuration est OK
             showStatus("Configuration email: OK", "green");
-
         } catch (Exception e) {
             System.err.println("❌ Erreur de configuration email: " + e.getMessage());
             showStatus("⚠️ Configuration email incomplète", "orange");
@@ -69,7 +76,7 @@ public class ForgotPasswordController {
 
         new Thread(() -> {
             try {
-                UserModel user = resetService.getUserByEmail(email);
+                UserModel user = userService.getUserByEmail(email);
 
                 javafx.application.Platform.runLater(() -> {
                     if (user == null) {
@@ -81,19 +88,30 @@ public class ForgotPasswordController {
 
                     try {
                         // Créer un token
-                        PasswordResetToken token = resetService.createResetToken(user.getId_User());
+                        PasswordResetToken token = new PasswordResetToken(user.getId_User());
+                        resetService.createToken(token);
 
                         if (token != null) {
-                            // Afficher le token dans la console pour déboguer
+                            // Stocker le token pour le test
+                            lastToken = token.getToken();
+
+                            // Afficher le token dans la console
                             System.out.println("🔑 Token généré: " + token.getToken());
+                            System.out.println("🔗 Lien de réinitialisation: http://localhost:8080/reset-password?token=" + token.getToken());
 
                             // Envoyer l'email avec le token
                             EmailService.sendResetPasswordEmail(email, user.getFirst_Name(), token.getToken());
 
                             showStatus("✅ Email envoyé! Vérifiez votre boîte de réception", "green");
 
-                            // ✅ Ouvrir directement la fenêtre de réinitialisation
-                            openResetPasswordWindow(token.getToken());
+                            // 👇 Afficher le bouton de test
+                            if (testLinkButton != null) {
+                                testLinkButton.setVisible(true);
+                                testLinkButton.setText("Tester le lien (token: " + token.getToken().substring(0, 8) + "...)");
+                            }
+
+                            // ✅ SUPPRIMÉ : openResetPasswordWindow(token.getToken());
+                            // La fenêtre ne s'ouvre plus automatiquement !
 
                         } else {
                             showStatus("❌ Erreur lors de la création du token", "red");
@@ -118,6 +136,16 @@ public class ForgotPasswordController {
         }).start();
     }
 
+    // 👇 NOUVELLE MÉTHODE : Pour tester le lien sans navigateur
+    @FXML
+    private void handleTestLink() {
+        if (lastToken != null && !lastToken.isEmpty()) {
+            openResetPasswordWindow(lastToken);
+        } else {
+            showStatus("❌ Aucun lien récent à tester", "red");
+        }
+    }
+
     private void openResetPasswordWindow(String token) {
         try {
             FXMLLoader loader = new FXMLLoader(
@@ -133,9 +161,8 @@ public class ForgotPasswordController {
             stage.setScene(new Scene(root));
             stage.show();
 
-            // Fermer la fenêtre actuelle
-            Stage currentStage = (Stage) sendResetLinkBtn.getScene().getWindow();
-            currentStage.close();
+            // ✅ NE PAS fermer la fenêtre actuelle
+            // L'utilisateur peut vouloir revenir en arrière
 
         } catch (Exception e) {
             e.printStackTrace();
