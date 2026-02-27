@@ -2,6 +2,7 @@ package com.example.pidev.controller.sponsor;
 
 import com.example.pidev.model.sponsor.Sponsor;
 import com.example.pidev.service.sponsor.SponsorService;
+import com.example.pidev.service.translation.TranslationService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -14,6 +15,7 @@ public class SponsorCardController {
     @FXML private Label companyLabel;
     @FXML private Label emailLabel;
     @FXML private Label contributionLabel;
+    @FXML private Label eventLabelPrefix;
     @FXML private Label eventLabel;
     @FXML private Button detailsBtn;
     @FXML private Button pdfBtn;
@@ -32,7 +34,7 @@ public class SponsorCardController {
         if (eventLabel != null) {
             String title = sponsorService.getEventTitleById(s.getEvent_id());
             if (title == null || title.isBlank()) title = "—";
-            eventLabel.setText("Événement: " + title);
+            eventLabel.setText(title);
         }
 
         try {
@@ -47,6 +49,17 @@ public class SponsorCardController {
         if (pdfBtn != null) pdfBtn.setOnAction(e -> { if (onPdf != null) onPdf.run(); });
         if (editBtn != null) editBtn.setOnAction(e -> { if (onEdit != null) onEdit.run(); });
         if (deleteBtn != null) deleteBtn.setOnAction(e -> { if (onDelete != null) onDelete.run(); });
+
+        translateUI();
+    }
+
+    private void translateUI() {
+        if (TranslationService.getCurrentLang().equals("fr")) return;
+        if (eventLabelPrefix != null) eventLabelPrefix.setText(TranslationService.translate("Événement:"));
+        if (detailsBtn != null) detailsBtn.setText(TranslationService.translate("Détails"));
+        if (pdfBtn != null) pdfBtn.setText(TranslationService.translate("Contrat"));
+        if (editBtn != null) editBtn.setText(TranslationService.translate("Modifier"));
+        if (deleteBtn != null) deleteBtn.setText(TranslationService.translate("Supprimer"));
     }
 
     private static String nv(String s) {

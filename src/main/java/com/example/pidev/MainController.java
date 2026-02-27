@@ -2,15 +2,14 @@ package com.example.pidev;
 
 import com.example.pidev.controller.sponsor.SponsorAdminController;
 import com.example.pidev.controller.sponsor.SponsorPortalController;
+import com.example.pidev.service.translation.TranslationService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
+import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -29,16 +28,17 @@ public class MainController {
     public void setLastSponsorPortalEmail(String email) { this.lastSponsorPortalEmail = email; }
     public String getLastSponsorPortalEmail() { return lastSponsorPortalEmail; }
 
+    private String currentPage; // pour recharger après changement de langue
+
     private static final String SPONSOR_PORTAL_FXML = "/com/example/pidev/fxml/Sponsor/sponsor_portal.fxml";
     private static final String SPONSOR_ADMIN_FXML  = "/com/example/pidev/fxml/Sponsor/sponsor_admin.fxml";
     private static final String BUDGET_LIST_FXML    = "/com/example/pidev/fxml/Budget/budget.fxml";
     private static final String DEPENSE_LIST_FXML   = "/com/example/pidev/fxml/Depense/depense-modern.fxml";
     private static final String DASHBOARD_FXML      = "/com/example/pidev/fxml/dashboard/dashboard.fxml";
 
-    // ===================== CENTER CONTENT =====================
     @FXML private VBox pageContentContainer;
 
-    // ===================== TOP BAR =====================
+    // Top bar
     @FXML private Label navDateLabel;
     @FXML private Label navTimeLabel;
     @FXML private Label userNameLabel;
@@ -48,26 +48,21 @@ public class MainController {
     @FXML private StackPane initialsContainer;
     @FXML private StackPane avatarContainer;
     @FXML private MenuButton profileMenu;
+    @FXML private ComboBox<String> languageCombo;
 
-    // ===================== SIDEBAR =====================
+    // Sidebar buttons
     @FXML private Button dashboardBtn;
-
-    // Events
     @FXML private Button eventsToggleBtn;
     @FXML private VBox eventsSubmenu;
     @FXML private Text eventsArrow;
     @FXML private Button eventsListBtn;
     @FXML private Button categoriesBtn;
     @FXML private Button ticketsBtn;
-
-    // Participants
     @FXML private Button usersToggleBtn;
     @FXML private VBox usersSubmenu;
     @FXML private Text usersArrow;
     @FXML private Button rolesBtn;
     @FXML private Button inscriptionsBtn;
-
-    // Sponsors
     @FXML private Button sponsorsBtn;
     @FXML private VBox sponsorsSubmenu;
     @FXML private Text sponsorsArrow;
@@ -75,26 +70,20 @@ public class MainController {
     @FXML private Button sponsorPortalBtn;
     @FXML private Button budgetBtn;
     @FXML private Button contratsBtn;
-
-    // Ressources
     @FXML private Button resourcesToggleBtn;
     @FXML private VBox resourcesSubmenu;
     @FXML private Text resourcesArrow;
     @FXML private Button sallesBtn;
     @FXML private Button equipementsBtn;
     @FXML private Button reservationsBtn;
-
-    // Questionnaires
     @FXML private Button questionnairesToggleBtn;
     @FXML private VBox questionnairesSubmenu;
     @FXML private Text questionnairesArrow;
     @FXML private Button questionsBtn;
     @FXML private Button reponsesBtn;
-
     @FXML private Button settingsBtn;
     @FXML private Button logoutBtn;
 
-    // ===================== INIT =====================
     @FXML
     public void initialize() {
         instance = this;
@@ -102,11 +91,40 @@ public class MainController {
         configureDateTime();
         loadSessionUserInHeader();
 
+        // Initialiser le sélecteur de langue
+        languageCombo.getItems().setAll("Français", "English", "العربية");
+        languageCombo.setValue("Français");
+        languageCombo.valueProperty().addListener((obs, old, n) -> {
+            String lang = "fr";
+            if ("English".equals(n)) lang = "en";
+            else if ("العربية".equals(n)) lang = "ar";
+            TranslationService.setCurrentLang(lang);
+            refreshCurrentPage();
+        });
+
         // Page par défaut : Admin Sponsors
         showSponsorsAdmin();
     }
 
-    // ===================== HEADER USER =====================
+    private void refreshCurrentPage() {
+        if (currentPage == null) return;
+        switch (currentPage) {
+            case "sponsorsAdmin":
+                showSponsorsAdmin();
+                break;
+            case "sponsorPortal":
+                showSponsorPortal(lastSponsorPortalEmail);
+                break;
+            case "budget":
+                onBudget();
+                break;
+            case "depenses":
+                onDepenses();
+                break;
+            // ... autres pages
+        }
+    }
+
     private void loadSessionUserInHeader() {
         String fullName = "Maryem Manai";
         String role = "Sponsor";
@@ -117,7 +135,6 @@ public class MainController {
         if (userInitialsText != null) userInitialsText.setText(initials);
     }
 
-    // ===================== DATE/TIME =====================
     private void configureDateTime() {
         DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("EEEE dd MMMM yyyy");
         DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -144,7 +161,6 @@ public class MainController {
         t.start();
     }
 
-    // ===================== TOGGLES =====================
     @FXML private void toggleEvents()         { toggleSubmenu(eventsSubmenu, eventsArrow, eventsToggleBtn); }
     @FXML private void toggleUsers()          { toggleSubmenu(usersSubmenu, usersArrow, usersToggleBtn); }
     @FXML private void toggleSponsors()       { toggleSubmenu(sponsorsSubmenu, sponsorsArrow, sponsorsBtn); }
@@ -168,19 +184,18 @@ public class MainController {
         if (sponsorsArrow != null) sponsorsArrow.setText("▼");
     }
 
-    // ===================== NAV =====================
     @FXML
     public void onDashboard() {
+        currentPage = "dashboard";
         setActiveButton(dashboardBtn);
         loadIntoCenter(DASHBOARD_FXML, null);
     }
 
-    @FXML public void onEventsList()   { setActiveButton(eventsListBtn);   showEmptyPage("Événements", "Page non branchée pour le moment."); }
-    @FXML public void onCategories()   { setActiveButton(categoriesBtn);   showEmptyPage("Catégories", "Page non branchée pour le moment."); }
-    @FXML public void onTickets()      { setActiveButton(ticketsBtn);      showEmptyPage("Billets", "Page non branchée pour le moment."); }
-
-    @FXML public void onRoles()        { setActiveButton(rolesBtn);        showEmptyPage("Rôles", "Page non branchée pour le moment."); }
-    @FXML public void onInscriptions() { setActiveButton(inscriptionsBtn); showEmptyPage("Inscriptions", "Page non branchée pour le moment."); }
+    @FXML public void onEventsList()   { currentPage = "events"; setActiveButton(eventsListBtn);   showEmptyPage("Événements", "Page non branchée pour le moment."); }
+    @FXML public void onCategories()   { currentPage = "categories"; setActiveButton(categoriesBtn);   showEmptyPage("Catégories", "Page non branchée pour le moment."); }
+    @FXML public void onTickets()      { currentPage = "tickets"; setActiveButton(ticketsBtn);      showEmptyPage("Billets", "Page non branchée pour le moment."); }
+    @FXML public void onRoles()        { currentPage = "roles"; setActiveButton(rolesBtn);        showEmptyPage("Rôles", "Page non branchée pour le moment."); }
+    @FXML public void onInscriptions() { currentPage = "inscriptions"; setActiveButton(inscriptionsBtn); showEmptyPage("Inscriptions", "Page non branchée pour le moment."); }
 
     @FXML
     public void onSponsorsList() {
@@ -196,6 +211,7 @@ public class MainController {
 
     @FXML
     public void onBudget() {
+        currentPage = "budget";
         openSponsorsSubmenu();
         setActiveButton(budgetBtn);
         loadIntoCenter(BUDGET_LIST_FXML, null);
@@ -203,19 +219,18 @@ public class MainController {
 
     @FXML
     public void onDepenses() {
+        currentPage = "depenses";
         openSponsorsSubmenu();
         setActiveButton(contratsBtn);
         loadIntoCenter(DEPENSE_LIST_FXML, null);
     }
 
-    @FXML public void onSalles()       { setActiveButton(sallesBtn);       showEmptyPage("Salles", "Page non branchée pour le moment."); }
-    @FXML public void onEquipements()  { setActiveButton(equipementsBtn);  showEmptyPage("Équipements", "Page non branchée pour le moment."); }
-    @FXML public void onReservations() { setActiveButton(reservationsBtn); showEmptyPage("Réservations", "Page non branchée pour le moment."); }
-
-    @FXML public void onQuestions()    { setActiveButton(questionsBtn);    showEmptyPage("Questions", "Page non branchée pour le moment."); }
-    @FXML public void onReponses()     { setActiveButton(reponsesBtn);     showEmptyPage("Réponses", "Page non branchée pour le moment."); }
-
-    @FXML public void showSettings()   { setActiveButton(settingsBtn);     showEmptyPage("Paramètres", "Page non branchée pour le moment."); }
+    @FXML public void onSalles()       { currentPage = "salles"; setActiveButton(sallesBtn);       showEmptyPage("Salles", "Page non branchée pour le moment."); }
+    @FXML public void onEquipements()  { currentPage = "equipements"; setActiveButton(equipementsBtn);  showEmptyPage("Équipements", "Page non branchée pour le moment."); }
+    @FXML public void onReservations() { currentPage = "reservations"; setActiveButton(reservationsBtn); showEmptyPage("Réservations", "Page non branchée pour le moment."); }
+    @FXML public void onQuestions()    { currentPage = "questions"; setActiveButton(questionsBtn);    showEmptyPage("Questions", "Page non branchée pour le moment."); }
+    @FXML public void onReponses()     { currentPage = "reponses"; setActiveButton(reponsesBtn);     showEmptyPage("Réponses", "Page non branchée pour le moment."); }
+    @FXML public void showSettings()   { currentPage = "settings"; setActiveButton(settingsBtn);     showEmptyPage("Paramètres", "Page non branchée pour le moment."); }
     @FXML public void showProfile()    { showEmptyPage("Profil", "Page non branchée pour le moment."); }
 
     @FXML
@@ -223,8 +238,8 @@ public class MainController {
         System.out.println("Déconnexion...");
     }
 
-    // ===================== PAGES =====================
     public void showSponsorPortal(String email) {
+        currentPage = "sponsorPortal";
         openSponsorsSubmenu();
         setActiveButton(sponsorPortalBtn);
         if (email != null && !email.isBlank()) setLastSponsorPortalEmail(email);
@@ -235,6 +250,7 @@ public class MainController {
     }
 
     public void showSponsorsAdmin() {
+        currentPage = "sponsorsAdmin";
         openSponsorsSubmenu();
         setActiveButton(sponsorsListBtn);
         loadIntoCenter(SPONSOR_ADMIN_FXML, (SponsorAdminController ctrl) -> {});
@@ -244,7 +260,6 @@ public class MainController {
     public void showBudget()   { onBudget(); }
     public void showDepenses() { onDepenses(); }
 
-    // ===================== LOAD INTO CENTER =====================
     public <T> void loadIntoCenter(String fxmlPath, Consumer<T> controllerConsumer) {
         try {
             if (pageContentContainer == null) {
@@ -267,7 +282,6 @@ public class MainController {
         }
     }
 
-    // ===================== SAFE EMPTY PAGE =====================
     private void showEmptyPage(String title, String subtitle) {
         if (pageContentContainer == null) return;
 
@@ -292,7 +306,6 @@ public class MainController {
         pageContentContainer.getChildren().setAll(box);
     }
 
-    // ===================== ACTIVE BUTTON CSS =====================
     private void setActiveButton(Button button) {
         Button[] all = {
                 dashboardBtn,

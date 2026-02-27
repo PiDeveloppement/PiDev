@@ -1,6 +1,7 @@
 package com.example.pidev.controller.depense;
 
 import com.example.pidev.model.depense.Depense;
+import com.example.pidev.service.translation.TranslationService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -14,6 +15,8 @@ public class DepenseCardController {
     @FXML private Label amountLabel;
     @FXML private Label categoryLabel;
     @FXML private Label dateLabel;
+    @FXML private Label categoryPrefix;
+    @FXML private Label datePrefix;
     @FXML private Button detailsBtn;
     @FXML private Button editBtn;
     @FXML private Button deleteBtn;
@@ -24,28 +27,24 @@ public class DepenseCardController {
         if (d == null) return;
 
         if (descLabel != null) descLabel.setText(nvl(d.getDescription(), "—"));
-
-        String amountText = String.format("%,.2f DT", d.getAmount());
-        if (amountLabel != null) {
-            amountLabel.setText(amountText);
-            if (d.isAnomaly()) {
-                amountLabel.setStyle("-fx-background-color: #fee2e2; -fx-padding: 2 5; -fx-background-radius: 5; " +
-                        "-fx-font-weight: 900; -fx-text-fill: #b91c1c;");
-                amountLabel.setTooltip(new Tooltip("Dépense anormale (Isolation Forest)"));
-            } else {
-                amountLabel.setStyle("-fx-font-weight: 900; -fx-text-fill: #0f172a;");
-                amountLabel.setTooltip(null);
-            }
-        }
-
+        if (amountLabel != null) amountLabel.setText(String.format("%,.2f DT", d.getAmount()));
         if (categoryLabel != null) categoryLabel.setText(nvl(d.getCategory(), "—"));
-        if (dateLabel != null) {
-            dateLabel.setText(d.getExpense_date() == null ? "—" : FMT.format(d.getExpense_date()));
-        }
+        if (dateLabel != null) dateLabel.setText(d.getExpense_date() == null ? "—" : FMT.format(d.getExpense_date()));
 
         if (detailsBtn != null) detailsBtn.setOnAction(e -> { if (onDetails != null) onDetails.run(); });
         if (editBtn != null) editBtn.setOnAction(e -> { if (onEdit != null) onEdit.run(); });
         if (deleteBtn != null) deleteBtn.setOnAction(e -> { if (onDelete != null) onDelete.run(); });
+
+        translateUI();
+    }
+
+    private void translateUI() {
+        if (TranslationService.getCurrentLang().equals("fr")) return;
+        if (categoryPrefix != null) categoryPrefix.setText(TranslationService.translate("Catégorie") + ":");
+        if (datePrefix != null) datePrefix.setText(TranslationService.translate("Date") + ":");
+        if (detailsBtn != null) detailsBtn.setText(TranslationService.translate("Détails"));
+        if (editBtn != null) editBtn.setText(TranslationService.translate("Modifier"));
+        if (deleteBtn != null) deleteBtn.setText(TranslationService.translate("Supprimer"));
     }
 
     private String nvl(String s, String def) {

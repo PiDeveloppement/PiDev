@@ -5,9 +5,8 @@ import com.example.pidev.model.sponsor.Sponsor;
 import com.example.pidev.service.sponsor.SponsorService;
 import com.example.pidev.service.pdf.LocalSponsorPdfService;
 import com.example.pidev.service.search.LuceneSearchService;
-import com.example.pidev.service.excel.ExcelExportService; // AJOUT
-import com.example.pidev.service.chart.QuickChartService; // AJOUT
-import com.google.gson.JsonObject; // AJOUT
+import com.example.pidev.service.translation.TranslationService;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -21,8 +20,6 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.TilePane;
-import javafx.stage.FileChooser; // AJOUT
-import javafx.stage.Stage; // AJOUT
 
 import java.awt.Desktop;
 import java.io.File;
@@ -43,11 +40,15 @@ public class SponsorAdminController implements Initializable {
     @FXML private ComboBox<String> companyFilter;
     @FXML private ComboBox<String> eventFilter;
     @FXML private Button addSponsorBtn;
-    @FXML private Button exportExcelBtn; // AJOUT
 
     @FXML private ScrollPane cardsScroll;
     @FXML private TilePane cardsPane;
     @FXML private PieChart contributionsChart;
+
+    // Labels de section pour traduction
+    @FXML private Label totalSponsorsSectionLabel;
+    @FXML private Label totalContributionSectionLabel;
+    @FXML private Label avgContributionSectionLabel;
 
     private final SponsorService sponsorService = new SponsorService();
     private final LocalSponsorPdfService pdfService = new LocalSponsorPdfService();
@@ -77,8 +78,6 @@ public class SponsorAdminController implements Initializable {
         if (companyFilter != null) companyFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
         if (eventFilter != null) eventFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
         if (addSponsorBtn != null) addSponsorBtn.setOnAction(e -> onAdd());
-        // AJOUT : listener pour le bouton d'export
-        if (exportExcelBtn != null) exportExcelBtn.setOnAction(e -> exportSponsorsToExcel());
 
         if (cardsScroll != null && cardsPane != null) {
             cardsPane.setPadding(new Insets(8));
@@ -93,40 +92,28 @@ public class SponsorAdminController implements Initializable {
         applyPredicate();
         initCharts();
 
-        // Réindexation au démarrage
         reindexAllSponsors();
+
+        // Traduire l'interface si la langue n'est pas français
+        Platform.runLater(() -> translateUI());
     }
 
-    private void searchSponsors(String query) {
-        try {
-            List<Integer> ids = LuceneSearchService.searchSponsors(query);
-            List<Sponsor> found = new ArrayList<>();
-            for (Integer id : ids) {
-                Sponsor s = sponsorService.getSponsorById(id);
-                if (s != null) found.add(s);
-            }
-            baseList.setAll(found);
-            updateGlobalStats();
-            if (statusLabel != null) {
-                statusLabel.setText("🔍 " + found.size() + " résultat(s) pour \"" + query + "\"");
-            }
-            renderCards();
-        } catch (Exception e) {
-            e.printStackTrace();
-            showError("Recherche", "Erreur lors de la recherche : " + e.getMessage());
+    private void translateUI() {
+        if (TranslationService.getCurrentLang().equals("fr")) return;
+        String[] texts = {
+                "Sponsors Total",
+                "Contribution Totale",
+                "Moyenne/Sponsor",
+                "Répartition des contributions par événement"
+        };
+        String[] translated = new String[texts.length];
+        for (int i = 0; i < texts.length; i++) {
+            translated[i] = TranslationService.translate(texts[i]);
         }
-    }
-
-    private void reindexAllSponsors() {
-        try {
-            List<Sponsor> all = sponsorService.getAllSponsors();
-            for (Sponsor s : all) {
-                LuceneSearchService.indexSponsor(s.getId(), s.getCompany_name(), s.getContact_email(), s.getContribution_name(), s.getEvent_id());
-            }
-            System.out.println("Indexation terminée : " + all.size() + " sponsors");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        if (totalSponsorsSectionLabel != null) totalSponsorsSectionLabel.setText(translated[0]);
+        if (totalContributionSectionLabel != null) totalContributionSectionLabel.setText(translated[1]);
+        if (avgContributionSectionLabel != null) avgContributionSectionLabel.setText(translated[2]);
+        if (contributionsChart != null) contributionsChart.setTitle(translated[3]);
     }
 
     private int computeCols(double width) {
@@ -255,6 +242,38 @@ public class SponsorAdminController implements Initializable {
         }
     }
 
+    private void reindexAllSponsors() {
+        try {
+            List<Sponsor> all = sponsorService.getAllSponsors();
+            for (Sponsor s : all) {
+                LuceneSearchService.indexSponsor(s.getId(), s.getCompany_name(), s.getContact_email(), s.getContribution_name(), s.getEvent_id());
+            }
+            System.out.println("Indexation terminée : " + all.size() + " sponsors");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void searchSponsors(String query) {
+        try {
+            List<Integer> ids = LuceneSearchService.searchSponsors(query);
+            List<Sponsor> found = new ArrayList<>();
+            for (Integer id : ids) {
+                Sponsor s = sponsorService.getSponsorById(id);
+                if (s != null) found.add(s);
+            }
+            baseList.setAll(found);
+            updateGlobalStats();
+            if (statusLabel != null) {
+                statusLabel.setText("🔍 " + found.size() + " résultat(s) pour \"" + query + "\"");
+            }
+            renderCards();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Recherche", "Erreur lors de la recherche : " + e.getMessage());
+        }
+    }
+
     private void onAdd() {
         openFormAsPage(null, null);
     }
@@ -332,45 +351,6 @@ public class SponsorAdminController implements Initializable {
         } catch (Exception e) {
             showError("UI", "Impossible d'ouvrir détails: " + e.getMessage());
         }
-    }
-
-    // AJOUT : Méthode d'export Excel
-    private void exportSponsorsToExcel() {
-        try {
-            List<Sponsor> allSponsors = sponsorService.getAllSponsors();
-            Map<String, Double> data = sponsorService.getTotalContributionByEvent();
-            JsonObject chartConfig = QuickChartService.createDoughnutChart(
-                    "Répartition des contributions",
-                    data.keySet().toArray(new String[0]),
-                    data.values().stream().mapToDouble(Double::doubleValue).toArray()
-            );
-
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Enregistrer le fichier Excel");
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Fichiers Excel", "*.xlsx"));
-            File file = fileChooser.showSaveDialog(getStage());
-            if (file != null) {
-                ExcelExportService.exportSponsors(allSponsors, chartConfig, file.getAbsolutePath());
-                showInfo("Export réussi", "Le fichier Excel a été généré avec succès.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            showError("Export", "Erreur lors de l'export : " + e.getMessage());
-        }
-    }
-
-    // AJOUT : Méthode utilitaire pour obtenir la fenêtre
-    private Stage getStage() {
-        return (Stage) addSponsorBtn.getScene().getWindow();
-    }
-
-    // AJOUT : Méthode pour afficher une info
-    private void showInfo(String title, String msg) {
-        Alert a = new Alert(Alert.AlertType.INFORMATION);
-        a.setTitle(title);
-        a.setHeaderText(null);
-        a.setContentText(msg);
-        a.showAndWait();
     }
 
     private void showError(String title, String msg) {

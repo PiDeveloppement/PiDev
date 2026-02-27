@@ -202,6 +202,9 @@
                     <Label fx:id="navTimeLabel" styleClass="topbar-time"/>
                 </VBox>
 
+                <!-- Sélecteur de langue -->
+                <ComboBox fx:id="languageCombo" prefWidth="120" styleClass="text-field"/>
+
                 <MenuButton fx:id="profileMenu" styleClass="topbar-profile">
                     <graphic>
                         <HBox alignment="CENTER" spacing="10">

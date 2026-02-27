@@ -2,6 +2,7 @@ package com.example.pidev.controller.budget;
 
 import com.example.pidev.model.budget.Budget;
 import com.example.pidev.service.budget.BudgetService;
+import com.example.pidev.service.translation.TranslationService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -9,13 +10,14 @@ import javafx.scene.control.Label;
 public class BudgetCardController {
 
     @FXML private Label titleLabel;
-    @FXML private Label rentLabel;
+    @FXML private Label eventLabelPrefix;
     @FXML private Label eventLabel;
     @FXML private Label initialLabel;
     @FXML private Label expensesLabel;
     @FXML private Label revenueLabel;
-    @FXML private Label statusLabel;
+    @FXML private Label rentLabel;
     @FXML private Label rent2Label;
+    @FXML private Label statusLabel;
     @FXML private Button detailsBtn;
     @FXML private Button editBtn;
     @FXML private Button deleteBtn;
@@ -26,34 +28,27 @@ public class BudgetCardController {
         if (b == null) return;
 
         if (titleLabel != null) titleLabel.setText("Budget");
-
         if (eventLabel != null) {
             try {
                 String eventTitle = budgetService.getEventTitleById(b.getEvent_id());
-                eventLabel.setText("Événement: " + eventTitle);
+                eventLabel.setText(eventTitle);
             } catch (Exception e) {
-                eventLabel.setText("Événement: (ID: " + b.getEvent_id() + ")");
+                eventLabel.setText("—");
             }
         }
-
         if (initialLabel != null) initialLabel.setText(String.format("%,.2f DT", b.getInitial_budget()));
         if (expensesLabel != null) expensesLabel.setText(String.format("%,.2f DT", b.getTotal_expenses()));
         if (revenueLabel != null) revenueLabel.setText(String.format("%,.2f DT", b.getTotal_revenue()));
 
         double rent = b.getRentabilite();
-
         if (rentLabel != null) {
             rentLabel.setText(String.format("%,.2f DT", rent));
-            rentLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 900; -fx-text-fill:"
-                    + (rent >= 0 ? "#059669" : "#dc2626") + ";");
+            rentLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: 900; -fx-text-fill:" + (rent >= 0 ? "#059669" : "#dc2626") + ";");
         }
-
         if (rent2Label != null) {
             rent2Label.setText(String.format("%,.2f DT", rent));
-            rent2Label.setStyle("-fx-font-weight: 900; -fx-text-fill:"
-                    + (rent >= 0 ? "#059669" : "#dc2626") + ";");
+            rent2Label.setStyle("-fx-font-weight: 900; -fx-text-fill:" + (rent >= 0 ? "#059669" : "#dc2626") + ";");
         }
-
         if (statusLabel != null) {
             if (rent >= 0) {
                 statusLabel.setText("OK");
@@ -69,5 +64,24 @@ public class BudgetCardController {
         if (detailsBtn != null) detailsBtn.setOnAction(e -> { if (onDetails != null) onDetails.run(); });
         if (editBtn != null) editBtn.setOnAction(e -> { if (onEdit != null) onEdit.run(); });
         if (deleteBtn != null) deleteBtn.setOnAction(e -> { if (onDelete != null) onDelete.run(); });
+
+        translateUI();
+    }
+
+    private void translateUI() {
+        if (TranslationService.getCurrentLang().equals("fr")) return;
+        if (eventLabelPrefix != null) eventLabelPrefix.setText(TranslationService.translate("Événement:"));
+        if (detailsBtn != null) detailsBtn.setText(TranslationService.translate("Détails"));
+        if (editBtn != null) editBtn.setText(TranslationService.translate("Modifier"));
+        if (deleteBtn != null) deleteBtn.setText(TranslationService.translate("Supprimer"));
+        // Les labels fixes comme "Budget", "OK", "Déficit" pourraient aussi être traduits, mais ils sont dans le code.
+        // On peut traduire "OK" et "Déficit" si on veut :
+        if (statusLabel != null) {
+            if (statusLabel.getText().equals("OK")) {
+                statusLabel.setText(TranslationService.translate("OK"));
+            } else if (statusLabel.getText().equals("Déficit")) {
+                statusLabel.setText(TranslationService.translate("Déficit"));
+            }
+        }
     }
 }

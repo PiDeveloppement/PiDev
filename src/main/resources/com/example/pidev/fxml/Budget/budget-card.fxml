@@ -18,7 +18,7 @@
         </HBox>
 
         <HBox spacing="10">
-            <!-- ✅ ID supprimé -->
+            <Label fx:id="eventLabelPrefix" text="Événement:" style="-fx-text-fill:#334155; -fx-font-weight:700;" />
             <Label fx:id="eventLabel" style="-fx-text-fill:#334155; -fx-font-weight:700;" />
             <Region HBox.hgrow="ALWAYS" />
             <Label fx:id="statusLabel" style="-fx-background-color:#ecfdf5; -fx-text-fill:#047857; -fx-font-weight:900;
@@ -52,11 +52,6 @@
                 <Label style="-fx-text-fill:#64748b; -fx-font-size:12px;" text="Rentabilité" />
                 <Label fx:id="rent2Label" style="-fx-font-weight:900; -fx-text-fill:#0f172a;" text="0,00 DT" />
             </VBox>
-
-            <rowConstraints>
-                <RowConstraints />
-                <RowConstraints />
-            </rowConstraints>
         </GridPane>
 
         <HBox spacing="10" style="-fx-padding: 8 0 0 0;">
@@ -71,6 +66,5 @@
             <Button fx:id="deleteBtn" style="-fx-background-color:#fee2e2; -fx-text-fill:#b91c1c; -fx-font-weight:900;
                             -fx-background-radius:12; -fx-padding: 8 12;" text="Supprimer" />
         </HBox>
-
     </VBox>
 </AnchorPane>

@@ -4,6 +4,8 @@ import com.example.pidev.MainController;
 import com.example.pidev.model.sponsor.Sponsor;
 import com.example.pidev.service.sponsor.SponsorService;
 import com.example.pidev.service.pdf.LocalSponsorPdfService;
+import com.example.pidev.service.translation.TranslationService;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -46,6 +48,11 @@ public class SponsorPortalController implements Initializable {
     @FXML private BarChart<String, Number> myContributionsChart;
     @FXML private CategoryAxis xAxis;
     @FXML private NumberAxis yAxis;
+
+    // Labels de section pour traduction
+    @FXML private Label mySponsorsSectionLabel;
+    @FXML private Label myContributionSectionLabel;
+    @FXML private Label myEventsSectionLabel;
 
     private final SponsorService sponsorService = new SponsorService();
     private final LocalSponsorPdfService pdfService = new LocalSponsorPdfService();
@@ -90,7 +97,6 @@ public class SponsorPortalController implements Initializable {
             cardsPane.setTileAlignment(Pos.TOP_LEFT);
         }
 
-        // Charger les emails disponibles depuis la table sponsor
         try {
             if (emailAccount != null) {
                 emailAccount.getItems().setAll(sponsorService.getDemoEmailsFromSponsor());
@@ -109,6 +115,27 @@ public class SponsorPortalController implements Initializable {
             emailAccount.setValue(remembered);
             onAccountSelected(remembered);
         }
+
+        // Traduire l'interface si besoin
+        Platform.runLater(() -> translateUI());
+    }
+
+    private void translateUI() {
+        if (TranslationService.getCurrentLang().equals("fr")) return;
+        String[] texts = {
+                "Mes Sponsors",
+                "Ma Contribution",
+                "Mes Événements",
+                "Mes contributions par sponsor"
+        };
+        String[] translated = new String[texts.length];
+        for (int i = 0; i < texts.length; i++) {
+            translated[i] = TranslationService.translate(texts[i]);
+        }
+        if (mySponsorsSectionLabel != null) mySponsorsSectionLabel.setText(translated[0]);
+        if (myContributionSectionLabel != null) myContributionSectionLabel.setText(translated[1]);
+        if (myEventsSectionLabel != null) myEventsSectionLabel.setText(translated[2]);
+        if (myContributionsChart != null) myContributionsChart.setTitle(translated[3]);
     }
 
     private void onAccountSelected(String email) {

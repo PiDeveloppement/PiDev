@@ -15,8 +15,7 @@
             fx:controller="com.example.pidev.controller.sponsor.SponsorPortalController">
 
     <center>
-        <!-- ScrollPane principal : fitToWidth true, fitToHeight false -->
-        <ScrollPane fitToWidth="true" fitToHeight="false"
+        <ScrollPane fitToHeight="true" fitToWidth="true"
                     hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
                     style="-fx-background-color: transparent; -fx-border-color: transparent;">
             <VBox spacing="0">
@@ -34,15 +33,15 @@
 
                     <HBox spacing="14">
                         <VBox styleClass="stat-card stat-card-purple" HBox.hgrow="ALWAYS" spacing="8">
-                            <Label text="Mes Sponsors" styleClass="label-section"/>
+                            <Label fx:id="mySponsorsSectionLabel" text="Mes Sponsors" styleClass="label-section"/>
                             <Label fx:id="mySponsorsLabel" text="0" styleClass="label-value" style="-fx-text-fill:#7c3aed;"/>
                         </VBox>
                         <VBox styleClass="stat-card stat-card-emerald" HBox.hgrow="ALWAYS" spacing="8">
-                            <Label text="Ma Contribution" styleClass="label-section"/>
+                            <Label fx:id="myContributionSectionLabel" text="Ma Contribution" styleClass="label-section"/>
                             <Label fx:id="myContributionLabel" text="0,00 DT" styleClass="label-value" style="-fx-text-fill:#15803d;"/>
                         </VBox>
                         <VBox styleClass="stat-card stat-card-blue" HBox.hgrow="ALWAYS" spacing="8">
-                            <Label text="Mes Événements" styleClass="label-section"/>
+                            <Label fx:id="myEventsSectionLabel" text="Mes Événements" styleClass="label-section"/>
                             <Label fx:id="myEventsLabel" text="0" styleClass="label-value" style="-fx-text-fill:#1e40af;"/>
                         </VBox>
                     </HBox>

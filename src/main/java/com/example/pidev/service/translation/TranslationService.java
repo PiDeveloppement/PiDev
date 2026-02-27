@@ -12,8 +12,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TranslationService {
-    private static final String API_URL = "http://api.mymemory.translated.net/get";
-    private static final HttpClient client = HttpClient.newHttpClient();
+    private static final String API_URL = "https://api.mymemory.translated.net/get";
+    private static final HttpClient client = HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.ALWAYS)
+            .build();
     private static final Map<String, Map<String, String>> cache = new HashMap<>();
     private static String currentLang = "fr";
 
@@ -21,11 +23,10 @@ public class TranslationService {
         currentLang = lang;
     }
 
-    /**
-     * Traduit un texte du français vers la langue courante.
-     * @param text le texte à traduire (en français)
-     * @return le texte traduit, ou le texte original en cas d'erreur
-     */
+    public static String getCurrentLang() {
+        return currentLang;
+    }
+
     public static String translate(String text) {
         if (currentLang.equals("fr") || text == null || text.isEmpty()) {
             return text;
@@ -36,21 +37,28 @@ public class TranslationService {
         }
         try {
             String encodedText = URLEncoder.encode(text, StandardCharsets.UTF_8);
-            String url = API_URL + "?q=" + encodedText + "&langpair=fr|" + currentLang;
+            String langPair = "fr|" + currentLang;
+            String encodedLangPair = URLEncoder.encode(langPair, StandardCharsets.UTF_8);
+            String url = API_URL + "?q=" + encodedText + "&langpair=" + encodedLangPair;
+
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
+                    .header("User-Agent", "EventFlow-App/1.0")
                     .GET()
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
             if (response.statusCode() == 200) {
                 JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
                 String translated = json.get("responseData").getAsJsonObject().get("translatedText").getAsString();
-                // Mettre en cache
+                // Nettoyer les éventuels marqueurs de confiance (ex: "###")
+                translated = translated.replaceAll("^#+", "").trim();
                 cache.computeIfAbsent(currentLang, k -> new HashMap<>()).put(text, translated);
                 return translated;
             } else {
                 System.err.println("Erreur traduction: " + response.statusCode());
+                System.err.println("Réponse: " + response.body());
             }
         } catch (Exception e) {
             e.printStackTrace();

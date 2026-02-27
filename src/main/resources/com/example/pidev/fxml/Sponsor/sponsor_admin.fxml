@@ -40,7 +40,7 @@
                         <HBox spacing="12" alignment="CENTER_LEFT">
                             <Label text="💼" style="-fx-font-size: 32px;"/>
                             <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                <Label text="Sponsors Total" styleClass="label-section"/>
+                                <Label fx:id="totalSponsorsSectionLabel" text="Sponsors Total" styleClass="label-section"/>
                                 <Label fx:id="totalSponsorsLabel" text="0" styleClass="label-value" style="-fx-text-fill: #7c3aed;"/>
                             </VBox>
                         </HBox>
@@ -51,7 +51,7 @@
                         <HBox spacing="12" alignment="CENTER_LEFT">
                             <Label text="💎" style="-fx-font-size: 32px;"/>
                             <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                <Label text="Contribution Totale" styleClass="label-section"/>
+                                <Label fx:id="totalContributionSectionLabel" text="Contribution Totale" styleClass="label-section"/>
                                 <Label fx:id="totalContributionLabel" text="0,00 DT" styleClass="label-value" style="-fx-text-fill: #15803d;"/>
                             </VBox>
                         </HBox>
@@ -62,7 +62,7 @@
                         <HBox spacing="12" alignment="CENTER_LEFT">
                             <Label text="📊" style="-fx-font-size: 32px;"/>
                             <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                <Label text="Moyenne/Sponsor" styleClass="label-section"/>
+                                <Label fx:id="avgContributionSectionLabel" text="Moyenne/Sponsor" styleClass="label-section"/>
                                 <Label fx:id="avgContributionLabel" text="0,00 DT" styleClass="label-value" style="-fx-text-fill: #1e40af;"/>
                             </VBox>
                         </HBox>
@@ -93,10 +93,8 @@
 
                     <Region HBox.hgrow="ALWAYS"/>
 
-                    <!-- AJOUT : bouton Exporter Excel -->
                     <Button fx:id="exportExcelBtn" text="📥 Exporter Excel"
                             styleClass="btn-primary" minHeight="40" minWidth="160"/>
-
                     <Button fx:id="addSponsorBtn" text="➕ Nouveau Sponsor"
                             styleClass="btn-success" minHeight="40" minWidth="180"/>
                 </HBox>
