@@ -41,7 +41,6 @@
                       style="-fx-padding: 24 35; -fx-background-color: #f1f5f9;
                              -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
 
-                    <!-- Carte 1 : Total Dépenses -->
                     <VBox styleClass="stat-card stat-card-rose" HBox.hgrow="ALWAYS" maxWidth="300">
                         <HBox alignment="CENTER_LEFT" spacing="12">
                             <Label style="-fx-font-size: 32px;" text="💸" />
@@ -53,7 +52,6 @@
                         <Label style="-fx-text-fill: #e11d48; -fx-font-size: 12px; -fx-font-weight: bold;" text="Engagées" />
                     </VBox>
 
-                    <!-- Carte 2 : Nombre total -->
                     <VBox styleClass="stat-card stat-card-blue" HBox.hgrow="ALWAYS" maxWidth="300">
                         <HBox alignment="CENTER_LEFT" spacing="12">
                             <Label style="-fx-font-size: 32px;" text="📋" />
@@ -65,7 +63,6 @@
                         <Label style="-fx-text-fill: #2563eb; -fx-font-size: 12px; -fx-font-weight: bold;" text="Enregistrées" />
                     </VBox>
 
-                    <!-- Carte 3 : Ligne moyenne -->
                     <VBox styleClass="stat-card stat-card-emerald" HBox.hgrow="ALWAYS" maxWidth="300">
                         <HBox alignment="CENTER_LEFT" spacing="12">
                             <Label style="-fx-font-size: 32px;" text="📊" />
@@ -77,7 +74,6 @@
                         <Label style="-fx-text-fill: #059669; -fx-font-size: 12px; -fx-font-weight: bold;" text="Par dépense" />
                     </VBox>
 
-                    <!-- Carte 4 : Catégories -->
                     <VBox styleClass="stat-card stat-card-purple" HBox.hgrow="ALWAYS" maxWidth="300">
                         <HBox alignment="CENTER_LEFT" spacing="12">
                             <Label style="-fx-font-size: 32px;" text="🏷" />
@@ -89,7 +85,6 @@
                         <Label style="-fx-text-fill: #a855f7; -fx-font-size: 12px; -fx-font-weight: bold;" text="Utilisées" />
                     </VBox>
 
-                    <!-- Carte 5 : Anomalies -->
                     <VBox styleClass="stat-card stat-card-amber" HBox.hgrow="ALWAYS" maxWidth="300">
                         <HBox alignment="CENTER_LEFT" spacing="12">
                             <Label style="-fx-font-size: 32px;" text="⚠" />
@@ -123,6 +118,10 @@
                     </VBox>
 
                     <Region HBox.hgrow="ALWAYS" />
+
+                    <!-- AJOUT : bouton Exporter Excel -->
+                    <Button fx:id="exportExcelBtn" text="📥 Exporter Excel"
+                            styleClass="btn-primary" minHeight="40" minWidth="170"/>
 
                     <Button fx:id="addBtn" minHeight="40" minWidth="170"
                             styleClass="btn-success" text="➕ Nouvelle Dépense" />

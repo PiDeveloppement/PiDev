@@ -11,7 +11,6 @@
             fx:controller="com.example.pidev.controller.sponsor.SponsorAdminController">
 
     <center>
-        <!-- ScrollPane principal : fitToWidth true, fitToHeight false pour que le contenu prenne sa hauteur naturelle -->
         <ScrollPane fitToWidth="true" fitToHeight="false"
                     hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
                     style="-fx-background-color: transparent; -fx-border-color: transparent;">
@@ -94,6 +93,10 @@
 
                     <Region HBox.hgrow="ALWAYS"/>
 
+                    <!-- AJOUT : bouton Exporter Excel -->
+                    <Button fx:id="exportExcelBtn" text="📥 Exporter Excel"
+                            styleClass="btn-primary" minHeight="40" minWidth="160"/>
+
                     <Button fx:id="addSponsorBtn" text="➕ Nouveau Sponsor"
                             styleClass="btn-success" minHeight="40" minWidth="180"/>
                 </HBox>
@@ -102,7 +105,6 @@
                 <VBox spacing="20" style="-fx-padding: 28 35;" VBox.vgrow="ALWAYS">
                     <Label text="📋 Sponsors Enregistrés" styleClass="label-subtitle"/>
 
-                    <!-- ScrollPane interne pour les cartes uniquement -->
                     <ScrollPane fx:id="cardsScroll" fitToWidth="true"
                                 style="-fx-background-color: transparent; -fx-border-color: transparent;">
                         <TilePane fx:id="cardsPane" prefColumns="3" hgap="16" vgap="16" style="-fx-padding: 10;"/>

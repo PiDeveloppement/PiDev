@@ -3,6 +3,9 @@ package com.example.pidev.controller.depense;
 import com.example.pidev.MainController;
 import com.example.pidev.model.depense.Depense;
 import com.example.pidev.service.depense.DepenseService;
+import com.example.pidev.service.excel.ExcelExportService;
+import com.example.pidev.service.chart.QuickChartService;
+import com.google.gson.JsonObject;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -16,7 +19,10 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.TilePane;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
+import java.io.File;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -29,11 +35,12 @@ public class DepenseListController implements Initializable {
     @FXML private Label countDepensesLabel;
     @FXML private Label avgDepenseLabel;
     @FXML private Label categoriesLabel;
-    // @FXML private Label anomaliesLabel;  // Supprimé car plus utilisé
+    @FXML private Label anomaliesLabel;
     @FXML private ComboBox<String> filtreCategorie;
     @FXML private ComboBox<String> filtrePeriode;
     @FXML private ComboBox<String> filtreEtatFinancier;
     @FXML private Button addBtn;
+    @FXML private Button exportExcelBtn;
     @FXML private Label statusLabel;
     @FXML private TilePane cardsPane;
     @FXML private PieChart categoryPieChart;
@@ -58,6 +65,7 @@ public class DepenseListController implements Initializable {
         if (filtreEtatFinancier != null) filtreEtatFinancier.valueProperty().addListener((obs, o, n) -> applyPredicate());
 
         if (addBtn != null) addBtn.setOnAction(e -> onAdd());
+        if (exportExcelBtn != null) exportExcelBtn.setOnAction(e -> exportDepensesToExcel());
 
         if (cardsPane != null) {
             cardsPane.setPadding(new Insets(8));
@@ -100,9 +108,7 @@ public class DepenseListController implements Initializable {
         try {
             baseList.setAll(depenseService.getAllDepenses());
 
-            // Plus de détection d'anomalies
-            // for (Depense d : baseList) { d.setAnomaly(...); }
-
+            // Pas de détection d'anomalies
             updateKpis();
             initCategoryChart();
 
@@ -118,15 +124,11 @@ public class DepenseListController implements Initializable {
         int count = depenseService.countDepenses();
         double total = depenseService.sumDepenses();
 
-        YearMonth now = YearMonth.now();
-        LocalDate from = now.atDay(1);
-        LocalDate to = now.atEndOfMonth();
-        // double monthTotal = depenseService.sumDepensesBetween(from, to); // non utilisé, commenté
-
         int cats = 0;
         try { cats = depenseService.getCategories().size(); } catch (Exception ignored) {}
 
-        // long anomalies = baseList.stream().filter(Depense::isAnomaly).count(); // supprimé
+        // anomalies désactivées
+        long anomalies = 0;
 
         if (countDepensesLabel != null) countDepensesLabel.setText(String.valueOf(count));
         if (totalDepensesLabel != null) totalDepensesLabel.setText(String.format("%,.2f DT", total));
@@ -135,7 +137,7 @@ public class DepenseListController implements Initializable {
             avgDepenseLabel.setText(String.format("%,.2f DT", avg));
         }
         if (categoriesLabel != null) categoriesLabel.setText(String.valueOf(cats));
-        // if (anomaliesLabel != null) anomaliesLabel.setText(String.valueOf(anomalies));
+        if (anomaliesLabel != null) anomaliesLabel.setText(String.valueOf(anomalies));
     }
 
     private void initCategoryChart() {
@@ -276,17 +278,59 @@ public class DepenseListController implements Initializable {
         });
     }
 
+    private void exportDepensesToExcel() {
+        try {
+            List<Depense> allDepenses = depenseService.getAllDepenses();
+            Map<String, Double> data = depenseService.getSumByCategory();
+            JsonObject chartConfig = QuickChartService.createDoughnutChart(
+                    "Répartition des dépenses",
+                    data.keySet().toArray(new String[0]),
+                    data.values().stream().mapToDouble(Double::doubleValue).toArray()
+            );
+
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Enregistrer le fichier Excel");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Fichiers Excel", "*.xlsx"));
+            File file = fileChooser.showSaveDialog(getStage());
+            if (file != null) {
+                ExcelExportService.exportDepenses(allDepenses, chartConfig, file.getAbsolutePath());
+                showInfo("Export réussi", "Le fichier Excel a été généré avec succès.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Export", "Erreur lors de l'export : " + e.getMessage());
+        }
+    }
+
+    private Stage getStage() {
+        return (Stage) addBtn.getScene().getWindow();
+    }
+
+    private void showInfo(String title, String msg) {
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setTitle(title);
+        a.setHeaderText(null);
+        a.setContentText(msg);
+        a.showAndWait();
+    }
+
+    private void showError(String title, String msg) {
+        Alert a = new Alert(Alert.AlertType.ERROR);
+        a.setTitle(title);
+        a.setHeaderText(null);
+        a.setContentText(msg);
+        a.showAndWait();
+    }
+
     private void openFormAsPage(Depense existing) {
         try {
             MainController.getInstance().loadIntoCenter(
                     FORM_FXML,
                     (DepenseFormController ctrl) -> {
                         ctrl.setDepense(existing);
-
                         ctrl.setOnFormDone(() -> {
                             setupFilters();
                             loadData();
-
                             if (ctrl.isSaved() && ctrl.getDepense() != null) {
                                 openDetailsAsPage(ctrl.getDepense());
                             } else {
@@ -321,13 +365,5 @@ public class DepenseListController implements Initializable {
             setupFilters();
             loadData();
         }
-    }
-
-    private void showError(String title, String msg) {
-        Alert a = new Alert(Alert.AlertType.ERROR);
-        a.setTitle(title);
-        a.setHeaderText(null);
-        a.setContentText(msg);
-        a.showAndWait();
     }
 }

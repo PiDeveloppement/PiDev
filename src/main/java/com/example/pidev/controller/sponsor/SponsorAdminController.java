@@ -5,6 +5,9 @@ import com.example.pidev.model.sponsor.Sponsor;
 import com.example.pidev.service.sponsor.SponsorService;
 import com.example.pidev.service.pdf.LocalSponsorPdfService;
 import com.example.pidev.service.search.LuceneSearchService;
+import com.example.pidev.service.excel.ExcelExportService; // AJOUT
+import com.example.pidev.service.chart.QuickChartService; // AJOUT
+import com.google.gson.JsonObject; // AJOUT
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -18,6 +21,8 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.TilePane;
+import javafx.stage.FileChooser; // AJOUT
+import javafx.stage.Stage; // AJOUT
 
 import java.awt.Desktop;
 import java.io.File;
@@ -38,6 +43,7 @@ public class SponsorAdminController implements Initializable {
     @FXML private ComboBox<String> companyFilter;
     @FXML private ComboBox<String> eventFilter;
     @FXML private Button addSponsorBtn;
+    @FXML private Button exportExcelBtn; // AJOUT
 
     @FXML private ScrollPane cardsScroll;
     @FXML private TilePane cardsPane;
@@ -71,6 +77,8 @@ public class SponsorAdminController implements Initializable {
         if (companyFilter != null) companyFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
         if (eventFilter != null) eventFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
         if (addSponsorBtn != null) addSponsorBtn.setOnAction(e -> onAdd());
+        // AJOUT : listener pour le bouton d'export
+        if (exportExcelBtn != null) exportExcelBtn.setOnAction(e -> exportSponsorsToExcel());
 
         if (cardsScroll != null && cardsPane != null) {
             cardsPane.setPadding(new Insets(8));
@@ -268,7 +276,6 @@ public class SponsorAdminController implements Initializable {
                         openDetailsAsPage(saved);
                     });
                     ctrl.setOnFormDone(() -> {
-                        // Annulation : retour à la liste
                         MainController.getInstance().showSponsorsAdmin();
                     });
                 }
@@ -325,6 +332,45 @@ public class SponsorAdminController implements Initializable {
         } catch (Exception e) {
             showError("UI", "Impossible d'ouvrir détails: " + e.getMessage());
         }
+    }
+
+    // AJOUT : Méthode d'export Excel
+    private void exportSponsorsToExcel() {
+        try {
+            List<Sponsor> allSponsors = sponsorService.getAllSponsors();
+            Map<String, Double> data = sponsorService.getTotalContributionByEvent();
+            JsonObject chartConfig = QuickChartService.createDoughnutChart(
+                    "Répartition des contributions",
+                    data.keySet().toArray(new String[0]),
+                    data.values().stream().mapToDouble(Double::doubleValue).toArray()
+            );
+
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Enregistrer le fichier Excel");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Fichiers Excel", "*.xlsx"));
+            File file = fileChooser.showSaveDialog(getStage());
+            if (file != null) {
+                ExcelExportService.exportSponsors(allSponsors, chartConfig, file.getAbsolutePath());
+                showInfo("Export réussi", "Le fichier Excel a été généré avec succès.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Export", "Erreur lors de l'export : " + e.getMessage());
+        }
+    }
+
+    // AJOUT : Méthode utilitaire pour obtenir la fenêtre
+    private Stage getStage() {
+        return (Stage) addSponsorBtn.getScene().getWindow();
+    }
+
+    // AJOUT : Méthode pour afficher une info
+    private void showInfo(String title, String msg) {
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setTitle(title);
+        a.setHeaderText(null);
+        a.setContentText(msg);
+        a.showAndWait();
     }
 
     private void showError(String title, String msg) {
