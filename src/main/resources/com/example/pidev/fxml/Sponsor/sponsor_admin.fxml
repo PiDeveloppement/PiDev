@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.chart.PieChart?>
+
+<BorderPane prefHeight="900" prefWidth="1600" stylesheets="@../../css/design-system.css"
+            style="-fx-background-color: #f1f5f9;"
+            xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.pidev.controller.sponsor.SponsorAdminController">
+
+    <center>
+        <!-- ScrollPane principal : fitToWidth true, fitToHeight false pour que le contenu prenne sa hauteur naturelle -->
+        <ScrollPane fitToWidth="true" fitToHeight="false"
+                    hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                    style="-fx-background-color: transparent; -fx-border-color: transparent;">
+            <VBox spacing="0">
+
+                <!-- HEADER -->
+                <HBox alignment="CENTER_LEFT" spacing="20"
+                      style="-fx-background-color: white; -fx-padding: 28 35; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 2 0; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2);">
+
+                    <VBox spacing="4">
+                        <Label text="💼 Gestion des Sponsors" styleClass="label-title"/>
+                        <Label text="Administration complète des sponsors et leurs contributions" styleClass="label-description"/>
+                    </VBox>
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <VBox spacing="2" alignment="CENTER_RIGHT">
+                        <Label text="📊 Résumé" style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;"/>
+                        <Label text="—" style="-fx-text-fill: #1e293b; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                    </VBox>
+                </HBox>
+
+                <!-- STATS (3 cards) -->
+                <HBox spacing="14" style="-fx-padding: 24 35; -fx-background-color: #f1f5f9; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+
+                    <VBox styleClass="stat-card stat-card-purple" HBox.hgrow="ALWAYS" spacing="10">
+                        <HBox spacing="12" alignment="CENTER_LEFT">
+                            <Label text="💼" style="-fx-font-size: 32px;"/>
+                            <VBox spacing="3" HBox.hgrow="ALWAYS">
+                                <Label text="Sponsors Total" styleClass="label-section"/>
+                                <Label fx:id="totalSponsorsLabel" text="0" styleClass="label-value" style="-fx-text-fill: #7c3aed;"/>
+                            </VBox>
+                        </HBox>
+                        <Label text="✓ Actifs" style="-fx-text-fill: #a855f7; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+                    </VBox>
+
+                    <VBox styleClass="stat-card stat-card-emerald" HBox.hgrow="ALWAYS" spacing="10">
+                        <HBox spacing="12" alignment="CENTER_LEFT">
+                            <Label text="💎" style="-fx-font-size: 32px;"/>
+                            <VBox spacing="3" HBox.hgrow="ALWAYS">
+                                <Label text="Contribution Totale" styleClass="label-section"/>
+                                <Label fx:id="totalContributionLabel" text="0,00 DT" styleClass="label-value" style="-fx-text-fill: #15803d;"/>
+                            </VBox>
+                        </HBox>
+                        <Label text="💰 Engagée" style="-fx-text-fill: #059669; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+                    </VBox>
+
+                    <VBox styleClass="stat-card stat-card-blue" HBox.hgrow="ALWAYS" spacing="10">
+                        <HBox spacing="12" alignment="CENTER_LEFT">
+                            <Label text="📊" style="-fx-font-size: 32px;"/>
+                            <VBox spacing="3" HBox.hgrow="ALWAYS">
+                                <Label text="Moyenne/Sponsor" styleClass="label-section"/>
+                                <Label fx:id="avgContributionLabel" text="0,00 DT" styleClass="label-value" style="-fx-text-fill: #1e40af;"/>
+                            </VBox>
+                        </HBox>
+                        <Label text="📈 Performance" style="-fx-text-fill: #2563eb; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+                    </VBox>
+                </HBox>
+
+                <!-- Graphique circulaire -->
+                <HBox alignment="CENTER" style="-fx-padding: 20 35;">
+                    <PieChart fx:id="contributionsChart" prefWidth="800" prefHeight="450"
+                              title="Répartition des contributions par événement"
+                              labelsVisible="true" legendVisible="true"
+                              style="-fx-font-size: 14px;"/>
+                </HBox>
+
+                <!-- FILTRES -->
+                <HBox alignment="CENTER_LEFT" spacing="14"
+                      style="-fx-padding: 20 35; -fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+
+                    <TextField fx:id="searchField" promptText="🔍 Rechercher sponsor..."
+                               prefWidth="250" styleClass="text-field"/>
+
+                    <ComboBox fx:id="companyFilter" promptText="🏢 Entreprise"
+                              prefWidth="220" styleClass="text-field"/>
+
+                    <ComboBox fx:id="eventFilter" promptText="📅 Événement"
+                              prefWidth="220" styleClass="text-field"/>
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <Button fx:id="addSponsorBtn" text="➕ Nouveau Sponsor"
+                            styleClass="btn-success" minHeight="40" minWidth="180"/>
+                </HBox>
+
+                <!-- LISTE -->
+                <VBox spacing="20" style="-fx-padding: 28 35;" VBox.vgrow="ALWAYS">
+                    <Label text="📋 Sponsors Enregistrés" styleClass="label-subtitle"/>
+
+                    <!-- ScrollPane interne pour les cartes uniquement -->
+                    <ScrollPane fx:id="cardsScroll" fitToWidth="true"
+                                style="-fx-background-color: transparent; -fx-border-color: transparent;">
+                        <TilePane fx:id="cardsPane" prefColumns="3" hgap="16" vgap="16" style="-fx-padding: 10;"/>
+                    </ScrollPane>
+
+                    <Label fx:id="statusLabel" text="..." styleClass="label-description"/>
+                </VBox>
+
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

@@ -4,29 +4,47 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.geometry.Insets?>
 
-<VBox spacing="20" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.pidev.controller.resource.ReservationFormController">
-    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+<VBox spacing="20.0" style="-fx-background-color: #f1f5f9; -fx-padding: 30;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.pidev.controller.resource.ReservationFormController">
 
-    <Label text="Formulaire de Réservation" style="-fx-font-size: 20; -fx-font-weight: bold;" />
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Button text="← Retour" onAction="#goBack" style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-cursor: hand;"/>
+        <Label text="Formulaire de Réservation" style="-fx-font-size: 20; -fx-font-weight: bold;" />
+    </HBox>
 
-    <GridPane hgap="10" vgap="15">
-        <Label text="Type:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-        <ComboBox fx:id="typeCombo" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+    <HBox spacing="20.0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);">
+        <VBox spacing="15" HBox.hgrow="ALWAYS">
+            <GridPane hgap="10" vgap="15">
+                <columnConstraints>
+                    <ColumnConstraints minWidth="150" />
+                    <ColumnConstraints minWidth="150" />
+                    <ColumnConstraints minWidth="80" />
+                </columnConstraints>
 
-        <Label text="Ressource:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-        <ComboBox fx:id="itemCombo" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+                <Label text="Début :" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-font-weight: bold;"/>
+                <DatePicker fx:id="startDatePicker" promptText="Date début" GridPane.rowIndex="1" GridPane.columnIndex="0" maxWidth="Infinity"/>
 
-        <Label text="Date Début:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-        <DatePicker fx:id="startDatePicker" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+                <Label text="Fin :" GridPane.rowIndex="0" GridPane.columnIndex="1" style="-fx-font-weight: bold;"/>
+                <DatePicker fx:id="endDatePicker" promptText="Date fin" GridPane.rowIndex="1" GridPane.columnIndex="1" maxWidth="Infinity"/>
 
-        <Label text="Quantité:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-        <TextField fx:id="quantityField" GridPane.rowIndex="3" GridPane.columnIndex="1" />
-    </GridPane>
+                <Label text="Type :" GridPane.rowIndex="2" GridPane.columnIndex="0" style="-fx-font-weight: bold;"/>
+                <ComboBox fx:id="typeCombo" promptText="Choisir type" GridPane.rowIndex="3" GridPane.columnIndex="0" maxWidth="Infinity"/>
 
-    <ImageView fx:id="imagePreview" fitHeight="100" fitWidth="100" preserveRatio="true" />
+                <Label text="Ressource :" GridPane.rowIndex="2" GridPane.columnIndex="1" style="-fx-font-weight: bold;"/>
+                <ComboBox fx:id="itemCombo" promptText="Sélectionner" GridPane.rowIndex="3" GridPane.columnIndex="1" maxWidth="Infinity"/>
 
-    <HBox spacing="10">
-        <Button text="Retour à la liste" onAction="#goToList" />
-        <Button text="Enregistrer" onAction="#handleSave" style="-fx-background-color: #059669; -fx-text-fill: white;" />
+                <Label text="Qté :" GridPane.rowIndex="2" GridPane.columnIndex="2" style="-fx-font-weight: bold;"/>
+                <TextField fx:id="quantityField" text="1" GridPane.rowIndex="3" GridPane.columnIndex="2" prefWidth="60"/>
+            </GridPane>
+
+            <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0;">
+                <Button onAction="#goBack" text="Annuler" prefWidth="100"/>
+                <Button fx:id="btnValider" onAction="#validerAction" text="Réserver" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold;" prefWidth="120"/>
+            </HBox>
+        </VBox>
+
+        <VBox alignment="CENTER" spacing="5" style="-fx-border-color: #cbd5e1; -fx-padding: 10; -fx-background-color: #f8fafc; -fx-background-radius: 8;">
+            <Label text="Aperçu" style="-fx-font-size: 11; -fx-text-fill: #64748b;"/>
+            <ImageView fx:id="imagePreview" fitHeight="120" fitWidth="120" preserveRatio="true" />
+        </VBox>
     </HBox>
 </VBox>
