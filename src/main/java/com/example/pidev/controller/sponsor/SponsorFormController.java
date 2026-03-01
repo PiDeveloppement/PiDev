@@ -1,5 +1,6 @@
 package com.example.pidev.controller.sponsor;
 
+import com.example.pidev.MainController;
 import com.example.pidev.model.sponsor.Sponsor;
 import com.example.pidev.service.sponsor.SponsorService;
 import com.example.pidev.service.upload.CloudinaryUploadService;
@@ -9,6 +10,7 @@ import com.example.pidev.service.whatsapp.WhatsAppService;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -17,7 +19,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
@@ -37,6 +38,7 @@ public class SponsorFormController {
     @FXML private ComboBox<String> currencyComboBox;
     @FXML private Label convertedAmountLabel;
     @FXML private TextField phoneField;
+    @FXML private TextField industryField;
 
     private Sponsor editing;
     private Sponsor result;
@@ -72,7 +74,6 @@ public class SponsorFormController {
             analyzeLogoBtn.setOnAction(e -> onAnalyzeLogo());
         }
 
-        // Devise
         if (currencyComboBox != null) {
             currencyComboBox.getItems().addAll(
                     "TND", "USD", "EUR", "GBP", "CHF", "CAD", "JPY", "CNY", "AUD", "NZD",
@@ -88,7 +89,6 @@ public class SponsorFormController {
             contributionField.textProperty().addListener((obs, old, n) -> updateConvertedAmount());
         }
 
-        // Téléphone (uniquement chiffres)
         if (phoneField != null) {
             phoneField.textProperty().addListener((obs, old, n) -> {
                 if (n == null) return;
@@ -151,6 +151,8 @@ public class SponsorFormController {
         eventComboBox.setValue(null);
         companyField.clear();
         contributionField.clear();
+        industryField.clear();
+        phoneField.clear();
 
         selectedLogoFile = null;
         logoField.clear();
@@ -158,7 +160,6 @@ public class SponsorFormController {
         if (visionResultArea != null) visionResultArea.clear();
         if (currencyComboBox != null) currencyComboBox.setValue("TND");
         if (convertedAmountLabel != null) convertedAmountLabel.setText("");
-        if (phoneField != null) phoneField.clear();
 
         if (logoFileLabel != null) logoFileLabel.setText("Aucun fichier choisi");
 
@@ -187,6 +188,8 @@ public class SponsorFormController {
 
         companyField.setText(s.getCompany_name());
         contributionField.setText(String.valueOf(s.getContribution_name()));
+        industryField.setText(s.getIndustry());
+        phoneField.setText(s.getPhone());
 
         logoField.setText(s.getLogo_url() == null ? "" : s.getLogo_url());
         selectedLogoFile = null;
@@ -205,7 +208,6 @@ public class SponsorFormController {
         if (visionResultArea != null) visionResultArea.clear();
         if (currencyComboBox != null) currencyComboBox.setValue("TND");
         if (convertedAmountLabel != null) convertedAmountLabel.setText("");
-        if (phoneField != null) phoneField.clear();
 
         if (fixedEmail != null) {
             emailField.setText(fixedEmail);
@@ -326,6 +328,8 @@ public class SponsorFormController {
         String company = safe(companyField.getText());
         String email = safe(emailField.getText());
         String contribTxt = safe(contributionField.getText()).replace(",", ".");
+        String industry = safe(industryField.getText());
+        String phone = safe(phoneField.getText());
 
         if (fixedEmail != null && !fixedEmail.isEmpty()) email = fixedEmail;
 
@@ -348,7 +352,6 @@ public class SponsorFormController {
         if (email.isEmpty()) { error("Email obligatoire"); return; }
         if (!EMAIL_RX.matcher(email).matches()) { error("Email invalide"); return; }
 
-        // Gestion de la devise
         String currency = (currencyComboBox == null) ? "TND" : currencyComboBox.getValue();
         double originalAmount;
         try {
@@ -389,6 +392,8 @@ public class SponsorFormController {
         out.setContact_email(email);
         out.setContribution_name(contributionInTND);
         out.setLogo_url(logoUrlFinal.isEmpty() ? null : logoUrlFinal);
+        out.setIndustry(industry);
+        out.setPhone(phone);
 
         out.setContract_url(editing == null ? null : editing.getContract_url());
         out.setAccess_code(editing == null ? null : editing.getAccess_code());
@@ -401,8 +406,6 @@ public class SponsorFormController {
             Sponsor saved = sponsorService.getSponsorById(out.getId());
             result = saved != null ? saved : out;
 
-            // Envoi WhatsApp si numéro fourni
-            String phone = phoneField.getText().trim();
             if (!phone.isEmpty()) {
                 new Thread(() -> {
                     boolean sent = WhatsAppService.sendConfirmation(phone, company, contributionInTND);
@@ -426,9 +429,8 @@ public class SponsorFormController {
 
     @FXML
     private void onCancel() {
-        result = null;
         if (onFormDone != null) {
-            onFormDone.run(); // Retour à la liste via le callback
+            onFormDone.run(); // Retour à la liste des sponsors
         } else {
             closeWindowIfModal();
         }
@@ -440,6 +442,26 @@ public class SponsorFormController {
             Stage stage = getStage();
             if (stage != null && stage.isShowing()) stage.close();
         } catch (Exception ignored) {}
+    }
+
+    public void preSelectEvent(com.example.pidev.model.event.Event event) {
+        if (event != null) {
+            String title = event.getTitle();
+            if (eventComboBox.getItems().contains(title)) {
+                eventComboBox.setValue(title);
+            } else {
+                // Si le titre n'est pas dans la liste (cas rare), on peut essayer de le recharger
+                try {
+                    ObservableList<String> titles = sponsorService.getAllEventTitles();
+                    if (titles.contains(title)) {
+                        eventComboBox.setItems(titles);
+                        eventComboBox.setValue(title);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     private String safe(String s) { return s == null ? "" : s.trim(); }

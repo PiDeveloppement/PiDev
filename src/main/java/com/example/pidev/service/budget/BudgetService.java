@@ -1,7 +1,7 @@
 package com.example.pidev.service.budget;
 
 import com.example.pidev.model.budget.Budget;
-import com.example.pidev.utils.MyDatabase;
+import com.example.pidev.utils.DBConnection;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -12,7 +12,7 @@ import java.util.List;
 public class BudgetService {
 
     private Connection cnx() {
-        return MyDatabase.getInstance().getConnection();
+        return DBConnection.getInstance().getConnection();
     }
 
     // ===================== ACCÈS DIRECT À LA TABLE EVENT =====================

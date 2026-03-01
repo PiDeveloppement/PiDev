@@ -6,6 +6,9 @@ import com.example.pidev.service.sponsor.SponsorService;
 import com.example.pidev.service.pdf.LocalSponsorPdfService;
 import com.example.pidev.service.search.LuceneSearchService;
 import com.example.pidev.service.translation.TranslationService;
+import com.example.pidev.service.excel.ExcelExportService;
+import com.example.pidev.service.chart.QuickChartService;
+import com.google.gson.JsonObject;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -20,6 +23,7 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.TilePane;
+import javafx.stage.FileChooser;
 
 import java.awt.Desktop;
 import java.io.File;
@@ -40,6 +44,7 @@ public class SponsorAdminController implements Initializable {
     @FXML private ComboBox<String> companyFilter;
     @FXML private ComboBox<String> eventFilter;
     @FXML private Button addSponsorBtn;
+    @FXML private Button exportExcelBtn;
 
     @FXML private ScrollPane cardsScroll;
     @FXML private TilePane cardsPane;
@@ -78,6 +83,7 @@ public class SponsorAdminController implements Initializable {
         if (companyFilter != null) companyFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
         if (eventFilter != null) eventFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
         if (addSponsorBtn != null) addSponsorBtn.setOnAction(e -> onAdd());
+        if (exportExcelBtn != null) exportExcelBtn.setOnAction(e -> handleExportExcel());
 
         if (cardsScroll != null && cardsPane != null) {
             cardsPane.setPadding(new Insets(8));
@@ -94,7 +100,6 @@ public class SponsorAdminController implements Initializable {
 
         reindexAllSponsors();
 
-        // Traduire l'interface si la langue n'est pas français
         Platform.runLater(() -> translateUI());
     }
 
@@ -137,7 +142,7 @@ public class SponsorAdminController implements Initializable {
     private void setupFiltersCombos() {
         try {
             if (companyFilter != null) {
-                companyFilter.getItems().setAll(sponsorService.getCompanyNamesAll());
+                companyFilter.getItems().setAll(sponsorService.getCompanyNamesByContactEmail(null)); // ou autre méthode
                 companyFilter.setValue(null);
             }
             if (eventFilter != null) {
@@ -213,12 +218,18 @@ public class SponsorAdminController implements Initializable {
 
     private void updateGlobalStats() {
         try {
-            if (totalSponsorsLabel != null)
-                totalSponsorsLabel.setText(String.valueOf(sponsorService.getTotalSponsors()));
-            if (totalContributionLabel != null)
-                totalContributionLabel.setText(String.format("%,.2f DT", sponsorService.getTotalContribution()));
-            if (avgContributionLabel != null)
-                avgContributionLabel.setText(String.format("%,.2f DT", sponsorService.getAverageContribution()));
+            if (totalSponsorsLabel != null) {
+                int total = sponsorService.getTotalSponsors();
+                totalSponsorsLabel.setText(String.valueOf(total));
+            }
+            if (totalContributionLabel != null) {
+                double total = sponsorService.getTotalContribution();
+                totalContributionLabel.setText(String.format("%,.2f DT", total));
+            }
+            if (avgContributionLabel != null) {
+                double avg = sponsorService.getAverageContribution();
+                avgContributionLabel.setText(String.format("%,.2f DT", avg));
+            }
         } catch (Exception e) {
             showError("Stats", e.getMessage());
         }
@@ -351,6 +362,44 @@ public class SponsorAdminController implements Initializable {
         } catch (Exception e) {
             showError("UI", "Impossible d'ouvrir détails: " + e.getMessage());
         }
+    }
+
+    private void handleExportExcel() {
+        try {
+            List<Sponsor> sponsorsToExport = new ArrayList<>(filtered);
+            if (sponsorsToExport.isEmpty()) {
+                showError("Export", "Aucun sponsor à exporter.");
+                return;
+            }
+            Map<String, Double> contributions = sponsorService.getTotalContributionByEvent();
+            JsonObject chartConfig = QuickChartService.createPieChart(
+                    "Répartition des contributions",
+                    contributions.keySet().toArray(new String[0]),
+                    contributions.values().stream().mapToDouble(Double::doubleValue).toArray()
+            );
+
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Enregistrer le fichier Excel");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Fichiers Excel", "*.xlsx"));
+            fileChooser.setInitialFileName("sponsors_export.xlsx");
+            File file = fileChooser.showSaveDialog(exportExcelBtn.getScene().getWindow());
+
+            if (file != null) {
+                ExcelExportService.exportSponsors(sponsorsToExport, chartConfig, file.getAbsolutePath());
+                showInfo("Export réussi", "Le fichier Excel a été généré avec succès.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Export", "Erreur lors de l'export : " + e.getMessage());
+        }
+    }
+
+    private void showInfo(String title, String msg) {
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setTitle(title);
+        a.setHeaderText(null);
+        a.setContentText(msg);
+        a.showAndWait();
     }
 
     private void showError(String title, String msg) {

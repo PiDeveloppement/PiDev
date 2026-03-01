@@ -1,10 +1,14 @@
 package com.example.pidev.controller.sponsor;
 
 import com.example.pidev.MainController;
+import com.example.pidev.model.event.Event;
 import com.example.pidev.model.sponsor.Sponsor;
 import com.example.pidev.service.sponsor.SponsorService;
+import com.example.pidev.service.sponsor.SponsorMatchingService;
+import com.example.pidev.service.event.EventService;
 import com.example.pidev.service.pdf.LocalSponsorPdfService;
 import com.example.pidev.service.translation.TranslationService;
+import com.example.pidev.utils.UserSession;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -17,18 +21,16 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.chart.BarChart;
-import javafx.scene.chart.CategoryAxis;
-import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.TilePane;
+import javafx.scene.layout.*;
 
 import java.awt.Desktop;
 import java.io.File;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
@@ -46,16 +48,16 @@ public class SponsorPortalController implements Initializable {
     @FXML private Label statusLabel;
     @FXML private TilePane cardsPane;
     @FXML private BarChart<String, Number> myContributionsChart;
-    @FXML private CategoryAxis xAxis;
-    @FXML private NumberAxis yAxis;
+    @FXML private ListView<Event> suggestedEventsListView;
 
-    // Labels de section pour traduction
     @FXML private Label mySponsorsSectionLabel;
     @FXML private Label myContributionSectionLabel;
     @FXML private Label myEventsSectionLabel;
 
     private final SponsorService sponsorService = new SponsorService();
     private final LocalSponsorPdfService pdfService = new LocalSponsorPdfService();
+    private final SponsorMatchingService matchingService = new SponsorMatchingService();
+    private final EventService eventService = new EventService();
 
     private final ObservableList<Sponsor> baseList = FXCollections.observableArrayList();
     private FilteredList<Sponsor> filtered;
@@ -68,6 +70,7 @@ public class SponsorPortalController implements Initializable {
 
     public void setInitialEmail(String email) {
         if (email == null || email.isBlank()) return;
+        System.out.println("setInitialEmail: " + email);
         currentEmail = email;
         if (emailAccount != null) emailAccount.setValue(email);
         setPortalEnabled(true);
@@ -76,6 +79,8 @@ public class SponsorPortalController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        System.out.println("SponsorPortalController.initialize()");
+
         if (todayLabel != null) {
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd MMM yyyy");
             todayLabel.setText(LocalDate.now().format(fmt));
@@ -84,10 +89,18 @@ public class SponsorPortalController implements Initializable {
         filtered = new FilteredList<>(baseList, s -> true);
         filtered.addListener((ListChangeListener<Sponsor>) c -> renderCards());
 
-        if (searchField != null)  searchField.textProperty().addListener((obs,o,n)-> applyPredicate());
-        if (companyFilter != null) companyFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
-        if (eventFilter != null)   eventFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
-        if (addSponsorBtn != null) addSponsorBtn.setOnAction(e -> onAdd());
+        if (searchField != null) {
+            searchField.textProperty().addListener((obs, o, n) -> applyPredicate());
+        }
+        if (companyFilter != null) {
+            companyFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
+        }
+        if (eventFilter != null) {
+            eventFilter.valueProperty().addListener((obs, o, n) -> applyPredicate());
+        }
+        if (addSponsorBtn != null) {
+            addSponsorBtn.setOnAction(e -> onAdd());
+        }
 
         if (cardsPane != null) {
             cardsPane.setPadding(new Insets(8));
@@ -97,27 +110,94 @@ public class SponsorPortalController implements Initializable {
             cardsPane.setTileAlignment(Pos.TOP_LEFT);
         }
 
-        try {
-            if (emailAccount != null) {
-                emailAccount.getItems().setAll(sponsorService.getDemoEmailsFromSponsor());
+        // Configuration de la ListView avec cellules personnalisées
+        if (suggestedEventsListView != null) {
+            suggestedEventsListView.setPlaceholder(new Label("Aucun événement recommandé pour le moment."));
+            suggestedEventsListView.setCellFactory(lv -> new ListCell<Event>() {
+                private final HBox container = new HBox(15);
+                private final VBox textContainer = new VBox(5);
+                private final Label titleLabel = new Label();
+                private final Label detailsLabel = new Label();
+                private final Button sponsorBtn = new Button("Sponsoriser");
+                private final Region spacer = new Region();
+
+                {
+                    // Style du conteneur principal
+                    container.setPadding(new Insets(10, 15, 10, 15));
+                    container.setAlignment(Pos.CENTER_LEFT);
+                    container.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 5, 0, 0, 2);");
+
+                    // Titre de l'événement
+                    titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;");
+
+                    // Détails (lieu, date)
+                    detailsLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #64748b;");
+
+                    // Bouton Sponsoriser
+                    sponsorBtn.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 6 15; -fx-cursor: hand;");
+                    sponsorBtn.setOnMouseEntered(e -> sponsorBtn.setStyle("-fx-background-color: #059669; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 6 15; -fx-cursor: hand;"));
+                    sponsorBtn.setOnMouseExited(e -> sponsorBtn.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 6 15; -fx-cursor: hand;"));
+
+                    HBox.setHgrow(spacer, Priority.ALWAYS);
+                    textContainer.getChildren().addAll(titleLabel, detailsLabel);
+                    container.getChildren().addAll(textContainer, spacer, sponsorBtn);
+                }
+
+                @Override
+                protected void updateItem(Event event, boolean empty) {
+                    super.updateItem(event, empty);
+                    if (empty || event == null) {
+                        setGraphic(null);
+                    } else {
+                        titleLabel.setText(event.getTitle());
+                        String dateStr = "";
+                        if (event.getStartDate() != null) {
+                            dateStr = event.getStartDate().toLocalDate().toString();
+                        }
+                        detailsLabel.setText(event.getLocation() + " • " + dateStr);
+                        sponsorBtn.setOnAction(e -> handleSponsorEvent(event));
+                        setGraphic(container);
+                    }
+                }
+            });
+            System.out.println("✅ ListView configurée avec cellules personnalisées.");
+        }
+
+        // Gestion du sélecteur d'email
+        if (emailAccount != null) {
+            try {
+                ObservableList<String> emails = sponsorService.getDemoEmailsFromSponsor();
+                emailAccount.setItems(emails);
                 emailAccount.valueProperty().addListener((obs, oldV, email) -> onAccountSelected(email));
+
+                String sessionEmail = UserSession.getInstance().getEmail();
+                if (sessionEmail != null && !sessionEmail.isBlank() && emails.contains(sessionEmail)) {
+                    emailAccount.setValue(sessionEmail);
+                    onAccountSelected(sessionEmail);
+                } else if (!emails.isEmpty()) {
+                    String first = emails.get(0);
+                    emailAccount.setValue(first);
+                    onAccountSelected(first);
+                } else {
+                    showError("Aucun email", "Aucun sponsor trouvé en base. Veuillez en créer un.");
+                }
+            } catch (Exception e) {
+                showError("DB", "Impossible de charger les emails : " + e.getMessage());
             }
-        } catch (Exception e) {
-            showError("DB", "Impossible de charger emails (demo): " + e.getMessage());
+        } else {
+            String sessionEmail = UserSession.getInstance().getEmail();
+            if (sessionEmail != null && !sessionEmail.isBlank()) {
+                setInitialEmail(sessionEmail);
+            } else {
+                showError("Session", "Aucun utilisateur connecté et aucun sélecteur d'email.");
+            }
         }
 
         setPortalEnabled(false);
         clearPortal();
         renderCards();
 
-        String remembered = MainController.getInstance().getLastSponsorPortalEmail();
-        if (remembered != null && !remembered.isBlank() && emailAccount != null) {
-            emailAccount.setValue(remembered);
-            onAccountSelected(remembered);
-        }
-
-        // Traduire l'interface si besoin
-        Platform.runLater(() -> translateUI());
+        Platform.runLater(this::translateUI);
     }
 
     private void translateUI() {
@@ -139,6 +219,7 @@ public class SponsorPortalController implements Initializable {
     }
 
     private void onAccountSelected(String email) {
+        System.out.println("onAccountSelected: " + email);
         currentEmail = email;
         MainController.getInstance().setLastSponsorPortalEmail(currentEmail);
         if (currentEmail == null || currentEmail.isBlank()) {
@@ -168,19 +249,60 @@ public class SponsorPortalController implements Initializable {
         if (companyFilter != null) companyFilter.getItems().clear();
         if (eventFilter != null) eventFilter.getItems().clear();
         myContributionsChart.setData(FXCollections.observableArrayList());
+        if (suggestedEventsListView != null) suggestedEventsListView.getItems().clear();
     }
 
     private void reloadMine() {
+        System.out.println("reloadMine() avec email: " + currentEmail);
         try {
             baseList.setAll(sponsorService.getSponsorsByContactEmail(currentEmail));
+            System.out.println("Nombre de sponsors trouvés: " + baseList.size());
             updateMyKpis();
             refreshFilterCombos();
             applyPredicate();
             if (statusLabel != null) statusLabel.setText("📊 " + filtered.size() + " sponsor(s)");
             initMyChart();
+            loadSuggestedEvents();
         } catch (Exception e) {
             showError("DB", e.getMessage());
+            e.printStackTrace();
         }
+    }
+
+    private void loadSuggestedEvents() {
+        System.out.println("loadSuggestedEvents()");
+        if (currentEmail == null || currentEmail.isBlank()) return;
+
+        List<Sponsor> sponsors = null;
+        try {
+            sponsors = sponsorService.getSponsorsByContactEmail(currentEmail);
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la récupération des sponsors: " + e.getMessage());
+            return;
+        }
+
+        if (sponsors == null || sponsors.isEmpty()) {
+            System.out.println("Aucun sponsor trouvé pour cet email.");
+            return;
+        }
+
+        Sponsor sponsor = sponsors.get(0);
+        String industry = sponsor.getIndustry();
+        System.out.println("Secteur du sponsor: " + industry);
+
+        if (industry == null || industry.isBlank()) {
+            System.out.println("Secteur vide, pas de recommandations.");
+            suggestedEventsListView.getItems().clear();
+            return;
+        }
+
+        List<Event> events = matchingService.findRelevantEvents(industry);
+        System.out.println("Événements recommandés trouvés: " + events.size());
+
+        Platform.runLater(() -> {
+            suggestedEventsListView.getItems().setAll(events);
+            suggestedEventsListView.refresh();
+        });
     }
 
     private void updateMyKpis() {
@@ -343,12 +465,19 @@ public class SponsorPortalController implements Initializable {
     }
 
     private void openFormAsPage(Sponsor existing, String fixedEmail) {
+        openFormAsPage(existing, fixedEmail, null);
+    }
+
+    private void openFormAsPage(Sponsor existing, String fixedEmail, Event eventToSelect) {
         MainController.getInstance().loadIntoCenter(
                 FORM_FXML,
                 (SponsorFormController ctrl) -> {
                     ctrl.setFixedEmail(fixedEmail);
                     if (existing == null) ctrl.setModeAdd();
                     else ctrl.setModeEdit(existing);
+                    if (eventToSelect != null) {
+                        ctrl.preSelectEvent(eventToSelect);
+                    }
                     ctrl.setOnSaved(saved -> {
                         reloadMine();
                         openDetailsAsPage(saved);
@@ -359,6 +488,14 @@ public class SponsorPortalController implements Initializable {
                     });
                 }
         );
+    }
+
+    private void handleSponsorEvent(Event event) {
+        if (currentEmail == null || currentEmail.isBlank()) {
+            showError("Accès", "Veuillez sélectionner un compte sponsor.");
+            return;
+        }
+        openFormAsPage(null, currentEmail, event);
     }
 
     private void openDetailsAsPage(Sponsor sponsor) {

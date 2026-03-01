@@ -1,7 +1,7 @@
 package com.example.pidev.service.depense;
 
 import com.example.pidev.model.depense.Depense;
-import com.example.pidev.utils.MyDatabase;
+import com.example.pidev.utils.DBConnection;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -13,7 +13,7 @@ import java.util.Map;
 public class DepenseService {
 
     private Connection cnx() {
-        return MyDatabase.getInstance().getConnection();
+        return DBConnection.getInstance().getConnection();
     }
 
     public boolean budgetExists(int budgetId) {

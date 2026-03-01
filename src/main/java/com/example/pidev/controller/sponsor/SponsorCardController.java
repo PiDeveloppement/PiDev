@@ -32,7 +32,12 @@ public class SponsorCardController {
         if (contributionLabel != null) contributionLabel.setText(String.format("%,.2f DT", s.getContribution_name()));
 
         if (eventLabel != null) {
-            String title = sponsorService.getEventTitleById(s.getEvent_id());
+            String title = null;
+            try {
+                title = sponsorService.getEventTitleById(s.getEvent_id());
+            } catch (Exception e) {
+                // log
+            }
             if (title == null || title.isBlank()) title = "—";
             eventLabel.setText(title);
         }

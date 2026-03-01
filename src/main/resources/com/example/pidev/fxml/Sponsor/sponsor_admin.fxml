@@ -1,114 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.chart.PieChart?>
 
-<BorderPane prefHeight="900" prefWidth="1600" stylesheets="@../../css/design-system.css"
-            style="-fx-background-color: #f1f5f9;"
-            xmlns="http://javafx.com/javafx/17"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.pidev.controller.sponsor.SponsorAdminController">
+<BorderPane prefHeight="900" prefWidth="1600" style="-fx-background-color: #f1f5f9;" stylesheets="@../../css/design-system.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.pidev.controller.sponsor.SponsorAdminController">
 
     <center>
-        <ScrollPane fitToWidth="true" fitToHeight="false"
-                    hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
-                    style="-fx-background-color: transparent; -fx-border-color: transparent;">
+        <ScrollPane fitToHeight="false" fitToWidth="true" hbarPolicy="NEVER" style="-fx-background-color: transparent; -fx-border-color: transparent;" vbarPolicy="AS_NEEDED">
             <VBox spacing="0">
-
-                <!-- HEADER -->
-                <HBox alignment="CENTER_LEFT" spacing="20"
-                      style="-fx-background-color: white; -fx-padding: 28 35; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 2 0; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2);">
-
-                    <VBox spacing="4">
-                        <Label text="💼 Gestion des Sponsors" styleClass="label-title"/>
-                        <Label text="Administration complète des sponsors et leurs contributions" styleClass="label-description"/>
-                    </VBox>
-
-                    <Region HBox.hgrow="ALWAYS"/>
-
-                    <VBox spacing="2" alignment="CENTER_RIGHT">
-                        <Label text="📊 Résumé" style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;"/>
-                        <Label text="—" style="-fx-text-fill: #1e293b; -fx-font-size: 13px; -fx-font-weight: bold;"/>
-                    </VBox>
-                </HBox>
 
                 <!-- STATS (3 cards) -->
                 <HBox spacing="14" style="-fx-padding: 24 35; -fx-background-color: #f1f5f9; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
 
-                    <VBox styleClass="stat-card stat-card-purple" HBox.hgrow="ALWAYS" spacing="10">
-                        <HBox spacing="12" alignment="CENTER_LEFT">
-                            <Label text="💼" style="-fx-font-size: 32px;"/>
+                    <VBox spacing="10" styleClass="stat-card stat-card-purple" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <Label style="-fx-font-size: 32px;" text="💼" />
                             <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                <Label fx:id="totalSponsorsSectionLabel" text="Sponsors Total" styleClass="label-section"/>
-                                <Label fx:id="totalSponsorsLabel" text="0" styleClass="label-value" style="-fx-text-fill: #7c3aed;"/>
+                                <Label fx:id="totalSponsorsSectionLabel" styleClass="label-section" text="Sponsors Total" />
+                                <Label fx:id="totalSponsorsLabel" style="-fx-text-fill: #7c3aed;" styleClass="label-value" text="0" />
                             </VBox>
                         </HBox>
-                        <Label text="✓ Actifs" style="-fx-text-fill: #a855f7; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+                        <Label style="-fx-text-fill: #a855f7; -fx-font-size: 12px; -fx-font-weight: bold;" text="✓ Actifs" />
                     </VBox>
 
-                    <VBox styleClass="stat-card stat-card-emerald" HBox.hgrow="ALWAYS" spacing="10">
-                        <HBox spacing="12" alignment="CENTER_LEFT">
-                            <Label text="💎" style="-fx-font-size: 32px;"/>
+                    <VBox spacing="10" styleClass="stat-card stat-card-emerald" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <Label style="-fx-font-size: 32px;" text="💎" />
                             <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                <Label fx:id="totalContributionSectionLabel" text="Contribution Totale" styleClass="label-section"/>
-                                <Label fx:id="totalContributionLabel" text="0,00 DT" styleClass="label-value" style="-fx-text-fill: #15803d;"/>
+                                <Label fx:id="totalContributionSectionLabel" styleClass="label-section" text="Contribution Totale" />
+                                <Label fx:id="totalContributionLabel" style="-fx-text-fill: #15803d;" styleClass="label-value" text="0,00 DT" />
                             </VBox>
                         </HBox>
-                        <Label text="💰 Engagée" style="-fx-text-fill: #059669; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+                        <Label style="-fx-text-fill: #059669; -fx-font-size: 12px; -fx-font-weight: bold;" text="💰 Engagée" />
                     </VBox>
 
-                    <VBox styleClass="stat-card stat-card-blue" HBox.hgrow="ALWAYS" spacing="10">
-                        <HBox spacing="12" alignment="CENTER_LEFT">
-                            <Label text="📊" style="-fx-font-size: 32px;"/>
+                    <VBox spacing="10" styleClass="stat-card stat-card-blue" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <Label style="-fx-font-size: 32px;" text="📊" />
                             <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                <Label fx:id="avgContributionSectionLabel" text="Moyenne/Sponsor" styleClass="label-section"/>
-                                <Label fx:id="avgContributionLabel" text="0,00 DT" styleClass="label-value" style="-fx-text-fill: #1e40af;"/>
+                                <Label fx:id="avgContributionSectionLabel" styleClass="label-section" text="Moyenne/Sponsor" />
+                                <Label fx:id="avgContributionLabel" style="-fx-text-fill: #1e40af;" styleClass="label-value" text="0,00 DT" />
                             </VBox>
                         </HBox>
-                        <Label text="📈 Performance" style="-fx-text-fill: #2563eb; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+                        <Label style="-fx-text-fill: #2563eb; -fx-font-size: 12px; -fx-font-weight: bold;" text="📈 Performance" />
                     </VBox>
                 </HBox>
 
                 <!-- Graphique circulaire -->
                 <HBox alignment="CENTER" style="-fx-padding: 20 35;">
-                    <PieChart fx:id="contributionsChart" prefWidth="800" prefHeight="450"
-                              title="Répartition des contributions par événement"
-                              labelsVisible="true" legendVisible="true"
-                              style="-fx-font-size: 14px;"/>
+                    <PieChart fx:id="contributionsChart" labelsVisible="true" legendVisible="true" prefHeight="450" prefWidth="800" style="-fx-font-size: 14px;" title="Répartition des contributions par événement" />
                 </HBox>
 
                 <!-- FILTRES -->
-                <HBox alignment="CENTER_LEFT" spacing="14"
-                      style="-fx-padding: 20 35; -fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+                <HBox alignment="CENTER_LEFT" spacing="14" style="-fx-padding: 20 35; -fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
 
-                    <TextField fx:id="searchField" promptText="🔍 Rechercher sponsor..."
-                               prefWidth="250" styleClass="text-field"/>
+                    <TextField fx:id="searchField" prefWidth="250" promptText="🔍 Rechercher sponsor..." styleClass="text-field" />
 
-                    <ComboBox fx:id="companyFilter" promptText="🏢 Entreprise"
-                              prefWidth="220" styleClass="text-field"/>
+                    <ComboBox fx:id="companyFilter" prefWidth="220" promptText="🏢 Entreprise" styleClass="text-field" />
 
-                    <ComboBox fx:id="eventFilter" promptText="📅 Événement"
-                              prefWidth="220" styleClass="text-field"/>
+                    <ComboBox fx:id="eventFilter" prefWidth="220" promptText="📅 Événement" styleClass="text-field" />
 
-                    <Region HBox.hgrow="ALWAYS"/>
+                    <Region HBox.hgrow="ALWAYS" />
 
-                    <Button fx:id="exportExcelBtn" text="📥 Exporter Excel"
-                            styleClass="btn-primary" minHeight="40" minWidth="160"/>
-                    <Button fx:id="addSponsorBtn" text="➕ Nouveau Sponsor"
-                            styleClass="btn-success" minHeight="40" minWidth="180"/>
+                    <Button fx:id="exportExcelBtn" minHeight="40" minWidth="160" styleClass="btn-primary" text="📥 Exporter Excel" />
+                    <Button fx:id="addSponsorBtn" minHeight="40" minWidth="180" styleClass="btn-success" text="➕ Nouveau Sponsor" />
                 </HBox>
 
                 <!-- LISTE -->
                 <VBox spacing="20" style="-fx-padding: 28 35;" VBox.vgrow="ALWAYS">
-                    <Label text="📋 Sponsors Enregistrés" styleClass="label-subtitle"/>
+                    <Label styleClass="label-subtitle" text="📋 Sponsors Enregistrés" />
 
-                    <ScrollPane fx:id="cardsScroll" fitToWidth="true"
-                                style="-fx-background-color: transparent; -fx-border-color: transparent;">
-                        <TilePane fx:id="cardsPane" prefColumns="3" hgap="16" vgap="16" style="-fx-padding: 10;"/>
+                    <ScrollPane fx:id="cardsScroll" fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;">
+                        <TilePane fx:id="cardsPane" hgap="16" prefColumns="3" style="-fx-padding: 10;" vgap="16" />
                     </ScrollPane>
 
-                    <Label fx:id="statusLabel" text="..." styleClass="label-description"/>
+                    <Label fx:id="statusLabel" styleClass="label-description" text="..." />
                 </VBox>
 
             </VBox>

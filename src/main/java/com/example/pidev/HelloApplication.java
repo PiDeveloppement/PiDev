@@ -12,27 +12,61 @@ import java.util.Objects;
 
 public class HelloApplication extends Application {
 
+    private static Stage primaryStage;
+
+    public static Stage getPrimaryStage() {
+        return primaryStage;
+    }
+
     @Override
     public void start(Stage stage) throws Exception {
+        primaryStage = stage;
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
 
+        // Charger directement le dashboard (pas de login)
         URL fxml = getClass().getResource("/com/example/pidev/fxml/MainLayout.fxml");
-        System.out.println("FXML URL = " + fxml);
-
-        FXMLLoader loader = new FXMLLoader(fxml);
-        Parent root = loader.load();
-
+        if (fxml == null) {
+            System.err.println("❌ FXML MainLayout.fxml introuvable !");
+            return;
+        }
+        Parent root = FXMLLoader.load(fxml);
         Scene scene = new Scene(root, 1200, 800);
         scene.getStylesheets().add(
-                Objects.requireNonNull(getClass().getResource("/com/example/pidev/css/atlantafx-custom.css"))
-                        .toExternalForm()
+                Objects.requireNonNull(getClass().getResource("/com/example/pidev/css/atlantafx-custom.css")).toExternalForm()
         );
-
-        stage.setTitle("EventFlow");
+        stage.setTitle("EventFlow - Dashboard");
         stage.setScene(scene);
         stage.setMinWidth(1000);
         stage.setMinHeight(700);
         stage.show();
+    }
+
+    // Méthodes de navigation (pour les redirections depuis les contrôleurs)
+    public static void loadLoginPage() {
+        loadPage("/com/example/pidev/fxml/auth/login.fxml");
+    }
+
+    public static void loadSignupPage() {
+        loadPage("/com/example/pidev/fxml/auth/signup.fxml");
+    }
+
+    public static void loadLandingPage() {
+        loadPage("/com/example/pidev/fxml/auth/landingPage.fxml");
+    }
+
+    public static void loadDashboard() {
+        loadPage("/com/example/pidev/fxml/MainLayout.fxml");
+    }
+
+    private static void loadPage(String fxmlPath) {
+        try {
+            FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource(fxmlPath));
+            Parent root = loader.load();
+            primaryStage.getScene().setRoot(root);
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors du chargement de " + fxmlPath + " : " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {

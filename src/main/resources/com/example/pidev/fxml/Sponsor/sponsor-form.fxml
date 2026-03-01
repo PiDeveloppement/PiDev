@@ -45,17 +45,20 @@
                     <Label text="📧 Email contact" style="-fx-font-weight: 700; -fx-text-fill: #334155;" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
                     <TextField fx:id="emailField" promptText="ex: sponsor@gmail.com" style="-fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 10 15; -fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-width: 1.5;" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
-                    <!-- Téléphone (WhatsApp) -->
+                    <!-- Téléphone -->
                     <Label text="📞 Téléphone (WhatsApp)" style="-fx-font-weight: 700; -fx-text-fill: #334155;" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
                     <TextField fx:id="phoneField" promptText="216XXXXXXXX" style="-fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 10 15; -fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-width: 1.5;" maxWidth="Infinity" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
 
+                    <!-- Secteur -->
+                    <Label text="🏭 Secteur" style="-fx-font-weight: 700; -fx-text-fill: #334155;" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                    <TextField fx:id="industryField" promptText="ex: Technologie, Marketing" style="-fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 10 15; -fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-width: 1.5;" maxWidth="Infinity" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
                     <!-- Séparateur -->
-                    <Separator GridPane.rowIndex="4" GridPane.columnSpan="2" style="-fx-padding: 10 0;"/>
+                    <Separator GridPane.rowIndex="5" GridPane.columnSpan="2" style="-fx-padding: 10 0;"/>
 
                     <!-- Logo -->
-                    <Label text="🖼️ Logo" style="-fx-font-weight: 700; -fx-text-fill: #334155;" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
-
-                    <VBox spacing="12" GridPane.rowIndex="5" GridPane.columnIndex="1">
+                    <Label text="🖼️ Logo" style="-fx-font-weight: 700; -fx-text-fill: #334155;" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                    <VBox spacing="12" GridPane.rowIndex="6" GridPane.columnIndex="1">
                         <HBox spacing="10" alignment="CENTER_LEFT">
                             <Button text="Choisir Logo" onAction="#onChooseLogo"
                                     style="-fx-background-color: #eff6ff; -fx-text-fill: #1d4ed8;
@@ -72,9 +75,9 @@
                                    style="-fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 10 15; -fx-background-color: #f1f5f9; -fx-border-color: #cbd5e1; -fx-border-width: 1.5;"/>
                     </VBox>
 
-                    <!-- Bouton d'analyse -->
-                    <Label text="🤖 IA Logo" style="-fx-font-weight: 700; -fx-text-fill: #334155;" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
-                    <VBox spacing="8" GridPane.rowIndex="6" GridPane.columnIndex="1">
+                    <!-- Analyse IA -->
+                    <Label text="🤖 IA Logo" style="-fx-font-weight: 700; -fx-text-fill: #334155;" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+                    <VBox spacing="8" GridPane.rowIndex="7" GridPane.columnIndex="1">
                         <Button fx:id="analyzeLogoBtn" text="🔍 Analyser le logo"
                                 style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 800; -fx-background-radius: 12; -fx-padding: 10 18; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.2), 5, 0, 0, 2);"/>
                         <TextArea fx:id="visionResultArea" prefRowCount="3" editable="false" wrapText="true"
@@ -82,16 +85,16 @@
                     </VBox>
 
                     <!-- Contribution -->
-                    <Label text="💰 Contribution" style="-fx-font-weight: 700; -fx-text-fill: #334155;" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
-                    <HBox spacing="10" GridPane.rowIndex="7" GridPane.columnIndex="1">
+                    <Label text="💰 Contribution" style="-fx-font-weight: 700; -fx-text-fill: #334155;" GridPane.rowIndex="8" GridPane.columnIndex="0"/>
+                    <HBox spacing="10" GridPane.rowIndex="8" GridPane.columnIndex="1">
                         <TextField fx:id="contributionField" promptText="ex: 3500" HBox.hgrow="ALWAYS"
                                    style="-fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 10 15; -fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-width: 1.5;"/>
                         <ComboBox fx:id="currencyComboBox" prefWidth="120" style="-fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 10 12; -fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-width: 1.5;"/>
                     </HBox>
 
-                    <!-- Résultat conversion -->
-                    <Label text="💱 En TND" style="-fx-font-weight: 700; -fx-text-fill: #334155;" GridPane.rowIndex="8" GridPane.columnIndex="0"/>
-                    <HBox alignment="CENTER_LEFT" GridPane.rowIndex="8" GridPane.columnIndex="1">
+                    <!-- Conversion -->
+                    <Label text="💱 En TND" style="-fx-font-weight: 700; -fx-text-fill: #334155;" GridPane.rowIndex="9" GridPane.columnIndex="0"/>
+                    <HBox alignment="CENTER_LEFT" GridPane.rowIndex="9" GridPane.columnIndex="1">
                         <Label fx:id="convertedAmountLabel" style="-fx-text-fill: #059669; -fx-font-weight: 800; -fx-font-size: 16px; -fx-background-color: #d1fae5; -fx-background-radius: 12; -fx-padding: 12 20; -fx-border-color: #a7f3d0; -fx-border-width: 1.5; -fx-border-radius: 12; -fx-min-width: 200;"/>
                     </HBox>
                 </GridPane>
