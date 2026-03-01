@@ -16,9 +16,13 @@ module com.example.pidev {
     requires jakarta.persistence;          // ← AJOUT ARIJ
     requires java.prefs;                   // ← AJOUT ARIJ
 
+    // Serveur HTTP pour validation des billets
+    requires jdk.httpserver;               // ← AJOUT VALIDATION
+
     // iText PDF
     requires kernel;
     requires layout;
+    requires io;                           // ← AJOUT PDF
 
     // ========== EXPORTS ==========
 

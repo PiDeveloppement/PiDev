@@ -89,12 +89,6 @@
                                     <Text text="🎫" style="-fx-font-size: 14px; -fx-fill: white;"/>
                                 </graphic>
                             </Button>
-                            <Button fx:id="ticketValidationBtn" text="    Validation" maxWidth="180" prefHeight="35"
-                                    styleClass="submenu-button">
-                                <graphic>
-                                    <Text text="✅" style="-fx-font-size: 14px; -fx-fill: white;"/>
-                                </graphic>
-                            </Button>
                         </VBox>
                     </VBox>
 

@@ -120,8 +120,6 @@ public class MainController {
     @FXML
     private Button ticketsBtn;
     @FXML
-    private Button ticketValidationBtn;
-    @FXML
     private Text eventsArrow;
 
     // Sous-menus Participants
@@ -579,13 +577,6 @@ public class MainController {
             });
         }
 
-        if (ticketValidationBtn != null) {
-            ticketValidationBtn.setOnAction(e -> {
-                collapseAllSubmenus();
-                setActiveButton(ticketValidationBtn);
-                showTicketValidation();
-            });
-        }
 
         if (rolesBtn != null) {
             rolesBtn.setOnAction(e -> {
@@ -1762,28 +1753,6 @@ public class MainController {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void showTicketValidation() {
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/pidev/fxml/event/ticket-validation.fxml")
-            );
-            Parent page = loader.load();
-
-            pageTitle.setText("Validation d'entrée");
-            pageSubtitle.setText("Vérifiez et validez les billets à l'entrée");
-
-            showTicketKPIs();
-
-            pageContentContainer.getChildren().setAll(page);
-
-            System.out.println("✅ Page validation chargée");
-
-        } catch (Exception e) {
-            System.err.println("❌ Erreur chargement page validation: " + e.getMessage());
             e.printStackTrace();
         }
     }

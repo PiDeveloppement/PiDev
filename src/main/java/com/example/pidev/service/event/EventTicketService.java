@@ -83,9 +83,20 @@ public class EventTicketService {
     }
 
     private String buildQrUrl(String ticketCode) {
-        String encoded = URLEncoder.encode(ticketCode, StandardCharsets.UTF_8);
-        // QuickChart QR API (image directe)
-        return "https://quickchart.io/qr?text=" + encoded + "&size=200";
+        try {
+            // URL qui ouvrira le PDF du billet quand scanné
+            String pdfUrl = "http://localhost:8080/ticket/" +
+                          URLEncoder.encode(ticketCode, StandardCharsets.UTF_8) + "/pdf";
+
+            // Encoder l'URL dans le QR
+            String encodedUrl = URLEncoder.encode(pdfUrl, StandardCharsets.UTF_8);
+
+            // QuickChart génère le QR contenant l'URL du PDF
+            return "https://quickchart.io/qr?text=" + encodedUrl + "&size=200&margin=2";
+        } catch (Exception e) {
+            System.err.println("❌ Erreur génération QR URL: " + e.getMessage());
+            return null;
+        }
     }
 
     // ==================== READ ====================

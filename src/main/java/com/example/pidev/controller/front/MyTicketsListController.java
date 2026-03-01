@@ -162,12 +162,12 @@ public class MyTicketsListController {
                 "-fx-text-fill: #0D47A1; -fx-background-radius: 6; -fx-font-weight: bold; -fx-cursor: hand;");
         viewBtn.setOnAction(e -> showTicketDetail(ticket));
 
-        Button printBtn = new Button("Imprimer");
-        printBtn.setStyle("-fx-padding: 10 18; -fx-font-size: 12px; -fx-background-color: #f3f4f6; " +
-                "-fx-text-fill: #475569; -fx-background-radius: 6; -fx-font-weight: bold; -fx-cursor: hand;");
-        printBtn.setOnAction(e -> printTicket(ticket));
+        Button pdfBtn = new Button("📥 Télécharger PDF");
+        pdfBtn.setStyle("-fx-padding: 10 18; -fx-font-size: 12px; -fx-background-color: #10b981; " +
+                "-fx-text-fill: white; -fx-background-radius: 6; -fx-font-weight: bold; -fx-cursor: hand;");
+        pdfBtn.setOnAction(e -> downloadTicketPDF(ticket));
 
-        buttonsBox.getChildren().addAll(viewBtn, printBtn);
+        buttonsBox.getChildren().addAll(viewBtn, pdfBtn);
 
         infoContainer.getChildren().addAll(codeBox, eventBox, dateBox, statusBox, buttonsBox);
 
@@ -175,12 +175,54 @@ public class MyTicketsListController {
         return card;
     }
 
-    private void printTicket(EventTicket ticket) {
-        System.out.println("🖨️ Impression du billet : " + ticket.getTicketCode());
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Impression");
-        alert.setHeaderText("Billet prêt à imprimer");
-        alert.setContentText("Billet : " + ticket.getTicketCode() + "\n\nFonctionnalité d'impression en développement...");
+    private void downloadTicketPDF(EventTicket ticket) {
+        System.out.println("📥 Génération du PDF pour : " + ticket.getTicketCode());
+
+        try {
+            // Récupérer l'événement
+            com.example.pidev.service.event.EventService eventService = new com.example.pidev.service.event.EventService();
+            com.example.pidev.model.event.Event event = eventService.getEventById(ticket.getEventId());
+
+            if (event == null) {
+                showAlert("Erreur", "Événement introuvable", Alert.AlertType.ERROR);
+                return;
+            }
+
+            // Récupérer le nom du participant
+            com.example.pidev.utils.UserSession session = com.example.pidev.utils.UserSession.getInstance();
+            String userName = session.getFullName();
+
+            // Générer le PDF
+            String pdfPath = com.example.pidev.utils.TicketPDFGenerator.generateTicketPDF(ticket, event, userName);
+
+            if (pdfPath != null) {
+                // Ouvrir le PDF
+                com.example.pidev.utils.TicketPDFGenerator.openPDF(pdfPath);
+
+                // Afficher un message de succès
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("PDF Généré");
+                alert.setHeaderText("✅ Votre billet est prêt !");
+                alert.setContentText("Le PDF a été généré et ouvert.\n\n" +
+                                   "Scannez le QR code du PDF avec votre téléphone pour l'ouvrir.\n" +
+                                   "Présentez ce PDF le jour de l'événement.");
+                alert.showAndWait();
+            } else {
+                showAlert("Erreur", "Impossible de générer le PDF", Alert.AlertType.ERROR);
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ Erreur génération PDF: " + e.getMessage());
+            e.printStackTrace();
+            showAlert("Erreur", "Une erreur est survenue lors de la génération du PDF", Alert.AlertType.ERROR);
+        }
+    }
+
+    private void showAlert(String title, String content, Alert.AlertType type) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
         alert.showAndWait();
     }
 
