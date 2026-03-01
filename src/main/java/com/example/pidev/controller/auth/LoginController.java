@@ -40,6 +40,9 @@ public class LoginController implements Initializable {
     @FXML
     private Button cancelButton;
 
+    @FXML
+    private Hyperlink forgotPasswordLink;
+
     private UserService userService;
     private Preferences preferences;
 
@@ -54,7 +57,7 @@ public class LoginController implements Initializable {
             // Charger les identifiants sauvegardés
             loadSavedCredentials();
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             showAlert("Erreur", "Erreur de connexion à la base de données");
             e.printStackTrace();
         }
@@ -104,21 +107,8 @@ public class LoginController implements Initializable {
                 // Afficher les infos de session
                 UserSession.getInstance().printSessionInfo();
 
-                // Vérifier s'il y a un événement en attente de participation
-                handlePendingEventParticipation();
-
-                // Redirection: pendingEvent -> vitrine, sinon selon rôle
-                if (UserSession.getInstance().hasPendingEvent()) {
-                    HelloApplication.loadPublicEventsPage();
-                } else {
-                    String roleName = user.getRoleName() != null ? user.getRoleName().trim().toLowerCase() : "";
-                    boolean isOrganizer = user.getRole_Id() == 2 || roleName.equals("organisateur");
-                    if (isOrganizer) {
-                        HelloApplication.loadDashboard();
-                    } else {
-                        HelloApplication.loadPublicEventsPage();
-                    }
-                }
+                // Charger le dashboard
+                HelloApplication.loadDashboard();
 
             } else {
                 // Échec de connexion
@@ -131,6 +121,50 @@ public class LoginController implements Initializable {
         } catch (Exception e) {
             e.printStackTrace();
             showMessage("Erreur de connexion: " + e.getMessage(), "error");
+        }
+    }
+
+    /**
+     * ✅ Méthode pour mot de passe oublié - CORRIGÉE
+     */
+    @FXML
+    private void handleForgotPassword(ActionEvent event) {
+        try {
+            System.out.println("🔑 Redirection vers la page mot de passe oublié");
+
+            // Vérifier plusieurs chemins possibles
+            URL fxmlLocation = null;
+            String[] possiblePaths = {
+                    "/com/example/pidev/fxml/user/forgot_password.fxml",
+                    "/fxml/auth/forgot_password.fxml",
+                    "/auth/forgot_password.fxml",
+                    "../fxml/auth/forgot_password.fxml"
+            };
+
+            for (String path : possiblePaths) {
+                fxmlLocation = getClass().getResource(path);
+                if (fxmlLocation != null) {
+                    System.out.println("✅ FXML trouvé à: " + path);
+                    break;
+                }
+            }
+
+            if (fxmlLocation == null) {
+                System.err.println("❌ FXML forgot_password.fxml introuvable!");
+                showAlert("Erreur", "Fichier de récupération de mot de passe introuvable");
+                return;
+            }
+
+            Parent root = FXMLLoader.load(fxmlLocation);
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle("Mot de passe oublié - EventFlow");
+            stage.show();
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur lors de la redirection: " + e.getMessage());
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible d'ouvrir la page de récupération de mot de passe");
         }
     }
 
@@ -183,10 +217,19 @@ public class LoginController implements Initializable {
     private void goToSignup(ActionEvent event) {
         try {
             System.out.println("📝 Redirection vers la page d'inscription");
-            Parent root = FXMLLoader.load(getClass().getResource("/com/example/pidev/fxml/auth/signup.fxml"));
+
+            URL fxmlLocation = getClass().getResource("/com/example/pidev/fxml/auth/signup.fxml");
+            if (fxmlLocation == null) {
+                System.err.println("❌ FXML signup.fxml introuvable!");
+                showAlert("Erreur", "Fichier d'inscription introuvable");
+                return;
+            }
+
+            Parent root = FXMLLoader.load(fxmlLocation);
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.show();
+
         } catch (IOException e) {
             System.err.println("❌ Erreur lors de la redirection vers l'inscription");
             e.printStackTrace();
@@ -225,92 +268,6 @@ public class LoginController implements Initializable {
     }
 
     /**
-     * Gère la participation différée à un événement après connexion
-     */
-    private void handlePendingEventParticipation() {
-        UserSession session = UserSession.getInstance();
-
-        // Vérifier s'il y a un événement en attente
-        if (!session.hasPendingEvent()) {
-            return;
-        }
-
-        Integer eventId = session.getPendingEventId();
-        System.out.println("🎫 Traitement de la participation différée pour l'événement: " + eventId);
-
-        try {
-            // Créer le ticket service
-            com.example.pidev.service.event.EventTicketService ticketService =
-                new com.example.pidev.service.event.EventTicketService();
-
-            // Récupérer l'event service pour obtenir le nom de l'événement
-            com.example.pidev.service.event.EventService eventService =
-                new com.example.pidev.service.event.EventService();
-
-            com.example.pidev.model.event.Event event = eventService.getEventById(eventId);
-
-            if (event == null) {
-                System.err.println("❌ Événement non trouvé: " + eventId);
-                session.clearPendingEventId();
-                return;
-            }
-
-            int userId = session.getCurrentUser().getId_User();
-
-            // Créer le ticket dans la base de données
-            com.example.pidev.model.event.EventTicket ticket = ticketService.createTicket(eventId, userId);
-
-            if (ticket != null) {
-                // Succès : afficher le ticket généré
-                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
-                    javafx.scene.control.Alert.AlertType.INFORMATION
-                );
-                alert.setTitle("✅ Participation confirmée");
-                alert.setHeaderText("Bienvenue ! Votre participation est enregistrée");
-                alert.setContentText(
-                    "Vous participez à l'événement :\n" +
-                    event.getTitle() + "\n\n" +
-                    "Votre ticket : " + ticket.getTicketCode() + "\n\n" +
-                    "Un email de confirmation vous sera envoyé.\n" +
-                    "Conservez votre code de ticket pour accéder à l'événement."
-                );
-
-                // Style personnalisé
-                alert.getDialogPane().setStyle(
-                    "-fx-background-color: white; " +
-                    "-fx-font-size: 14px;"
-                );
-
-                alert.showAndWait();
-
-                System.out.println("✅ Ticket créé avec succès après connexion: " + ticket.getTicketCode());
-
-            } else {
-                // Erreur de création
-                System.err.println("❌ Échec de la création du ticket différé");
-
-                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
-                    javafx.scene.control.Alert.AlertType.WARNING
-                );
-                alert.setTitle("Participation incomplète");
-                alert.setHeaderText("Impossible de créer votre ticket");
-                alert.setContentText(
-                    "Votre connexion a réussi, mais nous n'avons pas pu créer votre ticket.\n\n" +
-                    "Veuillez réessayer de participer à l'événement depuis la page des événements."
-                );
-                alert.showAndWait();
-            }
-
-        } catch (Exception e) {
-            System.err.println("❌ Erreur lors de la participation différée: " + e.getMessage());
-            e.printStackTrace();
-        } finally {
-            // Toujours nettoyer le pendingEventId
-            session.clearPendingEventId();
-        }
-    }
-
-    /**
      * Affiche une boîte de dialogue d'alerte
      */
     private void showAlert(String title, String message) {
@@ -321,10 +278,8 @@ public class LoginController implements Initializable {
         alert.showAndWait();
     }
 
-    // Dans SignupController.java et LoginController.java
     @FXML
     private void goToLanding(ActionEvent event) {
         HelloApplication.loadLandingPage();
     }
 }
-

@@ -42,7 +42,7 @@ public class SignupController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         try {
             userService = new UserService();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

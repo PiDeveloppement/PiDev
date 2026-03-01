@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefHeight="650.0" prefWidth="550.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.pidev.controller.questionnaire.ResultatController">
+    <children>
+        <VBox layoutX="20.0" layoutY="20.0" prefWidth="510.0" spacing="15.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">
+            <children>
+                <Label text="VOS RÉSULTATS" style="-fx-font-weight: bold; -fx-font-size: 22; -fx-text-fill: #2c3e50;"/>
+
+                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: white;">
+                    <content>
+                        <VBox fx:id="vboxCorrection" spacing="10.0" style="-fx-padding: 10;" />
+                    </content>
+                </ScrollPane>
+
+                <HBox spacing="20.0" alignment="CENTER" style="-fx-padding: 10;">
+                    <children>
+                        <Label fx:id="lblScore" text="Score: 0/10" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+                        <Label fx:id="lblStatus" text="STATUS" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+                    </children>
+                </HBox>
+
+                <HBox alignment="CENTER">
+                    <children>
+                        <Button fx:id="btnCertificat" onAction="#onDownloadCertificat"
+                                text="🎓 TÉLÉCHARGER MON CERTIFICAT" visible="false"
+                                style="-fx-background-color: #f39c12; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20; -fx-background-radius: 5; -fx-cursor: hand;" />
+                    </children>
+                </HBox>
+
+                <VBox spacing="10.0" style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #ecf0f1; -fx-border-radius: 8;">
+                    <children>
+                        <Label text="Modifier votre avis :" style="-fx-font-weight: bold; -fx-text-fill: #7f8c8d;" />
+                        <HBox fx:id="editStarContainer" spacing="5.0" alignment="CENTER_LEFT">
+                            <children>
+                                <Button text="★" style="-fx-background-color: transparent; -fx-font-size: 20; -fx-cursor: hand;" />
+                                <Button text="★" style="-fx-background-color: transparent; -fx-font-size: 20; -fx-cursor: hand;" />
+                                <Button text="★" style="-fx-background-color: transparent; -fx-font-size: 20; -fx-cursor: hand;" />
+                                <Button text="★" style="-fx-background-color: transparent; -fx-font-size: 20; -fx-cursor: hand;" />
+                                <Button text="★" style="-fx-background-color: transparent; -fx-font-size: 20; -fx-cursor: hand;" />
+                            </children>
+                        </HBox>
+                        <TextArea fx:id="txtAreaComment" prefHeight="60.0" promptText="Laissez un commentaire..." wrapText="true" style="-fx-background-radius: 5;"/>
+                        <HBox spacing="10.0" alignment="CENTER_RIGHT">
+                            <children>
+                                <Button onAction="#onModifier" text="ENREGISTRER" style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 5; -fx-cursor: hand;" />
+                                <Button onAction="#onSupprimer" text="SUPPRIMER" style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 5; -fx-cursor: hand;" />
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+    </children>
+</AnchorPane>

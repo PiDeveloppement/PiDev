@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
  */
 public class Event {
 
-    // ==================== les CONSTANTES ====================
+    // ==================== CONSTANTES ====================
 
     public enum EventStatus {
         DRAFT("Brouillon"),
@@ -215,6 +215,10 @@ public class Event {
                 startDate != null && endDate != null &&
                 startDate.isBefore(endDate) &&
                 categoryId > 0 && createdBy > 0;
+    }
+    public Event(int id, String title) {
+        this.id = id;
+        this.title = title;
     }
 
     /**

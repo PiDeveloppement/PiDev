@@ -5,214 +5,152 @@ import com.example.pidev.service.sponsor.SponsorService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
-import javafx.util.Callback;
 
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ResourceBundle;
 
 public class SponsorListController implements Initializable {
 
-    @FXML private TableView<Sponsor> sponsorsTable;
-    @FXML private TableColumn<Sponsor, Integer> idCol;
-    @FXML private TableColumn<Sponsor, Integer> eventIdCol;
-    @FXML private TableColumn<Sponsor, String> companyNameCol;
-    @FXML private TableColumn<Sponsor, String> logoCol;
-    @FXML private TableColumn<Sponsor, Double> contributionCol;
-    @FXML private TableColumn<Sponsor, String> emailCol;
-    @FXML private TableColumn<Sponsor, Void> actionsCol;
+    @FXML private TableView<Sponsor> table;
 
-    @FXML private Button addSponsorBtn;
-    @FXML private Label statusLabel;
+    @FXML private TableColumn<Sponsor, String> colId;
+    @FXML private TableColumn<Sponsor, String> colEventName;
+    @FXML private TableColumn<Sponsor, String> colCompany;
+    @FXML private TableColumn<Sponsor, String> colEmail;
+    @FXML private TableColumn<Sponsor, String> colContribution;
+    @FXML private TableColumn<Sponsor, String> colContract;
 
-    @FXML private Label totalSponsorsLabel;
-    @FXML private Label totalContributionLabel;
-    @FXML private Label avgContributionLabel;
+    @FXML private TextField searchField;
 
-    private ObservableList<Sponsor> sponsorsList = FXCollections.observableArrayList();
-    private SponsorService sponsorService = new SponsorService();
+    private final SponsorService sponsorService = new SponsorService();
+
+    private final ObservableList<Sponsor> baseList = FXCollections.observableArrayList();
+    private FilteredList<Sponsor> filtered;
 
     @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        setupTableColumns();
-        loadSponsors();
-        setupActionsColumn();
-        updateStats();
+    public void initialize(URL url, ResourceBundle rb) {
 
-        addSponsorBtn.setOnAction(e -> handleAddSponsor());
+        // ⚠️ Si ton FXML n'a pas ces fx:id, table sera null -> NPE
+        if (table == null) return;
+
+        setupColumns();
+
+        filtered = new FilteredList<>(baseList, s -> true);
+
+        SortedList<Sponsor> sorted = new SortedList<>(filtered);
+        sorted.comparatorProperty().bind(table.comparatorProperty());
+        table.setItems(sorted);
+
+        if (searchField != null) {
+            searchField.textProperty().addListener((obs, o, n) -> applyFilter());
+        }
+
+        refresh();
     }
 
-    private void setupTableColumns() {
-        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
-        eventIdCol.setCellValueFactory(new PropertyValueFactory<>("event_id"));
-        companyNameCol.setCellValueFactory(new PropertyValueFactory<>("company_name"));
-        contributionCol.setCellValueFactory(new PropertyValueFactory<>("contribution_amt"));
-        emailCol.setCellValueFactory(new PropertyValueFactory<>("contact_email"));
+    private void setupColumns() {
 
-        // Colonne Logo avec image
-        logoCol.setCellFactory(param -> new TableCell<Sponsor, String>() {
-            private final ImageView imageView = new ImageView();
+        if (colId != null) {
+            colId.setCellValueFactory(c ->
+                    new SimpleStringProperty(String.valueOf(c.getValue().getId())));
+        }
 
-            {
-                imageView.setFitHeight(40);
-                imageView.setFitWidth(40);
-                imageView.setPreserveRatio(true);
-                setGraphic(imageView);
-            }
+        if (colCompany != null) {
+            colCompany.setCellValueFactory(c ->
+                    new SimpleStringProperty(nvl(c.getValue().getCompany_name())));
+        }
 
-            @Override
-            protected void updateItem(String logoUrl, boolean empty) {
-                super.updateItem(logoUrl, empty);
+        if (colEmail != null) {
+            colEmail.setCellValueFactory(c ->
+                    new SimpleStringProperty(nvl(c.getValue().getContact_email())));
+        }
 
-                if (empty || logoUrl == null || logoUrl.isEmpty()) {
-                    setGraphic(null);
-                } else {
-                    try {
-                        imageView.setImage(new Image(logoUrl, true));
-                        imageView.setStyle("-fx-background-radius: 20; -fx-border-radius: 20;");
-                    } catch (Exception e) {
-                        // Image par défaut si l'URL échoue
-                        ImageView defaultIcon = new ImageView();
-                        defaultIcon.setFitHeight(40);
-                        defaultIcon.setFitWidth(40);
-                        defaultIcon.setStyle("-fx-background-color: #e2e8f0; -fx-background-radius: 20; -fx-padding: 10;");
-                        setGraphic(defaultIcon);
-                    }
-                }
-            }
-        });
+        if (colContribution != null) {
+            colContribution.setCellValueFactory(c ->
+                    new SimpleStringProperty(String.format("%,.2f", c.getValue().getContribution_name())));
+        }
 
-        // Formatage de la colonne contribution
-        contributionCol.setCellFactory(column -> new TableCell<Sponsor, Double>() {
-            @Override
-            protected void updateItem(Double amount, boolean empty) {
-                super.updateItem(amount, empty);
+        if (colContract != null) {
+            colContract.setCellValueFactory(c ->
+                    new SimpleStringProperty(nvl(c.getValue().getContract_url())));
+        }
 
-                if (empty || amount == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(String.format("%,.2f DT", amount));
-                    setStyle("-fx-alignment: CENTER_RIGHT; -fx-font-weight: bold; -fx-text-fill: #059669;");
-                }
-            }
-        });
+        // Event name: si tu n’as pas join Event dans SponsorService,
+        // laisse vide ou affiche event_id.
+        if (colEventName != null) {
+            colEventName.setCellValueFactory(c ->
+                    new SimpleStringProperty(String.valueOf(c.getValue().getEvent_id())));
+        }
     }
 
-    private void setupActionsColumn() {
-        actionsCol.setCellFactory(param -> new TableCell<Sponsor, Void>() {
-            private final HBox container = new HBox(8);
-            private final Button updateBtn = new Button("\u270F"); // ✏
-            private final Button deleteBtn = new Button("\uD83D\uDDD1"); // 🗑
+    private void refresh() {
+        try {
+            baseList.setAll(sponsorService.getAllSponsors());
+            applyFilter();
+        } catch (SQLException e) {
+            showError("DB", "Erreur chargement sponsors: " + e.getMessage());
+        }
+    }
 
-            {
-                // Style des boutons
-                updateBtn.setStyle("-fx-background-color: #3b82f6; " +
-                        "-fx-text-fill: white; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif; " +
-                        "-fx-padding: 6 12; " +
-                        "-fx-background-radius: 6; " +
-                        "-fx-cursor: hand; " +
-                        "-fx-min-width: 40px; " +
-                        "-fx-min-height: 30px;");
+    private void applyFilter() {
+        if (filtered == null) return;
 
-                deleteBtn.setStyle("-fx-background-color: #ef4444; " +
-                        "-fx-text-fill: white; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif; " +
-                        "-fx-padding: 6 12; " +
-                        "-fx-background-radius: 6; " +
-                        "-fx-cursor: hand; " +
-                        "-fx-min-width: 40px; " +
-                        "-fx-min-height: 30px;");
+        String q = (searchField == null || searchField.getText() == null)
+                ? "" : searchField.getText().trim().toLowerCase();
 
-                updateBtn.setOnAction(e -> {
-                    Sponsor sponsor = getTableView().getItems().get(getIndex());
-                    handleUpdateSponsor(sponsor);
-                });
+        filtered.setPredicate(s -> {
+            if (q.isEmpty()) return true;
 
-                deleteBtn.setOnAction(e -> {
-                    Sponsor sponsor = getTableView().getItems().get(getIndex());
-                    handleDeleteSponsor(sponsor);
-                });
-
-                container.getChildren().addAll(updateBtn, deleteBtn);
-                container.setAlignment(javafx.geometry.Pos.CENTER);
-            }
-
-            @Override
-            protected void updateItem(Void item, boolean empty) {
-                super.updateItem(item, empty);
-                setGraphic(empty ? null : container);
-            }
+            return String.valueOf(s.getId()).contains(q)
+                    || nvl(s.getCompany_name()).toLowerCase().contains(q)
+                    || nvl(s.getContact_email()).toLowerCase().contains(q)
+                    || String.valueOf(s.getEvent_id()).contains(q);
         });
     }
 
-    private void loadSponsors() {
-        sponsorsList.setAll(sponsorService.getAllSponsors());
-        sponsorsTable.setItems(sponsorsList);
-        statusLabel.setText("📊 " + sponsorsList.size() + " sponsors trouvés • 🔄 Dernière mise à jour: Maintenant");
-    }
+    // Exemple actions (si tu as des boutons/menu)
+    @FXML
+    private void handleDelete() {
+        Sponsor s = (table == null) ? null : table.getSelectionModel().getSelectedItem();
+        if (s == null) return;
 
-    private void updateStats() {
-        totalSponsorsLabel.setText(String.valueOf(sponsorService.getTotalSponsors()));
-        totalContributionLabel.setText(String.format("%,.2f DT", sponsorService.getTotalContribution()));
-        avgContributionLabel.setText(String.format("%,.2f DT", sponsorService.getAverageContribution()));
-    }
-
-    private void handleAddSponsor() {
-        System.out.println("Ajouter un nouveau sponsor");
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Ajouter un sponsor");
-        alert.setHeaderText("Fonctionnalité d'ajout");
-        alert.setContentText("Bouton 'Nouveau Sponsor' cliqué");
-        alert.showAndWait();
-    }
-
-    private void handleUpdateSponsor(Sponsor sponsor) {
-        System.out.println("Mettre à jour le sponsor: " + sponsor.getCompany_name());
-
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Mise à jour");
-        alert.setHeaderText("Mettre à jour le sponsor");
-        alert.setContentText("✏️ Vous avez cliqué sur Modifier pour: " +
-                sponsor.getCompany_name() + "\nID: " + sponsor.getId() +
-                "\nContribution: " + sponsor.getContribution_amt() + " DT");
-        alert.showAndWait();
-    }
-
-    private void handleDeleteSponsor(Sponsor sponsor) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Confirmation de suppression");
-        confirm.setHeaderText("🗑️ Supprimer le sponsor");
-        confirm.setContentText("Êtes-vous sûr de vouloir supprimer le sponsor: \n\n" +
-                "🏢 " + sponsor.getCompany_name() + "\n" +
-                "🔢 ID: " + sponsor.getId() + "\n" +
-                "💰 Contribution: " + sponsor.getContribution_amt() + " DT\n" +
-                "📧 Email: " + sponsor.getContact_email() + "\n\n" +
-                "Cette action est irréversible !");
+        confirm.setTitle("Suppression");
+        confirm.setHeaderText("Supprimer sponsor");
+        confirm.setContentText("Supprimer: " + s.getCompany_name() + " (id=" + s.getId() + ") ?");
 
-        confirm.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                sponsorsList.remove(sponsor);
-                updateStats();
-                statusLabel.setText("✅ Sponsor supprimé avec succès • 📊 " +
-                        sponsorsList.size() + " sponsors restants");
-
-                Alert success = new Alert(Alert.AlertType.INFORMATION);
-                success.setTitle("Suppression réussie");
-                success.setHeaderText("✅ Sponsor supprimé");
-                success.setContentText("Le sponsor '" + sponsor.getCompany_name() + "' a été supprimé avec succès.");
-                success.showAndWait();
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                try {
+                    sponsorService.deleteSponsor(s.getId());
+                    refresh();
+                } catch (SQLException e) {
+                    showError("DB", "Erreur suppression: " + e.getMessage());
+                }
             }
         });
+    }
+
+    @FXML
+    private void handleRefresh() {
+        refresh();
+    }
+
+    private String nvl(String s) {
+        return (s == null) ? "" : s;
+    }
+
+    private void showError(String title, String msg) {
+        Alert a = new Alert(Alert.AlertType.ERROR);
+        a.setTitle(title);
+        a.setHeaderText(null);
+        a.setContentText(msg);
+        a.showAndWait();
     }
 }
