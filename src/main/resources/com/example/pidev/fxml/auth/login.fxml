@@ -141,9 +141,29 @@
                                            -fx-background-radius: 8; -fx-padding: 10 35; -fx-font-size: 13px;"
                                     prefWidth="280"/>
 
+                            <!-- ===== NOUVEAU BOUTON CONNEXION FACIALE ===== -->
+                            <Button fx:id="facialLoginButton"
+                                    onAction="#handleFacialLogin"
+                                    style="-fx-background-color: #6c5ce7; -fx-text-fill: white; -fx-font-weight: bold;
+                                           -fx-background-radius: 8; -fx-padding: 10 35; -fx-font-size: 13px;
+                                           -fx-effect: dropshadow(gaussian, rgba(108, 92, 231, 0.4), 10, 0, 0, 2);"
+                                    prefWidth="280">
+                                <graphic>
+                                    <Label text="👤" style="-fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 0 8 0 0;"/>
+                                </graphic>
+                                Connexion Faciale
+                            </Button>
+
+                            <!-- Séparateur "OU" -->
+                            <HBox alignment="CENTER" spacing="10">
+                                <Region prefHeight="1" prefWidth="100" style="-fx-background-color: #ddd;"/>
+                                <Label text="OU" style="-fx-text-fill: #999; -fx-font-size: 11px;"/>
+                                <Region prefHeight="1" prefWidth="100" style="-fx-background-color: #ddd;"/>
+                            </HBox>
+
                             <Button fx:id="cancelButton" text="Annuler"
                                     onAction="#cancelButtonOnAction"
-                                    style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;
+                                    style="-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-weight: bold;
                                            -fx-background-radius: 8; -fx-padding: 10 35; -fx-font-size: 13px;"
                                     prefWidth="280"/>
 
@@ -163,6 +183,3 @@
         </center>
     </BorderPane>
 </ScrollPane>
-
-
-

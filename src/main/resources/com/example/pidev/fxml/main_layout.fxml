@@ -12,10 +12,11 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.shape.Circle?>
-<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Tooltip?> <!-- AJOUTÉ pour le tooltip -->
 
 <StackPane fx:id="mainStackPane"
            xmlns="http://javafx.com/javafx/17"
@@ -221,6 +222,7 @@
                     </VBox>
 
 
+
                 </VBox>
             </ScrollPane>
 
@@ -336,8 +338,6 @@
                     </VBox>
                     <Region HBox.hgrow="ALWAYS"/>
 
-
-
                 </HBox>
 
                 <!-- CONTENT AREA (Cartes + Table) - Ceci sera chargé dynamiquement -->
@@ -346,4 +346,33 @@
             </VBox>
         </VBox>
     </HBox>
+
+    <!-- ===== BOUTON FLOTTANT ASSISTANT CHAT (EN BAS À DROITE) ===== -->
+    <Button fx:id="chatFloatingButton"
+            onAction="#openChatAssistant"
+            style="-fx-background-color: linear-gradient(to bottom, #2196F3, #1565C0);
+                   -fx-background-radius: 30;
+                   -fx-min-width: 60;
+                   -fx-min-height: 60;
+                   -fx-max-width: 60;
+                   -fx-max-height: 60;
+                   -fx-cursor: hand;
+                   -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 4);
+                   -fx-translate-x: -20;
+                   -fx-translate-y: -20;"
+            StackPane.alignment="BOTTOM_RIGHT">
+        <graphic>
+            <StackPane>
+                <Label text="🤖" style="-fx-font-size: 28px; -fx-text-fill: white;"/>
+                <!-- Petit indicateur de présence (en ligne) -->
+                <Circle radius="6" fill="#4CAF50" stroke="white" strokeWidth="2"
+                        translateX="15" translateY="-15"/>
+            </StackPane>
+        </graphic>
+        <tooltip>
+            <Tooltip text="Assistant IA - Cliquez pour discuter !" />
+        </tooltip>
+    </Button>
+    <!-- ===== FIN BOUTON FLOTTANT ===== -->
+
 </StackPane>

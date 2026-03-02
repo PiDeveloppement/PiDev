@@ -76,7 +76,8 @@ public class MainController {
     // ===================== PAGE HEADER =====================
     @FXML private Label pageTitle;
     @FXML private Label pageSubtitle;
-
+    @FXML
+    private Button chatFloatingButton;
     // ===================== TOP BAR =====================
     @FXML private Label navDateLabel;
     @FXML private Label navTimeLabel;
@@ -85,7 +86,7 @@ public class MainController {
     @FXML private Text userInitialsText;
     @FXML private ImageView profileImageView;
     @FXML private StackPane initialsContainer;
-    @FXML private StackPane avatarContainer;
+
     @FXML private MenuButton profileMenu;
 
     // ===================== SIDEBAR =====================
@@ -169,6 +170,13 @@ public class MainController {
         if (dashboardBtn != null) {
             setActiveButton(dashboardBtn);
             loadDashboardView();
+        }
+
+
+        // Animer le bouton flottant au démarrage
+        animateFloatingButton();
+        if (logoutBtn != null) {
+            logoutBtn.setOnAction(e -> logout());
         }
     }
 
@@ -1518,6 +1526,45 @@ public class MainController {
         setActiveButton(budgetBtn);
         showBudget();
     }
+    @FXML
+    private void openChatAssistant() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/chat/chat_view.fxml")
+            );
+            Parent root = loader.load();
 
+            Stage chatStage = new Stage();
+            chatStage.setTitle("Assistant IA - EventFlow");
+            chatStage.setScene(new Scene(root, 550, 600));
+
+            chatStage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible d'ouvrir l'assistant: " + e.getMessage());
+        }
+    }
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+    private void animateFloatingButton() {
+        if (chatFloatingButton != null) {
+            // Animation de pulsation
+            javafx.animation.ScaleTransition st = new javafx.animation.ScaleTransition(
+                    javafx.util.Duration.millis(1500), chatFloatingButton
+            );
+            st.setFromX(1.0);
+            st.setFromY(1.0);
+            st.setToX(1.15);
+            st.setToY(1.15);
+            st.setCycleCount(3);
+            st.setAutoReverse(true);
+            st.play();
+        }}
 
 }

@@ -16,7 +16,6 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 
@@ -43,9 +42,12 @@ public class LoginController implements Initializable {
     @FXML
     private Hyperlink forgotPasswordLink;
 
+    // ✅ NOUVEAU: Bouton pour la connexion faciale
+    @FXML
+    private Button facialLoginButton;
+
     private UserService userService;
     private Preferences preferences;
-
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -57,10 +59,97 @@ public class LoginController implements Initializable {
             // Charger les identifiants sauvegardés
             loadSavedCredentials();
 
+            // Configurer le bouton facial
+            setupFacialLoginButton();
+
         } catch (Exception e) {
             showAlert("Erreur", "Erreur de connexion à la base de données");
             e.printStackTrace();
         }
+    }
+
+    /**
+     * ✅ Configure le bouton de connexion faciale
+     */
+    private void setupFacialLoginButton() {
+        if (facialLoginButton != null) {
+            // Vérifier si OpenCV est disponible
+            boolean isOpenCvAvailable = checkOpenCvAvailability();
+
+            if (isOpenCvAvailable) {
+                facialLoginButton.setDisable(false);
+                facialLoginButton.setTooltip(new Tooltip("Se connecter avec reconnaissance faciale"));
+                System.out.println("✅ Connexion faciale disponible");
+            } else {
+                facialLoginButton.setDisable(true);
+                facialLoginButton.setTooltip(new Tooltip("Reconnaissance faciale non disponible (OpenCV manquant)"));
+                System.out.println("⚠️ Connexion faciale non disponible");
+            }
+        }
+    }
+
+    /**
+     * ✅ Vérifie si OpenCV est disponible
+     */
+    private boolean checkOpenCvAvailability() {
+        try {
+            Class.forName("org.bytedeco.javacpp.Loader");
+            Class.forName("org.bytedeco.opencv.opencv_java");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
+     * ✅ Méthode appelée quand on clique sur le bouton de connexion faciale
+     */
+    @FXML
+    private void handleFacialLogin(ActionEvent event) {
+        try {
+            System.out.println("👤 Tentative de connexion faciale");
+
+            // Charger la vue de connexion faciale
+            URL fxmlLocation = getClass().getResource("/com/example/pidev/fxml/facial/facial_login.fxml");
+
+            if (fxmlLocation == null) {
+                // Si le fichier n'existe pas encore, créer une alerte
+                showFacialLoginNotImplemented(event);
+                return;
+            }
+
+            Parent root = FXMLLoader.load(fxmlLocation);
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle("Connexion Faciale - EventFlow");
+            stage.show();
+
+        } catch (IOException e) {
+            System.err.println("❌ Erreur lors de l'ouverture de la connexion faciale: " + e.getMessage());
+            showFacialLoginNotImplemented(event);
+        }
+    }
+
+    /**
+     * ✅ Version temporaire si le FXML n'existe pas encore
+     */
+    private void showFacialLoginNotImplemented(ActionEvent event) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Connexion Faciale");
+        alert.setHeaderText("Fonctionnalité en cours de développement");
+        alert.setContentText("La connexion par reconnaissance faciale sera bientôt disponible !");
+
+        ButtonType tryPasswordBtn = new ButtonType("Utiliser mot de passe", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelBtn = new ButtonType("Annuler", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        alert.getButtonTypes().setAll(tryPasswordBtn, cancelBtn);
+
+        alert.showAndWait().ifPresent(response -> {
+            if (response == tryPasswordBtn) {
+                // Retour au login classique (déjà sur la page)
+                System.out.println("↩️ Retour au login classique");
+            }
+        });
     }
 
     /**
@@ -125,29 +214,14 @@ public class LoginController implements Initializable {
     }
 
     /**
-     * ✅ Méthode pour mot de passe oublié - CORRIGÉE
+     * ✅ Méthode pour mot de passe oublié
      */
     @FXML
     private void handleForgotPassword(ActionEvent event) {
         try {
             System.out.println("🔑 Redirection vers la page mot de passe oublié");
 
-            // Vérifier plusieurs chemins possibles
-            URL fxmlLocation = null;
-            String[] possiblePaths = {
-                    "/com/example/pidev/fxml/user/forgot_password.fxml",
-                    "/fxml/auth/forgot_password.fxml",
-                    "/auth/forgot_password.fxml",
-                    "../fxml/auth/forgot_password.fxml"
-            };
-
-            for (String path : possiblePaths) {
-                fxmlLocation = getClass().getResource(path);
-                if (fxmlLocation != null) {
-                    System.out.println("✅ FXML trouvé à: " + path);
-                    break;
-                }
-            }
+            URL fxmlLocation = getClass().getResource("/com/example/pidev/fxml/user/forgot_password.fxml");
 
             if (fxmlLocation == null) {
                 System.err.println("❌ FXML forgot_password.fxml introuvable!");
@@ -169,7 +243,7 @@ public class LoginController implements Initializable {
     }
 
     /**
-     * ✅ Méthode pour charger les identifiants sauvegardés
+     * Méthode pour charger les identifiants sauvegardés
      */
     private void loadSavedCredentials() {
         String savedEmail = preferences.get("saved_email", "");
@@ -184,7 +258,7 @@ public class LoginController implements Initializable {
     }
 
     /**
-     * ✅ Méthode pour sauvegarder les identifiants
+     * Méthode pour sauvegarder les identifiants
      */
     private void saveCredentials(String email, String password) {
         preferences.put("saved_email", email);
@@ -193,7 +267,7 @@ public class LoginController implements Initializable {
     }
 
     /**
-     * ✅ Méthode pour effacer les identifiants sauvegardés
+     * Méthode pour effacer les identifiants sauvegardés
      */
     private void clearSavedCredentials() {
         preferences.remove("saved_email");
@@ -211,7 +285,7 @@ public class LoginController implements Initializable {
     }
 
     /**
-     * ✅ Méthode appelée quand on clique sur "Créer un compte"
+     * Méthode appelée quand on clique sur "Créer un compte"
      */
     @FXML
     private void goToSignup(ActionEvent event) {

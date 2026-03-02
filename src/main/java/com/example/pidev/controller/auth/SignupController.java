@@ -3,6 +3,7 @@ package com.example.pidev.controller.auth;
 import com.example.pidev.HelloApplication;
 import com.example.pidev.model.user.UserModel;
 import com.example.pidev.service.user.UserService;
+import com.example.pidev.service.user.EmailService; // ✅ AJOUTER CET IMPORT
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -53,8 +54,7 @@ public class SignupController implements Initializable {
             }
         });
 
-        // === VALIDATION MOT DE PASSE - CORRIGÉ ===
-        // ⚠️ ÉTAIT MAL PLACÉ (dans le listener de l'email)
+        // === VALIDATION MOT DE PASSE ===
         Password.textProperty().addListener((obs, oldVal, newVal) -> {
             validatePassword();
             if (!ConfirmerPassword.getText().isEmpty()) {
@@ -68,7 +68,7 @@ public class SignupController implements Initializable {
             }
         });
 
-        // === VALIDATION CONFIRMATION - CORRIGÉ ===
+        // === VALIDATION CONFIRMATION ===
         ConfirmerPassword.textProperty().addListener((obs, oldVal, newVal) -> {
             validatePasswordMatch();
         });
@@ -180,7 +180,7 @@ public class SignupController implements Initializable {
 
         // ✅ Validation complète avant soumission
         if (!validateAll()) {
-            RegistrationMessageLabel.setText("Veuillez saisir un mot de passe avec :min 6 car, 1 lettre, 1 chiffre, 1 symbole");
+            RegistrationMessageLabel.setText("Veuillez saisir un mot de passe avec : min 6 car, 1 lettre, 1 chiffre, 1 symbole");
             RegistrationMessageLabel.setStyle("-fx-text-fill: red;");
             return;
         }
@@ -210,6 +210,17 @@ public class SignupController implements Initializable {
         if (success) {
             RegistrationMessageLabel.setText("✓ Inscription réussie !");
             RegistrationMessageLabel.setStyle("-fx-text-fill: green;");
+
+            // ✅ 4️⃣ ENVOYER LA NOTIFICATION À L'ADMIN (APPEL AJOUTÉ)
+            new Thread(() -> {
+                try {
+                    System.out.println("📧 Envoi notification admin pour: " + user.getEmail());
+                    EmailService.sendNewUserNotificationToAdmin(user);
+                } catch (Exception e) {
+                    System.err.println("⚠️ Erreur envoi notification admin: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }).start();
 
             // Redirection vers Login
             Parent root = FXMLLoader.load(getClass().getResource("/com/example/pidev/fxml/auth/login.fxml"));
@@ -247,6 +258,7 @@ public class SignupController implements Initializable {
             e.printStackTrace();
         }
     }
+
     @FXML
     private void goToLanding(ActionEvent event) {
         HelloApplication.loadLandingPage();

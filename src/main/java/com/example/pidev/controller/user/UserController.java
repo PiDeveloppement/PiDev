@@ -505,7 +505,7 @@ public class UserController implements Initializable {
                 tokenService.createToken(token);
 
                 // Envoyer l'email avec le lien
-                EmailService.sendResetPasswordEmail(email, user.getFirst_Name(), token.getToken());
+              //  EmailService.sendResetPasswordEmail(email, user.getFirst_Name(), token.getToken());
 
                 showAlert("Succès", "Un lien de réinitialisation a été envoyé à votre adresse email.\nVérifiez votre boîte de réception (ou MailDev sur http://localhost:1080)");
 

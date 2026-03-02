@@ -2,9 +2,10 @@ package com.example.pidev.controller.user;
 
 import com.example.pidev.model.user.PasswordResetToken;
 import com.example.pidev.model.user.UserModel;
-import com.example.pidev.service.user.EmailService;
+import com.example.pidev.service.user.WhatsAppService;  // Changé de SmsService à WhatsAppService
 import com.example.pidev.service.user.PasswordResetService;
 import com.example.pidev.service.user.UserService;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -14,19 +15,16 @@ import javafx.stage.Stage;
 
 public class ForgotPasswordController {
 
-    @FXML private TextField emailField;
+    @FXML private TextField emailField;  // Gardé pour compatibilité
+    @FXML private TextField phoneField;  // Champ pour numéro de téléphone
     @FXML private Button sendResetLinkBtn;
     @FXML private Button backToLoginBtn;
     @FXML private Label statusLabel;
     @FXML private ProgressIndicator loadingIndicator;
-
-    // 👇 NOUVEAU : Bouton pour tester le lien (optionnel)
     @FXML private Button testLinkButton;
 
     private PasswordResetService resetService;
     private UserService userService;
-
-    // 👇 Stocker le dernier token pour le test
     private String lastToken;
 
     @FXML
@@ -38,105 +36,123 @@ public class ForgotPasswordController {
             loadingIndicator.setVisible(false);
         }
 
-        // 👇 Cacher le bouton de test par défaut
         if (testLinkButton != null) {
             testLinkButton.setVisible(false);
         }
 
-        testEmailConfiguration();
-    }
-
-    private void testEmailConfiguration() {
-        System.out.println("=== TEST CONFIGURATION EMAIL AU DÉMARRAGE ===");
-        try {
-            showStatus("Configuration email: OK", "green");
-        } catch (Exception e) {
-            System.err.println("❌ Erreur de configuration email: " + e.getMessage());
-            showStatus("⚠️ Configuration email incomplète", "orange");
-        }
+        // Message d'information pour WhatsApp
+        System.out.println("📱 WhatsApp Service prêt - Utilisation du Sandbox Twilio");
     }
 
     @FXML
     private void handleSendResetLink() {
-        String email = emailField.getText().trim();
+        String phoneNumber = phoneField.getText().trim();
 
-        if (email.isEmpty()) {
-            showStatus("❌ Veuillez saisir votre email", "red");
+        if (phoneNumber.isEmpty()) {
+            showStatus("❌ Veuillez saisir votre numéro de téléphone", "red");
             return;
         }
 
-        if (!isValidEmail(email)) {
-            showStatus("❌ Format d'email invalide", "red");
+        if (!phoneNumber.matches("^\\+?[0-9]{8,15}$")) {
+            showStatus("❌ Format de numéro invalide (ex: +21692500441)", "red");
             return;
         }
 
         sendResetLinkBtn.setDisable(true);
-        if (loadingIndicator != null) loadingIndicator.setVisible(true);
-        showStatus("Envoi en cours...", "blue");
+        loadingIndicator.setVisible(true);
+        showStatus("Préparation du message WhatsApp...", "blue");
 
         new Thread(() -> {
             try {
-                UserModel user = userService.getUserByEmail(email);
+                UserModel user = userService.getUserByPhone(phoneNumber);
 
-                javafx.application.Platform.runLater(() -> {
+                Platform.runLater(() -> {
                     if (user == null) {
-                        showStatus("❌ Aucun compte trouvé avec cet email", "red");
+                        showStatus("❌ Aucun compte avec ce numéro", "red");
                         sendResetLinkBtn.setDisable(false);
-                        if (loadingIndicator != null) loadingIndicator.setVisible(false);
+                        loadingIndicator.setVisible(false);
                         return;
                     }
 
                     try {
-                        // Créer un token
                         PasswordResetToken token = new PasswordResetToken(user.getId_User());
                         resetService.createToken(token);
 
                         if (token != null) {
-                            // Stocker le token pour le test
                             lastToken = token.getToken();
 
-                            // Afficher le token dans la console
-                            System.out.println("🔑 Token généré: " + token.getToken());
-                            System.out.println("🔗 Lien de réinitialisation: http://localhost:8080/reset-password?token=" + token.getToken());
+                            // ✅ 1. Envoyer le message WhatsApp
+                            String userPhone = user.getPhone();
+                            WhatsAppService.sendResetPasswordWhatsApp(userPhone, token.getToken());
 
-                            // Envoyer l'email avec le token
-                            EmailService.sendResetPasswordEmail(email, user.getFirst_Name(), token.getToken());
+                            // ✅ 2. OUVRIR AUTOMATIQUEMENT LA FENÊTRE DE RÉINITIALISATION
+                            openResetPasswordWindow(token.getToken());
 
-                            showStatus("✅ Email envoyé! Vérifiez votre boîte de réception", "green");
+                            // ✅ 3. Mettre à jour le message de statut
+                            showStatus("✅ Message envoyé sur WhatsApp! La fenêtre de réinitialisation est ouverte", "green");
 
-                            // 👇 Afficher le bouton de test
+                            // Afficher les instructions
+                            showWhatsAppInstructions();
+
+                            System.out.println("🔑 Token: " + token.getToken());
+
+                            // Optionnel: Afficher le bouton de test
                             if (testLinkButton != null) {
                                 testLinkButton.setVisible(true);
-                                testLinkButton.setText("Tester le lien (token: " + token.getToken().substring(0, 8) + "...)");
+                                testLinkButton.setText("Tester le lien (mode développement)");
                             }
 
-                            // ✅ SUPPRIMÉ : openResetPasswordWindow(token.getToken());
-                            // La fenêtre ne s'ouvre plus automatiquement !
-
                         } else {
-                            showStatus("❌ Erreur lors de la création du token", "red");
+                            showStatus("❌ Erreur création token", "red");
                         }
 
                     } catch (Exception e) {
                         showStatus("❌ Erreur: " + e.getMessage(), "red");
                         e.printStackTrace();
+                        showTestModeOption();
                     }
 
                     sendResetLinkBtn.setDisable(false);
-                    if (loadingIndicator != null) loadingIndicator.setVisible(false);
+                    loadingIndicator.setVisible(false);
                 });
 
             } catch (Exception e) {
-                javafx.application.Platform.runLater(() -> {
+                Platform.runLater(() -> {
                     showStatus("❌ Erreur: " + e.getMessage(), "red");
                     sendResetLinkBtn.setDisable(false);
-                    if (loadingIndicator != null) loadingIndicator.setVisible(false);
+                    loadingIndicator.setVisible(false);
                 });
             }
         }).start();
     }
+    /**
+     * Affiche les instructions pour le sandbox WhatsApp
+     */
+    private void showWhatsAppInstructions() {
+        String instructions =
+                "📱 *Instructions WhatsApp Sandbox*\n\n" +
+                        "1. Ouvrez WhatsApp sur votre téléphone\n" +
+                        "2. Envoyez 'join orange-popsicle' au +14155238886\n" +
+                        "3. Attendez la confirmation\n" +
+                        "4. Vous recevrez alors le message de réinitialisation\n\n" +
+                        "⚠️ Le sandbox expire après 3 jours, renouvelez si nécessaire";
 
-    // 👇 NOUVELLE MÉTHODE : Pour tester le lien sans navigateur
+        System.out.println(instructions);
+
+        // Optionnel: Afficher une alerte informative
+        if (statusLabel != null) {
+            statusLabel.setText("📱 N'oubliez pas de rejoindre le sandbox WhatsApp!");
+        }
+    }
+
+    /**
+     * Propose le mode test en cas d'échec
+     */
+    private void showTestModeOption() {
+        // Vous pouvez ajouter un bouton ou une option pour le mode test
+        System.out.println("💡 Mode test: Utilisez le bouton 'Tester le lien' pour continuer");
+    }
+
     @FXML
     private void handleTestLink() {
         if (lastToken != null && !lastToken.isEmpty()) {
@@ -148,28 +164,34 @@ public class ForgotPasswordController {
 
     private void openResetPasswordWindow(String token) {
         try {
+            System.out.println("🖥️ Tentative d'ouverture de la fenêtre de réinitialisation...");
+            System.out.println("🔑 Avec token: " + token);
+
+            // Charger le FXML
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/com/example/pidev/fxml/user/reset_password.fxml")
             );
+
             Parent root = loader.load();
 
+            // Récupérer le contrôleur et passer le token
             ResetPasswordController controller = loader.getController();
-            controller.setToken(token);
+            controller.setToken(token);  // 👈 IMPORTANT: Cette méthode doit exister
 
+            // Créer et afficher la nouvelle fenêtre
             Stage stage = new Stage();
             stage.setTitle("Réinitialisation du mot de passe");
             stage.setScene(new Scene(root));
             stage.show();
 
-            // ✅ NE PAS fermer la fenêtre actuelle
-            // L'utilisateur peut vouloir revenir en arrière
+            System.out.println("✅ Fenêtre de réinitialisation ouverte avec succès!");
 
         } catch (Exception e) {
+            System.err.println("❌ Erreur détaillée d'ouverture:");
             e.printStackTrace();
             showStatus("❌ Erreur d'ouverture: " + e.getMessage(), "red");
         }
     }
-
     @FXML
     private void handleBackToLogin() {
         try {
@@ -183,12 +205,9 @@ public class ForgotPasswordController {
     }
 
     private void showStatus(String message, String color) {
-        statusLabel.setText(message);
-        statusLabel.setStyle("-fx-text-fill: " + color + "; -fx-font-weight: bold;");
-    }
-
-    private boolean isValidEmail(String email) {
-        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
-        return email.matches(emailRegex);
+        if (statusLabel != null) {
+            statusLabel.setText(message);
+            statusLabel.setStyle("-fx-text-fill: " + color + "; -fx-font-weight: bold;");
+        }
     }
 }
