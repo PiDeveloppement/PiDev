@@ -8,6 +8,7 @@ import com.example.pidev.service.upload.CloudinaryUploadService;
 import com.example.pidev.service.imagga.ImaggaService;
 import com.example.pidev.service.currency.CurrencyService;
 import com.example.pidev.service.whatsapp.WhatsAppService;
+import com.example.pidev.service.external.OpenStreetMapService;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
@@ -40,25 +41,25 @@ public class SponsorFormController {
     @FXML private Label convertedAmountLabel;
     @FXML private TextField phoneField;
     @FXML private TextField industryField;
-    @FXML private TextField taxIdField;          // NOUVEAU
-    @FXML private Button uploadDocBtn;            // NOUVEAU
-    @FXML private Label docFileLabel;             // NOUVEAU
-    @FXML private Button importDocBtn;  // (optionnel)
+    @FXML private TextField taxIdField;
+    @FXML private Button uploadDocBtn;
+    @FXML private Label docFileLabel;
+    @FXML private Button importDocBtn;
 
     private Sponsor editing;
     private Sponsor result;
     private String fixedEmail;
     private File selectedLogoFile;
-    private File selectedDocFile;                  // NOUVEAU
+    private File selectedDocFile;
 
     private Runnable onFormDone;
     private Consumer<Sponsor> onSaved;
 
     private final CloudinaryUploadService cloud = new CloudinaryUploadService();
     private final SponsorService sponsorService = new SponsorService();
+    private final OpenStreetMapService osmService = new OpenStreetMapService();
 
     private static final Pattern EMAIL_RX = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
-    // Regex pour numéro fiscal tunisien : 7 chiffres + une lettre (ex: 1234567A)
     private static final Pattern TAX_ID_RX = Pattern.compile("^[0-9]{7}[A-Za-z]$");
 
     public void setOnFormDone(Runnable callback) { this.onFormDone = callback; }
@@ -105,12 +106,10 @@ public class SponsorFormController {
             });
         }
 
-        // Gestionnaire pour le bouton d'upload de document
         if (uploadDocBtn != null) {
             uploadDocBtn.setOnAction(e -> onChooseDocument());
         }
 
-        // Validation en temps réel du numéro fiscal (optionnel)
         if (taxIdField != null) {
             taxIdField.focusedProperty().addListener((obs, old, focused) -> {
                 if (!focused) {
@@ -123,7 +122,6 @@ public class SponsorFormController {
     private void validateTaxId() {
         String taxId = safe(taxIdField.getText());
         if (!taxId.isEmpty() && !TAX_ID_RX.matcher(taxId).matches()) {
-            // Afficher un indicateur d'erreur (bordure rouge)
             taxIdField.setStyle("-fx-border-color: #ef4444; -fx-border-width: 2;");
             error("Format de numéro fiscal invalide (ex: 1234567A)");
         } else {
@@ -187,10 +185,10 @@ public class SponsorFormController {
         contributionField.clear();
         industryField.clear();
         phoneField.clear();
-        taxIdField.clear();          // nouveau
+        taxIdField.clear();
 
         selectedLogoFile = null;
-        selectedDocFile = null;      // nouveau
+        selectedDocFile = null;
         logoField.clear();
         logoPreview.setImage(null);
         if (visionResultArea != null) visionResultArea.clear();
@@ -226,11 +224,11 @@ public class SponsorFormController {
         contributionField.setText(String.valueOf(s.getContribution_name()));
         industryField.setText(s.getIndustry());
         phoneField.setText(s.getPhone());
-        taxIdField.setText(s.getTax_id());          // nouveau
+        taxIdField.setText(s.getTax_id());
 
         logoField.setText(s.getLogo_url() == null ? "" : s.getLogo_url());
         selectedLogoFile = null;
-        selectedDocFile = null;                      // nouveau
+        selectedDocFile = null;
 
         try {
             if (s.getLogo_url() != null && !s.getLogo_url().isBlank()) {
@@ -280,7 +278,7 @@ public class SponsorFormController {
     }
 
     @FXML
-    private void onChooseDocument() {                // NOUVELLE MÉTHODE
+    private void onChooseDocument() {
         clearErrors();
 
         FileChooser fc = new FileChooser();
@@ -387,7 +385,7 @@ public class SponsorFormController {
         String contribTxt = safe(contributionField.getText()).replace(",", ".");
         String industry = safe(industryField.getText());
         String phone = safe(phoneField.getText());
-        String taxId = safe(taxIdField.getText());   // nouveau
+        String taxId = safe(taxIdField.getText());
 
         if (fixedEmail != null && !fixedEmail.isEmpty()) email = fixedEmail;
 
@@ -410,7 +408,6 @@ public class SponsorFormController {
         if (email.isEmpty()) { error("Email obligatoire"); return; }
         if (!EMAIL_RX.matcher(email).matches()) { error("Email invalide"); return; }
 
-        // Validation du numéro fiscal (optionnel mais si présent, doit être valide)
         if (!taxId.isEmpty() && !TAX_ID_RX.matcher(taxId).matches()) {
             error("Format de numéro fiscal invalide (7 chiffres + lettre)");
             return;
@@ -468,12 +465,32 @@ public class SponsorFormController {
         out.setLogo_url(logoUrlFinal.isEmpty() ? null : logoUrlFinal);
         out.setIndustry(industry);
         out.setPhone(phone);
-        out.setTax_id(taxId);                // nouveau
-        out.setDocument_url(docUrlFinal);     // nouveau
+        out.setTax_id(taxId);
+        out.setDocument_url(docUrlFinal);
 
         out.setContract_url(editing == null ? null : editing.getContract_url());
         out.setAccess_code(editing == null ? null : editing.getAccess_code());
         out.setUser_id(editing == null ? null : editing.getUser_id());
+
+        // Lancer la vérification OpenStreetMap (ne bloque pas la sauvegarde)
+        if (!company.isEmpty()) {
+            new Thread(() -> {
+                try {
+                    String displayName = osmService.searchCompany(company);
+                    Platform.runLater(() -> {
+                        if (displayName != null) {
+                            showInfo("Vérification OpenStreetMap",
+                                    "✅ Entreprise trouvée :\n" + displayName);
+                        } else {
+                            showWarning("Vérification OpenStreetMap",
+                                    "⚠️ Aucune correspondance trouvée pour cette entreprise.");
+                        }
+                    });
+                } catch (Exception e) {
+                    Platform.runLater(() -> showError("Erreur de recherche: " + e.getMessage()));
+                }
+            }).start();
+        }
 
         try {
             if (editing == null) sponsorService.addSponsor(out);
@@ -492,6 +509,9 @@ public class SponsorFormController {
                     }
                 }).start();
             }
+
+            // Message de succès
+            showSuccess("Succès", "Sponsor enregistré avec succès !");
 
             if (onSaved != null) onSaved.accept(result);
             if (onFormDone != null) onFormDone.run();
@@ -543,6 +563,30 @@ public class SponsorFormController {
     private void error(String msg) { if (errorLabel != null) errorLabel.setText("❌ " + msg); }
     private void clearErrors() { if (errorLabel != null) errorLabel.setText(""); }
     private void showError(String msg) { if (errorLabel != null) errorLabel.setText("❌ " + msg); }
+
+    private void showInfo(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showWarning(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showSuccess(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
 
     private Stage getStage() {
         try { return (Stage) eventComboBox.getScene().getWindow(); }
