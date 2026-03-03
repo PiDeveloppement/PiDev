@@ -9,46 +9,57 @@
       fx:controller="com.example.pidev.controller.event.EventListController"
       style="-fx-background-color: #f8fafc;">
 
-    <!-- Barre de filtres (FIXE) -->
-    <HBox style="-fx-background-color: #f1f5f9; -fx-padding: 15 30; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;"
-          spacing="15" alignment="CENTER_LEFT" prefHeight="70">
+    <!-- Barre de filtres (COMPACTE, une seule ligne) -->
+    <HBox style="-fx-background-color: #f1f5f9; -fx-padding: 12 30; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;"
+          spacing="10" alignment="CENTER_LEFT" prefHeight="50">
 
+        <!-- Barre de recherche réduite -->
         <TextField fx:id="searchField"
-                   promptText="🔍 Rechercher un événement..."
-                   style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 8 15; -fx-pref-width: 300;
-                          -fx-border-color: #cbd5e1; -fx-border-width: 1; -fx-border-radius: 8;"/>
+                   promptText="🔍 Rechercher..."
+                   prefWidth="300"
+                   style="-fx-background-color: white; -fx-background-radius: 6; -fx-padding: 6 12; -fx-font-size: 11px;
+                          -fx-border-color: #cbd5e1; -fx-border-width: 1; -fx-border-radius: 6;"/>
 
+        <!-- Filtres compacts -->
         <ComboBox fx:id="statusFilter"
                   promptText="📊 Statut"
-                  prefWidth="150"
-                  style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 8 15;
-                         -fx-border-color: #cbd5e1; -fx-border-width: 1; -fx-border-radius: 8;"/>
+                  prefWidth="130"
+                  style="-fx-background-color: white; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 10px;
+                         -fx-border-color: #cbd5e1; -fx-border-width: 1; -fx-border-radius: 6;"/>
 
         <ComboBox fx:id="categoryFilter"
                   promptText="📂 Catégorie"
-                  prefWidth="180"
-                  style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 8 15;
-                         -fx-border-color: #cbd5e1; -fx-border-width: 1; -fx-border-radius: 8;"/>
+                  prefWidth="130"
+                  style="-fx-background-color: white; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 10px;
+                         -fx-border-color: #cbd5e1; -fx-border-width: 1; -fx-border-radius: 6;"/>
 
         <ComboBox fx:id="sortOrder"
                   promptText="🔽 Ordre"
-                  prefWidth="150"
-                  style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 8 15;
-                         -fx-border-color: #cbd5e1; -fx-border-width: 1; -fx-border-radius: 8;"/>
+                  prefWidth="130"
+                  style="-fx-background-color: white; -fx-background-radius: 6; -fx-padding: 6 10; -fx-font-size: 10px;
+                         -fx-border-color: #cbd5e1; -fx-border-width: 1; -fx-border-radius: 6;"/>
 
-        <Region HBox.hgrow="ALWAYS"/>
+        <!-- Espace flexible minimal -->
+        <Region HBox.hgrow="ALWAYS" minWidth="8"/>
+
+        <!-- Boutons compacts alignés à droite -->
+        <Button text="📅 Calendrier"
+                onAction="#handleShowCalendar"
+                style="-fx-background-color: #7c3aed; -fx-text-fill: white; -fx-padding: 6 15; -fx-font-size: 11px;
+                       -fx-background-radius: 6; -fx-cursor: hand;"
+                prefWidth="115"/>
 
         <Button text="📄 Exporter PDF"
                 onAction="#handleExportPDF"
-                style="-fx-background-color: #0D47A1; -fx-text-fill: white; -fx-padding: 8 20;
-                       -fx-background-radius: 8; -fx-cursor: hand;"
-                minWidth="140"/>
+                style="-fx-background-color: #0D47A1; -fx-text-fill: white; -fx-padding: 6 15; -fx-font-size: 11px;
+                       -fx-background-radius: 6; -fx-cursor: hand;"
+                prefWidth="120"/>
 
-        <Button fx:id="addBtn" text="➕ Créer un événement"
+        <Button fx:id="addBtn" text="➕ Créer évènement"
                 onAction="#handleAdd"
-                style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 8 20;
-                       -fx-background-radius: 8; -fx-cursor: hand; -fx-font-weight: bold;"
-                minWidth="180"/>
+                style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 6 15; -fx-font-size: 11px;
+                       -fx-background-radius: 6; -fx-cursor: hand; -fx-font-weight: bold;"
+                prefWidth="150"/>
     </HBox>
 
     <!-- SCROLLPANE GLOBAL -->

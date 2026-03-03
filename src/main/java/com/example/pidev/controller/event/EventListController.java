@@ -545,6 +545,23 @@ public class EventListController {
         helloController.showEventForm(null);
     }
 
+    /**
+     * Ouvre la vue calendrier
+     */
+    @FXML
+    private void handleShowCalendar() {
+        System.out.println("📅 Ouverture du calendrier des événements");
+        if (helloController != null) {
+            helloController.showEventCalendar();
+        } else {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Erreur");
+            alert.setHeaderText("Impossible d'ouvrir le calendrier");
+            alert.setContentText("Le contrôleur principal n'est pas disponible");
+            alert.showAndWait();
+        }
+    }
+
     private void handleView(Event event) {
         System.out.println("👁️ Consultation de: " + event.getTitle());
         if (helloController != null) {

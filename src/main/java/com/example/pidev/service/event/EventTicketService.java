@@ -446,4 +446,62 @@ public class EventTicketService {
 
         return ticket;
     }
+
+    // ==================== GÉNÉRATION QR CODES MANQUANTS ====================
+
+    /**
+     * Générer les QR codes manquants pour les anciens tickets avec qr_code = NULL
+     * Utilise QuickChart.io pour générer les QR codes dynamiques
+     * @return Le nombre de tickets mis à jour
+     */
+    public int generateMissingQRCodes() {
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return 0;
+        }
+
+        int updatedCount = 0;
+
+        // 1. Récupérer tous les tickets sans QR code
+        String selectSql = "SELECT id, ticket_code FROM event_ticket WHERE qr_code IS NULL OR qr_code = ''";
+
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(selectSql)) {
+
+            while (rs.next()) {
+                int ticketId = rs.getInt("id");
+                String ticketCode = rs.getString("ticket_code");
+
+                // 2. Générer l'URL du QR code via QuickChart.io
+                String qrUrl = buildQrUrl(ticketCode);
+
+                if (qrUrl != null) {
+                    // 3. Mettre à jour le ticket dans la base de données
+                    String updateSql = "UPDATE event_ticket SET qr_code = ? WHERE id = ?";
+
+                    try (PreparedStatement pstmt = connection.prepareStatement(updateSql)) {
+                        pstmt.setString(1, qrUrl);
+                        pstmt.setInt(2, ticketId);
+
+                        int rowsAffected = pstmt.executeUpdate();
+                        if (rowsAffected > 0) {
+                            updatedCount++;
+                            System.out.println("✅ QR code généré pour ticket ID=" + ticketId + " (" + ticketCode + ")");
+                        }
+                    }
+                } else {
+                    System.err.println("⚠️ Impossible de générer QR code pour ticket ID=" + ticketId);
+                }
+            }
+
+            System.out.println("✅ " + updatedCount + " tickets ont été mis à jour avec des QR codes");
+
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur génération QR codes manquants: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return updatedCount;
+    }
 }
+

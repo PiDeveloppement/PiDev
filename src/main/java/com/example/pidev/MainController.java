@@ -1194,6 +1194,37 @@ public class MainController {
         }
     }
 
+    /**
+     * Affiche le calendrier interactif des événements
+     */
+    public void showEventCalendar() {
+        try {
+            System.out.println("📅 Chargement du calendrier des événements");
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/event/event-calendar.fxml")
+            );
+            Parent page = loader.load();
+
+            Object controller = loader.getController();
+            if (controller instanceof EventCalendarController) {
+                ((EventCalendarController) controller).setMainController(this);
+            }
+
+            pageTitle.setText("Calendrier des événements");
+            pageSubtitle.setText("Visualisez vos événements par mois");
+            hideKPIs();
+
+            pageContentContainer.getChildren().clear();
+            pageContentContainer.getChildren().add(page);
+
+            System.out.println("✅ Calendrier chargé avec succès");
+        } catch (IOException e) {
+            System.err.println("❌ Erreur chargement calendrier: " + e.getMessage());
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible de charger le calendrier: " + e.getMessage());
+        }
+    }
+
     public void showEventView(Event event) {
         try {
             FXMLLoader loader = new FXMLLoader(
@@ -1765,6 +1796,17 @@ public class MainController {
             System.out.println("🔄 Rafraîchissement KPI Billets...");
             loadTicketData();
         }
+    }
+
+    /**
+     * Affiche une alerte simple
+     */
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
 }

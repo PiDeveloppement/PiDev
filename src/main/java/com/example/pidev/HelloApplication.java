@@ -17,15 +17,30 @@ public class HelloApplication extends Application {
         primaryStage = stage;
 
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
-        Parent root = FXMLLoader.load(getClass().getResource("/com/example/pidev/fxml/auth/landingPage.fxml"));
-        stage.initStyle(StageStyle.DECORATED);
-        Scene scene = new Scene(root, 1400, 900);
-        scene.getStylesheets().add(getClass().getResource("/com/example/pidev/css/atlantafx-custom.css").toExternalForm());
-        stage.setTitle("EventFlow - Plateforme de gestion d'evenements");
-        stage.setScene(scene);
-        stage.setMinWidth(1200);
-        stage.setMinHeight(800);
-        stage.show();
+
+        try {
+            // Charger le FXML de landing page
+            String fxmlPath = "/com/example/pidev/fxml/auth/landingPage.fxml";
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+
+            if (loader.getLocation() == null) {
+                throw new IllegalArgumentException("Fichier FXML non trouvé: " + fxmlPath);
+            }
+
+            Parent root = loader.load();
+            stage.initStyle(StageStyle.DECORATED);
+            Scene scene = new Scene(root, 1400, 900);
+            scene.getStylesheets().add(getClass().getResource("/com/example/pidev/css/atlantafx-custom.css").toExternalForm());
+            stage.setTitle("EventFlow - Plateforme de gestion d'evenements");
+            stage.setScene(scene);
+            stage.setMinWidth(1200);
+            stage.setMinHeight(800);
+            stage.show();
+        } catch (Exception e) {
+            System.err.println("❌ Erreur au démarrage de l'application: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     public static Stage getPrimaryStage() {
