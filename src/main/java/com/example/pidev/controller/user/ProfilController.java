@@ -35,7 +35,7 @@ public class ProfilController implements Initializable {
     @FXML private TextField lastNameField;
     @FXML private TextField emailField;
     @FXML private TextField phoneField;
-    @FXML private ComboBox<String> facultyComboBox;
+    @FXML private TextField facultyTextField;  // Changé de ComboBox à TextField
     @FXML private ComboBox<String> roleComboBox;
     @FXML private TextField registrationDateField;
     @FXML private TextArea bioTextArea;
@@ -48,14 +48,14 @@ public class ProfilController implements Initializable {
     @FXML private Text userInitialsText;
     @FXML private Button uploadImageButton;
 
-    // Sécurité - MODIFIÉ POUR UTILISER TextField
-    @FXML private TextField currentPasswordField;  // Changé de PasswordField à TextField
-    @FXML private TextField newPasswordField;      // Changé de PasswordField à TextField
-    @FXML private TextField confirmPasswordField;  // Changé de PasswordField à TextField
+    // Sécurité
+    @FXML private PasswordField currentPasswordField;
+    @FXML private PasswordField newPasswordField;
+    @FXML private PasswordField confirmPasswordField;
+    @FXML private ToggleButton emailNotificationsToggle;
 
     // Statistiques
     @FXML private Label eventCountLabel;
-
     @FXML private Label verificationStatusLabel;
     @FXML private Label lastLoginLabel;
     @FXML private Label userRoleDisplayLabel;
@@ -93,7 +93,6 @@ public class ProfilController implements Initializable {
 
                 // Charger les données
                 loadUserDataFromModel();
-                loadFacultiesFromDatabase();
                 loadRolesFromDatabase();
                 loadProfileImage();
                 updateStatistics();
@@ -226,49 +225,6 @@ public class ProfilController implements Initializable {
         }
     }
 
-    // === LE RESTE DE VOTRE CODE (méthodes existantes) ===
-
-    /**
-     * Charge les facultés depuis la table user_model
-     */
-    private void loadFacultiesFromDatabase() {
-        try {
-            ObservableList<String> faculties = userService.getAllFacultes();
-
-            if (faculties.isEmpty()) {
-                System.out.println("⚠️ Aucune faculté trouvée dans la base de données");
-                faculties.add("Non définie");
-            } else {
-                System.out.println("✅ " + faculties.size() + " facultés chargées depuis la base");
-            }
-
-            facultyComboBox.setItems(faculties);
-
-            String userFaculty = currentUser.getFaculte();
-            if (userFaculty != null && !userFaculty.isEmpty()) {
-                if (faculties.contains(userFaculty)) {
-                    facultyComboBox.setValue(userFaculty);
-                    System.out.println("✅ Faculté sélectionnée: " + userFaculty);
-                } else {
-                    facultyComboBox.getItems().add(userFaculty);
-                    facultyComboBox.setValue(userFaculty);
-                    System.out.println("➕ Faculté ajoutée: " + userFaculty);
-                }
-            }
-
-            facultyComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                if (newVal != null && !newVal.equals(oldVal)) {
-                    System.out.println("Faculté changée: " + oldVal + " -> " + newVal);
-                    currentUser.setFaculte(newVal);
-                }
-            });
-
-        } catch (Exception e) {
-            System.err.println("❌ Erreur chargement facultés: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
     /**
      * Charge les rôles depuis la table role
      */
@@ -313,6 +269,9 @@ public class ProfilController implements Initializable {
             emailField.setText(currentUser.getEmail());
             phoneField.setText(currentUser.getPhone() != null ? currentUser.getPhone() : "");
 
+            // Charger la faculté dans le TextField
+            facultyTextField.setText(currentUser.getFaculte() != null ? currentUser.getFaculte() : "");
+
             if (currentUser.getRegistrationDate() != null) {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
                 registrationDateField.setText(currentUser.getRegistrationDate().format(formatter));
@@ -329,8 +288,10 @@ public class ProfilController implements Initializable {
                 userRoleDisplayLabel.setText(currentUser.getRole().getRoleName());
             }
 
-            // NE PAS charger le mot de passe dans les champs
-            // Les champs de mot de passe restent vides
+            // Initialiser le toggle des notifications
+            if (emailNotificationsToggle != null) {
+                emailNotificationsToggle.setSelected(true);
+            }
         }
     }
 
@@ -452,11 +413,19 @@ public class ProfilController implements Initializable {
 
     @FXML
     private void saveProfile() {
+        // Validation des champs requis
+        if (firstNameField.getText().trim().isEmpty() ||
+                lastNameField.getText().trim().isEmpty() ||
+                emailField.getText().trim().isEmpty()) {
+            showAlert("Champs requis", "Veuillez remplir tous les champs obligatoires (*)");
+            return;
+        }
+
         currentUser.setFirst_Name(firstNameField.getText().trim());
         currentUser.setLast_Name(lastNameField.getText().trim());
         currentUser.setEmail(emailField.getText().trim());
         currentUser.setPhone(phoneField.getText().trim());
-        currentUser.setFaculte(facultyComboBox.getValue());
+        currentUser.setFaculte(facultyTextField.getText().trim()); // Utilisation du TextField
         currentUser.setBio(bioTextArea.getText().trim());
 
         try {
@@ -484,9 +453,7 @@ public class ProfilController implements Initializable {
     private void cancelChanges() {
         loadUserDataFromModel();
         loadProfileImage();
-        if (currentUser.getFaculte() != null) {
-            facultyComboBox.setValue(currentUser.getFaculte());
-        }
+        facultyTextField.setText(currentUser.getFaculte()); // Mise à jour avec le TextField
 
         // Réinitialiser les champs de mot de passe
         currentPasswordField.clear();

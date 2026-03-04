@@ -26,8 +26,6 @@
                    style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #16a34a;"/>
             <Label text="Événements créés" style="-fx-text-fill: #22c55e; -fx-font-size: 11px;"/>
         </VBox>
-
-
     </HBox>
 
     <!-- Section scrollable (contenu principal) -->
@@ -65,7 +63,6 @@
                 <HBox spacing="30" alignment="TOP_LEFT">
 
                     <!-- Section photo de profil -->
-                    <!-- Section photo de profil -->
                     <VBox spacing="15" alignment="TOP_CENTER" style="-fx-padding: 15;">
                         <!-- Avatar avec le MÊME STYLE que la top bar -->
                         <StackPane fx:id="avatarContainer"
@@ -93,7 +90,7 @@
                             <StackPane fx:id="initialsContainer" visible="true">
                                 <Circle radius="66" fill="#2196F3"/>
                                 <Text fx:id="userInitialsText"
-                                      text="OA"
+                                      text="SA"
                                       style="-fx-font-size: 48px; -fx-font-weight: bold; -fx-fill: white;"
                                       StackPane.alignment="CENTER"/>
                             </StackPane>
@@ -119,6 +116,7 @@
                                    style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;"/>
                         </VBox>
                     </VBox>
+
                     <!-- Section informations personnelles -->
                     <VBox spacing="20" prefWidth="600">
                         <GridPane hgap="15" vgap="15">
@@ -159,23 +157,25 @@
                             <Label text="Téléphone"
                                    style="-fx-text-fill: #475569; -fx-font-size: 13px; -fx-font-weight: bold;"
                                    GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-                            <TextField fx:id="phoneField" promptText="+33 1 23 45 67 89"
+                            <TextField fx:id="phoneField" promptText="+216 XX XXX XXX"
                                        style="-fx-background-color: white; -fx-background-radius: 8;
                                               -fx-padding: 10 15; -fx-pref-height: 40;
                                               -fx-border-color: #cbd5e1; -fx-border-width: 1;"
                                        GridPane.rowIndex="3" GridPane.columnIndex="1"/>
 
-                            <!-- Ligne 3: Faculté / Département -->
+                            <!-- Ligne 3: Faculté (TextField au lieu de ComboBox) -->
                             <Label text="Faculté *"
                                    style="-fx-text-fill: #475569; -fx-font-size: 13px; -fx-font-weight: bold;"
                                    GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-                            <ComboBox fx:id="facultyComboBox" promptText="Sélectionnez votre faculté"
-                                      style="-fx-background-color: white; -fx-background-radius: 8;
-                                             -fx-padding: 10 15; -fx-pref-height: 40;
-                                             -fx-border-color: #cbd5e1; -fx-border-width: 1;"
-                                      GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                            <TextField fx:id="facultyTextField" promptText="Entrez votre faculté"
+                                       style="-fx-background-color: white; -fx-background-radius: 8;
+                                              -fx-padding: 10 15; -fx-pref-height: 40;
+                                              -fx-border-color: #cbd5e1; -fx-border-width: 1;"
+                                       GridPane.rowIndex="5" GridPane.columnIndex="0"/>
 
-
+                            <!-- Espace vide pour la colonne de droite -->
+                            <Label text="" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                            <Label text="" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
 
                             <!-- Ligne 4: Rôle / Date d'inscription -->
                             <Label text="Rôle *"
@@ -206,7 +206,7 @@
                                       style="-fx-background-color: white; -fx-background-radius: 8;
                                              -fx-padding: 10 15; -fx-pref-height: 80;
                                              -fx-border-color: #cbd5e1; -fx-border-width: 1;"/>
-                            <Label fx:id="bioCharCountLabel" text="0/500 caractères"
+                            <Label fx:id="bioCharCountLabel" text="0/500"
                                    style="-fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-alignment: CENTER_RIGHT;"/>
                         </VBox>
 
@@ -243,7 +243,7 @@
                     <Label text="🔒 Sécurité du compte"
                            style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #334155;"/>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Label fx:id="lastLoginLabel" text="Dernière connexion: Aujourd'hui, 10:30"
+                    <Label fx:id="lastLoginLabel" text="Dernière connexion: Aujourd'hui"
                            style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
                 </HBox>
 
@@ -283,7 +283,6 @@
                                        -fx-background-radius: 8; -fx-padding: 10 20;
                                        -fx-cursor: hand;"/>
                     </HBox>
-
 
                     <HBox spacing="15" alignment="CENTER_LEFT">
                         <VBox spacing="5">
