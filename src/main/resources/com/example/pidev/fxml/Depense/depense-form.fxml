@@ -14,7 +14,7 @@
     </padding>
 
     <VBox spacing="20" AnchorPane.topAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0">
-        <!-- Titre avec icône -->
+        <!-- Titre -->
         <Label fx:id="titleLabel" text="➕ Nouvelle Dépense" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 0 0 10 0;"/>
 
         <!-- Formulaire -->
@@ -32,7 +32,7 @@
             <Label text="📝 Description" style="-fx-font-weight: 700; -fx-text-fill: #334155; -fx-font-size: 14px;" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
             <TextField fx:id="descField" promptText="Ex: Achat de matériel" style="-fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 10 15; -fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-width: 1.5;" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
-            <!-- Catégorie (remplacée par ComboBox) -->
+            <!-- Catégorie -->
             <Label text="🏷️ Catégorie" style="-fx-font-weight: 700; -fx-text-fill: #334155; -fx-font-size: 14px;" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
             <ComboBox fx:id="categoryComboBox" promptText="Choisissez une catégorie" style="-fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 10 15; -fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-width: 1.5;" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
@@ -43,7 +43,7 @@
                 <ComboBox fx:id="currencyComboBox" prefWidth="150" style="-fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 10 15; -fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-width: 1.5;"/>
             </HBox>
 
-            <!-- Résultat de conversion -->
+            <!-- Résultat conversion -->
             <Label text="💱 Résultat" style="-fx-font-weight: 700; -fx-text-fill: #334155; -fx-font-size: 14px;" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
             <HBox spacing="10" alignment="CENTER_LEFT" GridPane.rowIndex="4" GridPane.columnIndex="1">
                 <Label fx:id="convertedAmountLabel" style="-fx-text-fill: #059669; -fx-font-weight: 800; -fx-font-size: 18px; -fx-background-color: #d1fae5; -fx-background-radius: 12; -fx-padding: 12 20; -fx-border-color: #a7f3d0; -fx-border-width: 1.5; -fx-border-radius: 12; -fx-min-width: 200;"/>

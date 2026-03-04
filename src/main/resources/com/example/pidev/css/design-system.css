@@ -720,6 +720,25 @@
     -fx-border-radius: 14;
     -fx-padding: 12;
 }
+/* Carte budget normale */
+.budget-card-normal {
+    -fx-background-color: white;
+    -fx-background-radius: 16;
+    -fx-border-radius: 16;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 1;
+    -fx-padding: 14;
+}
+
+/* Carte budget en alerte (dépassement) */
+.budget-card-alert {
+    -fx-background-color: #fee2e2;
+    -fx-background-radius: 16;
+    -fx-border-radius: 16;
+    -fx-border-color: #ef4444;
+    -fx-border-width: 2;
+    -fx-padding: 14;
+}
 
 /* ---- PieChart moderne ---- */
 .modern-pie-chart {

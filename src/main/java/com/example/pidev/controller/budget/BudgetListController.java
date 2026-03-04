@@ -45,12 +45,9 @@ public class BudgetListController implements Initializable {
     @FXML private Label statusLabel;
     @FXML private TilePane cardsPane;
 
-    // Les StackPanes sont déclarés dans le FXML (sans ImageView dedans)
-    // On crée les ImageViews programmatiquement pour un contrôle total
     @FXML private StackPane budgetChartHolder;
     @FXML private StackPane roiChartHolder;
 
-    // ImageViews créées par le controller
     private final ImageView budgetComparisonImage = new ImageView();
     private final ImageView roiTrendImage         = new ImageView();
 
@@ -59,7 +56,7 @@ public class BudgetListController implements Initializable {
     private FilteredList<Budget> filtered;
 
     private static final String CARD_FXML    = "/com/example/pidev/fxml/Budget/budget-card.fxml";
-    private static final String FORM_FXML    = "/com/example/pidev/fxml/Budget/budget-form.fxml";
+    private static final String FORM_FXML    = "/com/example/pidev/fxml/Budget/budget-form.fxml"; // <-- Vérifiez ce chemin
     private static final String DETAILS_FXML = "/com/example/pidev/fxml/Budget/budget-detail.fxml";
 
     @Override
@@ -78,7 +75,6 @@ public class BudgetListController implements Initializable {
             cardsPane.setVgap(14);
         }
 
-        // Injecter les ImageViews dans les StackPanes et les contraindre
         setupImageView(budgetChartHolder, budgetComparisonImage);
         setupImageView(roiChartHolder,    roiTrendImage);
 
@@ -86,12 +82,9 @@ public class BudgetListController implements Initializable {
         loadDataSafe();
         applyPredicate();
 
-        // Attendre que le layout JavaFX soit rendu pour avoir les vraies dimensions
         Platform.runLater(() -> {
             updateBudgetComparisonChart();
             updateRoiTrendChart();
-
-            // Recharger si l'utilisateur redimensionne la fenêtre
             if (budgetChartHolder != null) {
                 budgetChartHolder.widthProperty().addListener((obs, oldVal, newVal) -> {
                     if (Math.abs(newVal.doubleValue() - oldVal.doubleValue()) > 30) {
@@ -103,46 +96,30 @@ public class BudgetListController implements Initializable {
         });
     }
 
-    /**
-     * Configure une ImageView et l'insère dans son StackPane conteneur.
-     * L'ImageView est liée en taille au StackPane → elle ne peut pas déborder.
-     */
     private void setupImageView(StackPane holder, ImageView imageView) {
         if (holder == null) return;
-
         imageView.setPreserveRatio(false);
         imageView.setSmooth(true);
         imageView.setCache(true);
-
-        // ✅ Lier la taille AU StackPane : l'image occupera exactement le holder
-        imageView.fitWidthProperty() .bind(holder.widthProperty());
+        imageView.fitWidthProperty().bind(holder.widthProperty());
         imageView.fitHeightProperty().bind(holder.heightProperty());
-
-        // ✅ Clip pour couper net si jamais l'image dépasse (sécurité supplémentaire)
         Rectangle clip = new Rectangle();
-        clip.widthProperty() .bind(holder.widthProperty());
+        clip.widthProperty().bind(holder.widthProperty());
         clip.heightProperty().bind(holder.heightProperty());
         holder.setClip(clip);
-
         holder.getChildren().add(imageView);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Graphiques — taille = taille réelle du holder au moment du rendu
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void updateBudgetComparisonChart() {
         if (budgetChartHolder == null) return;
         try {
             List<Budget> top5 = budgetService.getTop5Budgets();
             if (top5.isEmpty()) return;
-
             int n = top5.size();
             String[] labels   = new String[n];
             double[] initial  = new double[n];
             double[] expenses = new double[n];
             double[] revenue  = new double[n];
-
             for (int i = 0; i < n; i++) {
                 Budget b    = top5.get(i);
                 labels[i]   = compactEventLabel(budgetService.getEventTitleById(b.getEvent_id()));
@@ -150,20 +127,14 @@ public class BudgetListController implements Initializable {
                 expenses[i] = b.getTotal_expenses();
                 revenue[i]  = b.getTotal_revenue();
             }
-
             String[]   seriesNames = {"Budget initial", "Dépenses", "Revenus"};
             double[][] seriesData  = {initial, expenses, revenue};
-
-            // Dimensions = taille réelle du StackPane (connue après le layout)
             int w = getHolderWidth(budgetChartHolder);
             int h = getHolderHeight(budgetChartHolder);
-
             JsonObject config = QuickChartService.createMultiBarChart(
                     "Comparaison des 5 derniers budgets", labels, seriesNames, seriesData);
             String url = QuickChartService.getChartUrl(config, w, h);
-
             loadImageAsync(url, budgetComparisonImage);
-
         } catch (Exception e) {
             showError("Chart", "Erreur graphique : " + e.getMessage());
         }
@@ -174,19 +145,15 @@ public class BudgetListController implements Initializable {
         try {
             List<Budget> all = new ArrayList<>(baseList);
             if (all.size() < 2) return;
-
             List<RoiCalculator.Pair<LocalDate, Double>> dataPoints = new ArrayList<>();
             LocalDate base = LocalDate.now().minusMonths(all.size());
             for (int i = 0; i < all.size(); i++)
                 dataPoints.add(new RoiCalculator.Pair<>(base.plusMonths(i), all.get(i).getRentabilite()));
             dataPoints.sort(Comparator.comparing(RoiCalculator.Pair::getFirst));
-
             RoiCalculator.LinearRegressionResult model = RoiCalculator.linearRegression(dataPoints);
             LocalDate minDate = dataPoints.stream().map(RoiCalculator.Pair::getFirst).min(LocalDate::compareTo).orElse(LocalDate.now());
-
             List<String> histL = new ArrayList<>(); List<Double> histV = new ArrayList<>();
             for (RoiCalculator.Pair<LocalDate, Double> p : dataPoints) { histL.add(compactMonthYear(p.getFirst())); histV.add(p.getSecond()); }
-
             List<String> projL = new ArrayList<>(); List<Double> projV = new ArrayList<>();
             LocalDate last = dataPoints.get(dataPoints.size() - 1).getFirst();
             for (int i = 1; i <= 3; i++) {
@@ -194,41 +161,31 @@ public class BudgetListController implements Initializable {
                 projL.add(compactMonthYear(fd));
                 projV.add(model.predict(fd.toEpochDay() - minDate.toEpochDay()));
             }
-
             List<String> allLabels = new ArrayList<>(histL); allLabels.addAll(projL);
             String[]   sNames = {"ROI historique", "Projection"};
             double[][] sData  = new double[2][allLabels.size()];
             for (int i = 0; i < histL.size(); i++) sData[0][i] = histV.get(i);
             for (int i = 0; i < projL.size(); i++) sData[1][histL.size() + i] = projV.get(i);
-
             int w = getHolderWidth(roiChartHolder);
             int h = getHolderHeight(roiChartHolder);
-
             JsonObject config = QuickChartService.createLineChart(
                     "Tendance du ROI avec projection sur 3 mois",
                     allLabels.toArray(new String[0]), sNames, sData);
             String url = QuickChartService.getChartUrl(config, w, h);
-
             loadImageAsync(url, roiTrendImage);
-
         } catch (Exception e) {
             showError("ROI Trend", "Erreur tendance : " + e.getMessage());
         }
     }
 
-    /** Retourne la largeur réelle du holder, avec fallback à 500 */
     private int getHolderWidth(StackPane holder) {
         double w = holder.getWidth();
         return (int)(w > 50 ? w : 500);
     }
-
-    /** Retourne la hauteur réelle du holder, avec fallback à 340 */
     private int getHolderHeight(StackPane holder) {
         double h = holder.getHeight();
         return (int)(h > 50 ? h : 340);
     }
-
-    /** Charge l'image en thread background, l'affecte sur le thread JavaFX */
     private void loadImageAsync(String url, ImageView target) {
         new Thread(() -> {
             try {
@@ -239,10 +196,6 @@ public class BudgetListController implements Initializable {
             }
         }, "chart-loader").start();
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Filtres / données
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void setupFiltersSafe() {
         if (healthFilter != null) { healthFilter.getItems().setAll("Tous","🟢 Excellent","🔵 Bon","🟡 Fragile","🔴 Critique"); healthFilter.setValue("Tous"); }
@@ -303,10 +256,6 @@ public class BudgetListController implements Initializable {
         return "Tous".equalsIgnoreCase(sel) || getFinancialHealth(b).contains(sel);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Cartes / navigation
-    // ─────────────────────────────────────────────────────────────────────────
-
     private void renderCards() {
         if (cardsPane == null || filtered == null) return;
         cardsPane.getChildren().clear();
@@ -336,20 +285,27 @@ public class BudgetListController implements Initializable {
         try {
             MainController.getInstance().loadIntoCenter(FORM_FXML, (BudgetFormController ctrl) -> {
                 if (existing == null) ctrl.setModeAdd(); else ctrl.setModeEdit(existing);
-                ctrl.setOnFormDone(() -> { Budget saved = ctrl.getResult(); setupFiltersSafe(); loadDataSafe(); applyPredicate(); if (saved != null) openDetailsAsPage(saved); else MainController.getInstance().onBudget(); });
+                ctrl.setOnFormDone(() -> {
+                    Budget saved = ctrl.getResult();
+                    setupFiltersSafe();
+                    loadDataSafe();
+                    applyPredicate();
+                    if (saved != null) openDetailsAsPage(saved);
+                    else MainController.getInstance().onBudget();
+                });
             });
-        } catch (Exception e) { showError("UI", "Impossible d'ouvrir le formulaire: " + e.getMessage()); }
+        } catch (Exception e) {
+            showError("UI", "Impossible d'ouvrir le formulaire: " + e.getMessage());
+        }
     }
 
     private void openDetailsAsPage(Budget b) {
         try {
             MainController.getInstance().loadIntoCenter(DETAILS_FXML, (BudgetDetailsController ctrl) -> { ctrl.setBudget(b); ctrl.setOnCloseAction(() -> MainController.getInstance().onBudget()); });
-        } catch (Exception e) { showError("Détails", "Impossible d'ouvrir les détails: " + e.getMessage()); }
+        } catch (Exception e) {
+            showError("Détails", "Impossible d'ouvrir les détails: " + e.getMessage());
+        }
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Helpers
-    // ─────────────────────────────────────────────────────────────────────────
 
     private String compactEventLabel(String text) {
         if (text == null || text.isBlank()) return "";

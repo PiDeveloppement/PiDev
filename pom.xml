@@ -34,7 +34,7 @@
       <version>${javafx.version}</version>
     </dependency>
 
-    <!-- Ikonli pour les icônes vectorielles -->
+    <!-- Ikonli -->
     <dependency>
       <groupId>org.kordamp.ikonli</groupId>
       <artifactId>ikonli-javafx</artifactId>
@@ -74,7 +74,7 @@
       <version>2.0.1</version>
     </dependency>
 
-    <!-- Jakarta Persistence (JPA) -->
+    <!-- Jakarta Persistence -->
     <dependency>
       <groupId>jakarta.persistence</groupId>
       <artifactId>jakarta.persistence-api</artifactId>
@@ -131,7 +131,7 @@
       <version>9.8.0</version>
     </dependency>
 
-    <!-- Apache POI pour Excel -->
+    <!-- Apache POI -->
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi-ooxml</artifactId>
@@ -153,7 +153,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- Apache HttpClient et HttpMime -->
+    <!-- Apache HttpClient -->
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
@@ -165,7 +165,7 @@
       <version>4.5.14</version>
     </dependency>
 
-    <!-- Google Cloud Vision (optionnel) -->
+    <!-- Google Cloud Vision -->
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-vision</artifactId>
@@ -190,13 +190,9 @@
         <version>0.0.8</version>
         <configuration>
           <mainClass>com.example.pidev.HelloApplication</mainClass>
-          <!-- Options JVM optimisées pour éviter l'erreur mémoire -->
           <options>
-            <option>-Xmx1536m</option>                  <!-- Réduit légèrement la mémoire max -->
-            <option>-Xms512m</option>                    <!-- Taille initiale du tas -->
-            <option>-XX:+UseSerialGC</option>            <!-- Garbage collector plus léger -->
-            <option>-XX:MaxHeapFreeRatio=50</option>     <!-- Évite la fragmentation -->
-            <option>-XX:MinHeapFreeRatio=20</option>
+            <option>-Xmx512m</option>   <!-- 512 Mo seulement -->
+            <option>-Xms256m</option>   <!-- Taille initiale réduite -->
           </options>
         </configuration>
       </plugin>

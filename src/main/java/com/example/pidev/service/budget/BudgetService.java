@@ -287,4 +287,27 @@ public class BudgetService {
         }
         return "Budget N°" + budgetId;
     }
+
+    // ==================== NOUVELLE MÉTHODE POUR LE FORMULAIRE DE DÉPENSE ====================
+    /**
+     * Retourne une liste de libellés pour chaque budget : "Titre événement (montant initial DT)"
+     * Utilisé dans le ComboBox du formulaire de dépense.
+     */
+    public ObservableList<String> getBudgetDisplayNames() {
+        ObservableList<String> list = FXCollections.observableArrayList();
+        String sql = "SELECT b.id, e.title, b.initial_budget " +
+                "FROM budget b JOIN event e ON b.event_id = e.id " +
+                "ORDER BY b.id DESC";
+        try (PreparedStatement ps = cnx().prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                String title = rs.getString("title");
+                double initial = rs.getDouble("initial_budget");
+                list.add(title + " (" + String.format("%,.2f DT", initial) + ")");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("getBudgetDisplayNames failed", e);
+        }
+        return list;
+    }
 }

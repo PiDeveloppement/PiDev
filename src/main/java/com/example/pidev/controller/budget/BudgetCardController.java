@@ -1,13 +1,22 @@
 package com.example.pidev.controller.budget;
 
 import com.example.pidev.model.budget.Budget;
+import com.example.pidev.model.depense.Depense;
 import com.example.pidev.service.budget.BudgetService;
+import com.example.pidev.service.depense.DepenseService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.layout.AnchorPane;
+
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Objects;
 
 public class BudgetCardController {
 
+    @FXML private AnchorPane rootPane;
     @FXML private Label titleLabel;
     @FXML private Label eventLabelPrefix;
     @FXML private Label eventLabel;
@@ -20,12 +29,16 @@ public class BudgetCardController {
     @FXML private Button detailsBtn;
     @FXML private Button editBtn;
     @FXML private Button deleteBtn;
+    @FXML private Label alertLabel;
+    @FXML private Label forecastLabel;
 
     private final BudgetService budgetService = new BudgetService();
+    private final DepenseService depenseService = new DepenseService();
 
     public void setData(Budget b, Runnable onDetails, Runnable onEdit, Runnable onDelete) {
         if (b == null) return;
 
+        // ---- Informations générales ----
         if (titleLabel != null) titleLabel.setText("Budget");
         if (eventLabel != null) {
             try {
@@ -60,6 +73,78 @@ public class BudgetCardController {
             }
         }
 
+        // ---- Alerte de dépassement ----
+        double initial = b.getInitial_budget();
+        double totalExpenses = b.getTotal_expenses();
+        boolean overBudget = false;
+
+        if (initial > 0) {
+            double usagePercent = (totalExpenses / initial) * 100;
+            String usageText = String.format("%.1f%% utilisé", usagePercent);
+
+            if (usagePercent >= 100) {
+                alertLabel.setText("🚨 Budget DÉPASSÉ !");
+                alertLabel.setStyle("-fx-text-fill: #b91c1c; -fx-font-weight: bold; -fx-font-size: 14px;");
+                overBudget = true;
+            } else if (usagePercent >= 80) {
+                alertLabel.setText("⚠️ " + usageText);
+                alertLabel.setStyle("-fx-text-fill: #f97316; -fx-font-weight: bold;");
+            } else {
+                alertLabel.setText(usageText);
+                alertLabel.setStyle("-fx-text-fill: #059669; -fx-font-weight: bold;");
+            }
+        } else {
+            alertLabel.setText("Budget initial nul");
+            alertLabel.setStyle("-fx-text-fill: #64748b; -fx-font-style: italic;");
+        }
+
+        // ---- Montant restant coloré ----
+        double remaining = initial - totalExpenses;
+        String remainingText = String.format("%,.2f DT restants", remaining);
+        forecastLabel.setText(remainingText);
+        if (remaining < 0) {
+            forecastLabel.setStyle("-fx-text-fill: #b91c1c; -fx-font-weight: bold;");
+        } else {
+            forecastLabel.setStyle("-fx-text-fill: #059669; -fx-font-weight: bold;");
+        }
+
+        // ---- Style de la carte (rouge si dépassement) ----
+        if (rootPane != null) {
+            rootPane.getStyleClass().removeAll("budget-card-normal", "budget-card-alert");
+            if (overBudget) {
+                rootPane.getStyleClass().add("budget-card-alert");
+            } else {
+                rootPane.getStyleClass().add("budget-card-normal");
+            }
+        }
+
+        // ---- Prévision des jours restants (optionnel, mais on garde) ----
+        List<Depense> depenses = depenseService.getDepensesByBudgetId(b.getId());
+        if (!depenses.isEmpty()) {
+            LocalDate earliest = depenses.stream()
+                    .map(Depense::getExpense_date)
+                    .filter(Objects::nonNull)
+                    .min(LocalDate::compareTo)
+                    .orElse(null);
+            LocalDate latest = depenses.stream()
+                    .map(Depense::getExpense_date)
+                    .filter(Objects::nonNull)
+                    .max(LocalDate::compareTo)
+                    .orElse(null);
+
+            if (earliest != null && latest != null && !earliest.equals(latest) && remaining > 0) {
+                long daysSpan = ChronoUnit.DAYS.between(earliest, latest);
+                if (daysSpan > 0) {
+                    double avgDaily = totalExpenses / daysSpan;
+                    if (avgDaily > 0) {
+                        long daysLeft = (long) (remaining / avgDaily);
+                        forecastLabel.setText(forecastLabel.getText() + "  (~" + daysLeft + " jours)");
+                    }
+                }
+            }
+        }
+
+        // ---- Boutons ----
         if (detailsBtn != null) detailsBtn.setOnAction(e -> { if (onDetails != null) onDetails.run(); });
         if (editBtn != null) editBtn.setOnAction(e -> { if (onEdit != null) onEdit.run(); });
         if (deleteBtn != null) deleteBtn.setOnAction(e -> { if (onDelete != null) onDelete.run(); });

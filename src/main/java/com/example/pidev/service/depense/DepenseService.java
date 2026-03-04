@@ -1,13 +1,16 @@
 package com.example.pidev.service.depense;
 
 import com.example.pidev.model.depense.Depense;
+import com.example.pidev.model.event.EventCategory;
 import com.example.pidev.utils.DBConnection;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DepenseService {
@@ -68,9 +71,6 @@ public class DepenseService {
         }
     }
 
-    /**
-     * Retourne la liste des noms de catégories depuis la table event_category.
-     */
     public ObservableList<String> getCategories() {
         ObservableList<String> list = FXCollections.observableArrayList();
         String sql = "SELECT name FROM event_category ORDER BY name";
@@ -249,5 +249,63 @@ public class DepenseService {
         } catch (SQLException e) {
             throw new RuntimeException("recomputeBudget failed", e);
         }
+    }
+
+    // ==================== NOUVELLE MÉTHODE ====================
+    public List<Depense> getDepensesByBudgetId(int budgetId) {
+        List<Depense> list = new ArrayList<>();
+        String sql = "SELECT id, budget_id, description, amount, category, expense_date " +
+                "FROM depense WHERE budget_id = ? ORDER BY expense_date";
+        try (PreparedStatement ps = cnx().prepareStatement(sql)) {
+            ps.setInt(1, budgetId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Date d = rs.getDate("expense_date");
+                    LocalDate ld = (d == null) ? null : d.toLocalDate();
+                    Depense dep = new Depense(
+                            rs.getInt("id"),
+                            rs.getInt("budget_id"),
+                            rs.getString("description"),
+                            rs.getDouble("amount"),
+                            rs.getString("category"),
+                            ld
+                    );
+                    list.add(dep);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("getDepensesByBudgetId failed", e);
+        }
+        return list;
+    }
+
+    /**
+     * Retourne la liste des catégories d'événements avec leurs détails (nom, description, couleur)
+     * Utilisé dans le formulaire de dépense pour afficher la description automatiquement.
+     */
+    public ObservableList<EventCategory> getEventCategories() {
+        ObservableList<EventCategory> list = FXCollections.observableArrayList();
+        String sql = "SELECT id, name, description, icon, color, is_active, created_at, updated_at " +
+                "FROM event_category ORDER BY name";
+        try (PreparedStatement ps = cnx().prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                EventCategory cat = new EventCategory();
+                cat.setId(rs.getInt("id"));
+                cat.setName(rs.getString("name"));
+                cat.setDescription(rs.getString("description"));
+                cat.setIcon(rs.getString("icon"));
+                cat.setColor(rs.getString("color"));
+                cat.setActive(rs.getBoolean("is_active"));
+                if (rs.getTimestamp("created_at") != null)
+                    cat.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+                if (rs.getTimestamp("updated_at") != null)
+                    cat.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+                list.add(cat);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("getEventCategories failed", e);
+        }
+        return list;
     }
 }
