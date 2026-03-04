@@ -251,7 +251,6 @@ public class DepenseService {
         }
     }
 
-    // ==================== NOUVELLE MÉTHODE ====================
     public List<Depense> getDepensesByBudgetId(int budgetId) {
         List<Depense> list = new ArrayList<>();
         String sql = "SELECT id, budget_id, description, amount, category, expense_date " +
@@ -279,10 +278,6 @@ public class DepenseService {
         return list;
     }
 
-    /**
-     * Retourne la liste des catégories d'événements avec leurs détails (nom, description, couleur)
-     * Utilisé dans le formulaire de dépense pour afficher la description automatiquement.
-     */
     public ObservableList<EventCategory> getEventCategories() {
         ObservableList<EventCategory> list = FXCollections.observableArrayList();
         String sql = "SELECT id, name, description, icon, color, is_active, created_at, updated_at " +

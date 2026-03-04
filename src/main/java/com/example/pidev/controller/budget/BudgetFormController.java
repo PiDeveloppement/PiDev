@@ -58,12 +58,12 @@ public class BudgetFormController {
         editing = b;
         result = null;
         clearErrors();
+
         try {
             String eventTitle = budgetService.getEventTitleById(b.getEvent_id());
             eventComboBox.setValue(eventTitle);
-        } catch (Exception e) {
-            // ignore
-        }
+        } catch (Exception ignored) {}
+
         initialField.setText(String.valueOf(b.getInitial_budget()));
         revenueField.setText(String.valueOf(b.getTotal_revenue()));
     }
@@ -73,17 +73,19 @@ public class BudgetFormController {
         clearErrors();
 
         String selectedEvent = eventComboBox.getValue();
-        String initialText = initialField.getText().trim();
-        String revenueText = revenueField.getText().trim();
+        String initialText = initialField.getText() == null ? "" : initialField.getText().trim();
+        String revenueText = revenueField.getText() == null ? "" : revenueField.getText().trim();
 
         if (selectedEvent == null || selectedEvent.isEmpty()) {
             error("Veuillez sélectionner un événement.");
             return;
         }
+
         if (initialText.isEmpty()) {
             error("Le budget initial est obligatoire.");
             return;
         }
+
         double initial;
         try {
             initial = Double.parseDouble(initialText);
@@ -123,17 +125,17 @@ public class BudgetFormController {
         }
 
         try {
-            if (editing == null) {
-                budgetService.addBudget(budget);
-            } else {
-                budgetService.updateBudget(budget);
-            }
-            result = budgetService.getAllBudgets().stream()
-                    .filter(b -> b.getId() == budget.getId())
-                    .findFirst().orElse(budget);
+            if (editing == null) budgetService.addBudget(budget);
+            else budgetService.updateBudget(budget);
+
+            // ✅ PAS besoin de getId() ni getBudgets()
+            // On renvoie simplement l'objet budget mis à jour
+            result = budget;
+
             if (onSaved != null) onSaved.accept(result);
             if (onFormDone != null) onFormDone.run();
             closeWindow();
+
         } catch (Exception e) {
             error("Erreur lors de l'enregistrement : " + e.getMessage());
         }

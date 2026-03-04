@@ -61,6 +61,7 @@
         <VBox spacing="4" style="-fx-padding: 5 0;">
             <Label fx:id="alertLabel" style="-fx-font-size: 12px;"/>
             <Label fx:id="forecastLabel" style="-fx-font-size: 12px; -fx-font-weight: bold;"/>
+            <Label fx:id="adjustedForecastLabel" style="-fx-font-size: 11px; -fx-text-fill: #2563eb;"/>
         </VBox>
 
         <!-- Boutons d'action -->

@@ -1,17 +1,18 @@
 package com.example.pidev.controller.depense;
 
-import com.example.pidev.MainController;
 import com.example.pidev.model.depense.Depense;
 import com.example.pidev.model.event.EventCategory;
 import com.example.pidev.service.budget.BudgetService;
 import com.example.pidev.service.currency.CurrencyService;
 import com.example.pidev.service.depense.DepenseService;
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
@@ -39,50 +40,48 @@ public class DepenseFormController {
 
     @FXML
     private void initialize() {
-        // Charger les budgets avec titre d'événement
         try {
-            budgetComboBox.setItems(budgetService.getBudgetDisplayNames());
+            budgetComboBox.setItems(budgetService.getBudgetDisplayNames()); // ✅ sans ID
         } catch (Exception e) {
             showError("Erreur chargement budgets : " + e.getMessage());
         }
 
-        // Charger les catégories avec leurs détails
         try {
             ObservableList<EventCategory> categories = depenseService.getEventCategories();
             categoryComboBox.setItems(categories);
-            // Personnaliser l'affichage pour montrer le nom uniquement
-            categoryComboBox.setCellFactory(param -> new ListCell<EventCategory>() {
+
+            categoryComboBox.setCellFactory(param -> new ListCell<>() {
                 @Override
                 protected void updateItem(EventCategory item, boolean empty) {
                     super.updateItem(item, empty);
                     setText(empty || item == null ? null : item.getName());
                 }
             });
-            categoryComboBox.setButtonCell(new ListCell<EventCategory>() {
+
+            categoryComboBox.setButtonCell(new ListCell<>() {
                 @Override
                 protected void updateItem(EventCategory item, boolean empty) {
                     super.updateItem(item, empty);
                     setText(empty || item == null ? null : item.getName());
                 }
             });
+
         } catch (Exception e) {
             showError("Erreur chargement catégories : " + e.getMessage());
         }
 
-        // Remplir automatiquement la description quand une catégorie est sélectionnée
         categoryComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null && (descField.getText() == null || descField.getText().trim().isEmpty())) {
+            if (newVal != null && newVal.getDescription() != null) {
                 descField.setText(newVal.getDescription());
             }
         });
 
-        // Configuration de la devise
         if (currencyComboBox != null) {
             currencyComboBox.getItems().addAll(
-                    "TND", "USD", "EUR", "GBP", "CHF", "CAD", "JPY", "CNY", "AUD", "NZD",
-                    "DKK", "NOK", "SEK", "TRY", "SAR", "AED", "KWD", "BHD", "QAR", "MAD",
-                    "EGP", "ZAR", "INR", "PKR", "BDT", "LKR", "MYR", "SGD", "HKD", "KRW",
-                    "RUB", "BRL", "MXN", "PLN", "CZK", "HUF", "ILS", "THB", "VND", "PHP"
+                    "TND","USD","EUR","GBP","CHF","CAD","JPY","CNY","AUD","NZD",
+                    "DKK","NOK","SEK","TRY","SAR","AED","KWD","BHD","QAR","MAD",
+                    "EGP","ZAR","INR","PKR","BDT","LKR","MYR","SGD","HKD","KRW",
+                    "RUB","BRL","MXN","PLN","CZK","HUF","ILS","THB","VND","PHP"
             );
             currencyComboBox.setValue("TND");
             currencyComboBox.valueProperty().addListener((obs, old, n) -> updateConvertedAmount());
@@ -92,7 +91,6 @@ public class DepenseFormController {
             amountField.textProperty().addListener((obs, old, n) -> updateConvertedAmount());
         }
 
-        // Valeur par défaut de la date
         if (datePicker != null) {
             datePicker.setValue(LocalDate.now());
         }
@@ -100,23 +98,24 @@ public class DepenseFormController {
 
     private void updateConvertedAmount() {
         if (currencyComboBox == null || amountField == null || convertedAmountLabel == null) return;
+
         String currency = currencyComboBox.getValue();
-        String amountText = amountField.getText().trim().replace(",", ".");
+        String amountText = amountField.getText() == null ? "" : amountField.getText().trim().replace(",", ".");
         if (amountText.isEmpty()) {
             convertedAmountLabel.setText("");
             return;
         }
+
         try {
             double amount = Double.parseDouble(amountText);
+
             if (currency == null || currency.equals("TND")) {
-                convertedAmountLabel.setText(String.format("= %,.2f TND", amount));
+                convertedAmountLabel.setText(String.format(Locale.US, "= %.2f TND", amount));
             } else {
                 double converted = CurrencyService.convert(amount, currency, "TND");
-                if (converted >= 0) {
-                    convertedAmountLabel.setText(String.format("≈ %,.2f TND", converted));
-                } else {
-                    convertedAmountLabel.setText("Erreur conversion");
-                }
+                convertedAmountLabel.setText(converted >= 0
+                        ? String.format(Locale.US, "≈ %.2f TND", converted)
+                        : "Erreur conversion");
             }
         } catch (NumberFormatException e) {
             convertedAmountLabel.setText("Montant invalide");
@@ -125,31 +124,46 @@ public class DepenseFormController {
 
     public void setDepense(Depense d) {
         this.editing = d;
+
         if (d == null) {
-            titleLabel.setText("➕ Nouvelle Dépense");
-        } else {
-            titleLabel.setText("✏ Modifier Dépense");
-            // Pré-remplir les champs
-            try {
-                String budgetName = budgetService.getBudgetNameById(d.getBudget_id());
-                budgetComboBox.setValue(budgetName);
-            } catch (Exception e) {
-                budgetComboBox.setValue("Budget N°" + d.getBudget_id());
+            if (titleLabel != null) titleLabel.setText("➕ Nouvelle Dépense");
+            return;
+        }
+
+        if (titleLabel != null) titleLabel.setText("✏ Modifier Dépense");
+
+        // ✅ IMPORTANT: récupérer l'affichage exact depuis la DB (même format que la ComboBox)
+        String expectedDisplay = budgetService.getBudgetDisplayNameById(d.getBudget_id());
+
+        Platform.runLater(() -> {
+            if (expectedDisplay == null) return;
+
+            // si la liste contient déjà l'item -> setValue direct
+            if (budgetComboBox.getItems().contains(expectedDisplay)) {
+                budgetComboBox.setValue(expectedDisplay);
+            } else {
+                // sinon on l'ajoute (au cas où) puis set
+                budgetComboBox.getItems().add(0, expectedDisplay);
+                budgetComboBox.setValue(expectedDisplay);
             }
-            descField.setText(d.getDescription());
-            // Chercher la catégorie dans la liste
+        });
+
+        if (descField != null) descField.setText(d.getDescription());
+
+        if (categoryComboBox != null && categoryComboBox.getItems() != null) {
             for (EventCategory cat : categoryComboBox.getItems()) {
-                if (cat.getName().equals(d.getCategory())) {
+                if (cat != null && cat.getName() != null && cat.getName().equals(d.getCategory())) {
                     categoryComboBox.setValue(cat);
                     break;
                 }
             }
-            amountField.setText(String.valueOf(d.getAmount()));
-            currencyComboBox.setValue("TND");
-            if (d.getExpense_date() != null) {
-                datePicker.setValue(d.getExpense_date());
-            }
         }
+
+        if (amountField != null) amountField.setText(String.format(Locale.US, "%.2f", d.getAmount()));
+        if (currencyComboBox != null) currencyComboBox.setValue("TND");
+        if (datePicker != null && d.getExpense_date() != null) datePicker.setValue(d.getExpense_date());
+
+        updateConvertedAmount();
     }
 
     public void setOnFormDone(Runnable callback) { this.onFormDone = callback; }
@@ -159,78 +173,41 @@ public class DepenseFormController {
 
     @FXML
     private void onSave() {
-        errorLabel.setText("");
+        if (errorLabel != null) errorLabel.setText("");
 
-        String budgetDisplay = budgetComboBox.getValue();
-        String description = descField.getText();
-        EventCategory selectedCat = categoryComboBox.getValue();
-        String amountText = amountField.getText().trim();
-        String currency = currencyComboBox.getValue();
-        LocalDate date = datePicker.getValue();
+        String budgetDisplay = budgetComboBox == null ? null : budgetComboBox.getValue();
+        String description = descField == null ? null : descField.getText();
+        EventCategory selectedCat = categoryComboBox == null ? null : categoryComboBox.getValue();
+        String amountText = amountField == null ? "" : amountField.getText().trim().replace(",", ".");
+        String currency = currencyComboBox == null ? null : currencyComboBox.getValue();
+        LocalDate date = datePicker == null ? null : datePicker.getValue();
 
-        // Validations
-        if (budgetDisplay == null || budgetDisplay.isEmpty()) {
-            showError("Veuillez sélectionner un budget.");
-            return;
-        }
-        if (description == null || description.trim().isEmpty()) {
-            showError("La description est obligatoire.");
-            return;
-        }
-        if (selectedCat == null) {
-            showError("Veuillez sélectionner une catégorie.");
-            return;
-        }
-        if (amountText.isEmpty()) {
-            showError("Le montant est obligatoire.");
-            return;
-        }
-        if (!AMOUNT_PATTERN.matcher(amountText).matches()) {
-            showError("Format de montant invalide (ex: 150.50)");
-            return;
-        }
-        if (date == null) {
-            showError("Veuillez sélectionner une date.");
-            return;
-        }
+        if (budgetDisplay == null || budgetDisplay.isBlank()) { showError("Veuillez sélectionner un budget."); return; }
+        if (description == null || description.trim().isEmpty()) { showError("La description est obligatoire."); return; }
+        if (selectedCat == null) { showError("Veuillez sélectionner une catégorie."); return; }
+        if (amountText.isEmpty()) { showError("Le montant est obligatoire."); return; }
+        if (!AMOUNT_PATTERN.matcher(amountText).matches()) { showError("Format de montant invalide (ex: 150.50)"); return; }
+        if (date == null) { showError("Veuillez sélectionner une date."); return; }
+        if (currency == null || currency.isBlank()) { showError("Veuillez sélectionner une devise."); return; }
 
         double amount;
-        try {
-            amount = Double.parseDouble(amountText);
-        } catch (NumberFormatException e) {
-            showError("Montant invalide");
-            return;
-        }
+        try { amount = Double.parseDouble(amountText); }
+        catch (NumberFormatException e) { showError("Montant invalide"); return; }
 
         double amountInTND;
-        if (currency.equals("TND")) {
+        if ("TND".equals(currency)) {
             amountInTND = amount;
         } else {
             amountInTND = CurrencyService.convert(amount, currency, "TND");
-            if (amountInTND < 0) {
-                showError("Erreur de conversion de devise.");
-                return;
-            }
+            if (amountInTND < 0) { showError("Erreur de conversion de devise."); return; }
         }
 
-        int budgetId = -1;
-        try {
-            budgetId = budgetService.getBudgetIdByName(budgetDisplay);
-            if (budgetId == -1) {
-                showError("Budget invalide.");
-                return;
-            }
-        } catch (Exception e) {
-            showError("Erreur lors de la récupération du budget.");
-            return;
-        }
+        int budgetId = budgetService.getBudgetIdByDisplayName(budgetDisplay);
+        if (budgetId == -1) { showError("Budget invalide."); return; }
 
-        Depense depense;
-        if (editing == null) {
-            depense = new Depense();
-        } else {
-            depense = editing;
-        }
+        Depense depense = (editing == null) ? new Depense() : editing;
+        int oldBudgetId = (editing == null) ? -1 : editing.getBudget_id();
+
         depense.setBudget_id(budgetId);
         depense.setDescription(description);
         depense.setCategory(selectedCat.getName());
@@ -240,16 +217,14 @@ public class DepenseFormController {
         depense.setOriginalAmount(amount);
 
         try {
-            if (editing == null) {
-                depenseService.addDepense(depense);
-            } else {
-                int oldBudgetId = editing.getBudget_id();
-                depenseService.updateDepense(depense, oldBudgetId);
-            }
+            if (editing == null) depenseService.addDepense(depense);
+            else depenseService.updateDepense(depense, oldBudgetId);
+
             saved = true;
             if (onSaved != null) onSaved.accept(depense);
             if (onFormDone != null) onFormDone.run();
             closeWindow();
+
         } catch (Exception e) {
             showError("Erreur lors de l'enregistrement : " + e.getMessage());
         }
@@ -269,6 +244,6 @@ public class DepenseFormController {
     }
 
     private void showError(String msg) {
-        errorLabel.setText("❌ " + msg);
+        if (errorLabel != null) errorLabel.setText("❌ " + msg);
     }
 }

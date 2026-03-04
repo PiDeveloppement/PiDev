@@ -4,6 +4,7 @@ import com.example.pidev.model.budget.Budget;
 import com.example.pidev.model.depense.Depense;
 import com.example.pidev.service.budget.BudgetService;
 import com.example.pidev.service.depense.DepenseService;
+import com.example.pidev.service.forecast.EconomicForecastService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -31,14 +32,16 @@ public class BudgetCardController {
     @FXML private Button deleteBtn;
     @FXML private Label alertLabel;
     @FXML private Label forecastLabel;
+    @FXML private Label adjustedForecastLabel; // nouveau
 
     private final BudgetService budgetService = new BudgetService();
     private final DepenseService depenseService = new DepenseService();
+    private final EconomicForecastService forecastService = new EconomicForecastService();
 
     public void setData(Budget b, Runnable onDetails, Runnable onEdit, Runnable onDelete) {
         if (b == null) return;
 
-        // ---- Informations générales ----
+        // Informations générales
         if (titleLabel != null) titleLabel.setText("Budget");
         if (eventLabel != null) {
             try {
@@ -73,7 +76,7 @@ public class BudgetCardController {
             }
         }
 
-        // ---- Alerte de dépassement ----
+        // Alerte de dépassement
         double initial = b.getInitial_budget();
         double totalExpenses = b.getTotal_expenses();
         boolean overBudget = false;
@@ -98,7 +101,7 @@ public class BudgetCardController {
             alertLabel.setStyle("-fx-text-fill: #64748b; -fx-font-style: italic;");
         }
 
-        // ---- Montant restant coloré ----
+        // Montant restant
         double remaining = initial - totalExpenses;
         String remainingText = String.format("%,.2f DT restants", remaining);
         forecastLabel.setText(remainingText);
@@ -108,7 +111,7 @@ public class BudgetCardController {
             forecastLabel.setStyle("-fx-text-fill: #059669; -fx-font-weight: bold;");
         }
 
-        // ---- Style de la carte (rouge si dépassement) ----
+        // Style de la carte
         if (rootPane != null) {
             rootPane.getStyleClass().removeAll("budget-card-normal", "budget-card-alert");
             if (overBudget) {
@@ -118,8 +121,9 @@ public class BudgetCardController {
             }
         }
 
-        // ---- Prévision des jours restants (optionnel, mais on garde) ----
+        // Prévision des jours restants et ajustement économique
         List<Depense> depenses = depenseService.getDepensesByBudgetId(b.getId());
+        long daysLeft = -1;
         if (!depenses.isEmpty()) {
             LocalDate earliest = depenses.stream()
                     .map(Depense::getExpense_date)
@@ -137,14 +141,39 @@ public class BudgetCardController {
                 if (daysSpan > 0) {
                     double avgDaily = totalExpenses / daysSpan;
                     if (avgDaily > 0) {
-                        long daysLeft = (long) (remaining / avgDaily);
-                        forecastLabel.setText(forecastLabel.getText() + "  (~" + daysLeft + " jours)");
+                        daysLeft = (long) (remaining / avgDaily);
+                        forecastLabel.setText(remainingText + "  (~" + daysLeft + " jours)");
                     }
                 }
             }
         }
 
-        // ---- Boutons ----
+        // Prévision ajustée par l'économie (via ExchangeRate-API)
+        if (adjustedForecastLabel != null) {
+            if (daysLeft > 0 && remaining > 0) {
+                // Utiliser TND comme devise par défaut (vous pouvez la rendre dynamique)
+                double adjustedRemaining = forecastService.adjustForInflation(remaining, (int) daysLeft, "TND");
+
+                // Taux de change USD/TND pour info (optionnel)
+                double usdToTnd = forecastService.getExchangeRate("USD", "TND");
+
+                String adjustedText;
+                if (adjustedRemaining > 0) {
+                    adjustedText = String.format("Ajusté (inflation estimée) : ~%,.2f DT", adjustedRemaining);
+                    if (usdToTnd > 0) {
+                        adjustedText += String.format("  (1 USD = %.4f TND)", usdToTnd);
+                    }
+                } else {
+                    adjustedText = "";
+                }
+                adjustedForecastLabel.setText(adjustedText);
+                adjustedForecastLabel.setStyle("-fx-text-fill: #2563eb; -fx-font-size: 11px;");
+            } else {
+                adjustedForecastLabel.setText("");
+            }
+        }
+
+        // Boutons
         if (detailsBtn != null) detailsBtn.setOnAction(e -> { if (onDetails != null) onDetails.run(); });
         if (editBtn != null) editBtn.setOnAction(e -> { if (onEdit != null) onEdit.run(); });
         if (deleteBtn != null) deleteBtn.setOnAction(e -> { if (onDelete != null) onDelete.run(); });
