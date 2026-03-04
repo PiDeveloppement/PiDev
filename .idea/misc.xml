@@ -8,6 +8,7 @@
       </list>
     </option>
   </component>
+
   <component name="ProjectResources">
     <resource url="http://javafx.com/fxml/1" location="$PROJECT_DIR$" />
   </component>

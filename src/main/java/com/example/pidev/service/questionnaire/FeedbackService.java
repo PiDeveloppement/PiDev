@@ -16,15 +16,22 @@ public class FeedbackService {
 
     public List<Question> chargerQuestionsAleatoires(int idEvent) throws SQLException {
         List<Question> questions = new ArrayList<>();
-        String req = "SELECT id_question, id_event, texte_question, bonne_reponse, points FROM questions WHERE id_event = ? ORDER BY RAND() LIMIT 10";
+        // On ajoute option1, option2, option3 à la requête
+        String req = "SELECT id_question, id_event, texte_question, bonne_reponse, points, option1, option2, option3 FROM questions WHERE id_event = ? ORDER BY RAND() LIMIT 10";
+
         try (PreparedStatement pst = conn.prepareStatement(req)) {
             pst.setInt(1, idEvent);
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
                     questions.add(new Question(
-                            rs.getInt("id_question"), rs.getInt("id_event"),
-                            rs.getString("texte_question"), rs.getString("bonne_reponse"),
-                            rs.getInt("points")
+                            rs.getInt("id_question"),
+                            rs.getInt("id_event"),
+                            rs.getString("texte_question"),
+                            rs.getString("bonne_reponse"),
+                            rs.getInt("points"),
+                            rs.getString("option1"),
+                            rs.getString("option2"),
+                            rs.getString("option3")
                     ));
                 }
             }
@@ -172,4 +179,29 @@ public class FeedbackService {
         }
         stats.put("repartition", repartition);
         return stats;
-    }}
+    }
+    public String getNomUserComplet(int idUser) {
+        String nomComplet = "";
+        // Note : On utilise 'user_model' et les colonnes 'First_Name'/'Last_Name'
+        // comme vu dans tes autres méthodes
+        String sql = "SELECT First_Name, Last_Name FROM user_model WHERE Id_User = ?";
+
+        try (PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setInt(1, idUser);
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    String prenom = rs.getString("First_Name");
+                    String nom = rs.getString("Last_Name");
+
+                    nomComplet = (prenom != null ? prenom : "") + " " + (nom != null ? nom : "");
+                    nomComplet = nomComplet.trim();
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la récupération du nom utilisateur : " + e.getMessage());
+        }
+
+        // Si on ne trouve rien en BDD, on retourne une valeur par défaut pour ne pas avoir un PDF vide
+        return nomComplet.isEmpty() ? "Participant #" + idUser : nomComplet;
+    }
+}

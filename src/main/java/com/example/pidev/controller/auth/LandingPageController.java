@@ -266,7 +266,7 @@ public class LandingPageController implements Initializable {
         return actionBox;
     }
 
-    // ==================== FEEDBACK (Ghofrane) ====================
+    // ==================== FEEDBACK ====================
 
     @FXML
     private void handleFeedback() {
@@ -426,7 +426,7 @@ public class LandingPageController implements Initializable {
         return card;
     }
 
-    // ==================== CERTIFICAT (Ghofrane) ====================
+    // ==================== CERTIFICAT ====================
 
     @FXML
     private void handleGetCertificate() {

@@ -82,6 +82,7 @@
                                            -fx-padding: 15 25; -fx-cursor: hand;
                                            -fx-effect: dropshadow(gaussian, rgba(245,158,11,0.4), 12, 0, 0, 4);"/>
                         </HBox>
+
                         <HBox spacing="50" style="-fx-padding: 30 0 0 0;">
                             <VBox spacing="5">
                                 <Label text="500+" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #0D47A1;"/>
@@ -104,7 +105,7 @@
                 </HBox>
             </VBox>
 
-            <!-- SECTION FONCTIONNALITÉS -->
+            <!-- ========== SECTION FONCTIONNALITÉS ========== -->
             <VBox fx:id="featuresSection" spacing="50" style="-fx-padding: 100; -fx-background-color: white;">
                 <VBox spacing="15" alignment="CENTER">
                     <Label text="FONCTIONNALITÉS" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0D47A1; -fx-letter-spacing: 2;"/>
@@ -153,7 +154,7 @@
                 </GridPane>
             </VBox>
 
-            <!-- SECTION FEEDBACKS (Ghofrane) -->
+            <!-- ========== SECTION FEEDBACK ========== -->
             <VBox fx:id="feedbackSection" spacing="40" style="-fx-padding: 80 100; -fx-background-color: #f8fafc;">
                 <VBox spacing="15" alignment="CENTER">
                     <Label text="FEEDBACKS"
@@ -173,7 +174,7 @@
                 <VBox fx:id="feedbackListContainer" spacing="15"/>
             </VBox>
 
-            <!-- SECTION CONTACT -->
+            <!-- ========== SECTION CONTACT ========== -->
             <VBox fx:id="contactSection" spacing="40" style="-fx-padding: 100; -fx-background-color: linear-gradient(to right, #0D47A1, #1976D2);">
                 <VBox spacing="15" alignment="CENTER">
                     <Label text="CONTACT" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: rgba(255,255,255,0.8); -fx-letter-spacing: 2;"/>
@@ -200,7 +201,7 @@
                 </HBox>
             </VBox>
 
-            <!-- FOOTER -->
+            <!-- ========== FOOTER ========== -->
             <VBox style="-fx-padding: 50 100 30 100; -fx-background-color: #0A1929;">
                 <HBox spacing="100" alignment="CENTER">
                     <VBox spacing="15">

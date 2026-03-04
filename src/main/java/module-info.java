@@ -3,6 +3,7 @@
  * Fixed: Added proper module exports and opens for JavaFX FXML controller access
  */
 module com.example.pidev {
+
     requires javafx.controls;
     requires org.slf4j;
     requires javafx.fxml;
@@ -51,4 +52,20 @@ module com.example.pidev {
     opens com.example.pidev.controller.budget to javafx.fxml;
     opens com.example.pidev.controller.depense to javafx.fxml;
     opens com.example.pidev.service.user to javafx.fxml;
+
+
+
+
+
+
+ requires org.json;
+
+
+
+
+
+
+
+
+
 }
