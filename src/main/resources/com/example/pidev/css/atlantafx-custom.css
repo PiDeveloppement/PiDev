@@ -1225,4 +1225,8 @@ VBox[style*="-fx-background-color: #cfe2ff"]:hover {
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 5);
     -fx-translate-y: -2;
     -fx-cursor: hand;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/event-integration

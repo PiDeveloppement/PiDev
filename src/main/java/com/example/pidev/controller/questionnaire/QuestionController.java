@@ -1,5 +1,5 @@
 package com.example.pidev.controller.questionnaire;
-
+import com.example.pidev.service.questionnaire.AIService;
 import com.example.pidev.MainController;
 import com.example.pidev.model.event.Event;
 import com.example.pidev.model.questionnaire.Question;
@@ -38,6 +38,7 @@ public class QuestionController {
     @FXML private ComboBox<Event> comboEvent, comboEventList;
     @FXML private ComboBox<String> comboSort;
     @FXML private TextField txtReponse, txtPoints, txtSearch;
+    @FXML private TextField txtOption1, txtOption2, txtOption3; // NOUVEAU
     @FXML private TextArea txtTexte;
     @FXML private FlowPane cardsContainer;
     @FXML private Label lblPagination, lblSuggestionIA;
@@ -53,16 +54,36 @@ public class QuestionController {
     @FXML
     public void initialize() {
         try {
+            // 1. Initialisation du tri
             if (comboSort != null) {
                 comboSort.setItems(FXCollections.observableArrayList(
                         "Points (Croissant)", "Points (Décroissant)", "Texte (A-Z)"
                 ));
             }
 
+            // 2. Chargement des données depuis la base
             List<Event> events = qs.chargerEvenements();
 
+            // 3. Configuration du ComboBox du Formulaire (Ajout/Modification)
             if (comboEvent != null) {
                 comboEvent.setItems(FXCollections.observableArrayList(events));
+
+                // CORRECTION : Formatage de l'affichage (CellFactory et ButtonCell)
+                comboEvent.setCellFactory(lv -> new ListCell<Event>() {
+                    @Override
+                    protected void updateItem(Event item, boolean empty) {
+                        super.updateItem(item, empty);
+                        setText((empty || item == null) ? null : item.getTitle());
+                    }
+                });
+                comboEvent.setButtonCell(new ListCell<Event>() {
+                    @Override
+                    protected void updateItem(Event item, boolean empty) {
+                        super.updateItem(item, empty);
+                        setText((empty || item == null) ? null : item.getTitle());
+                    }
+                });
+
                 if (questionEnCours != null) {
                     remplirChamps(questionEnCours);
                 }
@@ -72,8 +93,27 @@ public class QuestionController {
                 });
             }
 
+            // 4. Configuration du ComboBox de la Liste (Filtre)
             if (comboEventList != null) {
                 comboEventList.setItems(FXCollections.observableArrayList(events));
+
+                // CORRECTION : Formatage de l'affichage
+                comboEventList.setCellFactory(lv -> new ListCell<Event>() {
+                    @Override
+                    protected void updateItem(Event item, boolean empty) {
+                        super.updateItem(item, empty);
+                        setText((empty || item == null) ? null : item.getTitle());
+                    }
+                });
+
+                comboEventList.setButtonCell(new ListCell<Event>() {
+                    @Override
+                    protected void updateItem(Event item, boolean empty) {
+                        super.updateItem(item, empty);
+                        setText((empty || item == null) ? null : item.getTitle());
+                    }
+                });
+
                 toutesLesQuestions = qs.afficherTout();
                 questionsFiltrees = new ArrayList<>(toutesLesQuestions);
                 afficherPage();
@@ -83,6 +123,7 @@ public class QuestionController {
                 });
             }
 
+            // 5. Statistiques (PieChart)
             if (pieChartQuestions != null) {
                 afficherStatistiques();
             }
@@ -122,45 +163,46 @@ public class QuestionController {
     private void handleSave() {
         try {
             Event ev = comboEvent.getValue();
-            // Vérification rigoureuse des champs
-            if (ev == null || txtTexte.getText().trim().isEmpty() || txtReponse.getText().trim().isEmpty()) {
-                afficherAlerte("Champs manquants", "Veuillez sélectionner un événement et remplir l'énoncé et la réponse.");
+
+            // Validation : On vérifie que les options ne sont pas vides
+            if (ev == null || txtTexte.getText().trim().isEmpty() ||
+                    txtReponse.getText().trim().isEmpty() ||
+                    txtOption1.getText().trim().isEmpty() ||
+                    txtOption2.getText().trim().isEmpty() ||
+                    txtOption3.getText().trim().isEmpty()) {
+
+                afficherAlerte("Champs manquants", "Veuillez remplir l'énoncé, la bonne réponse ET les 3 options fausses.");
                 return;
             }
 
-            // Conversion sécurisée des points
-            int points;
-            try {
-                points = Integer.parseInt(txtPoints.getText().trim());
-            } catch (NumberFormatException e) {
-                afficherAlerte("Format invalide", "Le champ 'Points' doit être un nombre entier.");
-                return;
-            }
+            int points = Integer.parseInt(txtPoints.getText().trim());
+            int idUtilisateurConnecte = 1;
 
             if (questionEnCours == null) {
-                // AJOUT
-                Question nouvelleQ = new Question(0, ev.getId(), txtTexte.getText(), txtReponse.getText(), points);
+                // AJOUT : On passe les options au constructeur ou via setters
+                Question nouvelleQ = new Question(
+                        0, ev.getId(), txtTexte.getText(), txtReponse.getText(), points,
+                        txtOption1.getText(), txtOption2.getText(), txtOption3.getText()
+                );
+                nouvelleQ.setIdUser(idUtilisateurConnecte);
                 qs.ajouter(nouvelleQ);
-                System.out.println("✅ Question ajoutée avec succès !");
             } else {
                 // MODIFICATION
                 questionEnCours.setIdEvent(ev.getId());
                 questionEnCours.setTexte(txtTexte.getText());
                 questionEnCours.setReponse(txtReponse.getText());
                 questionEnCours.setPoints(points);
+                questionEnCours.setOption1(txtOption1.getText());
+                questionEnCours.setOption2(txtOption2.getText());
+                questionEnCours.setOption3(txtOption3.getText());
+
                 qs.modifier(questionEnCours);
-                System.out.println("✅ Question modifiée avec succès !");
-                questionEnCours = null; // Reset après modification
+                questionEnCours = null;
             }
 
-            switchToList(); // Retour à la liste
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            afficherAlerte("Erreur SQL", "Impossible d'enregistrer : " + e.getMessage());
+            switchToList();
         } catch (Exception e) {
-            e.printStackTrace();
-            afficherAlerte("Erreur", "Une erreur inattendue est survenue.");
+            afficherAlerte("Erreur", "Vérifiez vos champs : " + e.getMessage());
         }
     }
 
@@ -278,6 +320,7 @@ public class QuestionController {
 
     @FXML private void ouvrirPopupStats() { switchToStats(); }
 
+
     private void traduireTexte(Label labelAtraduire) {
         String texte = labelAtraduire.getText();
         labelAtraduire.setText("⌛...");
@@ -330,8 +373,6 @@ public class QuestionController {
         }
     }
 
-    // ==================== MÉTHODES DE NAVIGATION CORRIGÉES ====================
-
     @FXML
     private void switchToList() {
         changeScene("/com/example/pidev/fxml/questionnaire/list_question.fxml", "📋 LISTE DES QUESTIONS");
@@ -344,47 +385,28 @@ public class QuestionController {
 
     @FXML
     private void switchToStats() {
-        changeScene("/com/example/pidev/fxml/questionnaire/Resultat.fxml", "📊 STATISTIQUES");
+        changeScene("/com/example/pidev/fxml/questionnaire/stats_question.fxml", "📊 STATISTIQUES");
     }
 
-    /**
-     * Méthode générique pour changer de scène avec gestion d'erreur améliorée
-     */
     private void changeScene(String fxmlPath, String title) {
         Platform.runLater(() -> {
             try {
-                System.out.println("🔍 Tentative de chargement: " + fxmlPath);
-
-                // Vérifier si le chemin commence par /
                 String resourcePath = fxmlPath.startsWith("/") ? fxmlPath : "/" + fxmlPath;
                 URL resource = getClass().getResource(resourcePath);
 
                 if (resource == null) {
-                    System.err.println("❌ FXML non trouvé: " + resourcePath);
                     afficherAlerte("Erreur", "Fichier introuvable: " + resourcePath);
                     return;
                 }
 
-                System.out.println("✅ FXML trouvé: " + resource);
                 FXMLLoader loader = new FXMLLoader(resource);
                 Parent root = loader.load();
 
-                // Récupérer le contrôleur et lui passer le MainController si nécessaire
-                Object controller = loader.getController();
-                if (controller instanceof QuestionController) {
-                    // Pas besoin de setMainController ici car c'est le même type
-                }
-
                 if (MainController.getInstance() != null) {
                     MainController.getInstance().setContent(root, title);
-                    System.out.println("✅ Navigation vers: " + title);
-                } else {
-                    System.err.println("❌ MainController instance is null");
-                    afficherAlerte("Erreur", "MainController non disponible");
                 }
 
             } catch (IOException e) {
-                System.err.println("❌ Erreur chargement: " + fxmlPath);
                 e.printStackTrace();
                 afficherAlerte("Erreur", "Impossible de charger: " + e.getMessage());
             }
@@ -392,13 +414,14 @@ public class QuestionController {
     }
 
     @FXML
-    private void viderChampsSaufCombo() {
+    private void viderChampsSaufCombo() { // Le nom doit être identique au FXML
         if(txtTexte != null) txtTexte.clear();
         if(txtReponse != null) txtReponse.clear();
+        if(txtOption1 != null) txtOption1.clear();
+        if(txtOption2 != null) txtOption2.clear();
+        if(txtOption3 != null) txtOption3.clear();
         if(txtPoints != null) txtPoints.clear();
         if(lblSuggestionIA != null) lblSuggestionIA.setText("");
-        // On ne touche pas à comboEvent pour permettre l'ajout rapide
-        // de plusieurs questions pour le même événement.
         questionEnCours = null;
     }
 
@@ -418,6 +441,12 @@ public class QuestionController {
         txtTexte.setText(q.getTexte());
         txtReponse.setText(q.getReponse());
         txtPoints.setText(String.valueOf(q.getPoints()));
+
+        // NOUVEAU : Remplir les options
+        if(txtOption1 != null) txtOption1.setText(q.getOption1());
+        if(txtOption2 != null) txtOption2.setText(q.getOption2());
+        if(txtOption3 != null) txtOption3.setText(q.getOption3());
+
         if (comboEvent != null) {
             comboEvent.getItems().stream()
                     .filter(e -> e.getId() == q.getIdEvent())
@@ -433,4 +462,80 @@ public class QuestionController {
         alert.setContentText(m);
         alert.show();
     }
+    @FXML
+    private void genererQuestionParIA() {
+        if (txtTexte == null || comboEvent == null) {
+            afficherAlerte("Action requise", "Veuillez d'abord ouvrir l'éditeur.");
+            return;
+        }
+
+        Event selectedEvent = comboEvent.getValue();
+        if (selectedEvent == null) {
+            afficherAlerte("Sélection requise", "Veuillez choisir un événement.");
+            return;
+        }
+
+        String theme = selectedEvent.getTitle();
+
+        new Thread(() -> {
+            try {
+                Platform.runLater(() -> {
+                    lblSuggestionIA.setText("⌛ Génération complète du QCM...");
+                    lblSuggestionIA.setStyle("-fx-text-fill: #4f46e5;");
+                });
+
+                AIService ai = new AIService();
+                String reponseBruteIA = ai.appelerIA(theme);
+                String jsonNettoye = extraireLeJsonUniquement(reponseBruteIA);
+
+                org.json.JSONObject json = new org.json.JSONObject(jsonNettoye);
+
+                // Extraction de TOUTES les données du JSON
+                String question = json.optString("question", "");
+                String bonneReponse = json.optString("reponse", "");
+                String fausse1 = json.optString("option1", "");
+                String fausse2 = json.optString("option2", "");
+                String fausse3 = json.optString("option3", "");
+
+                Platform.runLater(() -> {
+                    // Remplissage de l'énoncé
+                    txtTexte.setText(question);
+
+                    // Remplissage de la bonne réponse
+                    txtReponse.setText(bonneReponse);
+
+                    // Remplissage des OPTIONS FAUSSES (Vérifie bien tes fx:id dans le contrôleur)
+                    txtOption1.setText(fausse1);
+                    txtOption2.setText(fausse2);
+                    txtOption3.setText(fausse3);
+
+                    lblSuggestionIA.setText("✨ QCM et options générés avec succès !");
+                    lblSuggestionIA.setStyle("-fx-text-fill: #059669; -fx-font-weight: bold;");
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                Platform.runLater(() -> {
+                    lblSuggestionIA.setText("❌ Erreur de génération.");
+                    afficherAlerte("Erreur IA", "L'IA n'a pas pu générer les options fausses.");
+                });
+            }
+        }).start();
+    }
+    /**
+     * Méthode utilitaire à ajouter dans ta classe pour isoler le JSON
+     */
+    private String extraireLeJsonUniquement(String texte) {
+        try {
+            int debut = texte.indexOf("{");
+            int fin = texte.lastIndexOf("}");
+            if (debut != -1 && fin != -1) {
+                return texte.substring(debut, fin + 1);
+            }
+        } catch (Exception e) {
+            System.err.println("Impossible d'extraire le JSON");
+        }
+        return texte;
+    }
 }
+

@@ -1,4 +1,4 @@
-package com.example.pidev;
+package com.melocode.pidev;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;

@@ -90,6 +90,7 @@ public class MainController {
     @FXML private Text userInitialsText;
     @FXML private ImageView profileImageView;
     @FXML private StackPane initialsContainer;
+    @FXML private StackPane avatarContainer;
     @FXML private MenuButton profileMenu;
 
     // ===================== SIDEBAR =====================
@@ -133,6 +134,7 @@ public class MainController {
     @FXML private Text questionnairesArrow;
     @FXML private Button questionsBtn;
     @FXML private Button reponsesBtn;
+    @FXML private Button participantQuizBtn;  // Ajouté depuis event
 
     @FXML private Button settingsBtn;
     @FXML private Button logoutBtn;
@@ -177,7 +179,7 @@ public class MainController {
                 System.out.println("✅ RoleService initialisé avec succès");
             } catch (SQLException e) {
                 System.err.println("⚠️ Erreur lors de l'initialisation de RoleService: " + e.getMessage());
-                roleService = null; // Mettre à null en cas d'erreur
+                roleService = null;
             }
         } catch (Exception e) {
             System.err.println("⚠️ Erreur lors de l'initialisation des services: " + e.getMessage());
@@ -201,6 +203,13 @@ public class MainController {
         if (dashboardBtn != null) {
             setActiveButton(dashboardBtn);
             loadDashboardView();
+        }
+
+        // Initialiser le bouton participant quiz (ajouté depuis event)
+        if (participantQuizBtn != null) {
+            participantQuizBtn.setOnAction(event -> {
+                loadParticipantQuizView();
+            });
         }
 
         // Animer le bouton flottant au démarrage
@@ -514,7 +523,7 @@ public class MainController {
         else if (selected.contains("Questions")) questionsBtn.fire();
         else if (selected.contains("Résultats")) reponsesBtn.fire();
         else if (selected.contains("Historique")) showHistorique();
-        else if (selected.contains("Passer le Quiz")) showParticipantQuiz();
+        else if (selected.contains("Passer le Quiz")) loadParticipantQuizView();  // Modifié pour utiliser la nouvelle méthode
         else if (selected.contains("Paramètres")) settingsBtn.fire();
     }
 
@@ -588,7 +597,7 @@ public class MainController {
         UserSession session = UserSession.getInstance();
         if (session.getRole() != null) {
             loadPage("/com/example/pidev/fxml/dashboard/dashboard.fxml", "dashboard");
-            hideKPIs(); // Cacher les KPI sur le dashboard
+            hideKPIs();
         }
     }
 
@@ -599,16 +608,9 @@ public class MainController {
             Parent root = loader.load();
             UserController controller = loader.getController();
             controller.setMainController(this);
-
-            // Mettre à jour l'en-tête
             updatePageHeader("users");
-
-            // Afficher uniquement le KPI des participants
             showParticipantKPIs();
-
-            // Charger le contenu
             pageContentContainer.getChildren().setAll(root);
-
         } catch (Exception e) {
             e.printStackTrace();
             showSimpleAlert("Erreur", "Impossible de charger la page des utilisateurs: " + e.getMessage());
@@ -622,16 +624,9 @@ public class MainController {
             Parent root = loader.load();
             RoleController controller = loader.getController();
             controller.setMainController(this);
-
-            // Mettre à jour l'en-tête
             updatePageHeader("roles");
-
-            // Afficher uniquement le KPI des rôles
             showRoleKPIs();
-
-            // Charger le contenu
             pageContentContainer.getChildren().setAll(root);
-
         } catch (Exception e) {
             e.printStackTrace();
             showSimpleAlert("Erreur", "Impossible de charger la page des rôles: " + e.getMessage());
@@ -646,7 +641,7 @@ public class MainController {
             controller.setMainController(this);
             controller.setUser(user);
             pageContentContainer.getChildren().setAll(root);
-            hideKPIs(); // Cacher les KPI sur la page d'édition
+            hideKPIs();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -661,7 +656,7 @@ public class MainController {
             controller.setMainController(this);
             pageContentContainer.getChildren().setAll(root);
             updatePageHeader("roles");
-            hideKPIs(); // Cacher les KPI sur la page d'édition
+            hideKPIs();
         } catch (Exception e) {
             e.printStackTrace();
             showSimpleAlert("Erreur", "Impossible de charger la page de modification: " + e.getMessage());
@@ -677,7 +672,7 @@ public class MainController {
             controller.setMainController(this);
             pageContentContainer.getChildren().setAll(root);
             updatePageHeader("roles");
-            hideKPIs(); // Cacher les KPI sur la page d'ajout
+            hideKPIs();
         } catch (Exception e) {
             e.printStackTrace();
             showSimpleAlert("Erreur", "Impossible de charger la page d'ajout: " + e.getMessage());
@@ -691,7 +686,7 @@ public class MainController {
             Parent root = loader.load();
             pageContentContainer.getChildren().setAll(root);
             updatePageHeader("salles");
-            hideKPIs(); // Cacher les KPI sur la page des salles
+            hideKPIs();
         } catch (Exception e) {
             e.printStackTrace();
             showSimpleAlert("Erreur", "Impossible de charger la page des salles: " + e.getMessage());
@@ -704,7 +699,7 @@ public class MainController {
             Parent root = loader.load();
             pageContentContainer.getChildren().setAll(root);
             updatePageHeader("equipements");
-            hideKPIs(); // Cacher les KPI sur la page des équipements
+            hideKPIs();
         } catch (Exception e) {
             e.printStackTrace();
             showSimpleAlert("Erreur", "Impossible de charger la page des équipements: " + e.getMessage());
@@ -717,7 +712,7 @@ public class MainController {
             Parent root = loader.load();
             pageContentContainer.getChildren().setAll(root);
             updatePageHeader("reservations");
-            hideKPIs(); // Cacher les KPI sur la page des réservations
+            hideKPIs();
         } catch (Exception e) {
             e.printStackTrace();
             showSimpleAlert("Erreur", "Impossible de charger la page des réservations: " + e.getMessage());
@@ -736,7 +731,7 @@ public class MainController {
             Object controller = loader.getController();
             if (controller instanceof EventListController) ((EventListController) controller).setMainController(this);
             updatePageHeader("events");
-            hideKPIs(); // Cacher les KPI sur la liste des événements
+            showEventKPIs();
             pageContentContainer.getChildren().clear();
             pageContentContainer.getChildren().add(page);
         } catch (IOException e) {
@@ -756,9 +751,40 @@ public class MainController {
             }
             pageContentContainer.getChildren().clear();
             pageContentContainer.getChildren().add(page);
-            hideKPIs(); // Cacher les KPI sur le formulaire
+            hideKPIs();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Affiche le calendrier interactif des événements (ajouté depuis event)
+     */
+    public void showEventCalendar() {
+        try {
+            System.out.println("📅 Chargement du calendrier des événements");
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/event/event-calendar.fxml")
+            );
+            Parent page = loader.load();
+
+            Object controller = loader.getController();
+            if (controller instanceof EventCalendarController) {
+                ((EventCalendarController) controller).setMainController(this);
+            }
+
+            pageTitle.setText("Calendrier des événements");
+            pageSubtitle.setText("Visualisez vos événements par mois");
+            hideKPIs();
+
+            pageContentContainer.getChildren().clear();
+            pageContentContainer.getChildren().add(page);
+
+            System.out.println("✅ Calendrier chargé avec succès");
+        } catch (IOException e) {
+            System.err.println("❌ Erreur chargement calendrier: " + e.getMessage());
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible de charger le calendrier: " + e.getMessage());
         }
     }
 
@@ -773,7 +799,7 @@ public class MainController {
             }
             pageContentContainer.getChildren().clear();
             pageContentContainer.getChildren().add(page);
-            hideKPIs(); // Cacher les KPI sur la vue détaillée
+            hideKPIs();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -786,7 +812,7 @@ public class MainController {
             Object controller = loader.getController();
             if (controller instanceof CategoryListController) ((CategoryListController) controller).setMainController(this);
             updatePageHeader("categories");
-            hideKPIs(); // Cacher les KPI sur la liste des catégories
+            showCategoryKPIs();
             pageContentContainer.getChildren().clear();
             pageContentContainer.getChildren().add(page);
         } catch (IOException e) {
@@ -806,7 +832,7 @@ public class MainController {
             }
             pageContentContainer.getChildren().clear();
             pageContentContainer.getChildren().add(page);
-            hideKPIs(); // Cacher les KPI sur le formulaire
+            hideKPIs();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -823,7 +849,7 @@ public class MainController {
             }
             pageContentContainer.getChildren().clear();
             pageContentContainer.getChildren().add(page);
-            hideKPIs(); // Cacher les KPI sur la vue détaillée
+            hideKPIs();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -836,7 +862,7 @@ public class MainController {
             Object controller = loader.getController();
             if (controller instanceof EventTicketListController) ((EventTicketListController) controller).setMainController(this);
             updatePageHeader("tickets");
-            hideKPIs(); // Cacher les KPI sur la liste des tickets
+            showTicketKPIs();
             pageContentContainer.getChildren().clear();
             pageContentContainer.getChildren().add(page);
         } catch (IOException e) {
@@ -856,7 +882,7 @@ public class MainController {
             }
             pageContentContainer.getChildren().clear();
             pageContentContainer.getChildren().add(page);
-            hideKPIs(); // Cacher les KPI sur la vue détaillée
+            hideKPIs();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -867,22 +893,52 @@ public class MainController {
     // ===================== NAVIGATION - QUESTIONNAIRES =====================
     public void loadQuestionEditor() {
         loadQuestionnairePage("/com/example/pidev/fxml/questionnaire/form_question.fxml", "Gestion des questions", "Gestion de la banque de données");
-        hideKPIs(); // Cacher les KPI sur l'éditeur de questions
+        hideKPIs();
     }
 
     public void loadResultatsView() {
         loadQuestionnairePage("/com/example/pidev/fxml/questionnaire/Resultat.fxml", "Résultats", "Statistiques et aperçu global");
-        hideKPIs(); // Cacher les KPI sur la page des résultats
+        hideKPIs();
     }
 
-    public void loadParticipantQuizView() {
-        loadQuestionnairePage("/com/example/pidev/fxml/questionnaire/Participant.fxml", "Passer le Quiz", "Interface d'examen");
-        hideKPIs(); // Cacher les KPI sur la page du quiz
+    /**
+     * Charge la vue du quiz participant (ajouté depuis event)
+     */
+    private void loadParticipantQuizView() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pidev/fxml/questionnaire/Participant.fxml"));
+            Parent view = loader.load();
+            pageContentContainer.getChildren().clear();
+            pageContentContainer.getChildren().add(view);
+            pageTitle.setText("Quiz Participant");
+            pageSubtitle.setText("Répondez aux questions");
+            hideKPIs();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void loadHistoriqueView() {
         loadQuestionnairePage("/com/example/pidev/fxml/questionnaire/Historique.fxml", "Historique", "Consultation des anciens scores");
-        hideKPIs(); // Cacher les KPI sur la page d'historique
+        hideKPIs();
+    }
+
+    /**
+     * Méthode utilitaire pour charger les pages questionnaire (ajoutée depuis event)
+     */
+    public void loadView(String fxmlPath) {
+        try {
+            URL fileUrl = getClass().getResource(fxmlPath);
+            if (fileUrl == null) {
+                System.err.println("❌ Fichier introuvable : " + fxmlPath);
+                return;
+            }
+            FXMLLoader loader = new FXMLLoader(fileUrl);
+            Parent root = loader.load();
+            setContent(root);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void loadQuestionnairePage(String fxmlPath, String title, String subtitle) {
@@ -905,19 +961,19 @@ public class MainController {
     // ===================== NAVIGATION - SETTINGS & PROFILE =====================
     public void loadSettingsView() {
         loadPage("/com/example/pidev/fxml/settings/settings.fxml", "settings");
-        hideKPIs(); // Cacher les KPI sur la page des paramètres
+        hideKPIs();
     }
 
     @FXML public void showProfile() {
         collapseAllSubmenus();
         loadPage("/com/example/pidev/fxml/user/profil.fxml", "profile");
-        hideKPIs(); // Cacher les KPI sur la page de profil
+        hideKPIs();
     }
 
     @FXML public void showSettings() {
         collapseAllSubmenus();
         loadPage("/com/example/pidev/fxml/settings/settings.fxml", "settings");
-        hideKPIs(); // Cacher les KPI sur la page des paramètres
+        hideKPIs();
     }
 
     // ===================== LOGOUT =====================
@@ -1007,7 +1063,6 @@ public class MainController {
 
     // ===========================================
     // SECTION KPI - GESTION DYNAMIQUE DES KPI
-    // pour Participants, Rôles, Catégories, Événements et Billets
     // ===========================================
 
     private void hideKPIs() {
@@ -1023,21 +1078,14 @@ public class MainController {
      */
     public void showParticipantKPIs() {
         if (kpiContainer == null) return;
-
-        // Vider le conteneur
         kpiContainer.getChildren().clear();
-
-        // Créer uniquement la carte des participants
         VBox participantCard = createKPICard(
                 "#dbeafe", "#93c5fd", "#1e40af", "#2563eb",
                 "👥", "totalParticipantsKPILabel", "Total Participants"
         );
-
         kpiContainer.getChildren().add(participantCard);
         kpiContainer.setVisible(true);
         kpiContainer.setManaged(true);
-
-        // Charger le nombre de participants
         loadParticipantData();
     }
 
@@ -1046,83 +1094,53 @@ public class MainController {
      */
     public void showRoleKPIs() {
         if (kpiContainer == null) return;
-
-        // Vider le conteneur
         kpiContainer.getChildren().clear();
-
-        // Créer uniquement la carte des rôles
         VBox roleCard = createKPICard(
                 "#f0fdf4", "#bbf7d0", "#16a34a", "#22c55e",
                 "📋", "totalRolesKPILabel", "Total Rôles"
         );
-
         kpiContainer.getChildren().add(roleCard);
         kpiContainer.setVisible(true);
         kpiContainer.setManaged(true);
-
-        // Charger le nombre de rôles
         loadRoleData();
     }
 
-    /**
-     * Charge les données des participants
-     */
-    /**
-     * Charge les données des participants (uniquement ceux avec le rôle Participant)
-     */
     /**
      * Charge les données des participants (TOUS les utilisateurs)
      */
     private void loadParticipantData() {
         try {
             int totalUsers = 0;
-
             if (userService != null) {
-                // Récupérer TOUS les utilisateurs
                 java.util.List<UserModel> users = userService.getAllUsers();
-                totalUsers = users.size(); // Compter TOUS les utilisateurs, pas seulement les participants
-
+                totalUsers = users.size();
                 System.out.println("📊 Nombre TOTAL d'utilisateurs: " + totalUsers);
-
-                // DEBUG: Afficher le détail des utilisateurs
-                for (UserModel user : users) {
-                    String roleName = (user.getRole() != null) ? user.getRole().getRoleName() : "Aucun rôle";
-                    System.out.println("   - " + user.getFirst_Name() + " " + user.getLast_Name() + " (" + roleName + ")");
-                }
             }
-
-            // Mettre à jour le label avec le nombre total
             updateLabel("totalParticipantsKPILabel", String.valueOf(totalUsers));
-
-            // Forcer le rafraîchissement visuel
             Platform.runLater(() -> {
                 if (kpiContainer != null) {
                     kpiContainer.requestLayout();
                 }
             });
-
         } catch (Exception e) {
             System.err.println("❌ Erreur lors du chargement des utilisateurs: " + e.getMessage());
             e.printStackTrace();
             updateLabel("totalParticipantsKPILabel", "0");
         }
     }
+
     /**
      * Charge les données des rôles
      */
     private void loadRoleData() {
         try {
             int totalRoles = 0;
-
-            // Utiliser RoleService pour compter les rôles
             if (roleService != null) {
                 totalRoles = roleService.getTotalRolesCount();
             } else {
-                // Si RoleService n'est pas disponible, utiliser une valeur par défaut
                 System.out.println("⚠️ RoleService non disponible, utilisation de la valeur par défaut");
                 totalRoles = 5;
             }
-
             updateLabel("totalRolesKPILabel", String.valueOf(totalRoles));
         } catch (Exception e) {
             System.err.println("Erreur lors du chargement des rôles: " + e.getMessage());
@@ -1131,7 +1149,7 @@ public class MainController {
     }
 
     /**
-     * Affiche les KPI pour les catégories (ancienne méthode, conservée mais non utilisée)
+     * Affiche les KPI pour les catégories
      */
     public void showCategoryKPIs() {
         if (kpiContainer == null) return;
@@ -1144,7 +1162,7 @@ public class MainController {
     }
 
     /**
-     * Affiche les KPI pour les événements (ancienne méthode, conservée mais non utilisée)
+     * Affiche les KPI pour les événements
      */
     public void showEventKPIs() {
         if (kpiContainer == null) return;
@@ -1157,7 +1175,7 @@ public class MainController {
     }
 
     /**
-     * Affiche les KPI pour les tickets (ancienne méthode, conservée mais non utilisée)
+     * Affiche les KPI pour les tickets
      */
     public void showTicketKPIs() {
         if (kpiContainer == null) return;
@@ -1245,5 +1263,10 @@ public class MainController {
         } else if (currentTitle.contains("billet") || currentTitle.contains("ticket")) {
             loadTicketData();
         }
+    }
+
+    // ===================== GETTERS =====================
+    public VBox getPageContentContainer() {
+        return pageContentContainer;
     }
 }

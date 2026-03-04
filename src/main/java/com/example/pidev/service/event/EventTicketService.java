@@ -3,6 +3,8 @@ package com.example.pidev.service.event;
 import com.example.pidev.model.event.EventTicket;
 import com.example.pidev.utils.DBConnection;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -44,14 +46,16 @@ public class EventTicketService {
         }
 
         String ticketCode = EventTicket.generateTicketCode(eventId, userId);
+        String qrUrl = buildQrUrl(ticketCode);
 
-        String sql = "INSERT INTO event_ticket (ticket_code, event_id, user_id) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO event_ticket (ticket_code, event_id, user_id, qr_code) VALUES (?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setString(1, ticketCode);
             pstmt.setInt(2, eventId);
             pstmt.setInt(3, userId);
+            pstmt.setString(4, qrUrl);
 
             int rowsAffected = pstmt.executeUpdate();
 
@@ -62,6 +66,8 @@ public class EventTicketService {
                         EventTicket ticket = new EventTicket(ticketCode, eventId, userId);
                         ticket.setId(rs.getInt(1));
                         ticket.setCreatedAt(LocalDateTime.now());
+                        ticket.setQrCode(qrUrl);
+
                         System.out.println("✅ Ticket créé: " + ticketCode);
                         return ticket;
                     }
@@ -74,6 +80,23 @@ public class EventTicketService {
         }
 
         return null;
+    }
+
+    private String buildQrUrl(String ticketCode) {
+        try {
+            // URL qui ouvrira le PDF du billet quand scanné
+            String pdfUrl = "http://localhost:8080/ticket/" +
+                    URLEncoder.encode(ticketCode, StandardCharsets.UTF_8) + "/pdf";
+
+            // Encoder l'URL dans le QR
+            String encodedUrl = URLEncoder.encode(pdfUrl, StandardCharsets.UTF_8);
+
+            // QuickChart génère le QR contenant l'URL du PDF
+            return "https://quickchart.io/qr?text=" + encodedUrl + "&size=200&margin=2";
+        } catch (Exception e) {
+            System.err.println("❌ Erreur génération QR URL: " + e.getMessage());
+            return null;
+        }
     }
 
     // ==================== READ ====================
@@ -423,4 +446,62 @@ public class EventTicketService {
 
         return ticket;
     }
+
+    // ==================== GÉNÉRATION QR CODES MANQUANTS ====================
+
+    /**
+     * Générer les QR codes manquants pour les anciens tickets avec qr_code = NULL
+     * Utilise QuickChart.io pour générer les QR codes dynamiques
+     * @return Le nombre de tickets mis à jour
+     */
+    public int generateMissingQRCodes() {
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return 0;
+        }
+
+        int updatedCount = 0;
+
+        // 1. Récupérer tous les tickets sans QR code
+        String selectSql = "SELECT id, ticket_code FROM event_ticket WHERE qr_code IS NULL OR qr_code = ''";
+
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(selectSql)) {
+
+            while (rs.next()) {
+                int ticketId = rs.getInt("id");
+                String ticketCode = rs.getString("ticket_code");
+
+                // 2. Générer l'URL du QR code via QuickChart.io
+                String qrUrl = buildQrUrl(ticketCode);
+
+                if (qrUrl != null) {
+                    // 3. Mettre à jour le ticket dans la base de données
+                    String updateSql = "UPDATE event_ticket SET qr_code = ? WHERE id = ?";
+
+                    try (PreparedStatement pstmt = connection.prepareStatement(updateSql)) {
+                        pstmt.setString(1, qrUrl);
+                        pstmt.setInt(2, ticketId);
+
+                        int rowsAffected = pstmt.executeUpdate();
+                        if (rowsAffected > 0) {
+                            updatedCount++;
+                            System.out.println("✅ QR code généré pour ticket ID=" + ticketId + " (" + ticketCode + ")");
+                        }
+                    }
+                } else {
+                    System.err.println("⚠️ Impossible de générer QR code pour ticket ID=" + ticketId);
+                }
+            }
+
+            System.out.println("✅ " + updatedCount + " tickets ont été mis à jour avec des QR codes");
+
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur génération QR codes manquants: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return updatedCount;
+    }
 }
+

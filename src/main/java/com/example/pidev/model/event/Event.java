@@ -34,6 +34,8 @@ public class Event {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private String location;
+    private String gouvernorat;
+    private String ville;
     private int capacity;
     private String imageUrl;
     private int categoryId;
@@ -123,6 +125,22 @@ public class Event {
 
     public void setLocation(String location) {
         this.location = location;
+    }
+
+    public String getGouvernorat() {
+        return gouvernorat;
+    }
+
+    public void setGouvernorat(String gouvernorat) {
+        this.gouvernorat = gouvernorat;
+    }
+
+    public String getVille() {
+        return ville;
+    }
+
+    public void setVille(String ville) {
+        this.ville = ville;
     }
 
     public int getCapacity() {
