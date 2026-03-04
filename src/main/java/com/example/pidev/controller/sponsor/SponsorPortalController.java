@@ -152,42 +152,30 @@ public class SponsorPortalController implements Initializable {
                 }
             });
         }
-
         if (emailAccount != null) {
-            try {
-                ObservableList<String> emails = sponsorService.getDemoEmailsFromSponsor();
-                emailAccount.setItems(emails);
-                emailAccount.valueProperty().addListener((obs, oldV, email) -> onAccountSelected(email));
-
-                String sessionEmail = UserSession.getInstance().getEmail();
-                if (sessionEmail != null && !sessionEmail.isBlank() && emails.contains(sessionEmail)) {
-                    emailAccount.setValue(sessionEmail);
-                    onAccountSelected(sessionEmail);
-                } else if (!emails.isEmpty()) {
-                    String first = emails.get(0);
-                    emailAccount.setValue(first);
-                    onAccountSelected(first);
-                } else {
-                    showError("Aucun email", "Aucun sponsor trouvÃ© en base.");
-                }
-            } catch (Exception e) {
-                showError("DB", "Impossible de charger les emails : " + e.getMessage());
-            }
-        } else {
-            String sessionEmail = UserSession.getInstance().getEmail();
-            if (sessionEmail != null && !sessionEmail.isBlank()) {
-                setInitialEmail(sessionEmail);
-            }
+            emailAccount.setVisible(false);
+            emailAccount.setManaged(false);
         }
 
-        setPortalEnabled(false);
-        clearPortal();
+        String sessionEmail = UserSession.getInstance().getEmail();
+        if (sessionEmail != null && !sessionEmail.isBlank()) {
+            setInitialEmail(sessionEmail);
+        } else {
+            try {
+                ObservableList<String> emails = sponsorService.getDemoEmailsFromSponsor();
+                if (!emails.isEmpty()) {
+                    setInitialEmail(emails.get(0));
+                }
+            } catch (Exception ignored) { }
+        }
+
+        setPortalEnabled(true);
+        reloadMine();
         renderCards();
     }
 
     private void onAccountSelected(String email) {
         currentEmail = email;
-        MainController.getInstance().setLastSponsorPortalEmail(currentEmail);
         if (currentEmail == null || currentEmail.isBlank()) {
             setPortalEnabled(false);
             clearPortal();
@@ -432,16 +420,34 @@ public class SponsorPortalController implements Initializable {
     }
 
     private void openFormAsPage(Sponsor existing, String fixedEmail, Event eventToSelect) {
-        MainController.getInstance().loadIntoCenter(
-                FORM_FXML,
-                (SponsorFormController ctrl) -> {
-                    ctrl.setFixedEmail(fixedEmail);
-                    if (existing == null) ctrl.setModeAdd();
-                    else ctrl.setModeEdit(existing);
-                    if (eventToSelect != null) ctrl.preSelectEvent(eventToSelect);
-                    ctrl.setOnSaved(saved -> {
-                        reloadMine();
-                        openDetailsAsPage(saved);
+                try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(FORM_FXML));
+            Parent root = loader.load();
+            SponsorFormController ctrl = loader.getController();
+            ctrl.setFixedEmail(fixedEmail);
+            if (existing == null) ctrl.setModeAdd();
+            else ctrl.setModeEdit(existing);
+            if (eventToSelect != null) ctrl.preSelectEvent(eventToSelect);
+
+            Stage dialog = new Stage();
+            dialog.setTitle("Sponsoriser un événement");
+            dialog.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            dialog.setScene(new Scene(root));
+
+            ctrl.setOnSaved(saved -> {
+                reloadMine();
+                dialog.close();
+                openDetailsAsPage(saved);
+            });
+            ctrl.setOnFormDone(() -> {
+                reloadMine();
+                dialog.close();
+            });
+
+            dialog.showAndWait();
+        } catch (Exception e) {
+            showError("UI", "Impossible d'ouvrir le formulaire : " + e.getMessage());
+        }
                     });
                     ctrl.setOnFormDone(() -> {
                         reloadMine();
@@ -461,11 +467,21 @@ public class SponsorPortalController implements Initializable {
 
     private void openDetailsAsPage(Sponsor sponsor) {
         try {
-            MainController.getInstance().loadIntoCenter(
-                    DETAILS_FXML,
-                    (SponsorDetailsController ctrl) -> {
-                        ctrl.setSponsor(sponsor);
-                        ctrl.setOnBack(() -> MainController.getInstance().showSponsorPortal(currentEmail));
+                    try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(DETAILS_FXML));
+            Parent root = loader.load();
+            SponsorDetailsController ctrl = loader.getController();
+            ctrl.setSponsor(sponsor);
+            ctrl.setOnBack(this::reloadMine);
+
+            Stage dialog = new Stage();
+            dialog.setTitle("Détails sponsor");
+            dialog.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            dialog.setScene(new Scene(root));
+            dialog.showAndWait();
+        } catch (Exception e) {
+            showError("UI", "Impossible d'ouvrir détails : " + e.getMessage());
+        }
                     }
             );
         } catch (Exception e) {
@@ -485,3 +501,7 @@ public class SponsorPortalController implements Initializable {
         a.showAndWait();
     }
 }
+
+
+
+

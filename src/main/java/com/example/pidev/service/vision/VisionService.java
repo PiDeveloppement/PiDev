@@ -19,7 +19,7 @@ public class VisionService {
      * @param imageUrl URL publique de l'image
      * @return Liste des labels détectés, ou null en cas d'erreur
      */
-    public static JsonArray analyzeImageFromUrl(String imageUrl) {
+    public static  JsonArray analyzeImageFromUrl(String imageUrl) {
         try {
             HttpClient client = HttpClient.newHttpClient();
             JsonObject requestBody = new JsonObject();

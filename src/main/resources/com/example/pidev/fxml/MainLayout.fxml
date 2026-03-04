@@ -1,317 +1,348 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.shape.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 
-<StackPane prefHeight="900" prefWidth="1400"
-           xmlns="http://javafx.com/javafx/17"
-           xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="com.example.pidev.MainController"
-           stylesheets="@/com/example/pidev/css/atlantafx-custom.css">
+<HBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.pidev.MainController"
+      prefHeight="900" prefWidth="1400"
+      minWidth="960" minHeight="680"
+      stylesheets="/com/example/pidev/css/atlantafx-custom.css">
 
-    <HBox alignment="TOP_LEFT">
+    <!-- ==================== SIDEBAR ==================== -->
+    <VBox prefWidth="210" minWidth="210" maxWidth="210"
+          styleClass="sidebar-root">
 
-        <!-- SIDEBAR -->
-        <VBox prefWidth="285" minWidth="285" maxWidth="285"
-              styleClass="sidebar-root" VBox.vgrow="ALWAYS">
+        <!-- Logo TOUJOURS visible en haut -->
+        <VBox styleClass="sidebar-logo" alignment="CENTER" spacing="4"
+              minHeight="120" maxHeight="120">
+            <ImageView fitHeight="70" fitWidth="70" preserveRatio="true">
+                <Image url="@images/logo.png"/>
+            </ImageView>
+            <Label text="EventFlow" styleClass="sidebar-appname"/>
+            <Label text="Gestion Événements" styleClass="sidebar-appsubtitle"/>
+        </VBox>
 
-            <!-- Logo -->
-            <VBox alignment="CENTER" spacing="6" styleClass="sidebar-logo">
-                <ImageView fitHeight="140" fitWidth="110" preserveRatio="true">
-                    <Image url="@/com/example/pidev/icons/logo.png"/>
-                </ImageView>
-                <Label text="EventFlow" styleClass="sidebar-appname"/>
-                <Label text="Gestion Événements" styleClass="sidebar-appsubtitle"/>
-            </VBox>
+        <!-- Menu navigation scrollable -->
+        <ScrollPane fitToWidth="true"
+                    vbarPolicy="NEVER"
+                    hbarPolicy="NEVER"
+                    styleClass="sidebar-scroll"
+                    VBox.vgrow="ALWAYS">
+            <content>
+                <VBox styleClass="sidebar-menu" spacing="3">
 
-            <!-- Menu -->
-            <ScrollPane fitToWidth="true"
-                        vbarPolicy="NEVER"
-                        hbarPolicy="NEVER"
-                        styleClass="sidebar-scroll"
-                        VBox.vgrow="ALWAYS">
-                <content>
-                    <VBox spacing="10" styleClass="sidebar-menu">
+                    <!-- Dashboard -->
+                    <Button fx:id="dashboardBtn"
+                            text="Dashboard"
+                            styleClass="main-menu-button"
+                            maxWidth="1.7976931348623157E308"
+                            prefHeight="40">
+                        <graphic>
+                            <Text text="📊" style="-fx-font-size: 14px;"/>
+                        </graphic>
+                    </Button>
 
-                        <!-- Dashboard -->
-                        <Button fx:id="dashboardBtn"
-                                text="Dashboard"
+                    <!-- Événements -->
+                    <VBox spacing="2">
+                        <Button fx:id="eventsToggleBtn"
+                                text="Événements"
                                 styleClass="main-menu-button"
-                                onAction="#onDashboard"
-                                maxWidth="1.7976931348623157E308">
+                                maxWidth="1.7976931348623157E308"
+                                prefHeight="40">
                             <graphic>
-                                <Text styleClass="menu-icon" text="▦"/>
+                                <HBox alignment="CENTER_LEFT" spacing="6">
+                                    <Text text="📅" style="-fx-font-size: 14px;"/>
+                                    <Text fx:id="eventsArrow" text="▶"
+                                          style="-fx-font-size: 10px; -fx-fill: white;"/>
+                                </HBox>
                             </graphic>
                         </Button>
-
-                        <!-- Événements -->
-                        <VBox spacing="6">
-                            <Button fx:id="eventsToggleBtn"
-                                    text="Événements"
-                                    styleClass="main-menu-button"
-                                    onAction="#toggleEvents"
-                                    maxWidth="1.7976931348623157E308">
-                                <graphic>
-                                    <HBox alignment="CENTER_LEFT" spacing="10">
-                                        <Text styleClass="menu-icon" text="🗓"/>
-                                        <Text fx:id="eventsArrow" styleClass="menu-arrow" text="▶"/>
-                                    </HBox>
-                                </graphic>
+                        <VBox fx:id="eventsSubmenu" visible="false" managed="false" spacing="2">
+                            <Button fx:id="eventsListBtn" text="  Liste événements"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="📋" style="-fx-font-size: 12px;"/></graphic>
                             </Button>
-
-                            <VBox fx:id="eventsSubmenu" visible="false" managed="false" spacing="6">
-                                <Button fx:id="eventsListBtn"
-                                        text="   Liste événements"
-                                        styleClass="submenu-button"
-                                        onAction="#onEventsList"
-                                        maxWidth="1.7976931348623157E308"/>
-                                <Button fx:id="categoriesBtn"
-                                        text="   Catégories"
-                                        styleClass="submenu-button"
-                                        onAction="#onCategories"
-                                        maxWidth="1.7976931348623157E308"/>
-                                <Button fx:id="ticketsBtn"
-                                        text="   Billets"
-                                        styleClass="submenu-button"
-                                        onAction="#onTickets"
-                                        maxWidth="1.7976931348623157E308"/>
-                            </VBox>
-                        </VBox>
-
-                        <!-- Participants -->
-                        <VBox spacing="6">
-                            <Button fx:id="usersToggleBtn"
-                                    text="Participants"
-                                    styleClass="main-menu-button"
-                                    onAction="#toggleUsers"
-                                    maxWidth="1.7976931348623157E308">
-                                <graphic>
-                                    <HBox alignment="CENTER_LEFT" spacing="10">
-                                        <Text styleClass="menu-icon" text="👥"/>
-                                        <Text fx:id="usersArrow" styleClass="menu-arrow" text="▶"/>
-                                    </HBox>
-                                </graphic>
+                            <Button fx:id="categoriesBtn" text="  Catégories"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="🏷️" style="-fx-font-size: 12px;"/></graphic>
                             </Button>
-
-                            <VBox fx:id="usersSubmenu" visible="false" managed="false" spacing="6">
-                                <Button fx:id="rolesBtn"
-                                        text="   Rôles"
-                                        styleClass="submenu-button"
-                                        onAction="#onRoles"
-                                        maxWidth="1.7976931348623157E308"/>
-                                <Button fx:id="inscriptionsBtn"
-                                        text="   Inscriptions"
-                                        styleClass="submenu-button"
-                                        onAction="#onInscriptions"
-                                        maxWidth="1.7976931348623157E308"/>
-                            </VBox>
-                        </VBox>
-
-                        <!-- Sponsors -->
-                        <VBox spacing="6">
-                            <Button fx:id="sponsorsBtn"
-                                    text="Sponsors"
-                                    styleClass="main-menu-button"
-                                    onAction="#toggleSponsors"
-                                    maxWidth="1.7976931348623157E308">
-                                <graphic>
-                                    <HBox alignment="CENTER_LEFT" spacing="10">
-                                        <Text styleClass="menu-icon" text="💼"/>
-                                        <Text fx:id="sponsorsArrow" styleClass="menu-arrow" text="▼"/>
-                                    </HBox>
-                                </graphic>
+                            <Button fx:id="ticketsBtn" text="  Billets"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="🎫" style="-fx-font-size: 12px;"/></graphic>
                             </Button>
-
-                            <VBox fx:id="sponsorsSubmenu" visible="true" managed="true" spacing="6">
-                                <Button fx:id="sponsorsListBtn"
-                                        text="   Admin Sponsors"
-                                        styleClass="submenu-button"
-                                        onAction="#onSponsorsList"
-                                        maxWidth="1.7976931348623157E308"/>
-                                <Button fx:id="sponsorPortalBtn"
-                                        text="   Portail Sponsor"
-                                        styleClass="submenu-button"
-                                        onAction="#onSponsorPortal"
-                                        maxWidth="1.7976931348623157E308"/>
-                                <Button fx:id="budgetBtn"
-                                        text="   Budget"
-                                        styleClass="submenu-button"
-                                        onAction="#onBudget"
-                                        maxWidth="1.7976931348623157E308"/>
-                                <Button fx:id="contratsBtn"
-                                        text="   Dépenses"
-                                        styleClass="submenu-button"
-                                        onAction="#onDepenses"
-                                        maxWidth="1.7976931348623157E308"/>
-                            </VBox>
                         </VBox>
-
-                        <!-- Ressources -->
-                        <VBox spacing="6">
-                            <Button fx:id="resourcesToggleBtn"
-                                    text="Ressources"
-                                    styleClass="main-menu-button"
-                                    onAction="#toggleResources"
-                                    maxWidth="1.7976931348623157E308">
-                                <graphic>
-                                    <HBox alignment="CENTER_LEFT" spacing="10">
-                                        <Text styleClass="menu-icon" text="🏢"/>
-                                        <Text fx:id="resourcesArrow" styleClass="menu-arrow" text="▶"/>
-                                    </HBox>
-                                </graphic>
-                            </Button>
-
-                            <VBox fx:id="resourcesSubmenu" visible="false" managed="false" spacing="6">
-                                <Button fx:id="sallesBtn"
-                                        text="   Salles"
-                                        styleClass="submenu-button"
-                                        onAction="#onSalles"
-                                        maxWidth="1.7976931348623157E308"/>
-                                <Button fx:id="equipementsBtn"
-                                        text="   Équipements"
-                                        styleClass="submenu-button"
-                                        onAction="#onEquipements"
-                                        maxWidth="1.7976931348623157E308"/>
-                                <Button fx:id="reservationsBtn"
-                                        text="   Réservations"
-                                        styleClass="submenu-button"
-                                        onAction="#onReservations"
-                                        maxWidth="1.7976931348623157E308"/>
-                            </VBox>
-                        </VBox>
-
-                        <!-- Questionnaires -->
-                        <VBox spacing="6">
-                            <Button fx:id="questionnairesToggleBtn"
-                                    text="Questionnaires"
-                                    styleClass="main-menu-button"
-                                    onAction="#toggleQuestionnaires"
-                                    maxWidth="1.7976931348623157E308">
-                                <graphic>
-                                    <HBox alignment="CENTER_LEFT" spacing="10">
-                                        <Text styleClass="menu-icon" text="📝"/>
-                                        <Text fx:id="questionnairesArrow" styleClass="menu-arrow" text="▶"/>
-                                    </HBox>
-                                </graphic>
-                            </Button>
-
-                            <VBox fx:id="questionnairesSubmenu" visible="false" managed="false" spacing="6">
-                                <Button fx:id="questionsBtn"
-                                        text="   Questions"
-                                        styleClass="submenu-button"
-                                        onAction="#onQuestions"
-                                        maxWidth="1.7976931348623157E308"/>
-                                <Button fx:id="reponsesBtn"
-                                        text="   Réponses"
-                                        styleClass="submenu-button"
-                                        onAction="#onReponses"
-                                        maxWidth="1.7976931348623157E308"/>
-                            </VBox>
-                        </VBox>
-
-                        <!-- Paramètres -->
-                        <Button fx:id="settingsBtn"
-                                text="Paramètres"
-                                styleClass="main-menu-button"
-                                onAction="#showSettings"
-                                maxWidth="1.7976931348623157E308">
-                            <graphic>
-                                <Text styleClass="menu-icon" text="⚙"/>
-                            </graphic>
-                        </Button>
-
                     </VBox>
-                </content>
-            </ScrollPane>
 
-            <!-- Bottom -->
-            <VBox styleClass="sidebar-bottom">
-                <Button fx:id="logoutBtn"
-                        text="Déconnexion"
-                        styleClass="logout-button"
-                        onAction="#logout"
-                        maxWidth="1.7976931348623157E308"/>
+                    <!-- Participants -->
+                    <VBox spacing="2">
+                        <Button fx:id="usersToggleBtn"
+                                text="Participants"
+                                styleClass="main-menu-button"
+                                maxWidth="1.7976931348623157E308"
+                                prefHeight="40">
+                            <graphic>
+                                <HBox alignment="CENTER_LEFT" spacing="6">
+                                    <Text text="👥" style="-fx-font-size: 14px;"/>
+                                    <Text fx:id="usersArrow" text="▶"
+                                          style="-fx-font-size: 10px; -fx-fill: white;"/>
+                                </HBox>
+                            </graphic>
+                        </Button>
+                        <VBox fx:id="usersSubmenu" visible="false" managed="false" spacing="2">
+                            <Button fx:id="rolesBtn" text="  Rôles"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="👤" style="-fx-font-size: 12px;"/></graphic>
+                            </Button>
+                            <Button fx:id="inscriptionsBtn" text="  Inscriptions"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="📝" style="-fx-font-size: 12px;"/></graphic>
+                            </Button>
+                        </VBox>
+                    </VBox>
+
+                    <!-- Sponsors -->
+                    <VBox spacing="2">
+                        <Button fx:id="sponsorsBtn"
+                                text="Sponsors"
+                                styleClass="main-menu-button"
+                                maxWidth="1.7976931348623157E308"
+                                prefHeight="40">
+                            <graphic>
+                                <HBox alignment="CENTER_LEFT" spacing="6">
+                                    <Text text="💼" style="-fx-font-size: 14px;"/>
+                                    <Text fx:id="sponsorsArrow" text="▶"
+                                          style="-fx-font-size: 10px; -fx-fill: white;"/>
+                                </HBox>
+                            </graphic>
+                        </Button>
+                        <VBox fx:id="sponsorsSubmenu" visible="false" managed="false" spacing="2">
+                            <Button fx:id="sponsorsListBtn" text="  Admin Sponsors"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="📋" style="-fx-font-size: 12px;"/></graphic>
+                            </Button>
+                            <Button fx:id="sponsorPortalBtn" text="  Portail Sponsor"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="🔑" style="-fx-font-size: 12px;"/></graphic>
+                            </Button>
+                            <Button fx:id="budgetBtn" text="  Budget"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="💰" style="-fx-font-size: 12px;"/></graphic>
+                            </Button>
+                            <Button fx:id="contratsBtn" text="  Dépenses"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="📄" style="-fx-font-size: 12px;"/></graphic>
+                            </Button>
+                        </VBox>
+                    </VBox>
+
+                    <!-- Ressources -->
+                    <VBox spacing="2">
+                        <Button fx:id="resourcesToggleBtn"
+                                text="Ressources"
+                                styleClass="main-menu-button"
+                                maxWidth="1.7976931348623157E308"
+                                prefHeight="40">
+                            <graphic>
+                                <HBox alignment="CENTER_LEFT" spacing="6">
+                                    <Text text="📦" style="-fx-font-size: 14px;"/>
+                                    <Text fx:id="resourcesArrow" text="▶"
+                                          style="-fx-font-size: 10px; -fx-fill: white;"/>
+                                </HBox>
+                            </graphic>
+                        </Button>
+                        <VBox fx:id="resourcesSubmenu" visible="false" managed="false" spacing="2">
+                            <Button fx:id="sallesBtn" text="  Salles"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="🏢" style="-fx-font-size: 12px;"/></graphic>
+                            </Button>
+                            <Button fx:id="equipementsBtn" text="  Équipements"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="💻" style="-fx-font-size: 12px;"/></graphic>
+                            </Button>
+                            <Button fx:id="reservationsBtn" text="  Réservations"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="📅" style="-fx-font-size: 12px;"/></graphic>
+                            </Button>
+                        </VBox>
+                    </VBox>
+
+                    <!-- Questionnaires -->
+                    <VBox spacing="2">
+                        <Button fx:id="questionnairesToggleBtn"
+                                text="Questionnaires"
+                                styleClass="main-menu-button"
+                                maxWidth="1.7976931348623157E308"
+                                prefHeight="40">
+                            <graphic>
+                                <HBox alignment="CENTER_LEFT" spacing="6">
+                                    <Text text="📝" style="-fx-font-size: 14px;"/>
+                                    <Text fx:id="questionnairesArrow" text="▶"
+                                          style="-fx-font-size: 10px; -fx-fill: white;"/>
+                                </HBox>
+                            </graphic>
+                        </Button>
+                        <VBox fx:id="questionnairesSubmenu" visible="false" managed="false" spacing="2">
+                            <Button fx:id="questionsBtn" text="  Questions"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="❓" style="-fx-font-size: 12px;"/></graphic>
+                            </Button>
+                            <Button fx:id="reponsesBtn" text="  Réponses"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="📊" style="-fx-font-size: 12px;"/></graphic>
+                            </Button>
+                            <Button fx:id="participantQuizBtn" text="  Passer Quiz"
+                                    styleClass="submenu-button"
+                                    maxWidth="1.7976931348623157E308" prefHeight="34">
+                                <graphic><Text text="🎯" style="-fx-font-size: 12px;"/></graphic>
+                            </Button>
+                        </VBox>
+                    </VBox>
+
+                </VBox>
+            </content>
+        </ScrollPane>
+
+        <!-- Bas sidebar : Paramètres + Déconnexion TOUJOURS visibles -->
+        <VBox styleClass="sidebar-bottom" spacing="4"
+              minHeight="100" maxHeight="100">
+            <Button fx:id="settingsBtn"
+                    text="Paramètres"
+                    styleClass="main-menu-button"
+                    maxWidth="1.7976931348623157E308"
+                    prefHeight="40">
+                <graphic><Text text="⚙️" style="-fx-font-size: 14px;"/></graphic>
+            </Button>
+            <Button fx:id="logoutBtn"
+                    text="Déconnexion"
+                    styleClass="logout-button"
+                    maxWidth="1.7976931348623157E308"
+                    prefHeight="40">
+                <graphic><Text text="🚪" style="-fx-font-size: 14px;"/></graphic>
+            </Button>
+        </VBox>
+    </VBox>
+
+    <!-- ==================== CONTENU DROIT ==================== -->
+    <VBox HBox.hgrow="ALWAYS" spacing="0">
+
+        <!-- TOP BAR -->
+        <HBox styleClass="topbar" alignment="CENTER_LEFT" spacing="14"
+              minHeight="56" maxHeight="56">
+
+            <TextField fx:id="globalSearchField"
+                       promptText="Recherche globale..."
+                       styleClass="topbar-search"
+                       prefWidth="300"/>
+
+            <Button onAction="#onSearchClick"
+                    style="-fx-background-color: rgba(255,255,255,0.18); -fx-text-fill: white; -fx-background-radius: 18; -fx-padding: 7 14; -fx-cursor: hand;">
+                <graphic><Text text="🔍" style="-fx-font-size: 14px;"/></graphic>
+            </Button>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <!-- Date / heure -->
+            <VBox alignment="CENTER_RIGHT" spacing="1">
+                <Label fx:id="navDateLabel"
+                       text="mercredi 04 mars 2026"
+                       styleClass="topbar-date"/>
+                <Label fx:id="navTimeLabel"
+                       text="00:00:00"
+                       styleClass="topbar-time"/>
             </VBox>
-        </VBox>
 
-        <!-- CONTENU DROITE -->
-        <VBox spacing="0" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
-
-            <!-- TOP BAR -->
-            <HBox alignment="CENTER_LEFT" prefHeight="64" styleClass="topbar">
-
-                <TextField promptText="Recherche globale..."
-                           styleClass="topbar-search"/>
-
-                <Region HBox.hgrow="ALWAYS"/>
-
-                <!-- Date / heure -->
-                <VBox alignment="CENTER_RIGHT" spacing="0">
-                    <Label fx:id="navDateLabel" text="Dimanche 15 février 2026" styleClass="topbar-date"/>
-                    <Label fx:id="navTimeLabel" text="14:40:48" styleClass="topbar-time"/>
-                </VBox>
-
-                <!-- Profil -->
-                <MenuButton fx:id="profileMenu" styleClass="topbar-profile">
-                    <graphic>
-                        <HBox alignment="CENTER" spacing="10">
-                            <StackPane fx:id="avatarContainer" alignment="CENTER">
-                                <Circle radius="18" fill="rgba(255,255,255,0.25)"/>
-                                <Circle radius="16" fill="white"/>
-
-                                <ImageView fx:id="profileImageView"
-                                           fitHeight="28"
-                                           fitWidth="28"
-                                           preserveRatio="true"
-                                           visible="false">
-                                    <clip>
-                                        <Circle centerX="14" centerY="14" radius="14"/>
-                                    </clip>
-                                </ImageView>
-
-                                <StackPane fx:id="initialsContainer" visible="true">
-                                    <Circle radius="14" fill="#1565C0"/>
-                                    <Text fx:id="userInitialsText"
-                                          text="MM"
-                                          style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-fill: white;"/>
-                                </StackPane>
+            <!-- Profil -->
+            <MenuButton fx:id="profileMenu" styleClass="topbar-profile">
+                <graphic>
+                    <HBox alignment="CENTER" spacing="8">
+                        <StackPane fx:id="avatarContainer" alignment="CENTER">
+                            <Circle radius="16" fill="rgba(255,255,255,0.25)"/>
+                            <Circle radius="14" fill="white"/>
+                            <ImageView fx:id="profileImageView"
+                                       fitHeight="26" fitWidth="26"
+                                       preserveRatio="true"
+                                       visible="false">
+                                <clip>
+                                    <Circle centerX="13" centerY="13" radius="13"/>
+                                </clip>
+                            </ImageView>
+                            <StackPane fx:id="initialsContainer" visible="true">
+                                <Circle radius="13" fill="#1565C0"/>
+                                <Text fx:id="userInitialsText"
+                                      text="EF"
+                                      style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-fill: white;"/>
                             </StackPane>
+                        </StackPane>
+                        <VBox alignment="CENTER_LEFT" spacing="0">
+                            <Label fx:id="userNameLabel" text="EventFlow"
+                                   styleClass="topbar-username"/>
+                            <Label fx:id="userRoleLabel" text="Admin"
+                                   styleClass="topbar-role"/>
+                        </VBox>
+                        <Text text="▼" style="-fx-fill: white; -fx-font-size: 9px;"/>
+                    </HBox>
+                </graphic>
+                <items>
+                    <MenuItem text="👤 Mon Profil"    onAction="#showProfile"/>
+                    <MenuItem text="⚙️ Paramètres"   onAction="#showSettings"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem text="🚪 Déconnexion"  onAction="#logout"/>
+                </items>
+            </MenuButton>
+        </HBox>
 
-                            <VBox alignment="CENTER_LEFT" spacing="0">
-                                <Label fx:id="userNameLabel" text="Maryem Manai" styleClass="topbar-username"/>
-                                <Label fx:id="userRoleLabel" text="Sponsor" styleClass="topbar-role"/>
-                            </VBox>
+        <!-- PAGE HEADER -->
+        <HBox styleClass="page-header" alignment="CENTER_LEFT"
+              minHeight="62" maxHeight="62">
+            <VBox spacing="3">
+                <Label fx:id="pageTitle"
+                       text="Tableau de bord"
+                       styleClass="page-title"/>
+                <Label fx:id="pageSubtitle"
+                       text="Aperçu général de votre activité"
+                       styleClass="page-subtitle"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <HBox fx:id="kpiContainer"
+                  spacing="14"
+                  alignment="CENTER_RIGHT"
+                  visible="false"
+                  managed="false"/>
+        </HBox>
 
-                            <Text text="▼" style="-fx-fill: white; -fx-font-size: 10px;"/>
-                        </HBox>
-                    </graphic>
+        <!-- ZONE CONTENU CENTRAL -->
+        <VBox fx:id="pageContentContainer"
+              styleClass="page-content"
+              VBox.vgrow="ALWAYS"/>
 
-                    <items>
-                        <MenuItem text="👤 Mon Profil" onAction="#showProfile"/>
-                        <MenuItem text="⚙️ Paramètres" onAction="#showSettings"/>
-                        <SeparatorMenuItem/>
-                        <MenuItem text="🚪 Déconnexion" onAction="#logout"/>
-                    </items>
-                </MenuButton>
-            </HBox>
-
-            <!-- HEADER PAGE -->
-            <HBox alignment="CENTER_LEFT" styleClass="page-header">
-                <VBox spacing="5">
-                    <Label fx:id="pageTitle" text="Tableau de bord" styleClass="page-title"/>
-                    <Label fx:id="pageSubtitle" text="Aperçu général de votre activité" styleClass="page-subtitle"/>
-                </VBox>
-                <Region HBox.hgrow="ALWAYS"/>
-            </HBox>
-
-            <!-- ZONE CENTRALE -->
-            <VBox fx:id="pageContentContainer"
-                  styleClass="page-content"
-                  VBox.vgrow="ALWAYS"/>
-        </VBox>
-
-    </HBox>
-</StackPane>
+    </VBox>
+</HBox>

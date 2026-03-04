@@ -399,6 +399,8 @@ public class EventService {
         }
 
         event.setLocation(rs.getString("location"));
+        event.setGouvernorat(rs.getString("gouvernorat"));
+        event.setVille(rs.getString("ville"));
         event.setCapacity(rs.getInt("capacity"));
         event.setImageUrl(rs.getString("image_url"));
         event.setCategoryId(rs.getInt("category_id"));

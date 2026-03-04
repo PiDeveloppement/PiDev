@@ -329,6 +329,7 @@
     -fx-graphic-text-gap: 10;
     -fx-background-radius: 12;
     -fx-border-radius: 12;
+    /* Bordure transparente de même épaisseur pour éviter le saut de layout */
     -fx-border-color: transparent;
     -fx-border-width: 2;
     -fx-cursor: hand;
@@ -343,6 +344,7 @@
     -fx-background-color: rgba(255,255,255,0.28);
 }
 
+/* Empêcher JavaFX de dessiner son propre focus ring bleu */
 .main-menu-button:focused {
     -fx-border-color: transparent;
     -fx-background-insets: 0;
@@ -375,18 +377,19 @@
 }
 
 /* =========================================================
-   ✅ BOUTON ACTIF — ENCADRÉ BLANC BIEN VISIBLE (comme capture 1)
+   ✅ CORRECTION 1 — BOUTON ACTIF ENCADRÉ BLANC BIEN VISIBLE
+      Reproduit exactement l'apparence de la capture 1
    ========================================================= */
 
 .sidebar-button-active {
-    -fx-background-color: rgba(255,255,255,0.25) !important;
-    -fx-border-color: white !important;
-    -fx-border-width: 2 !important;
-    -fx-border-radius: 12 !important;
-    -fx-background-radius: 12 !important;
-    -fx-text-fill: white !important;
-    -fx-font-weight: 800 !important;
-    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.20), 10, 0, 0, 0) !important;
+    -fx-background-color: rgba(255,255,255,0.28);
+    -fx-border-color: white;
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-text-fill: white;
+    -fx-font-weight: 800;
+    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.25), 10, 0, 0, 0);
 }
 
 /* logout button */
@@ -494,7 +497,8 @@
 }
 
 /* =========================================================
-   ✅ PAGE HEADER — TITRE SOMBRE ET LISIBLE (comme capture 1)
+   ✅ CORRECTION 2 — TITRE DE PAGE SOMBRE ET LISIBLE
+      Était trop clair (#64748b) → corrigé en #1e293b (noir ardoise)
    ========================================================= */
 
 .page-header {
@@ -504,21 +508,29 @@
     -fx-border-width: 0 0 1 0;
 }
 
-/* Titre principal de la page — NOIR FONCÉ */
-.page-title,
+/* Titre principal — NOIR FONCÉ comme capture 1 */
+.page-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b;
+}
+
+/* Ciblage par fx:id en plus de la classe */
 #pageTitle {
     -fx-font-size: 24px;
     -fx-font-weight: bold;
     -fx-text-fill: #1e293b;
-    -fx-opacity: 1.0;
 }
 
-/* Sous-titre de la page — GRIS MOYEN lisible */
-.page-subtitle,
+/* Sous-titre — GRIS MOYEN lisible (pas trop clair) */
+.page-subtitle {
+    -fx-text-fill: #475569;
+    -fx-font-size: 14px;
+}
+
 #pageSubtitle {
     -fx-text-fill: #475569;
     -fx-font-size: 14px;
-    -fx-opacity: 1.0;
 }
 
 .page-content {
@@ -545,6 +557,36 @@
     -fx-font-size: 22px;
     -fx-font-weight: bold;
     -fx-text-fill: #334155;
+}
+
+/* Landing page top navigation: underline active item like "Evenements" */
+.landing-nav-link {
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-border-insets: 0 0 -2 0;
+    -fx-padding: 6 0;
+}
+
+.landing-nav-link:hover {
+    -fx-border-color: #0D47A1;
+}
+
+.landing-nav-link-active {
+    -fx-border-color: #0D47A1;
+    -fx-text-fill: #1e293b;
+    -fx-font-weight: 600;
+}
+
+/* Menu déroulant profil */
+.context-menu {
+    -fx-background-color: white;
+}
+.menu-item .label {
+    -fx-text-fill: #1e293b;
+}
+.menu-item:focused .label {
+    -fx-text-fill: #0D47A1;
+    -fx-font-weight: 700;
 }
 
 .combo-box-sponsor {
@@ -635,4 +677,109 @@
 .stat-label {
     -fx-text-fill: #64748b;
     -fx-font-size: 14px;
+}
+/* =========================================================
+   CORRECTIFS SIDEBAR + WEBVIEW — à ajouter à la fin
+   de atlantafx-custom.css
+   ========================================================= */
+
+/* --- Sidebar root : gradient bleu qui couvre toute la hauteur --- */
+.sidebar-root {
+    -fx-background-color: linear-gradient(to bottom, #1565C0, #0D47A1);
+    -fx-border-color: #0a3880;
+    -fx-border-width: 0 1.5 0 0;
+}
+
+/* --- ScrollPane de la sidebar : transparent, pas de fond blanc --- */
+.sidebar-root .scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+.sidebar-root .scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+/* Scrollbar fine dans la sidebar */
+.sidebar-root .scroll-bar:vertical {
+    -fx-pref-width: 4px;
+    -fx-background-color: transparent;
+}
+.sidebar-root .scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(255,255,255,0.25);
+    -fx-background-radius: 2px;
+}
+
+/* --- Boutons menu principal sidebar --- */
+.main-menu-button {
+    -fx-background-color: rgba(255,255,255,0.12);
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 10 14;
+    -fx-alignment: CENTER_LEFT;
+    -fx-graphic-text-gap: 10;
+    -fx-cursor: hand;
+}
+.main-menu-button:hover {
+    -fx-background-color: rgba(255,255,255,0.20);
+}
+
+/* --- Boutons sous-menu --- */
+.submenu-button {
+    -fx-background-color: rgba(255,255,255,0.08);
+    -fx-text-fill: rgba(255,255,255,0.90);
+    -fx-font-size: 12px;
+    -fx-font-weight: 500;
+    -fx-background-radius: 7;
+    -fx-border-radius: 7;
+    -fx-padding: 8 14 8 20;
+    -fx-alignment: CENTER_LEFT;
+    -fx-graphic-text-gap: 8;
+    -fx-cursor: hand;
+}
+.submenu-button:hover {
+    -fx-background-color: rgba(255,255,255,0.16);
+}
+
+/* --- Bouton actif dans la sidebar --- */
+.sidebar-button-active {
+    -fx-background-color: rgba(255,255,255,0.28) !important;
+    -fx-border-color: rgba(255,255,255,0.50) !important;
+    -fx-border-width: 1.5 !important;
+    -fx-text-fill: white !important;
+    -fx-font-weight: 700 !important;
+    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.15), 8, 0, 0, 0) !important;
+}
+
+/* --- Logout --- */
+.logout-button {
+    -fx-background-color: rgba(220,38,38,0.25);
+    -fx-text-fill: #fecaca;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 9 14;
+    -fx-alignment: CENTER_LEFT;
+    -fx-graphic-text-gap: 10;
+    -fx-cursor: hand;
+}
+.logout-button:hover {
+    -fx-background-color: rgba(220,38,38,0.40);
+    -fx-text-fill: white;
+}
+
+/* --- Zone contenu principal : ne jamais déborder --- */
+.page-content, #pageContentContainer {
+    -fx-background-color: #f8fafc;
+    -fx-padding: 16;
+    /* Pas de prefHeight fixe — laisser VBox.vgrow=ALWAYS faire le travail */
+}
+
+/* --- WebView : prend tout l'espace disponible --- */
+.web-view {
+    -fx-background-color: transparent;
 }
