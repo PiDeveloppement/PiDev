@@ -8,13 +8,11 @@ import com.example.pidev.service.forecast.EconomicForecastService;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
-import java.util.Locale;
 
 public class BudgetDetailsController {
 
@@ -24,14 +22,8 @@ public class BudgetDetailsController {
     @FXML private Label revenueLabel;
     @FXML private Label rentLabel;
     @FXML private Label statusLabel;
-    @FXML private Label deficitAmountLabel;
-    @FXML private Label dailyRateLabel;
-    @FXML private Label doubleDaysLabel;
-    @FXML private Label exchangeRateLabel;
-    @FXML private HBox deficitBox;
-    @FXML private HBox rateBox;
-    @FXML private HBox doubleBox;
-    @FXML private HBox exchangeBox;
+    @FXML private Label forecastLabel;
+    @FXML private Label adjustedForecastLabel;
     @FXML private Button closeBtn;
 
     private Budget currentBudget;
@@ -74,13 +66,12 @@ public class BudgetDetailsController {
 
         double initial = currentBudget.getInitial_budget();
         double totalExpenses = currentBudget.getTotal_expenses();
-        double remaining = initial - totalExpenses; // peut être négatif
+        double remaining = initial - totalExpenses;
 
         List<Depense> depenses = depenseService.getDepensesByBudgetId(currentBudget.getId());
+        long daysLeft = -1;
 
-        // Calcul du rythme journalier si possible
-        double avgDaily = -1;
-        if (!depenses.isEmpty()) {
+        if (!depenses.isEmpty() && remaining > 0) {
             LocalDate earliest = depenses.stream()
                     .map(Depense::getExpense_date)
                     .filter(Objects::nonNull)
@@ -95,55 +86,38 @@ public class BudgetDetailsController {
             if (earliest != null && latest != null && !earliest.equals(latest)) {
                 long daysSpan = ChronoUnit.DAYS.between(earliest, latest);
                 if (daysSpan > 0) {
-                    avgDaily = totalExpenses / daysSpan;
-                }
-            }
-        }
-
-        // Mise à jour des cadres de prévision
-        if (remaining >= 0) {
-            // Budget non dépassé
-            deficitBox.setVisible(false);
-            if (avgDaily > 0 && remaining > 0) {
-                long daysLeft = (long) (remaining / avgDaily);
-                dailyRateLabel.setText(String.format("%.2f DT/jour", avgDaily));
-                doubleDaysLabel.setText(daysLeft + " jours (avant épuisement)");
-                rateBox.setVisible(true);
-                doubleBox.setVisible(true);
-            } else {
-                rateBox.setVisible(false);
-                doubleBox.setVisible(false);
-            }
-        } else {
-            // Budget dépassé
-            double deficit = -remaining;
-            deficitAmountLabel.setText(String.format("%,.2f DT", deficit));
-            deficitBox.setVisible(true);
-
-            if (avgDaily > 0) {
-                dailyRateLabel.setText(String.format("%.2f DT/jour", avgDaily));
-                double exactDays = deficit / avgDaily;
-                if (exactDays < 1) {
-                    doubleDaysLabel.setText("< 1 jour");
+                    double avgDaily = totalExpenses / daysSpan;
+                    if (avgDaily > 0) {
+                        daysLeft = (long) (remaining / avgDaily);
+                        forecastLabel.setText("📅 Budget tient encore ~" + daysLeft + " jours au rythme actuel");
+                    } else {
+                        forecastLabel.setText("💰 Budget restant : " + String.format("%,.2f DT", remaining));
+                    }
                 } else {
-                    long daysToDouble = (long) exactDays;
-                    doubleDaysLabel.setText(daysToDouble + " jours (doublement)");
+                    forecastLabel.setText("💰 Budget restant : " + String.format("%,.2f DT", remaining));
                 }
-                rateBox.setVisible(true);
-                doubleBox.setVisible(true);
             } else {
-                rateBox.setVisible(false);
-                doubleBox.setVisible(false);
+                forecastLabel.setText("💰 Budget restant : " + String.format("%,.2f DT", remaining));
+            }
+        } else {
+            if (remaining >= 0) {
+                forecastLabel.setText("💰 Budget restant : " + String.format("%,.2f DT", remaining));
+            } else {
+                forecastLabel.setText("🚨 Dépassement de " + String.format("%,.2f DT", -remaining) + " par rapport au budget");
             }
         }
 
-        // Taux de change (API)
-        double usdToTnd = forecastService.getExchangeRate("USD", "TND");
-        if (usdToTnd > 0) {
-            exchangeRateLabel.setText(String.format("1 USD = %.4f TND", usdToTnd));
-            exchangeBox.setVisible(true);
+        if (daysLeft > 0 && remaining > 0) {
+            double adjustedRemaining = forecastService.adjustForInflation(remaining, (int) daysLeft, "TND");
+            double usdToTnd = forecastService.getExchangeRate("USD", "TND");
+            String adjustedText = String.format("Ajusté (inflation estimée) : ~%,.2f DT", adjustedRemaining);
+            if (usdToTnd > 0) {
+                adjustedText += String.format("  (1 USD = %.4f TND)", usdToTnd);
+            }
+            adjustedForecastLabel.setText(adjustedText);
+            adjustedForecastLabel.setStyle("-fx-text-fill: #2563eb; -fx-font-size: 12px;");
         } else {
-            exchangeBox.setVisible(false);
+            adjustedForecastLabel.setText("");
         }
     }
 

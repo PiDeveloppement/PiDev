@@ -44,7 +44,7 @@ public class SponsorFormController {
     @FXML private TextField taxIdField;
     @FXML private Button uploadDocBtn;
     @FXML private Label docFileLabel;
-    @FXML private Button importDocBtn;
+    @FXML private Button importDocBtn; // non utilisé, mais conservé pour compatibilité FXML
 
     private Sponsor editing;
     private Sponsor result;
@@ -61,6 +61,9 @@ public class SponsorFormController {
 
     private static final Pattern EMAIL_RX = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     private static final Pattern TAX_ID_RX = Pattern.compile("^[0-9]{7}[A-Za-z]$");
+
+    // === Clé publique Logo.dev (obtenue de votre compte) ===
+    private static final String LOGO_DEV_PUBLISHABLE_KEY = "pk_SFVuPb7oRJ6CraRuLwHgSw";
 
     public void setOnFormDone(Runnable callback) { this.onFormDone = callback; }
     public void setOnSaved(Consumer<Sponsor> callback) { this.onSaved = callback; }
@@ -117,6 +120,53 @@ public class SponsorFormController {
                 }
             });
         }
+
+        // === Détection du domaine dans l'email pour charger le logo automatiquement ===
+        if (emailField != null) {
+            emailField.focusedProperty().addListener((obs, old, focused) -> {
+                if (!focused) { // Quand on quitte le champ email
+                    String email = emailField.getText().trim();
+                    if (email != null && !email.isEmpty() && EMAIL_RX.matcher(email).matches()) {
+                        loadLogoFromEmail(email);
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Extrait le domaine de l'email et tente de charger le logo via Logo.dev
+     */
+    private void loadLogoFromEmail(String email) {
+        String domain = email.substring(email.indexOf("@") + 1).trim();
+        if (domain.isEmpty()) return;
+
+        String logoUrl = "https://img.logo.dev/" + domain + "?token=" + LOGO_DEV_PUBLISHABLE_KEY + "&format=png";
+
+        // Afficher un message de chargement
+        logoPreview.setImage(null);
+        logoFileLabel.setText("Chargement du logo...");
+
+        // Chargement direct de l'image (pas de vérification HEAD)
+        Image img = new Image(logoUrl, true);
+
+        img.progressProperty().addListener((obs, old, progress) -> {
+            if (progress.doubleValue() == 1.0) {
+                Platform.runLater(() -> {
+                    logoPreview.setImage(img);
+                    logoField.setText(logoUrl);
+                    logoFileLabel.setText("✅ Logo trouvé via Logo.dev");
+                });
+            }
+        });
+
+        img.errorProperty().addListener((obs, old, error) -> {
+            if (error) {
+                Platform.runLater(() -> {
+                    logoFileLabel.setText("❌ Aucun logo trouvé pour ce domaine");
+                });
+            }
+        });
     }
 
     private void validateTaxId() {

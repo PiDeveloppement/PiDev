@@ -23,10 +23,10 @@ public class HelloApplication extends Application {
         primaryStage = stage;
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
 
-        // Charger directement le dashboard (pas de login)
-        URL fxml = getClass().getResource("/com/example/pidev/fxml/MainLayout.fxml");
+        // Charger la landing page (page d'accueil) au lieu du dashboard
+        URL fxml = getClass().getResource("/com/example/pidev/fxml/auth/landingPage.fxml");
         if (fxml == null) {
-            System.err.println("❌ FXML MainLayout.fxml introuvable !");
+            System.err.println("❌ FXML landingPage.fxml introuvable !");
             return;
         }
         Parent root = FXMLLoader.load(fxml);
@@ -34,7 +34,7 @@ public class HelloApplication extends Application {
         scene.getStylesheets().add(
                 Objects.requireNonNull(getClass().getResource("/com/example/pidev/css/atlantafx-custom.css")).toExternalForm()
         );
-        stage.setTitle("EventFlow - Dashboard");
+        stage.setTitle("EventFlow - Accueil");
         stage.setScene(scene);
         stage.setMinWidth(1000);
         stage.setMinHeight(700);
@@ -63,6 +63,16 @@ public class HelloApplication extends Application {
             FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource(fxmlPath));
             Parent root = loader.load();
             primaryStage.getScene().setRoot(root);
+            // Mettre à jour le titre de la fenêtre en fonction de la page
+            if (fxmlPath.contains("login")) {
+                primaryStage.setTitle("EventFlow - Connexion");
+            } else if (fxmlPath.contains("signup")) {
+                primaryStage.setTitle("EventFlow - Inscription");
+            } else if (fxmlPath.contains("landingPage")) {
+                primaryStage.setTitle("EventFlow - Accueil");
+            } else {
+                primaryStage.setTitle("EventFlow - Dashboard");
+            }
         } catch (Exception e) {
             System.err.println("❌ Erreur lors du chargement de " + fxmlPath + " : " + e.getMessage());
             e.printStackTrace();
