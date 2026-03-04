@@ -3,22 +3,28 @@ package com.example.pidev.controller.event;
 import com.example.pidev.MainController;
 import com.example.pidev.model.event.Event;
 import com.example.pidev.model.event.EventCategory;
+import com.example.pidev.model.weather.WeatherData;
 import com.example.pidev.service.event.EventService;
 import com.example.pidev.service.event.EventCategoryService;
+import com.example.pidev.service.weather.WeatherService;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Controller pour le formulaire d'ajout/modification d'événement
@@ -40,7 +46,9 @@ public class EventFormController {
     @FXML private DatePicker endDatePicker;
     @FXML private Spinner<Integer> endHourSpinner;
     @FXML private Spinner<Integer> endMinuteSpinner;
-    @FXML private TextField locationField;
+    @FXML private ComboBox<String> gouvernoratCombo;
+    @FXML private ComboBox<String> villeCombo;
+    @FXML private ComboBox<String> locationCombo;
     @FXML private TextField capacityField;
     @FXML private TextField imageUrlField;
     @FXML private ComboBox<String> categoryCombo;
@@ -54,10 +62,22 @@ public class EventFormController {
     @FXML private Label descriptionError;
     @FXML private Label descriptionCounter;
     @FXML private Label dateError;
+    @FXML private Label gouvernoratError;
+    @FXML private Label villeError;
     @FXML private Label locationError;
     @FXML private Label capacityError;
     @FXML private Label categoryError;
     @FXML private Label priceError;
+
+    // ==================== MÉTÉO ELEMENTS ====================
+    @FXML private VBox weatherContainer;
+    @FXML private Label formWeatherEmoji;
+    @FXML private Label formWeatherTemp;
+    @FXML private Label formWeatherDescription;
+    @FXML private Label formWeatherRain;
+    @FXML private Label formWeatherHumidity;
+    @FXML private Label formWeatherAlert;
+    @FXML private Label formWeatherError;
 
     // ==================== NAVBAR ELEMENTS ====================
     @FXML private Label dateLabel;
@@ -67,6 +87,7 @@ public class EventFormController {
 
     private EventService eventService;
     private EventCategoryService categoryService;
+    private WeatherService weatherService;
     private MainController helloController;
     private Event currentEvent;
     private List<EventCategory> allCategories;
@@ -97,11 +118,16 @@ public class EventFormController {
 
         eventService = new EventService();
         categoryService = new EventCategoryService();
+        weatherService = new WeatherService();
 
+        loadTunisianData();
+        loadGouvernorats();
         loadCategories();
         setupSpinners();
         setupValidationListeners();
+        setupLocationListeners();
         setDefaultValues();
+        setupWeatherListeners();
 
         // Initialiser l'état du bouton save
         saveBtn.setDisable(true);
@@ -160,7 +186,27 @@ public class EventFormController {
                 endMinuteSpinner.getValueFactory().setValue(event.getEndDate().getMinute());
             }
 
-            locationField.setText(event.getLocation());
+            // Charger gouvernorat, ville et location
+            if (event.getGouvernorat() != null) {
+                gouvernoratCombo.setValue(event.getGouvernorat());
+                loadVillesForGouvernorat(event.getGouvernorat());
+
+                if (event.getVille() != null) {
+                    villeCombo.setValue(event.getVille());
+                    loadFacultesForVille(event.getVille());
+                }
+            }
+
+            if (event.getLocation() != null) {
+                // Essayer de sélectionner le location dans la liste
+                if (locationCombo.getItems().contains(event.getLocation())) {
+                    locationCombo.setValue(event.getLocation());
+                } else {
+                    // Sinon le saisir manuellement dans l'editor
+                    locationCombo.getEditor().setText(event.getLocation());
+                }
+            }
+
             capacityField.setText(String.valueOf(event.getCapacity()));
             imageUrlField.setText(event.getImageUrl());
 
@@ -371,14 +417,20 @@ public class EventFormController {
             validateForm();
         });
 
-        // ==================== LIEU ====================
-        locationField.textProperty().addListener((obs, oldVal, newVal) -> {
+        // ==================== LIEU (ComboBox) ====================
+        villeCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
             locationPristine = false;
             validateForm();
         });
 
-        locationField.focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (!newVal && locationField.getText().trim().isEmpty()) {
+        locationCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+            locationPristine = false;
+            validateForm();
+        });
+
+        // Gouvernorat et Ville
+        gouvernoratCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
                 locationPristine = false;
                 validateForm();
             }
@@ -472,6 +524,135 @@ public class EventFormController {
 
         if (!categoryCombo.getItems().isEmpty()) {
             categoryCombo.setValue(categoryCombo.getItems().get(0));
+        }
+    }
+
+    /**
+     * Configure les listeners pour afficher la météo en temps réel
+     */
+    private void setupWeatherListeners() {
+        // Listener sur la ville (utilisée pour la météo)
+        villeCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+            loadWeatherPreview();
+        });
+
+        // Listener sur la date de début
+        startDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+            loadWeatherPreview();
+        });
+    }
+
+    /**
+     * Charge et affiche la météo prévue
+     */
+    private void loadWeatherPreview() {
+        String ville = villeCombo.getValue();
+        LocalDate date = startDatePicker.getValue();
+
+        // Vérifier que ville et date sont remplis
+        if (ville == null || ville.isEmpty() || date == null) {
+            hideWeatherContainer();
+            return;
+        }
+
+        // Appeler le service météo en arrière-plan
+        Thread weatherThread = new Thread(() -> {
+            try {
+                // Créer un événement temporaire avec la ville pour la météo
+                Event tempEvent = new Event();
+                tempEvent.setLocation(ville); // Utiliser ville pour Geocoding API
+                tempEvent.setStartDate(LocalDateTime.of(date, LocalTime.of(9, 0)));
+
+                System.out.println("🌤️ Chargement météo pour " + ville + " le " + date);
+                WeatherData weather = weatherService.getWeatherForEvent(tempEvent);
+
+                // Afficher les résultats sur le thread JavaFX
+                javafx.application.Platform.runLater(() -> {
+                    if (weather != null && weather.isAvailable()) {
+                        displayWeatherPreview(weather);
+                    } else {
+                        showWeatherError(weather != null ? weather.getErrorMessage() : "Météo indisponible");
+                    }
+                });
+
+            } catch (Exception e) {
+                System.err.println("❌ Erreur chargement météo: " + e.getMessage());
+                javafx.application.Platform.runLater(() -> {
+                    showWeatherError("Erreur lors du chargement de la météo");
+                });
+            }
+        });
+        weatherThread.setDaemon(true);
+        weatherThread.start();
+    }
+
+    /**
+     * Affiche les données météorologiques
+     */
+    private void displayWeatherPreview(WeatherData weather) {
+        if (weatherContainer == null) return;
+
+        try {
+            // Rendre le container visible
+            weatherContainer.setVisible(true);
+            weatherContainer.setManaged(true);
+
+            // Remplir les données météo
+            formWeatherEmoji.setText(weather.getWeatherEmoji());
+            formWeatherTemp.setText(String.format("%.1f°C", weather.getTemperature()));
+            formWeatherDescription.setText(weather.getDescription());
+            formWeatherRain.setText(weather.getRainChance() + "%");
+            formWeatherHumidity.setText(String.format("%.0f%%", weather.getHumidity()));
+
+            // Masquer les erreurs
+            formWeatherError.setVisible(false);
+            formWeatherError.setManaged(false);
+
+            // Afficher une alerte si conditions défavorables
+            if (weather.getRainChance() > 60) {
+                formWeatherAlert.setText("⚠️ Risque de pluie élevé! Prévoyez une salle couverte ou un plan B");
+                formWeatherAlert.setVisible(true);
+                formWeatherAlert.setManaged(true);
+            } else {
+                formWeatherAlert.setVisible(false);
+                formWeatherAlert.setManaged(false);
+            }
+
+            System.out.println("✅ Météo affichée: " + weather.getWeatherEmoji() + " " +
+                    weather.getTemperature() + "°C");
+
+        } catch (Exception e) {
+            System.err.println("❌ Erreur affichage météo: " + e.getMessage());
+            showWeatherError("Erreur lors de l'affichage de la météo");
+        }
+    }
+
+    /**
+     * Affiche un message d'erreur
+     */
+    private void showWeatherError(String errorMsg) {
+        if (weatherContainer == null) return;
+
+        weatherContainer.setVisible(true);
+        weatherContainer.setManaged(true);
+
+        formWeatherError.setText("❌ " + errorMsg);
+        formWeatherError.setVisible(true);
+        formWeatherError.setManaged(true);
+
+        formWeatherAlert.setVisible(false);
+        formWeatherAlert.setManaged(false);
+
+        System.out.println("⚠️ Erreur météo: " + errorMsg);
+    }
+
+    /**
+     * Masque le container météo
+     */
+    private void hideWeatherContainer() {
+        if (weatherContainer != null) {
+            weatherContainer.setVisible(false);
+            weatherContainer.setManaged(false);
         }
     }
 
@@ -574,24 +755,28 @@ public class EventFormController {
 
         // ==================== 4. VALIDATION DU LIEU ====================
         if (!locationPristine) {
-            String location = locationField.getText().trim();
+            String location = locationCombo.getValue();
+            if (location == null || location.isEmpty() || location.equals("Autre (saisir manuellement)")) {
+                location = locationCombo.getEditor().getText().trim();
+            }
+
             if (location.isEmpty()) {
                 locationError.setText("❌ Le lieu est requis");
                 locationError.setVisible(true);
-                applyErrorStyle(locationField);
+                applyErrorStyle(locationCombo);
                 isValid = false;
             } else if (location.length() < LOCATION_MIN_LENGTH) {
                 locationError.setText("❌ Min " + LOCATION_MIN_LENGTH + " caractères");
                 locationError.setVisible(true);
-                applyErrorStyle(locationField);
+                applyErrorStyle(locationCombo);
                 isValid = false;
             } else if (location.length() > LOCATION_MAX_LENGTH) {
                 locationError.setText("❌ Max " + LOCATION_MAX_LENGTH + " caractères");
                 locationError.setVisible(true);
-                applyErrorStyle(locationField);
+                applyErrorStyle(locationCombo);
                 isValid = false;
             } else {
-                applySuccessStyle(locationField);
+                applySuccessStyle(locationCombo);
             }
         }
 
@@ -685,7 +870,7 @@ public class EventFormController {
         clearFieldStyles(descriptionArea);
         clearFieldStyles(startDatePicker);
         clearFieldStyles(endDatePicker);
-        clearFieldStyles(locationField);
+        clearFieldStyles(locationCombo);
         clearFieldStyles(capacityField);
         clearFieldStyles(categoryCombo);
         clearFieldStyles(priceField);
@@ -761,7 +946,20 @@ public class EventFormController {
 
         String title = titleField.getText().trim();
         String description = descriptionArea.getText().trim();
-        String location = locationField.getText().trim();
+        String gouvernorat = gouvernoratCombo.getValue();
+        String ville = villeCombo.getValue();
+        String location = locationCombo.getValue();
+
+        // Si l'utilisateur a choisi "Autre (saisir manuellement)" ou qu'il n'y a pas de sélection
+        if (location == null || location.isEmpty() || location.equals("Autre (saisir manuellement)")) {
+            // Laisser l'utilisateur saisir manuellement
+            location = locationCombo.getEditor().getText().trim();
+            if (location.isEmpty()) {
+                showError("Erreur", "Veuillez sélectionner ou saisir un lieu");
+                return;
+            }
+        }
+
         int capacity = Integer.parseInt(capacityField.getText());
         String imageUrl = imageUrlField.getText().trim();
 
@@ -793,6 +991,8 @@ public class EventFormController {
                 Event newEvent = new Event(title, description, startDate, endDate,
                         location, capacity, imageUrl, categoryId, 1,
                         isFree, price);
+                newEvent.setGouvernorat(gouvernorat);
+                newEvent.setVille(ville);
                 success = eventService.addEvent(newEvent);
 
                 if (success) {
@@ -815,6 +1015,8 @@ public class EventFormController {
                 currentEvent.setStartDate(startDate);
                 currentEvent.setEndDate(endDate);
                 currentEvent.setLocation(location);
+                currentEvent.setGouvernorat(gouvernorat);
+                currentEvent.setVille(ville);
                 currentEvent.setCapacity(capacity);
                 currentEvent.setImageUrl(imageUrl);
                 currentEvent.setCategoryId(categoryId);
@@ -861,5 +1063,105 @@ public class EventFormController {
         alert.setContentText(message);
         alert.showAndWait();
     }
-}
 
+    // ==================== DONNÉES TUNISIENNES ====================
+
+    private Map<String, List<String>> villesParGouvernorat;
+    private Map<String, List<String>> facultesParVille;
+
+    /**
+     * Charge les données tunisiennes (gouvernorats, villes, facultés)
+     */
+    private void loadTunisianData() {
+        villesParGouvernorat = new LinkedHashMap<>();
+        facultesParVille = new LinkedHashMap<>();
+
+        // 24 Gouvernorats tunisiens
+        villesParGouvernorat.put("Tunis", Arrays.asList("Tunis", "La Marsa", "Carthage", "Le Bardo"));
+        villesParGouvernorat.put("Ariana", Arrays.asList("Ariana", "Ettadhamen", "Raoued"));
+        villesParGouvernorat.put("Ben Arous", Arrays.asList("Ben Arous", "Hammam Lif", "Rades"));
+        villesParGouvernorat.put("Manouba", Arrays.asList("Manouba", "Oued Ellil", "Douar Hicher"));
+        villesParGouvernorat.put("Nabeul", Arrays.asList("Nabeul", "Hammamet", "Grombalia"));
+        villesParGouvernorat.put("Zaghouan", Arrays.asList("Zaghouan", "Bir Mcherga", "El Fahs"));
+        villesParGouvernorat.put("Bizerte", Arrays.asList("Bizerte", "Menzel Bourguiba", "Mateur"));
+        villesParGouvernorat.put("Béja", Arrays.asList("Béja", "Testour", "Medjez el-Bab"));
+        villesParGouvernorat.put("Jendouba", Arrays.asList("Jendouba", "Tabarka", "Ain Draham"));
+        villesParGouvernorat.put("Le Kef", Arrays.asList("Le Kef", "Dahmani", "Tajerouine"));
+        villesParGouvernorat.put("Siliana", Arrays.asList("Siliana", "Maktar", "Bargou"));
+        villesParGouvernorat.put("Kairouan", Arrays.asList("Kairouan", "Haffouz", "Sbikha"));
+        villesParGouvernorat.put("Kasserine", Arrays.asList("Kasserine", "Sbeitla", "Feriana"));
+        villesParGouvernorat.put("Sidi Bouzid", Arrays.asList("Sidi Bouzid", "Regueb", "Mezzouna"));
+        villesParGouvernorat.put("Sousse", Arrays.asList("Sousse", "Msaken", "Hammam Sousse"));
+        villesParGouvernorat.put("Monastir", Arrays.asList("Monastir", "Moknine", "Ksar Hellal"));
+        villesParGouvernorat.put("Mahdia", Arrays.asList("Mahdia", "Ksour Essaf", "Chebba"));
+        villesParGouvernorat.put("Sfax", Arrays.asList("Sfax", "Sakiet Eddaïer", "Sakiet Ezzit"));
+        villesParGouvernorat.put("Gafsa", Arrays.asList("Gafsa", "Metlaoui", "Redeyef"));
+        villesParGouvernorat.put("Tozeur", Arrays.asList("Tozeur", "Nefta", "Degache"));
+        villesParGouvernorat.put("Kebili", Arrays.asList("Kebili", "Douz", "Souk Lahad"));
+        villesParGouvernorat.put("Gabès", Arrays.asList("Gabès", "Mareth", "Matmata"));
+        villesParGouvernorat.put("Medenine", Arrays.asList("Medenine", "Zarzis", "Djerba"));
+        villesParGouvernorat.put("Tataouine", Arrays.asList("Tataouine", "Ghomrassen", "Remada"));
+
+        // Facultés par ville
+        facultesParVille.put("Tunis", Arrays.asList("FST", "FSEG", "FD", "FLSH", "ENIT", "ESSEC", "IHEC"));
+        facultesParVille.put("Sousse", Arrays.asList("FSM", "ESSTHS", "ISITCom", "ISSAT"));
+        facultesParVille.put("Sfax", Arrays.asList("FSS", "ENIS", "ISIMS"));
+        facultesParVille.put("Nabeul", Arrays.asList("ISSAT", "ISET"));
+        facultesParVille.put("Monastir", Arrays.asList("FM", "FSM", "ISIM"));
+
+        System.out.println("✅ Données tunisiennes chargées");
+    }
+
+    /**
+     * Charge les gouvernorats dans le ComboBox
+     */
+    private void loadGouvernorats() {
+        gouvernoratCombo.getItems().clear();
+        gouvernoratCombo.getItems().addAll(villesParGouvernorat.keySet());
+    }
+
+    /**
+     * Configure les listeners pour le filtrage automatique
+     */
+    private void setupLocationListeners() {
+        gouvernoratCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                loadVillesForGouvernorat(newVal);
+                villeCombo.setValue(null);
+                locationCombo.setValue(null);
+                locationCombo.getItems().clear();
+            }
+        });
+
+        villeCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                loadFacultesForVille(newVal);
+                locationCombo.setValue(null);
+            }
+        });
+    }
+
+    /**
+     * Charge les villes pour un gouvernorat donné
+     */
+    private void loadVillesForGouvernorat(String gouvernorat) {
+        villeCombo.getItems().clear();
+        List<String> villes = villesParGouvernorat.get(gouvernorat);
+        if (villes != null) {
+            villeCombo.getItems().addAll(villes);
+        }
+    }
+
+    /**
+     * Charge les facultés pour une ville donnée
+     */
+    private void loadFacultesForVille(String ville) {
+        locationCombo.getItems().clear();
+        List<String> facultes = facultesParVille.get(ville);
+        if (facultes != null && !facultes.isEmpty()) {
+            locationCombo.getItems().addAll(facultes);
+        } else {
+            locationCombo.getItems().addAll("Autre (saisir manuellement)");
+        }
+    }
+}

@@ -219,23 +219,53 @@
                                 <ColumnConstraints hgrow="ALWAYS" percentWidth="50"/>
                             </columnConstraints>
 
-                            <!-- Lieu -->
+                            <!-- Gouvernorat -->
                             <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="0">
                                 <HBox spacing="5" alignment="CENTER_LEFT">
-                                    <Label text="Lieu"
+                                    <Label text="Gouvernorat"
                                            style="-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;"/>
                                     <Label text="*" style="-fx-text-fill: #dc3545; -fx-font-size: 14px;"/>
                                 </HBox>
-                                <TextField fx:id="locationField" promptText="Ex: Amphi A, Salle 101..."
-                                           style="-fx-background-color: #f8f9fa; -fx-border-color: #ced4da;
-                                                  -fx-border-radius: 8; -fx-padding: 12 16; -fx-font-size: 14px;"
-                                           prefHeight="42"/>
+                                <ComboBox fx:id="gouvernoratCombo" promptText="Sélectionner un gouvernorat"
+                                          style="-fx-background-color: #f8f9fa; -fx-border-color: #ced4da;
+                                                 -fx-border-radius: 8;"
+                                          prefHeight="42" maxWidth="Infinity"/>
+                                <Label fx:id="gouvernoratError" text=""
+                                       style="-fx-text-fill: #ef4444; -fx-font-size: 12px;" visible="false"/>
+                            </VBox>
+
+                            <!-- Ville -->
+                            <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                <HBox spacing="5" alignment="CENTER_LEFT">
+                                    <Label text="Ville"
+                                           style="-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;"/>
+                                    <Label text="*" style="-fx-text-fill: #dc3545; -fx-font-size: 14px;"/>
+                                </HBox>
+                                <ComboBox fx:id="villeCombo" promptText="Sélectionner une ville"
+                                          style="-fx-background-color: #f8f9fa; -fx-border-color: #ced4da;
+                                                 -fx-border-radius: 8;"
+                                          prefHeight="42" maxWidth="Infinity"/>
+                                <Label fx:id="villeError" text=""
+                                       style="-fx-text-fill: #ef4444; -fx-font-size: 12px;" visible="false"/>
+                            </VBox>
+
+                            <!-- Lieu (Faculté) -->
+                            <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                <HBox spacing="5" alignment="CENTER_LEFT">
+                                    <Label text="Lieu (Faculté/Salle)"
+                                           style="-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;"/>
+                                </HBox>
+                                <ComboBox fx:id="locationCombo" promptText="Sélectionner un lieu"
+                                          editable="true"
+                                          style="-fx-background-color: #f8f9fa; -fx-border-color: #ced4da;
+                                                 -fx-border-radius: 8;"
+                                          prefHeight="42" maxWidth="Infinity"/>
                                 <Label fx:id="locationError" text=""
                                        style="-fx-text-fill: #ef4444; -fx-font-size: 12px;" visible="false"/>
                             </VBox>
 
                             <!-- Capacité -->
-                            <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                            <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                 <HBox spacing="5" alignment="CENTER_LEFT">
                                     <Label text="Capacité max"
                                            style="-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;"/>
@@ -250,7 +280,7 @@
                             </VBox>
 
                             <!-- Image URL (optionnel) -->
-                            <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2">
+                            <VBox spacing="6" GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2">
                                 <Label text="URL de l'image (optionnel)"
                                        style="-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #2c3e50;"/>
                                 <TextField fx:id="imageUrlField" promptText="https://..."
@@ -259,6 +289,71 @@
                                            prefHeight="42"/>
                             </VBox>
                         </GridPane>
+                    </VBox>
+
+                    <!-- SÉPARATEUR -->
+                    <Separator style="-fx-background-color: transparent;"/>
+
+                    <!-- SECTION MÉTÉO DYNAMIQUE -->
+                    <VBox fx:id="weatherContainer" spacing="15" visible="false" managed="false"
+                          style="-fx-background-color: #fffbeb; -fx-padding: 15; -fx-background-radius: 12;
+                                 -fx-border-color: #fbbf24; -fx-border-width: 1; -fx-border-radius: 12;">
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="🌤️" style="-fx-font-size: 18px;"/>
+                            <Label text="MÉTÉO PRÉVUE"
+                                   style="-fx-font-size: 16px; -fx-font-weight: 700; -fx-text-fill: #92400e;
+                                          -fx-letter-spacing: 0.5px;"/>
+                        </HBox>
+
+                        <!-- Contenu météo -->
+                        <HBox spacing="20" alignment="TOP_LEFT">
+                            <!-- Colonne gauche : température et description -->
+                            <VBox spacing="12" HBox.hgrow="ALWAYS">
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <Label fx:id="formWeatherEmoji" text="☀️"
+                                           style="-fx-font-size: 40px;"/>
+                                    <VBox spacing="4">
+                                        <Label fx:id="formWeatherTemp" text="22°C"
+                                               style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1e40af;"/>
+                                        <Label fx:id="formWeatherDescription" text="Ciel dégagé"
+                                               style="-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #92400e;"/>
+                                    </VBox>
+                                </HBox>
+                            </VBox>
+
+                            <!-- Colonne droite : infos complémentaires -->
+                            <VBox spacing="10" HBox.hgrow="ALWAYS">
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Label text="💧" style="-fx-font-size: 16px;"/>
+                                    <VBox spacing="2">
+                                        <Label text="Risque pluie" style="-fx-text-fill: #92400e; -fx-font-size: 11px; -fx-font-weight: 600;"/>
+                                        <Label fx:id="formWeatherRain" text="10%"
+                                               style="-fx-text-fill: #1e40af; -fx-font-size: 13px; -fx-font-weight: 600;"/>
+                                    </VBox>
+                                </HBox>
+
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Label text="💨" style="-fx-font-size: 16px;"/>
+                                    <VBox spacing="2">
+                                        <Label text="Humidité" style="-fx-text-fill: #92400e; -fx-font-size: 11px; -fx-font-weight: 600;"/>
+                                        <Label fx:id="formWeatherHumidity" text="65%"
+                                               style="-fx-text-fill: #1e40af; -fx-font-size: 13px; -fx-font-weight: 600;"/>
+                                    </VBox>
+                                </HBox>
+                            </VBox>
+                        </HBox>
+
+                        <!-- Alerte si mauvaises conditions -->
+                        <Label fx:id="formWeatherAlert" text="" visible="false" managed="false"
+                               style="-fx-text-fill: #b91c1c; -fx-font-size: 13px; -fx-font-weight: 600;
+                                      -fx-background-color: #fee2e2; -fx-padding: 10; -fx-background-radius: 8;
+                                      -fx-wrap-text: true;"/>
+
+                        <!-- Message erreur -->
+                        <Label fx:id="formWeatherError" text="" visible="false" managed="false"
+                               style="-fx-text-fill: #b91c1c; -fx-font-size: 12px;
+                                      -fx-background-color: #fee2e2; -fx-padding: 10; -fx-background-radius: 8;
+                                      -fx-wrap-text: true;"/>
                     </VBox>
 
                     <!-- SÉPARATEUR -->

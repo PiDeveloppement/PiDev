@@ -3,13 +3,16 @@ package com.example.pidev.controller.front;
 import com.example.pidev.HelloApplication;
 import com.example.pidev.model.event.Event;
 import com.example.pidev.model.event.EventCategory;
+import com.example.pidev.model.weather.WeatherData;
 import com.example.pidev.service.event.EventCategoryService;
+import com.example.pidev.service.weather.WeatherService;
 import com.example.pidev.utils.UserSession;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,19 +31,31 @@ public class EventDetailController {
     @FXML private Label priceLabel;
     @FXML private Label capacityLabel;
     @FXML private Label dateLabel;
+    @FXML private Label timeLabel;
     @FXML private Label durationLabel;
     @FXML private Label locationLabel;
     @FXML private Label descriptionLabel;
     @FXML private Label organizerLabel;
     @FXML private Label capacityInfoLabel;
 
+    // Labels météo
+    @FXML private VBox weatherContainer;
+    @FXML private Label weatherEmoji;
+    @FXML private Label weatherTemp;
+    @FXML private Label weatherDescription;
+    @FXML private Label weatherRain;
+    @FXML private Label weatherHumidity;
+    @FXML private Label weatherErrorLabel;
+
     private Event currentEvent;
     private EventCategoryService categoryService;
+    private WeatherService weatherService;
 
     @FXML
     public void initialize() {
         System.out.println("✅ EventDetailController initialisé");
         categoryService = new EventCategoryService();
+        weatherService = new WeatherService();
     }
 
     /**
@@ -101,11 +116,16 @@ public class EventDetailController {
         capacityLabel.setText(currentEvent.getCapacity() + " places disponibles");
         capacityInfoLabel.setText(currentEvent.getCapacity() + " personnes");
 
-        // Date
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE dd MMMM yyyy 'à' HH:mm", Locale.FRENCH);
+        // Date (seulement la date, pas l'heure)
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE dd MMMM yyyy", Locale.FRENCH);
         String formattedDate = currentEvent.getStartDate().format(dateFormatter);
         formattedDate = formattedDate.substring(0, 1).toUpperCase() + formattedDate.substring(1);
         dateLabel.setText(formattedDate);
+
+        // Heure (séparée de la date)
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.FRENCH);
+        String formattedTime = currentEvent.getStartDate().format(timeFormatter);
+        timeLabel.setText(formattedTime);
 
         // Durée
         long hours = (long) currentEvent.getDurationInHours();
@@ -144,6 +164,69 @@ public class EventDetailController {
             }
         } else {
             setDefaultHeroImage();
+        }
+
+        // Charger la météo (en arrière-plan pour ne pas bloquer l'UI)
+        loadWeatherData();
+    }
+
+    /**
+     * Charge les données météorologiques
+     */
+    private void loadWeatherData() {
+        Thread weatherThread = new Thread(() -> {
+            try {
+                System.out.println("🌤️ Chargement météo pour " + currentEvent.getLocation());
+                WeatherData weather = weatherService.getWeatherForEvent(currentEvent);
+
+                // Mettre à jour l'UI sur le thread JavaFX
+                javafx.application.Platform.runLater(() -> displayWeather(weather));
+
+            } catch (Exception e) {
+                System.err.println("❌ Erreur chargement météo: " + e.getMessage());
+                WeatherData errorData = new WeatherData();
+                errorData.setErrorMessage("Impossible de charger la météo");
+                javafx.application.Platform.runLater(() -> displayWeather(errorData));
+            }
+        });
+        weatherThread.setDaemon(true);
+        weatherThread.start();
+    }
+
+    /**
+     * Affiche les données météorologiques
+     */
+    private void displayWeather(WeatherData weather) {
+        if (weather == null || !weather.isAvailable()) {
+            // Erreur - afficher le message
+            String errorMsg = weather != null ? weather.getErrorMessage() : "Météo indisponible";
+            weatherErrorLabel.setText("⚠️ " + errorMsg);
+            weatherErrorLabel.setVisible(true);
+            weatherErrorLabel.setManaged(true);
+            System.out.println("❌ Météo indisponible: " + errorMsg);
+            return;
+        }
+
+        try {
+            // Afficher les données météo
+            weatherEmoji.setText(weather.getWeatherEmoji());
+            weatherTemp.setText(String.format("%.1f°C", weather.getTemperature()));
+            weatherDescription.setText(weather.getDescription());
+            weatherRain.setText(weather.getRainChance() + "%");
+            weatherHumidity.setText(String.format("%.0f%%", weather.getHumidity()));
+
+            // Masquer le message d'erreur
+            weatherErrorLabel.setVisible(false);
+            weatherErrorLabel.setManaged(false);
+
+            System.out.println("✅ Météo affichée: " + weather.getWeatherEmoji() + " " +
+                    weather.getTemperature() + "°C");
+
+        } catch (Exception e) {
+            System.err.println("❌ Erreur affichage météo: " + e.getMessage());
+            weatherErrorLabel.setText("⚠️ Erreur lors de l'affichage de la météo");
+            weatherErrorLabel.setVisible(true);
+            weatherErrorLabel.setManaged(true);
         }
     }
 
@@ -280,6 +363,16 @@ public class EventDetailController {
     @FXML
     private void handleGoToEvents() {
         HelloApplication.loadPublicEventsPage();
+    }
+
+    @FXML
+    private void handleGoToFeatures() {
+        HelloApplication.loadLandingPage();
+    }
+
+    @FXML
+    private void handleGoToFeedback() {
+        HelloApplication.loadLandingPage();
     }
 
     @FXML

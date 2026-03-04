@@ -206,29 +206,59 @@ public class EventsFrontController {
     }
 
     /**
-     * Crée une carte pour un événement
+     * Crée une carte pour un événement avec couleurs dynamiques de la BD
      */
     private VBox createEventCard(Event event) {
+        // Récupérer la catégorie et ses couleurs/icônes depuis la BD
+        EventCategory category = getCategoryById(event.getCategoryId());
+        String categoryColor = (category != null && category.getColor() != null)
+            ? category.getColor()
+            : "#6A1B9A"; // Violet par défaut
+        String categoryEmoji = (category != null && category.getIcon() != null)
+            ? category.getIcon()
+            : "📌"; // Épingle par défaut
+        String categoryName = (category != null) ? category.getName() : "Autre";
+
         VBox card = new VBox(15);
         card.setPrefWidth(360);
         card.setMaxWidth(360);
+
+        // Style de base avec bordure top colorée (vraie couleur de la catégorie)
         card.setStyle("-fx-background-color: white; -fx-background-radius: 16; -fx-padding: 0; " +
+                "-fx-border-color: " + categoryColor + "; -fx-border-width: 4 0 0 0; " +
+                "-fx-border-radius: 16; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);");
 
-        // Effet hover
+        // Effet hover avec la couleur réelle de la catégorie
+        String hoverColor = categoryColor.replace("#", "");
+        long colorLong = Long.parseLong(hoverColor, 16);
+        double r = ((colorLong >> 16) & 0xFF) / 255.0;
+        double g = ((colorLong >> 8) & 0xFF) / 255.0;
+        double b = (colorLong & 0xFF) / 255.0;
+
         card.setOnMouseEntered(e -> card.setStyle(
                 "-fx-background-color: white; -fx-background-radius: 16; -fx-padding: 0; " +
-                        "-fx-effect: dropshadow(gaussian, rgba(13,71,161,0.2), 15, 0, 0, 4); -fx-cursor: hand;"
+                "-fx-border-color: " + categoryColor + "; -fx-border-width: 4 0 0 0; " +
+                "-fx-border-radius: 16; " +
+                "-fx-effect: dropshadow(gaussian, rgba(" +
+                (int)(r*255) + "," + (int)(g*255) + "," + (int)(b*255) + ",0.3), 15, 0, 0, 4); " +
+                "-fx-cursor: hand;"
         ));
         card.setOnMouseExited(e -> card.setStyle(
                 "-fx-background-color: white; -fx-background-radius: 16; -fx-padding: 0; " +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);"
+                "-fx-border-color: " + categoryColor + "; -fx-border-width: 4 0 0 0; " +
+                "-fx-border-radius: 16; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);"
         ));
 
-        // Image
+        // Image container avec gradient basé sur la vraie couleur
         StackPane imageContainer = new StackPane();
         imageContainer.setPrefHeight(200);
-        imageContainer.setStyle("-fx-background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%); " +
+
+        String gradientColor1 = categoryColor;
+        String gradientColor2 = shiftColorBrightness(categoryColor, -30);
+        imageContainer.setStyle("-fx-background-color: linear-gradient(135deg, " +
+                gradientColor1 + " 0%, " + gradientColor2 + " 100%); " +
                 "-fx-background-radius: 16 16 0 0;");
 
         if (event.getImageUrl() != null && !event.getImageUrl().isEmpty()) {
@@ -239,21 +269,20 @@ public class EventsFrontController {
                 imageView.setPreserveRatio(false);
                 imageContainer.getChildren().add(imageView);
             } catch (Exception e) {
-                Label placeholder = new Label("📅");
-                placeholder.setStyle("-fx-font-size: 60px;");
+                Label placeholder = new Label(categoryEmoji);
+                placeholder.setStyle("-fx-font-size: 80px; -fx-text-fill: rgba(255,255,255,0.3);");
                 imageContainer.getChildren().add(placeholder);
             }
         } else {
-            Label placeholder = new Label("📅");
-            placeholder.setStyle("-fx-font-size: 60px;");
+            Label placeholder = new Label(categoryEmoji);
+            placeholder.setStyle("-fx-font-size: 80px; -fx-text-fill: rgba(255,255,255,0.3);");
             imageContainer.getChildren().add(placeholder);
         }
 
-        // Badge catégorie (en haut à droite de l'image)
-        String categoryName = getCategoryName(event.getCategoryId());
-        Label categoryBadge = new Label(categoryName);
-        categoryBadge.setStyle("-fx-background-color: rgba(13,71,161,0.9); -fx-text-fill: white; " +
-                "-fx-padding: 6 15; -fx-background-radius: 20; -fx-font-size: 12px; -fx-font-weight: bold;");
+        // Badge catégorie avec la vraie couleur et l'emoji de la BD
+        Label categoryBadge = new Label(categoryEmoji + " " + categoryName);
+        categoryBadge.setStyle("-fx-background-color: " + categoryColor + "; -fx-text-fill: white; " +
+                "-fx-padding: 8 15; -fx-background-radius: 20; -fx-font-size: 12px; -fx-font-weight: bold;");
         StackPane.setAlignment(categoryBadge, Pos.TOP_RIGHT);
         StackPane.setMargin(categoryBadge, new Insets(15, 15, 0, 0));
         imageContainer.getChildren().add(categoryBadge);
@@ -288,13 +317,13 @@ public class EventsFrontController {
         locationLabel.setStyle("-fx-text-fill: #64748b; -fx-font-size: 14px;");
         locationBox.getChildren().addAll(locationIcon, locationLabel);
 
-        // Prix
+        // Prix avec la couleur de la catégorie
         HBox priceBox = new HBox(8);
         priceBox.setAlignment(Pos.CENTER_LEFT);
         Label priceIcon = new Label("💰");
         priceIcon.setStyle("-fx-font-size: 16px;");
         Label priceLabel = new Label(event.getPriceDisplay());
-        priceLabel.setStyle("-fx-text-fill: " + (event.isFree() ? "#10b981" : "#0D47A1") + "; " +
+        priceLabel.setStyle("-fx-text-fill: " + (event.isFree() ? "#10b981" : categoryColor) + "; " +
                 "-fx-font-size: 16px; -fx-font-weight: bold;");
         priceBox.getChildren().addAll(priceIcon, priceLabel);
 
@@ -474,6 +503,18 @@ public class EventsFrontController {
     }
 
     @FXML
+    private void handleGoToFeatures() {
+        // Redirection vers la section fonctionnalités (landing page)
+        HelloApplication.loadLandingPage();
+    }
+
+    @FXML
+    private void handleGoToFeedback() {
+        // Redirection vers la section feedback (landing page)
+        HelloApplication.loadLandingPage();
+    }
+
+    @FXML
     private void handleLogin() {
         HelloApplication.loadLoginPage();
     }
@@ -499,6 +540,60 @@ public class EventsFrontController {
         alert.setHeaderText(null);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    /**
+     * Classe interne pour stocker le style d'une catégorie (couleur + emoji)
+     */
+    private static class CategoryStyle {
+        String color;
+        String emoji;
+
+        CategoryStyle(String color, String emoji) {
+            this.color = color;
+            this.emoji = emoji;
+        }
+    }
+
+    /**
+     * Récupère la catégorie par son ID depuis le cache allCategories
+     */
+    private EventCategory getCategoryById(int categoryId) {
+        if (allCategories != null) {
+            for (EventCategory cat : allCategories) {
+                if (cat.getId() == categoryId) {
+                    return cat;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Décale la luminosité d'une couleur hexadécimale
+     * @param hexColor couleur au format #RRGGBB
+     * @param amount montant du décalage (-100 à +100)
+     */
+    private String shiftColorBrightness(String hexColor, int amount) {
+        try {
+            // Enlever le # et convertir
+            hexColor = hexColor.replace("#", "");
+            long num = Long.parseLong(hexColor, 16);
+
+            int r = (int) ((num >> 16) & 0xFF);
+            int g = (int) ((num >> 8) & 0xFF);
+            int b = (int) (num & 0xFF);
+
+            // Appliquer le décalage
+            r = Math.min(255, Math.max(0, r + amount));
+            g = Math.min(255, Math.max(0, g + amount));
+            b = Math.min(255, Math.max(0, b + amount));
+
+            // Reconvertir en hex
+            return String.format("#%02x%02x%02x", r, g, b);
+        } catch (Exception e) {
+            return hexColor; // Retourner la couleur originale en cas d'erreur
+        }
     }
 }
 

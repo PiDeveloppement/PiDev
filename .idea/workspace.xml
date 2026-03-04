@@ -7,11 +7,21 @@
     <list default="true" id="61db2463-e3d3-4d2e-959c-d6fd677d7173" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/HelloApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/HelloApplication.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/MainController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/MainController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/event/EventListController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/event/EventListController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/service/event/EventTicketService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/service/event/EventTicketService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/event/event-list.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/event/event-list.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/auth/LandingPageController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/auth/LandingPageController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/event/EventFormController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/event/EventFormController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/front/EventDetailController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/front/EventDetailController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/front/EventsFrontController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/front/EventsFrontController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/questionnaire/ParticipantController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/controller/questionnaire/ParticipantController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/model/event/Event.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/model/event/Event.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/model/questionnaire/Question.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/model/questionnaire/Question.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/service/event/EventService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/service/event/EventService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/pidev/service/questionnaire/FeedbackService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/pidev/service/questionnaire/FeedbackService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/auth/landingPage.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/auth/landingPage.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/event/event-form.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/event/event-form.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/front/event-detail.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/front/event-detail.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/front/events.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/front/events.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/questionnaire/Participant.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/pidev/fxml/questionnaire/Participant.fxml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,8 +37,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Python Script" />
-        <option value="Class" />
         <option value="FxmlFile" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -122,7 +132,7 @@
       <option name="presentableId" value="Default" />
       <updated>1769121489549</updated>
       <workItem from="1772406255184" duration="17290000" />
-      <workItem from="1772496209519" duration="7893000" />
+      <workItem from="1772496209519" duration="32658000" />
     </task>
     <servers />
   </component>

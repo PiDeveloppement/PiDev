@@ -1809,6 +1809,14 @@ public class MainController {
         alert.showAndWait();
     }
 
+    // ===================== GETTERS =====================
+    /**
+     * Retourne le conteneur principal du contenu pour navigation depuis d'autres contrôleurs
+     */
+    public VBox getPageContentContainer() {
+        return pageContentContainer;
+    }
+
 }
 
 
