@@ -1,6 +1,5 @@
 package com.example.pidev.controller.user;
 
-import com.example.pidev.model.user.PasswordResetToken;
 import com.example.pidev.service.user.PasswordResetService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -10,111 +9,72 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.io.IOException;
+
 public class ResetPasswordController {
 
+    @FXML private TextField tokenField;
+    @FXML private Button validateTokenBtn;
+    @FXML private VBox passwordFormBox;
     @FXML private PasswordField newPasswordField;
     @FXML private PasswordField confirmPasswordField;
     @FXML private Button resetPasswordBtn;
     @FXML private Button backToLoginBtn;
     @FXML private Label statusLabel;
-    @FXML private Label tokenInfoLabel;
-    @FXML private ProgressIndicator loadingIndicator;
-    @FXML private Label passwordStrengthLabel;
-    @FXML private VBox formBox; // Le conteneur des champs
 
     private PasswordResetService resetService;
-    private String token;
-    private PasswordResetToken resetToken;
+    private String currentToken; // Stocker le token temporairement
 
     @FXML
     public void initialize() {
         resetService = new PasswordResetService();
+        passwordFormBox.setVisible(false);
+        passwordFormBox.setManaged(false);
 
-        if (loadingIndicator != null) {
-            loadingIndicator.setVisible(false);
-        }
+        // ✅ S'assurer que le champ token est VIDE au démarrage
+        tokenField.clear();
 
-        // Cacher le formulaire au départ
-        if (formBox != null) {
-            formBox.setVisible(false);
-            formBox.setManaged(false);
-        }
-
-        // Validation en temps réel
-        setupValidators();
+        System.out.println("✅ ResetPasswordController initialisé - champ token vide");
     }
 
-    private void setupValidators() {
-        if (newPasswordField != null) {
-            newPasswordField.textProperty().addListener((obs, oldVal, newVal) -> {
-                updatePasswordStrength(newVal);
-            });
-        }
-
-        if (confirmPasswordField != null) {
-            confirmPasswordField.textProperty().addListener((obs, oldVal, newVal) -> {
-                checkPasswordsMatch();
-            });
-        }
-    }
-
+    /**
+     * Cette méthode n'est plus utilisée pour pré-remplir
+     * On la garde juste pour stocker le token si nécessaire
+     */
     public void setToken(String token) {
-        this.token = token;
-        validateToken();
+        // ✅ NE PLUS pré-remplir le champ
+        this.currentToken = token;
+        System.out.println("🔑 Token reçu (non affiché): " + token);
+
+        // Optionnel: Afficher un message pour guider l'utilisateur
+        statusLabel.setText("📱 Collez le token reçu par WhatsApp dans le champ ci-dessus");
+        statusLabel.setStyle("-fx-text-fill: #2196F3; -fx-font-weight: bold;");
     }
 
-    private void validateToken() {
-        if (loadingIndicator != null) loadingIndicator.setVisible(true);
-        tokenInfoLabel.setText("Validation du token en cours...");
+    @FXML
+    private void handleValidateToken() {
+        String token = tokenField.getText().trim();
 
-        new Thread(() -> {
-            try {
-                if (token == null || token.isEmpty()) {
-                    javafx.application.Platform.runLater(() -> {
-                        tokenInfoLabel.setText("❌ Lien invalide");
-                        tokenInfoLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-                        resetPasswordBtn.setDisable(true);
-                        if (loadingIndicator != null) loadingIndicator.setVisible(false);
-                    });
-                    return;
-                }
+        if (token.isEmpty()) {
+            showStatus("❌ Veuillez saisir le token reçu par WhatsApp", "red");
+            return;
+        }
 
-                resetToken = resetService.validateToken(token);
+        System.out.println("🔍 Validation du token saisi par l'utilisateur: " + token);
 
-                javafx.application.Platform.runLater(() -> {
-                    if (resetToken == null) {
-                        tokenInfoLabel.setText("❌ Lien expiré ou déjà utilisé");
-                        tokenInfoLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-                        resetPasswordBtn.setDisable(true);
+        // Valider le token
+        boolean isValid = resetService.validateToken(token);
 
-                        // Cacher le formulaire
-                        if (formBox != null) {
-                            formBox.setVisible(false);
-                            formBox.setManaged(false);
-                        }
-                    } else {
-                        tokenInfoLabel.setText("✅ Lien valide - Vous pouvez réinitialiser votre mot de passe");
-                        tokenInfoLabel.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
-                        resetPasswordBtn.setDisable(false);
-
-                        // ✅ AFFICHER LE FORMULAIRE
-                        if (formBox != null) {
-                            formBox.setVisible(true);
-                            formBox.setManaged(true);
-                        }
-                    }
-                    if (loadingIndicator != null) loadingIndicator.setVisible(false);
-                });
-
-            } catch (Exception e) {
-                javafx.application.Platform.runLater(() -> {
-                    tokenInfoLabel.setText("❌ Erreur de validation");
-                    tokenInfoLabel.setStyle("-fx-text-fill: red;");
-                    resetPasswordBtn.setDisable(true);
-                    if (loadingIndicator != null) loadingIndicator.setVisible(false);
-                });
-            }
-        }).start();
+        if (isValid) {
+            showStatus("✅ Token valide ! Saisissez votre nouveau mot de passe", "green");
+            tokenField.setDisable(true);
+            validateTokenBtn.setDisable(true);
+            passwordFormBox.setVisible(true);
+            passwordFormBox.setManaged(true);
+            currentToken = token; // Stocker le token validé
+        } else {
+            showStatus("❌ Token invalide ou expiré. Demandez un nouveau lien.", "red");
+        }
     }
 
     @FXML
@@ -122,6 +82,7 @@ public class ResetPasswordController {
         String newPassword = newPasswordField.getText();
         String confirmPassword = confirmPasswordField.getText();
 
+        // Validation
         if (newPassword.isEmpty() || confirmPassword.isEmpty()) {
             showStatus("❌ Veuillez remplir tous les champs", "red");
             return;
@@ -132,145 +93,48 @@ public class ResetPasswordController {
             return;
         }
 
-        String passwordError = validatePassword(newPassword);
-        if (passwordError != null) {
-            showStatus("❌ " + passwordError, "red");
+        if (newPassword.length() < 6) {
+            showStatus("❌ Le mot de passe doit contenir au moins 6 caractères", "red");
             return;
         }
 
-        resetPasswordBtn.setDisable(true);
-        if (loadingIndicator != null) loadingIndicator.setVisible(true);
+        // ✅ Le mot de passe sera hashé dans le service, pas ici
+        boolean success = resetService.resetPassword(newPassword);
 
-        new Thread(() -> {
-            try {
-                boolean updated = resetService.updatePassword(resetToken.getUserId(), newPassword);
+        if (success) {
+            showStatus("✅ Mot de passe réinitialisé avec succès !", "green");
 
-                javafx.application.Platform.runLater(() -> {
-                    if (updated) {
-                        resetService.markTokenAsUsed(token);
-                        showStatus("✅ Mot de passe mis à jour avec succès!", "green");
-
-                        // Rediriger vers login après 2 secondes
-                        new Thread(() -> {
-                            try {
-                                Thread.sleep(2000);
-                                javafx.application.Platform.runLater(() -> {
-                                    try {
-                                        goToLogin();
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                });
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }).start();
-
-                    } else {
-                        showStatus("❌ Erreur lors de la mise à jour", "red");
-                        resetPasswordBtn.setDisable(false);
-                    }
-                    if (loadingIndicator != null) loadingIndicator.setVisible(false);
-                });
-
-            } catch (Exception e) {
-                javafx.application.Platform.runLater(() -> {
-                    showStatus("❌ Erreur: " + e.getMessage(), "red");
-                    resetPasswordBtn.setDisable(false);
-                    if (loadingIndicator != null) loadingIndicator.setVisible(false);
-                });
-            }
-        }).start();
-    }
-
-    private void goToLogin() {
-        try {
-            Parent root = FXMLLoader.load(getClass().getResource("/com/example/pidev/fxml/auth/login.fxml"));
-            Stage stage = (Stage) backToLoginBtn.getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
+            // Redirection vers login après 2 secondes
+            new Thread(() -> {
+                try {
+                    Thread.sleep(2000);
+                    javafx.application.Platform.runLater(this::handleBackToLogin);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        } else {
+            showStatus("❌ Erreur lors de la réinitialisation", "red");
         }
     }
 
     @FXML
     private void handleBackToLogin() {
-        goToLogin();
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/com/example/pidev/fxml/auth/login.fxml")
+            );
+            Stage stage = (Stage) backToLoginBtn.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            showStatus("❌ Erreur de navigation", "red");
+        }
     }
 
     private void showStatus(String message, String color) {
         statusLabel.setText(message);
         statusLabel.setStyle("-fx-text-fill: " + color + "; -fx-font-weight: bold;");
-    }
-
-    private String validatePassword(String password) {
-        if (password.length() < 6) {
-            return "Le mot de passe doit contenir au moins 6 caractères";
-        }
-        if (!password.matches(".*[A-Z].*")) {
-            return "Le mot de passe doit contenir au moins une majuscule";
-        }
-        if (!password.matches(".*[a-z].*")) {
-            return "Le mot de passe doit contenir au moins une minuscule";
-        }
-        if (!password.matches(".*\\d.*")) {
-            return "Le mot de passe doit contenir au moins un chiffre";
-        }
-        return null;
-    }
-
-    private void updatePasswordStrength(String password) {
-        if (passwordStrengthLabel == null) return;
-
-        if (password == null || password.isEmpty()) {
-            passwordStrengthLabel.setText("");
-            return;
-        }
-
-        int strength = 0;
-        if (password.length() >= 6) strength++;
-        if (password.matches(".*[A-Z].*")) strength++;
-        if (password.matches(".*[a-z].*")) strength++;
-        if (password.matches(".*\\d.*")) strength++;
-
-        String text;
-        String style;
-
-        switch (strength) {
-            case 0:
-            case 1:
-                text = "🔴 Faible";
-                style = "-fx-text-fill: red;";
-                break;
-            case 2:
-            case 3:
-                text = "🟡 Moyen";
-                style = "-fx-text-fill: orange;";
-                break;
-            default:
-                text = "🟢 Fort";
-                style = "-fx-text-fill: green;";
-        }
-
-        passwordStrengthLabel.setText(text);
-        passwordStrengthLabel.setStyle(style);
-    }
-
-    private void checkPasswordsMatch() {
-        if (confirmPasswordField == null || newPasswordField == null) return;
-
-        String newPass = newPasswordField.getText();
-        String confirmPass = confirmPasswordField.getText();
-
-        if (!confirmPass.isEmpty()) {
-            if (newPass.equals(confirmPass)) {
-                confirmPasswordField.setStyle("-fx-border-color: green; -fx-border-width: 2;");
-            } else {
-                confirmPasswordField.setStyle("-fx-border-color: red; -fx-border-width: 2;");
-            }
-        } else {
-            confirmPasswordField.setStyle("");
-        }
     }
 }

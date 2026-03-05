@@ -19,6 +19,8 @@
         <bouncycastle.version>1.78</bouncycastle.version>
         <lucene.version>9.8.0</lucene.version>
         <kotlin.version>1.9.0</kotlin.version>
+        <javacv.version>1.5.10</javacv.version>
+        <json.version>20231013</json.version>
     </properties>
 
     <dependencies>
@@ -240,6 +242,34 @@
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
             <version>${kotlin.version}</version>
+        </dependency>
+
+        <!-- Twilio -->
+        <dependency>
+            <groupId>com.twilio.sdk</groupId>
+            <artifactId>twilio</artifactId>
+            <version>9.2.5</version>
+        </dependency>
+
+        <!-- JavaCV / OpenCV -->
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv-platform</artifactId>
+            <version>${javacv.version}</version>
+        </dependency>
+
+        <!-- JSON -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>${json.version}</version>
+        </dependency>
+
+        <!-- Vosk (reconnaissance vocale) -->
+        <dependency>
+            <groupId>com.alphacephei</groupId>
+            <artifactId>vosk</artifactId>
+            <version>0.3.45</version>
         </dependency>
 
     </dependencies>

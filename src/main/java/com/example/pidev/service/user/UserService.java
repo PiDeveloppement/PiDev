@@ -8,10 +8,12 @@ import javafx.collections.ObservableList;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserService {
 
-    public Connection connection; // Changé de final à non-final pour pouvoir gérer les exceptions
+    public Connection connection;
 
     public UserService() {
         try {
@@ -24,6 +26,9 @@ public class UserService {
     }
 
     // 🔹 Créer un utilisateur avec gestion d'exceptions
+    // Dans UserService.java, modifiez la méthode registerUser
+
+    // Dans UserService.java, méthode registerUser
     public boolean registerUser(UserModel user) {
         if (connection == null) {
             System.err.println("❌ Pas de connexion à la base de données");
@@ -33,7 +38,7 @@ public class UserService {
         String query = "INSERT INTO user_model(First_Name, Last_Name, Email, Faculte, Password, Role_Id, phone, profile_picture_url, registration_date, bio) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+        try (PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, user.getFirst_Name());
             stmt.setString(2, user.getLast_Name());
             stmt.setString(3, user.getEmail());
@@ -41,7 +46,6 @@ public class UserService {
             stmt.setString(5, user.getPassword());
             stmt.setInt(6, 1); // Role_Id par défaut
 
-            // Nouveaux champs (gestion des valeurs null)
             if (user.getPhone() != null) {
                 stmt.setString(7, user.getPhone());
             } else {
@@ -54,7 +58,6 @@ public class UserService {
                 stmt.setNull(8, Types.VARCHAR);
             }
 
-            // Date d'inscription (automatique si non fournie)
             if (user.getRegistrationDate() != null) {
                 stmt.setTimestamp(9, Timestamp.valueOf(user.getRegistrationDate()));
             } else {
@@ -68,31 +71,74 @@ public class UserService {
             }
 
             int rowsInserted = stmt.executeUpdate();
-            return rowsInserted > 0;
+
+            if (rowsInserted > 0) {
+                System.out.println("✅ Utilisateur inscrit: " + user.getEmail());
+
+                // ✅ ENVOYER L'EMAIL DE BIENVENUE DANS UN THREAD SÉPARÉ
+                new Thread(() -> {
+                    try {
+                        EmailService.sendWelcomeEmail(user.getEmail(), user.getFirst_Name());
+                    } catch (Exception e) {
+                        System.err.println("⚠️ Erreur envoi email (non bloquant): " + e.getMessage());
+                    }
+                }).start();
+
+                return true;
+            }
 
         } catch (SQLException e) {
             System.err.println("❌ Erreur lors de l'inscription: " + e.getMessage());
             e.printStackTrace();
-            return false;
         }
+        return false;
     }
-
     // 🔹 Supprimer un utilisateur
     public boolean deleteUser(long id) {
         if (connection == null) return false;
 
-        String query = "DELETE FROM user_model WHERE Id_User=?";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setLong(1, id);
-            return stmt.executeUpdate() > 0;
+        try {
+            connection.setAutoCommit(false);
+            System.out.println("🔄 Suppression utilisateur ID: " + id);
+
+            // Étape 1: Supprimer les tokens (cause principale de l'erreur)
+            try {
+                String deleteTokens = "DELETE FROM password_reset_tokens WHERE user_id = ?";
+                try (PreparedStatement stmt = connection.prepareStatement(deleteTokens)) {
+                    stmt.setLong(1, id);
+                    int tokenRows = stmt.executeUpdate();
+                    if (tokenRows > 0) {
+                        System.out.println("✅ " + tokenRows + " tokens supprimés");
+                    }
+                }
+            } catch (SQLException e) {
+                System.out.println("⚠️ Erreur tokens (non bloquante): " + e.getMessage());
+            }
+
+            // Étape 2: Supprimer l'utilisateur
+            String deleteUser = "DELETE FROM user_model WHERE Id_User = ?";
+            try (PreparedStatement stmt = connection.prepareStatement(deleteUser)) {
+                stmt.setLong(1, id);
+                int userRows = stmt.executeUpdate();
+
+                if (userRows > 0) {
+                    connection.commit();
+                    System.out.println("✅ Utilisateur " + id + " supprimé");
+                    return true;
+                } else {
+                    connection.rollback();
+                    return false;
+                }
+            }
 
         } catch (SQLException e) {
-            System.err.println("❌ Erreur lors de la suppression: " + e.getMessage());
+            try { connection.rollback(); } catch (SQLException ex) {}
             e.printStackTrace();
             return false;
+        } finally {
+            try { connection.setAutoCommit(true); } catch (SQLException e) {}
         }
     }
-
     // 🔹 Récupérer tous les utilisateurs
     public ObservableList<UserModel> getAllUsers() {
         ObservableList<UserModel> users = FXCollections.observableArrayList();
@@ -243,6 +289,207 @@ public class UserService {
         return null;
     }
 
+    // ==================== NOUVELLES MÉTHODES POUR TÉLÉPHONE ====================
+
+    /**
+     * 🔹 Récupérer un utilisateur par numéro de téléphone
+     * @param phoneNumber Le numéro de téléphone à rechercher
+     * @return UserModel ou null si non trouvé
+     */
+    public UserModel getUserByPhone(String phoneNumber) {
+        if (connection == null) {
+            System.err.println("❌ Pas de connexion à la base de données");
+            return null;
+        }
+
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+            System.err.println("❌ Numéro de téléphone vide");
+            return null;
+        }
+
+        // Nettoyer le numéro pour la recherche
+        String cleanPhone = normalizePhoneNumber(phoneNumber);
+
+        String query = "SELECT u.*, r.RoleName FROM user_model u " +
+                "LEFT JOIN role r ON u.Role_Id = r.Id_Role " +
+                "WHERE u.phone = ? OR REPLACE(u.phone, '+', '') = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+
+            // Recherche avec et sans le +
+            String phoneWithPlus = cleanPhone.startsWith("+") ? cleanPhone : "+" + cleanPhone;
+            String phoneWithoutPlus = cleanPhone.replace("+", "");
+
+            stmt.setString(1, phoneWithPlus);
+            stmt.setString(2, phoneWithoutPlus);
+
+            System.out.println("🔍 Recherche téléphone - Avec +: " + phoneWithPlus + ", Sans +: " + phoneWithoutPlus);
+
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return mapResultSetToUser(rs);
+            } else {
+                System.out.println("ℹ️ Aucun utilisateur trouvé avec le numéro: " + phoneNumber);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getUserByPhone: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * 🔹 Vérifier si un numéro de téléphone existe déjà
+     * @param phoneNumber Le numéro à vérifier
+     * @return true si le numéro existe
+     */
+    public boolean isPhoneNumberExists(String phoneNumber) {
+        if (connection == null) return false;
+
+        String cleanPhone = normalizePhoneNumber(phoneNumber);
+        String phoneWithPlus = cleanPhone.startsWith("+") ? cleanPhone : "+" + cleanPhone;
+        String phoneWithoutPlus = cleanPhone.replace("+", "");
+
+        String query = "SELECT COUNT(*) FROM user_model WHERE phone = ? OR REPLACE(phone, '+', '') = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, phoneWithPlus);
+            ps.setString(2, phoneWithoutPlus);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur isPhoneNumberExists: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * 🔹 Mettre à jour le numéro de téléphone d'un utilisateur
+     * @param userId L'ID de l'utilisateur
+     * @param phoneNumber Le nouveau numéro
+     * @return true si succès
+     */
+    public boolean updateUserPhone(int userId, String phoneNumber) {
+        if (connection == null) return false;
+
+        String cleanPhone = normalizePhoneNumber(phoneNumber);
+
+        String query = "UPDATE user_model SET phone = ? WHERE Id_User = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, cleanPhone);
+            stmt.setInt(2, userId);
+
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("✅ Numéro de téléphone mis à jour pour l'utilisateur ID: " + userId);
+                return true;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur updateUserPhone: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * 🔹 Récupérer tous les utilisateurs qui ont un numéro de téléphone
+     * @return Liste des utilisateurs avec téléphone
+     */
+    public ObservableList<UserModel> getUsersWithPhone() {
+        ObservableList<UserModel> users = FXCollections.observableArrayList();
+
+        if (connection == null) return users;
+
+        String query = "SELECT u.*, r.RoleName FROM user_model u " +
+                "LEFT JOIN role r ON u.Role_Id = r.Id_Role " +
+                "WHERE u.phone IS NOT NULL AND u.phone != ''";
+
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                users.add(mapResultSetToUser(rs));
+            }
+            System.out.println("📱 " + users.size() + " utilisateurs avec téléphone trouvés");
+
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getUsersWithPhone: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return users;
+    }
+
+    // ==================== MÉTHODES UTILITAIRES ====================
+
+    /**
+     * Normalise un numéro de téléphone
+     * @param phoneNumber Le numéro à normaliser
+     * @return Le numéro normalisé
+     */
+    private String normalizePhoneNumber(String phoneNumber) {
+        if (phoneNumber == null) return null;
+
+        // Enlever tous les caractères non numériques sauf le +
+        String normalized = phoneNumber.replaceAll("[^0-9+]", "");
+
+        // Si le numéro commence par 0 et fait 8 chiffres (format tunisien local)
+        if (normalized.startsWith("0") && normalized.length() == 8) {
+            normalized = "+216" + normalized.substring(1);
+        }
+        // Si le numéro commence par 216 (sans +)
+        else if (normalized.startsWith("216") && normalized.length() == 11) {
+            normalized = "+" + normalized;
+        }
+        // Si le numéro fait 8 chiffres (numéro tunisien sans indicatif)
+        else if (normalized.length() == 8 && !normalized.startsWith("0")) {
+            normalized = "+216" + normalized;
+        }
+
+        return normalized;
+    }
+
+    /**
+     * Mappe un ResultSet vers un objet UserModel
+     * @param rs Le ResultSet
+     * @return UserModel
+     * @throws SQLException
+     */
+    private UserModel mapResultSetToUser(ResultSet rs) throws SQLException {
+        Role role = new Role();
+        role.setId_Role(rs.getInt("Role_Id"));
+        role.setRoleName(rs.getString("RoleName"));
+
+        UserModel user = new UserModel(
+                rs.getInt("Id_User"),
+                rs.getString("First_Name"),
+                rs.getString("Last_Name"),
+                rs.getString("Email"),
+                rs.getString("Faculte"),
+                rs.getString("Password"),
+                rs.getInt("Role_Id")
+        );
+
+        user.setPhone(rs.getString("phone"));
+        user.setProfilePictureUrl(rs.getString("profile_picture_url"));
+
+        Timestamp regDate = rs.getTimestamp("registration_date");
+        if (regDate != null) {
+            user.setRegistrationDate(regDate.toLocalDateTime());
+        }
+
+        user.setBio(rs.getString("bio"));
+        user.setRole(role);
+
+        return user;
+    }
+
     // 🔹 Mettre à jour le mot de passe
     public boolean updateUserPassword(int userId, String newPassword) {
         if (connection == null) return false;
@@ -276,32 +523,7 @@ public class UserService {
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                Role role = new Role();
-                role.setId_Role(rs.getInt("Role_Id"));
-                role.setRoleName(rs.getString("RoleName"));
-
-                UserModel user = new UserModel(
-                        rs.getInt("Id_User"),
-                        rs.getString("First_Name"),
-                        rs.getString("Last_Name"),
-                        rs.getString("Email"),
-                        rs.getString("Faculte"),
-                        rs.getString("Password"),
-                        rs.getInt("Role_Id")
-                );
-
-                user.setPhone(rs.getString("phone"));
-                user.setProfilePictureUrl(rs.getString("profile_picture_url"));
-
-                Timestamp regDate = rs.getTimestamp("registration_date");
-                if (regDate != null) {
-                    user.setRegistrationDate(regDate.toLocalDateTime());
-                }
-
-                user.setBio(rs.getString("bio"));
-                user.setRole(role);
-
-                return user;
+                return mapResultSetToUser(rs);
             }
         } catch (SQLException e) {
             System.err.println("❌ Erreur getUserById: " + e.getMessage());
@@ -325,32 +547,7 @@ public class UserService {
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                Role role = new Role();
-                role.setId_Role(rs.getInt("Role_Id"));
-                role.setRoleName(rs.getString("RoleName"));
-
-                UserModel user = new UserModel(
-                        rs.getInt("Id_User"),
-                        rs.getString("First_Name"),
-                        rs.getString("Last_Name"),
-                        rs.getString("Email"),
-                        rs.getString("Faculte"),
-                        rs.getString("Password"),
-                        rs.getInt("Role_Id")
-                );
-
-                user.setPhone(rs.getString("phone"));
-                user.setProfilePictureUrl(rs.getString("profile_picture_url"));
-
-                Timestamp regDate = rs.getTimestamp("registration_date");
-                if (regDate != null) {
-                    user.setRegistrationDate(regDate.toLocalDateTime());
-                }
-
-                user.setBio(rs.getString("bio"));
-                user.setRole(role);
-
-                return user;
+                return mapResultSetToUser(rs);
             }
         } catch (SQLException e) {
             System.err.println("❌ Erreur authenticate: " + e.getMessage());
@@ -413,5 +610,150 @@ public class UserService {
             e.printStackTrace();
         }
         return 0;
+    }
+    // Dans UserService.java, ajoutez ces méthodes :
+
+    /**
+     * Récupère tous les emails des administrateurs
+     */
+    public List<String> getAllAdminEmails() {
+        List<String> adminEmails = new ArrayList<>();
+
+        if (connection == null) return adminEmails;
+
+        // Version avec paramètre pour plus de sécurité
+        String query = "SELECT u.Email FROM user_model u " +
+                "INNER JOIN role r ON u.Role_Id = r.Id_Role " +
+                "WHERE LOWER(r.RoleName) = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, "admin");
+
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                adminEmails.add(rs.getString("Email"));
+            }
+
+            System.out.println("📧 " + adminEmails.size() + " admin(s) trouvé(s)");
+
+            // Si aucun admin trouvé, utilisez votre email par défaut
+            if (adminEmails.isEmpty()) {
+                System.out.println("⚠️ Aucun admin trouvé - Utilisation de l'email par défaut");
+                adminEmails.add("sellamiarij7@gmail.com"); // Votre email
+            }
+
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return adminEmails;
+    }
+    public int getNewUsersThisMonthCount() {
+        if (connection == null) return 0;
+
+        String query = "SELECT COUNT(*) FROM user_model " +
+                "WHERE registration_date IS NOT NULL " +
+                "AND MONTH(registration_date) = MONTH(CURRENT_DATE()) " +
+                "AND YEAR(registration_date) = YEAR(CURRENT_DATE())";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getNewUsersThisMonthCount: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    // ==================== MÉTHODES POUR LE CHATBOT ====================
+
+    /**
+     * Récupère le nombre total d'utilisateurs
+     */
+    public int getTotalUsersCount() {
+        if (connection == null) return 0;
+
+        String sql = "SELECT COUNT(*) FROM user_model";
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getTotalUsersCount: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Récupère les utilisateurs par rôle (sans utiliser la jointure directe)
+     */
+    public List<UserModel> getUsersByRole(String roleName) {
+        List<UserModel> users = new ArrayList<>();
+        if (connection == null) return users;
+
+        // Récupérer d'abord l'ID du rôle
+        String roleQuery = "SELECT Id_Role FROM role WHERE LOWER(RoleName) LIKE LOWER(?)";
+        try (PreparedStatement roleStmt = connection.prepareStatement(roleQuery)) {
+            roleStmt.setString(1, "%" + roleName + "%");
+            ResultSet roleRs = roleStmt.executeQuery();
+
+            if (roleRs.next()) {
+                int roleId = roleRs.getInt("Id_Role");
+
+                // Puis récupérer les utilisateurs avec cet ID
+                String userQuery = "SELECT * FROM user_model WHERE Role_Id = ?";
+                try (PreparedStatement userStmt = connection.prepareStatement(userQuery)) {
+                    userStmt.setInt(1, roleId);
+                    ResultSet userRs = userStmt.executeQuery();
+
+                    while (userRs.next()) {
+                        UserModel user = mapResultSetToUser(userRs);
+                        users.add(user);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getUsersByRole: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return users;
+    }
+
+    /**
+     * Récupère le nombre de nouveaux utilisateurs ce mois
+     */
+    public int getNewUsersThisMonth() {
+        return getNewUsersThisMonthCount(); // Utilise la méthode existante
+    }
+
+    /**
+     * Récupère les statistiques des utilisateurs par rôle
+     */
+    public List<Object[]> getUsersCountByRole() {
+        List<Object[]> stats = new ArrayList<>();
+        if (connection == null) return stats;
+
+        String sql = "SELECT r.RoleName, COUNT(u.Id_User) as count " +
+                "FROM role r LEFT JOIN user_model u ON r.Id_Role = u.Role_Id " +
+                "GROUP BY r.Id_Role, r.RoleName";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                stats.add(new Object[]{
+                        rs.getString("RoleName"),
+                        rs.getInt("count")
+                });
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getUsersCountByRole: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return stats;
     }
 }

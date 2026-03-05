@@ -146,6 +146,15 @@ public class SponsorService {
         return 0;
     }
 
+    // Compatibilite avec ChatController fusionne depuis origin/user
+    public int getActiveSponsors() {
+        try {
+            return getTotalSponsors();
+        } catch (SQLException e) {
+            return 0;
+        }
+    }
+
     public double getTotalContribution() throws SQLException {
         String sql = "SELECT SUM(contribution_name) FROM sponsor";
         try (Statement stmt = connection.createStatement();
@@ -155,11 +164,36 @@ public class SponsorService {
         return 0;
     }
 
+    // Compatibilite avec ChatController fusionne depuis origin/user
+    public double getTotalBudget() {
+        try {
+            return getTotalContribution();
+        } catch (SQLException e) {
+            return 0.0;
+        }
+    }
+
     public double getAverageContribution() throws SQLException {
         String sql = "SELECT AVG(contribution_name) FROM sponsor";
         try (Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) return rs.getDouble(1);
+        }
+        return 0;
+    }
+
+    // Compatibilite avec ChatController fusionne depuis origin/user
+    public int getNewSponsorsThisMonth() {
+        String sql = "SELECT COUNT(*) FROM sponsor " +
+                "WHERE MONTH(created_at) = MONTH(CURDATE()) " +
+                "AND YEAR(created_at) = YEAR(CURDATE())";
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException ignored) {
+            // Certaines bases n'ont pas la colonne created_at.
         }
         return 0;
     }

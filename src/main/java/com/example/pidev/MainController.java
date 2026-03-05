@@ -1206,6 +1206,10 @@ public class MainController {
         loadSallesView();
     }
 
+    public void showEquipements() {
+        loadEquipementsView();
+    }
+
     public void showReservations() {
         loadReservationsView();
     }

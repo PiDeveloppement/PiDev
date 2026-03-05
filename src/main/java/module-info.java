@@ -9,11 +9,14 @@ module com.example.pidev {
     requires java.desktop;
     requires java.net.http;
     requires java.mail;
+    requires twilio;
 
     requires mysql.connector.j;
     requires jakarta.persistence;
     requires com.google.gson;
     requires okhttp3;
+    requires org.json;
+    requires vosk;
 
     requires org.apache.pdfbox;
     requires org.apache.poi.ooxml;
@@ -34,6 +37,9 @@ module com.example.pidev {
     requires org.apache.httpcomponents.httpclient;
     requires org.apache.httpcomponents.httpmime;
     requires google.cloud.vision;
+    requires org.bytedeco.javacv;
+    requires org.bytedeco.opencv;
+    requires org.bytedeco.javacpp;
 
     exports com.example.pidev;
     exports com.example.pidev.model.event;
@@ -43,6 +49,7 @@ module com.example.pidev {
     exports com.example.pidev.model.sponsor;
     exports com.example.pidev.model.budget;
     exports com.example.pidev.model.depense;
+    exports com.example.pidev.model.facial;
 
     exports com.example.pidev.controller.event;
     exports com.example.pidev.controller.sponsor;
@@ -55,6 +62,8 @@ module com.example.pidev {
     exports com.example.pidev.controller.resource;
     exports com.example.pidev.controller.budget;
     exports com.example.pidev.controller.depense;
+    exports com.example.pidev.controller.chat;
+    exports com.example.pidev.controller.facial;
 
     exports com.example.pidev.service.user;
     exports com.example.pidev.service.event;
@@ -69,12 +78,17 @@ module com.example.pidev {
     exports com.example.pidev.service.pdf;
     exports com.example.pidev.service.chart;
     exports com.example.pidev.utils;
+    exports com.example.pidev.service.chat;
+    exports com.example.pidev.service.facial;
 
     opens com.example.pidev to javafx.fxml;
+    opens com.example.pidev.js to javafx.web;
     opens com.example.pidev.controller.dashboard to javafx.fxml;
     opens com.example.pidev.controller.event to javafx.fxml;
     opens com.example.pidev.controller.auth to javafx.fxml;
     opens com.example.pidev.controller.user to javafx.fxml;
+    opens com.example.pidev.controller.chat to javafx.fxml;
+    opens com.example.pidev.controller.facial to javafx.fxml;
     opens com.example.pidev.controller.role to javafx.fxml;
     opens com.example.pidev.controller.resource to javafx.fxml;
     opens com.example.pidev.controller.questionnaire to javafx.fxml;
@@ -83,4 +97,8 @@ module com.example.pidev {
     opens com.example.pidev.controller.budget to javafx.fxml;
     opens com.example.pidev.controller.depense to javafx.fxml;
     opens com.example.pidev.service.user to javafx.fxml;
+    opens com.example.pidev.service.chat to javafx.fxml;
+    opens com.example.pidev.service.facial to javafx.fxml;
+    opens com.example.pidev.service.resource to javafx.fxml;
+    opens com.example.pidev.model.facial to javafx.fxml;
 }

@@ -36,4 +36,7 @@ public class PasswordResetToken {
     public boolean isValid() {
         return !used && expiryDate.isAfter(LocalDateTime.now());
     }
+    public String generateResetLink() {
+        return "http://localhost:8080/reset-password?token=" + this.token;
+    }
 }

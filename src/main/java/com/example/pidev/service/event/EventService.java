@@ -421,4 +421,132 @@ public class EventService {
 
         return event;
     }
+    // ==================== MÉTHODES POUR LE CHATBOT ====================
+
+    /**
+     * Récupère les événements gratuits
+     */
+    public List<Event> getFreeEvents() {
+        List<Event> events = new ArrayList<>();
+        String sql = "SELECT * FROM event WHERE is_free = true ORDER BY start_date";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                events.add(extractEventFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getFreeEvents: " + e.getMessage());
+        }
+        return events;
+    }
+
+    /**
+     * Récupère les événements payants
+     */
+    public List<Event> getPaidEvents() {
+        List<Event> events = new ArrayList<>();
+        String sql = "SELECT * FROM event WHERE is_free = false ORDER BY ticket_price DESC";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                events.add(extractEventFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getPaidEvents: " + e.getMessage());
+        }
+        return events;
+    }
+
+    /**
+     * Récupère le prochain événement
+     */
+    public Event getNextEvent() {
+        String sql = "SELECT * FROM event WHERE start_date > NOW() ORDER BY start_date LIMIT 1";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return extractEventFromResultSet(rs);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getNextEvent: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Calcule la capacité totale de tous les événements
+     */
+    public int getTotalCapacity() {
+        String sql = "SELECT COALESCE(SUM(capacity), 0) FROM event";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getTotalCapacity: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
+     * Récupère le nombre total d'événements
+     */
+    public int getTotalEventsCount() {
+        String sql = "SELECT COUNT(*) FROM event";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getTotalEventsCount: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
+     * Récupère le nombre de nouveaux événements ce mois
+     */
+    public int getNewEventsThisMonth() {
+        String sql = "SELECT COUNT(*) FROM event " +
+                "WHERE MONTH(created_at) = MONTH(CURRENT_DATE()) " +
+                "AND YEAR(created_at) = YEAR(CURRENT_DATE())";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getNewEventsThisMonth: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
+     * Calcule le taux de participation moyen
+     */
+    public double getAverageParticipationRate() {
+        String sql = "SELECT AVG(participation_rate) FROM (" +
+                "SELECT e.id, (COUNT(t.id) * 100.0 / e.capacity) as participation_rate " +
+                "FROM event e LEFT JOIN event_ticket t ON e.id = t.event_id " +
+                "GROUP BY e.id, e.capacity" +
+                ") as rates";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getDouble(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getAverageParticipationRate: " + e.getMessage());
+        }
+        return 0.0;
+    }
 }
