@@ -59,10 +59,38 @@ public class SponsorCardController {
             }
         }
 
-        if (detailsBtn != null) detailsBtn.setOnAction(e -> { if (onDetails != null) onDetails.run(); });
-        if (pdfBtn != null) pdfBtn.setOnAction(e -> { if (onPdf != null) onPdf.run(); });
-        if (editBtn != null) editBtn.setOnAction(e -> { if (onEdit != null) onEdit.run(); });
-        if (deleteBtn != null) deleteBtn.setOnAction(e -> { if (onDelete != null) onDelete.run(); });
+        if (detailsBtn != null) {
+            boolean enabled = onDetails != null;
+            detailsBtn.setVisible(enabled);
+            detailsBtn.setManaged(enabled);
+            if (enabled) {
+                detailsBtn.setOnAction(e -> onDetails.run());
+            }
+        }
+        if (pdfBtn != null) {
+            boolean enabled = onPdf != null;
+            pdfBtn.setVisible(enabled);
+            pdfBtn.setManaged(enabled);
+            if (enabled) {
+                pdfBtn.setOnAction(e -> onPdf.run());
+            }
+        }
+        if (editBtn != null) {
+            boolean enabled = onEdit != null;
+            editBtn.setVisible(enabled);
+            editBtn.setManaged(enabled);
+            if (enabled) {
+                editBtn.setOnAction(e -> onEdit.run());
+            }
+        }
+        if (deleteBtn != null) {
+            boolean enabled = onDelete != null;
+            deleteBtn.setVisible(enabled);
+            deleteBtn.setManaged(enabled);
+            if (enabled) {
+                deleteBtn.setOnAction(e -> onDelete.run());
+            }
+        }
     }
 
     private static String nv(String value) {

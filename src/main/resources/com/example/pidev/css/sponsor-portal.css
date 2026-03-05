@@ -59,6 +59,116 @@
     -fx-border-color: #7fb3ff;
 }
 
+.sponsor-filter-row {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d7e3f4;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 12;
+}
+
+.sponsor-filter-row .text-field,
+.sponsor-filter-row .combo-box {
+    -fx-background-color: #f8fbff;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: #cfe0f6;
+}
+
+.sponsor-status-pill {
+    -fx-text-fill: #0f172a;
+    -fx-font-weight: 800;
+    -fx-background-color: #e8f0ff;
+    -fx-background-radius: 999;
+    -fx-padding: 7 12;
+}
+
+.sponsor-kpi-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-border-color: #d7e3f4;
+    -fx-border-width: 1;
+    -fx-padding: 16 18;
+}
+
+.sponsor-kpi-title {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.sponsor-kpi-value-green {
+    -fx-text-fill: #15803d;
+    -fx-font-size: 26px;
+    -fx-font-weight: 900;
+}
+
+.sponsor-kpi-value-blue {
+    -fx-text-fill: #1d4ed8;
+    -fx-font-size: 26px;
+    -fx-font-weight: 900;
+}
+
+.sponsor-kpi-value-violet {
+    -fx-text-fill: #7c3aed;
+    -fx-font-size: 26px;
+    -fx-font-weight: 900;
+}
+
+.sponsor-block-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #0f172a;
+}
+
+.sponsor-info-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #64748b;
+}
+
+.sponsor-info-value {
+    -fx-font-size: 20px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #0f172a;
+}
+
+.sponsor-section-banner {
+    -fx-background-color: linear-gradient(to right, #dbeafe, #fbcfe8, #c7ddff);
+    -fx-background-radius: 12;
+    -fx-padding: 10 14;
+    -fx-alignment: center;
+}
+
+.sponsor-section-banner-text {
+    -fx-font-size: 16px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #be185d;
+    -fx-alignment: center;
+}
+
+.sponsor-stat-box {
+    -fx-background-color: linear-gradient(to bottom, #f8fbff, #f1f7ff);
+    -fx-background-radius: 10;
+    -fx-border-color: #bfd8fb;
+    -fx-border-radius: 10;
+    -fx-border-width: 1.2;
+    -fx-padding: 12 14;
+}
+
+.sponsor-leader-value {
+    -fx-font-size: 17px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #1e3a8a;
+    -fx-padding: 0 0 6 0;
+    -fx-wrap-text: true;
+}
+
+.sponsor-stats-row {
+    -fx-alignment: center-left;
+}
+
 .sponsor-section-card {
     -fx-background-color: #fdfefe;
     -fx-background-radius: 16;
@@ -66,6 +176,47 @@
     -fx-border-color: #d7e3f5;
     -fx-border-width: 1;
     -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.07), 12, 0, 0, 3);
+    -fx-padding: 12;
+}
+
+.sponsor-chart-container {
+    -fx-padding: 6 4 2 4;
+}
+
+.sponsor-chart-row {
+    -fx-background-color: linear-gradient(to right, #f8fbff, #f3f8ff);
+    -fx-background-radius: 10;
+    -fx-border-color: #d7e6fb;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 8 10;
+}
+
+.sponsor-chart-line {
+    -fx-alignment: center-left;
+}
+
+.sponsor-chart-rank {
+    -fx-font-size: 12px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #be185d;
+    -fx-background-color: #fce7f3;
+    -fx-background-radius: 999;
+    -fx-padding: 2 8;
+    -fx-min-width: 24;
+    -fx-alignment: center;
+}
+
+.sponsor-chart-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #0f172a;
+}
+
+.sponsor-chart-amount {
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #334155;
 }
 
 .sponsor-events-grid {
@@ -119,4 +270,11 @@
 
 .sponsor-event-btn:hover {
     -fx-background-color: #0b3b86;
+}
+
+.sponsor-mini-progress {
+    -fx-accent: linear-gradient(to right, #2563eb, #14b8a6);
+    -fx-control-inner-background: #e5efff;
+    -fx-pref-height: 12;
+    -fx-background-radius: 999;
 }
