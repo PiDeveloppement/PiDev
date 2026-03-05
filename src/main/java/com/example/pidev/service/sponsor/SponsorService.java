@@ -358,4 +358,58 @@ public class SponsorService {
 
         return s;
     }
+    // ==================== MÉTHODES POUR LE CHATBOT ====================
+
+
+
+    /**
+     * Récupère le nombre de sponsors actifs
+     */
+    public int getActiveSponsors() {
+        String sql = "SELECT COUNT(DISTINCT sponsor_id) FROM budget WHERE amount > 0";
+        // Ou selon votre logique métier
+        try (PreparedStatement ps = cnx.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getActiveSponsors: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
+     * Récupère le budget total des sponsors
+     */
+    public double getTotalBudget() {
+        String sql = "SELECT COALESCE(SUM(amount), 0) FROM budget WHERE type = 'SPONSOR'";
+        try (PreparedStatement ps = cnx.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getDouble(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getTotalBudget: " + e.getMessage());
+        }
+        return 0.0;
+    }
+
+    /**
+     * Récupère le nombre de nouveaux sponsors ce mois
+     */
+    public int getNewSponsorsThisMonth() {
+        String sql = "SELECT COUNT(*) FROM sponsor " +
+                "WHERE MONTH(created_at) = MONTH(CURRENT_DATE()) " +
+                "AND YEAR(created_at) = YEAR(CURRENT_DATE())";
+        try (PreparedStatement ps = cnx.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getNewSponsorsThisMonth: " + e.getMessage());
+        }
+        return 0;
+    }
 }

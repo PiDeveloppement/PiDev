@@ -131,4 +131,82 @@ public class ReservationService {
         } catch (SQLException e) { e.printStackTrace(); }
         return stats;
     }
+
+    public int getAvailableResources() {
+        String sql = "SELECT (SELECT COUNT(*) FROM equipement WHERE disponible = true) + " +
+                "(SELECT COUNT(*) FROM salle WHERE disponible = true) as total";
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt("total");
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getAvailableResources: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
+     * Récupère le nombre d'équipements disponibles
+     */
+    public int getAvailableEquipment() {
+        String sql = "SELECT COUNT(*) FROM equipement WHERE disponible = true";
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getAvailableEquipment: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
+     * Récupère le nombre de salles disponibles
+     */
+    public int getAvailableRooms() {
+        String sql = "SELECT COUNT(*) FROM salle WHERE disponible = true";
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getAvailableRooms: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
+     * Récupère le nombre de réservations en cours
+     */
+    public int getCurrentReservations() {
+        String sql = "SELECT COUNT(*) FROM reservation WHERE NOW() BETWEEN date_debut AND date_fin";
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getCurrentReservations: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
+     * Récupère le nombre total de ressources (équipements + salles)
+     */
+    public int getTotalResources() {
+        String sql = "SELECT (SELECT COUNT(*) FROM equipement) + (SELECT COUNT(*) FROM salle) as total";
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt("total");
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getTotalResources: " + e.getMessage());
+        }
+        return 0;
+    }
 }

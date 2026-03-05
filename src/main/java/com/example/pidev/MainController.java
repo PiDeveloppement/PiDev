@@ -1,5 +1,6 @@
 package com.example.pidev;
 
+import com.example.pidev.controller.chat.ChatController;
 import com.example.pidev.controller.dashboard.DashboardController;
 import com.example.pidev.controller.event.*;
 import com.example.pidev.controller.role.RoleController;
@@ -36,10 +37,12 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import com.example.pidev.utils.UserSession;
 import com.example.pidev.model.user.UserModel;
+
 
 import java.io.IOException;
 import java.net.URL;
@@ -49,7 +52,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-
+import javafx.event.ActionEvent;    // ✅ À AJOUTER
 public class MainController {
 
     private static MainController instance;
@@ -81,7 +84,15 @@ public class MainController {
     @FXML private Label pageSubtitle;
     @FXML private Button chatFloatingButton;
     @FXML private HBox kpiContainer;
-
+    // ===================== CHAT PANEL FIELDS =====================
+    @FXML private VBox chatPanel;
+    @FXML private ScrollPane chatScrollPane;
+    @FXML private VBox chatBox;
+    @FXML private TextField inputField;
+    @FXML private Button sendButton;
+    @FXML private Button clearButton;
+    @FXML private Button closeChatButton;
+    @FXML private Label statusIndicator;
     // ===================== TOP BAR =====================
     @FXML private Label navDateLabel;
     @FXML private Label navTimeLabel;
@@ -139,7 +150,8 @@ public class MainController {
     @FXML private Button settingsBtn;
     @FXML private Button logoutBtn;
     @FXML private TextField globalSearchField;
-
+    private String lastSuggestion;
+    private ChatController chatController;
     private final Map<String, PageInfo> pageInfoMap = new HashMap<>();
     private Button activeButton;
     private DashboardController dashboardController;
@@ -205,7 +217,7 @@ public class MainController {
             loadDashboardView();
         }
 
-        // Initialiser le bouton participant quiz (ajouté depuis event)
+        // Initialiser le bouton participant quiz
         if (participantQuizBtn != null) {
             participantQuizBtn.setOnAction(event -> {
                 loadParticipantQuizView();
@@ -217,6 +229,14 @@ public class MainController {
 
         if (logoutBtn != null) {
             logoutBtn.setOnAction(e -> logout());
+        }
+
+        // Initialiser le chat
+        initChatPanel();
+
+        // Gestion de la touche Entrée dans le champ de saisie
+        if (inputField != null) {
+            inputField.setOnAction(event -> handleSendMessage());
         }
     }
 
@@ -1036,12 +1056,18 @@ public class MainController {
     @FXML
     private void openChatAssistant() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pidev/fxml/chat/chat_view.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pidev/fxml/chat/chat_window.fxml"));
             Parent root = loader.load();
+
             Stage chatStage = new Stage();
             chatStage.setTitle("Assistant IA - EventFlow");
-            chatStage.setScene(new Scene(root, 550, 600));
+            chatStage.setScene(new Scene(root, 450, 600));
+            chatStage.setResizable(false);
             chatStage.show();
+
+            // Optionnel : stocker la référence
+            ChatController chatController = loader.getController();
+
         } catch (Exception e) {
             e.printStackTrace();
             showAlert("Erreur", "Impossible d'ouvrir l'assistant: " + e.getMessage());
@@ -1269,4 +1295,159 @@ public class MainController {
     public VBox getPageContentContainer() {
         return pageContentContainer;
     }
+
+// ===================== CHAT PANEL METHODS =====================
+
+    @FXML
+    private void toggleChatPanel() {
+        if (chatPanel != null) {
+            boolean isVisible = chatPanel.isVisible();
+            chatPanel.setVisible(!isVisible);
+            chatPanel.setManaged(!isVisible);
+
+            // Focus sur le champ de saisie quand on ouvre
+            if (!isVisible && inputField != null) {
+                inputField.requestFocus();
+            }
+
+            System.out.println("🔄 Chat panel " + (isVisible ? "fermé" : "ouvert"));
+        }
+    }
+
+    @FXML
+    private void handleSendMessage() {
+        if (inputField == null) return;
+
+        String message = inputField.getText().trim();
+        if (message.isEmpty()) return;
+
+        // Afficher le message de l'utilisateur
+        addMessageToChat("Vous", message, true);
+        inputField.clear();
+
+        // Simuler une réponse (à remplacer par votre logique)
+        String response = getBotResponse(message);
+        addMessageToChat("Assistant", response, false);
+    }
+
+    private void addMessageToChat(String sender, String message, boolean isUser) {
+        if (chatBox == null) return;
+
+        HBox messageBox = new HBox();
+        messageBox.setAlignment(isUser ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        messageBox.setPadding(new Insets(5, 10, 5, 10));
+
+        Label senderLabel = new Label(sender + ": ");
+        senderLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: " + (isUser ? "#4CAF50" : "#2196F3") + ";");
+
+        Text messageText = new Text(message);
+        TextFlow messageFlow = new TextFlow(senderLabel, messageText);
+        messageFlow.setStyle("-fx-background-color: " + (isUser ? "#E8F5E8" : "#E3F2FD") +
+                "; -fx-background-radius: 15; -fx-padding: 10;");
+        messageFlow.setMaxWidth(350);
+
+        messageBox.getChildren().add(messageFlow);
+        chatBox.getChildren().add(messageBox);
+
+        // Scroll vers le bas
+        Platform.runLater(() -> {
+            if (chatScrollPane != null) {
+                chatScrollPane.setVvalue(1.0);
+            }
+        });
+    }
+
+    private String getBotResponse(String userMessage) {
+        // Logique simple - à remplacer par votre ChatbotService
+        userMessage = userMessage.toLowerCase();
+
+        if (userMessage.contains("combien") && userMessage.contains("utilisateur")) {
+            return "Il y a actuellement 157 utilisateurs inscrits sur la plateforme.";
+        } else if (userMessage.contains("admin")) {
+            return "Les administrateurs sont: Ons Abdesslem, Ahmed Ben Salem, Sarra Mansour.";
+        } else if (userMessage.contains("nouveau") && userMessage.contains("mois")) {
+            return "15 nouveaux utilisateurs se sont inscrits ce mois-ci.";
+        } else {
+            return "Je n'ai pas compris votre question. Pouvez-vous reformuler ?";
+        }
+    }
+
+    @FXML
+    private void handleClearChat() {
+        if (chatBox != null) {
+            chatBox.getChildren().clear();
+            addWelcomeMessage();
+        }
+    }
+
+    // ===================== CHAT METHODS =====================
+
+    @FXML
+    private void handleSuggestion(ActionEvent event) {
+        try {
+            // Récupérer le bouton qui a déclenché l'événement
+            Button sourceButton = (Button) event.getSource();
+            String suggestion = sourceButton.getText();
+
+            // Nettoyer le texte pour enlever les emojis et garder la question
+            String cleanSuggestion = suggestion.replaceAll("[📊👥📅✨]", "").trim();
+
+            System.out.println("💡 Suggestion sélectionnée: " + cleanSuggestion);
+
+            // Ouvrir le chat si fermé
+            if (!chatPanel.isVisible()) {
+                toggleChatPanel();
+            }
+
+            // Mettre la suggestion dans le champ de saisie
+            if (inputField != null) {
+                inputField.setText(cleanSuggestion);
+                // Envoyer automatiquement le message
+                handleSendMessage();
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Erreur dans handleSuggestion: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void addWelcomeMessage() {
+        if (chatBox == null) return;
+
+        HBox messageBox = new HBox();
+        messageBox.setAlignment(Pos.CENTER_LEFT);
+        messageBox.setPadding(new Insets(5, 10, 5, 10));
+
+        VBox welcomeBox = new VBox(5);
+        welcomeBox.setStyle("-fx-background-color: #E3F2FD; -fx-background-radius: 15; -fx-padding: 15;");
+        welcomeBox.setMaxWidth(350);
+
+        Label titleLabel = new Label("🤖 Assistant IA - EventFlow");
+        titleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #2196F3; -fx-font-size: 14px;");
+
+        Label messageLabel = new Label("🎉 Bonjour ! Je suis votre assistant de gestion.\n" +
+                "Posez-moi des questions sur les utilisateurs, événements, etc.");
+        messageLabel.setWrapText(true);
+        messageLabel.setStyle("-fx-text-fill: #333; -fx-font-size: 13px;");
+
+        Label hintLabel = new Label("💡 Suggestions: 'Combien d'utilisateurs ?', 'Liste des admins', 'Nouveaux ce mois'");
+        hintLabel.setWrapText(true);
+        hintLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 11px; -fx-font-style: italic;");
+
+        welcomeBox.getChildren().addAll(titleLabel, messageLabel, hintLabel);
+        messageBox.getChildren().add(welcomeBox);
+        chatBox.getChildren().add(messageBox);
+    }
+
+    // Initialisation du chat (à appeler dans initialize())
+    private void initChatPanel() {
+        if (chatBox != null) {
+            addWelcomeMessage();
+        }
+        if (statusIndicator != null) {
+            statusIndicator.setText("● Connecté");
+        }
+    }
+
+
 }

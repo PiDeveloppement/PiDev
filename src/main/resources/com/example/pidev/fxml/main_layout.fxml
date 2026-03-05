@@ -17,6 +17,7 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Tooltip?>
+<?import javafx.geometry.Insets?>
 
 <StackPane fx:id="mainStackPane"
            xmlns="http://javafx.com/javafx/17"
@@ -25,6 +26,7 @@
            prefHeight="900" prefWidth="1400"
            stylesheets="/com/example/pidev/css/atlantafx-custom.css">
 
+    <!-- VOTRE CONTENU PRINCIPAL EXISTANT (INCHANGÉ) -->
     <HBox alignment="TOP_LEFT" StackPane.alignment="TOP_LEFT">
         <VBox prefWidth="220" spacing="0" styleClass="sidebar-container-topbar" VBox.vgrow="ALWAYS">
 
@@ -246,9 +248,147 @@
         </VBox>
     </HBox>
 
+    <!-- ===== NOUVEAU : PANNEAU DE CHAT MODERNE (SUPERPOSÉ) ===== -->
+    <VBox fx:id="chatPanel"
+          visible="false" managed="false"
+          style="-fx-background-color: white;
+                 -fx-pref-width: 400;
+                 -fx-max-width: 400;
+                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 20, 0, -5, 0);
+                 -fx-background-radius: 16 0 0 16;
+                 -fx-border-color: #e0e0e0;
+                 -fx-border-width: 0 0 0 1;"
+          StackPane.alignment="CENTER_RIGHT">
+
+        <!-- Overlay transparent pour animation (optionnel) -->
+        <padding><Insets top="0" right="0" bottom="0" left="0"/></padding>
+
+        <!-- En-tête moderne -->
+        <HBox alignment="CENTER_LEFT" spacing="12"
+              style="-fx-background-color: linear-gradient(to right, #2196F3, #1565C0);
+                     -fx-padding: 20 15;">
+            <StackPane>
+                <Circle radius="22" fill="white" opacity="0.2"/>
+                <Label text="🤖" style="-fx-font-size: 28px;"/>
+            </StackPane>
+            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                <Label text="Assistant IA"
+                       style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                <Label fx:id="statusIndicator"
+                       text="● Connecté"
+                       style="-fx-font-size: 12px; -fx-text-fill: #BBDEFB;"/>
+            </VBox>
+            <Button fx:id="closeChatButton"
+                    onAction="#toggleChatPanel"
+                    style="-fx-background-color: rgba(255,255,255,0.2);
+                           -fx-background-radius: 20;
+                           -fx-text-fill: white; -fx-cursor: hand;
+                           -fx-font-size: 16px; -fx-font-weight: bold;"
+                    text="✕" prefWidth="32" prefHeight="32"/>
+        </HBox>
+
+        <!-- Zone de chat -->
+        <ScrollPane fx:id="chatScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
+                    style="-fx-background: #f8f9fa; -fx-background-color: #f8f9fa;
+                           -fx-border-color: null;">
+            <VBox fx:id="chatBox" spacing="15" style="-fx-padding: 20;">
+                <!-- Message de bienvenue -->
+                <HBox alignment="CENTER_LEFT">
+                    <StackPane style="-fx-padding: 0 10 0 0;">
+                        <Circle radius="18" fill="#2196F3" opacity="0.2"/>
+                        <Label text="🤖" style="-fx-font-size: 20px;"/>
+                    </StackPane>
+                    <VBox style="-fx-background-color: #E3F2FD;
+                                 -fx-background-radius: 16 16 16 5;
+                                 -fx-padding: 12;">
+                        <Label text="🎉 Bonjour ! Je suis votre assistant de gestion."
+                               wrapText="true" style="-fx-text-fill: #333; -fx-font-size: 13px;"/>
+                        <Label text="Posez-moi des questions sur les utilisateurs, événements..."
+                               wrapText="true" style="-fx-text-fill: #666; -fx-font-size: 12px;"/>
+                    </VBox>
+                </HBox>
+
+                <!-- Suggestions rapides -->
+                <VBox spacing="8" style="-fx-padding: 10 0 0 25;">
+                    <Label text="✨ Suggestions"
+                           style="-fx-font-weight: bold; -fx-text-fill: #666; -fx-font-size: 11px;"/>
+                    <Button onAction="#handleSuggestion"
+                            style="-fx-background-color: #E3F2FD;
+                                   -fx-background-radius: 20;
+                                   -fx-padding: 10 15;
+                                   -fx-cursor: hand;
+                                   -fx-alignment: CENTER_LEFT;
+                                   -fx-border-color: #90CAF9;
+                                   -fx-border-radius: 20;
+                                   -fx-max-width: 350;"
+                            text="📊 Combien d'utilisateurs sont inscrits ?"
+                            userData="statistiques"/>
+                    <Button onAction="#handleSuggestion"
+                            style="-fx-background-color: #E3F2FD;
+                                   -fx-background-radius: 20;
+                                   -fx-padding: 10 15;
+                                   -fx-cursor: hand;
+                                   -fx-alignment: CENTER_LEFT;
+                                   -fx-border-color: #90CAF9;
+                                   -fx-border-radius: 20;
+                                   -fx-max-width: 350;"
+                            text="👥 Liste des administrateurs"
+                            userData="liste admins"/>
+                    <Button onAction="#handleSuggestion"
+                            style="-fx-background-color: #E3F2FD;
+                                   -fx-background-radius: 20;
+                                   -fx-padding: 10 15;
+                                   -fx-cursor: hand;
+                                   -fx-alignment: CENTER_LEFT;
+                                   -fx-border-color: #90CAF9;
+                                   -fx-border-radius: 20;
+                                   -fx-max-width: 350;"
+                            text="📅 Nouveaux utilisateurs ce mois"
+                            userData="nouveaux utilisateurs"/>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+
+        <!-- Zone de saisie -->
+        <HBox spacing="10" style="-fx-background-color: white;
+                                   -fx-padding: 15;
+                                   -fx-border-color: #e0e0e0;
+                                   -fx-border-width: 1 0 0 0;">
+            <TextField fx:id="inputField"
+                       promptText="Écrivez votre message..."
+                       HBox.hgrow="ALWAYS"
+                       style="-fx-background-color: #f8f9fa;
+                              -fx-background-radius: 25;
+                              -fx-padding: 12 20;
+                              -fx-border-color: #e0e0e0;
+                              -fx-border-radius: 25;"/>
+            <Button fx:id="sendButton" onAction="#handleSendMessage"
+                    style="-fx-background-color: #2196F3;
+                           -fx-background-radius: 25;
+                           -fx-padding: 12 25;
+                           -fx-cursor: hand;"
+                    text="Envoyer" textFill="white"/>
+        </HBox>
+
+        <!-- Footer -->
+        <HBox alignment="CENTER" spacing="10"
+              style="-fx-background-color: #f8f9fa;
+                     -fx-padding: 10;">
+            <Button fx:id="clearButton" onAction="#handleClearChat"
+                    style="-fx-background-color: transparent;
+                           -fx-text-fill: #f44336;
+                           -fx-cursor: hand;
+                           -fx-font-size: 12px;"
+                    text="🗑️ Effacer"/>
+            <Label text="•" style="-fx-text-fill: #ccc;"/>
+            <Label text="Astuce: Entrée pour envoyer"
+                   style="-fx-text-fill: #999; -fx-font-size: 11px;"/>
+        </HBox>
+    </VBox>
+
     <!-- ===== BOUTON FLOTTANT ASSISTANT CHAT (EN BAS À DROITE) ===== -->
     <Button fx:id="chatFloatingButton"
-            onAction="#openChatAssistant"
+            onAction="#toggleChatPanel"
             style="-fx-background-color: linear-gradient(to bottom, #2196F3, #1565C0);
                    -fx-background-radius: 30;
                    -fx-min-width: 60; -fx-min-height: 60;

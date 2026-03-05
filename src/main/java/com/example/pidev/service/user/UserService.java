@@ -668,4 +668,92 @@ public class UserService {
         }
         return 0;
     }
+    // ==================== MÉTHODES POUR LE CHATBOT ====================
+
+    /**
+     * Récupère le nombre total d'utilisateurs
+     */
+    public int getTotalUsersCount() {
+        if (connection == null) return 0;
+
+        String sql = "SELECT COUNT(*) FROM user_model";
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getTotalUsersCount: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Récupère les utilisateurs par rôle (sans utiliser la jointure directe)
+     */
+    public List<UserModel> getUsersByRole(String roleName) {
+        List<UserModel> users = new ArrayList<>();
+        if (connection == null) return users;
+
+        // Récupérer d'abord l'ID du rôle
+        String roleQuery = "SELECT Id_Role FROM role WHERE LOWER(RoleName) LIKE LOWER(?)";
+        try (PreparedStatement roleStmt = connection.prepareStatement(roleQuery)) {
+            roleStmt.setString(1, "%" + roleName + "%");
+            ResultSet roleRs = roleStmt.executeQuery();
+
+            if (roleRs.next()) {
+                int roleId = roleRs.getInt("Id_Role");
+
+                // Puis récupérer les utilisateurs avec cet ID
+                String userQuery = "SELECT * FROM user_model WHERE Role_Id = ?";
+                try (PreparedStatement userStmt = connection.prepareStatement(userQuery)) {
+                    userStmt.setInt(1, roleId);
+                    ResultSet userRs = userStmt.executeQuery();
+
+                    while (userRs.next()) {
+                        UserModel user = mapResultSetToUser(userRs);
+                        users.add(user);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getUsersByRole: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return users;
+    }
+
+    /**
+     * Récupère le nombre de nouveaux utilisateurs ce mois
+     */
+    public int getNewUsersThisMonth() {
+        return getNewUsersThisMonthCount(); // Utilise la méthode existante
+    }
+
+    /**
+     * Récupère les statistiques des utilisateurs par rôle
+     */
+    public List<Object[]> getUsersCountByRole() {
+        List<Object[]> stats = new ArrayList<>();
+        if (connection == null) return stats;
+
+        String sql = "SELECT r.RoleName, COUNT(u.Id_User) as count " +
+                "FROM role r LEFT JOIN user_model u ON r.Id_Role = u.Role_Id " +
+                "GROUP BY r.Id_Role, r.RoleName";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                stats.add(new Object[]{
+                        rs.getString("RoleName"),
+                        rs.getInt("count")
+                });
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur getUsersCountByRole: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return stats;
+    }
 }

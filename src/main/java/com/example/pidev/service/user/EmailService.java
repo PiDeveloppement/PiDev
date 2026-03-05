@@ -12,7 +12,7 @@ public class EmailService {
     private static final String SMTP_HOST = "smtp.gmail.com";
     private static final String SMTP_PORT = "587";
     private static final String SMTP_USERNAME = "sellamiarij7@gmail.com"; // Votre adresse Gmail
-    private static final String SMTP_PASSWORD = "rkgt oaze azua nmvz"; // Le mot de passe à 16 caractères
+    private static final String SMTP_PASSWORD = "uern jvab upaa wolm"; // Le mot de passe à 16 caractères
     private static final String FROM_EMAIL = "sellamiarij7@gmail.com"; // Votre adresse Gmail (la même)
 
     static {
