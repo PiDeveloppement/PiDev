@@ -1448,6 +1448,28 @@ public class MainController {
     public VBox getPageContentContainer() {
         return pageContentContainer;
     }
+
+    /**
+     * Rafraîchit la page des événements publics (vitrine participant)
+     */
+    public void refreshEventsFrontPage() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/pidev/fxml/front/events.fxml")
+            );
+            Parent page = loader.load();
+
+            if (pageContentContainer != null) {
+                pageContentContainer.getChildren().clear();
+                pageContentContainer.getChildren().add(page);
+                System.out.println("✅ Page événements publics rafraîchie");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Erreur rafraîchissement page événements: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     @FXML
     public void showQuestionEditor() {
         collapseAllSubmenus();
@@ -1579,7 +1601,7 @@ public class MainController {
         VBox box = new VBox(10);
         box.setAlignment(Pos.TOP_LEFT);
         box.setPadding(new Insets(24));
-        box.setStyle("""
+        box.setStyle("""        
                 -fx-background-color: white;
                 -fx-background-radius: 14;
                 -fx-border-radius: 14;
@@ -1860,5 +1882,3 @@ public class MainController {
     }
 
 }
-
-
