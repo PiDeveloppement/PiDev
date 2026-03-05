@@ -48,6 +48,7 @@ public class ReservationFormController {
         UserSession session = UserSession.getInstance();
         currentUserId = session.getUserId();
         currentUserName = session.getFullName();
+        configurerCalendrier();
 
         // Afficher l'information utilisateur
         if (userInfoLabel != null) {
@@ -250,7 +251,6 @@ public class ReservationFormController {
             }
         }
     }
-
     @FXML
     void validerAction() {
         try {
@@ -266,9 +266,27 @@ public class ReservationFormController {
                 return;
             }
 
+            // --- NOUVEAU : CONTRÔLE DES DATES ---
+            LocalDate aujourdhui = LocalDate.now();
+            LocalDate dateDebutSaisie = startDatePicker.getValue();
+            LocalDate dateFinSaisie = endDatePicker.getValue();
+
+            // Bloquer si la date de début est avant aujourd'hui
+            if (dateDebutSaisie.isBefore(aujourdhui)) {
+                new Alert(Alert.AlertType.ERROR, "❌ Erreur : Vous ne pouvez pas réserver à une date passée.").show();
+                return;
+            }
+
+            // Bloquer si la date de fin est renseignée et qu'elle est avant le début
+            if (dateFinSaisie != null && dateFinSaisie.isBefore(dateDebutSaisie)) {
+                new Alert(Alert.AlertType.ERROR, "❌ Erreur : La date de fin ne peut pas être antérieure à la date de début.").show();
+                return;
+            }
+            // -------------------------------------
+
             // 3. Gestion des dates (Heure par défaut 08:00 à 18:00)
-            LocalDateTime s = startDatePicker.getValue().atTime(8, 0);
-            LocalDateTime e = endDatePicker.getValue() == null ? s.plusHours(2) : endDatePicker.getValue().atTime(18, 0);
+            LocalDateTime s = dateDebutSaisie.atTime(8, 0);
+            LocalDateTime e = (dateFinSaisie == null) ? s.plusHours(2) : dateFinSaisie.atTime(18, 0);
 
             Object sel = itemCombo.getValue();
 
@@ -288,7 +306,7 @@ public class ReservationFormController {
 
             // 5. Vérification de la disponibilité (Stock/Occupation)
             int dispo = 0;
-            String nomRessource = ""; // On prépare le nom pour l'email
+            String nomRessource = "";
 
             if (sel instanceof Salle sa) {
                 dispo = resService.isSalleOccupee(sa.getId(), s, e, currentId) ? 0 : 1;
@@ -317,17 +335,11 @@ public class ReservationFormController {
             // 7. Enregistrement et Envoi de l'Email
             String message;
             if (selectedReservation == null) {
-                // AJOUT
                 resService.ajouter(res);
                 message = "✅ Réservation créée avec succès pour " + currentUserName;
-
-                // --- DÉCLENCHEMENT DE L'EMAIL ---
                 System.out.println("📧 Tentative d'envoi d'email pour : " + nomRessource);
                 envoyerEmailConfirmation(res, nomRessource);
-                // --------------------------------
-
             } else {
-                // MODIFICATION
                 resService.modifier(res);
                 message = "✅ Réservation modifiée avec succès";
             }
@@ -347,7 +359,6 @@ public class ReservationFormController {
             new Alert(Alert.AlertType.ERROR, "Erreur: " + ex.getMessage()).show();
         }
     }
-
     private void chargerRessources() {
         itemCombo.getItems().clear();
         if ("SALLE".equals(typeCombo.getValue())) {
@@ -433,7 +444,6 @@ public class ReservationFormController {
         // 1. Tes identifiants Gmail
         final String username = "mecherguisouhail8@gmail.com";
 
-        // ⚠️ ATTENTION : Ne mets pas ton vrai mdp ici.
         // Génère un code de 16 lettres ici : https://myaccount.google.com/apppasswords
         final String password = "xknx cbvx piuc upbb";
 
@@ -478,4 +488,25 @@ public class ReservationFormController {
                 e.printStackTrace();
             }
         }).start();
-    }}
+    }
+    private void configurerCalendrier() {
+        // Création de la règle de restriction
+        javafx.util.Callback<DatePicker, DateCell> dayCellFactory = dp -> new DateCell() {
+            @Override
+            public void updateItem(LocalDate item, boolean empty) {
+                super.updateItem(item, empty);
+
+                // Désactiver toutes les dates antérieures à aujourd'hui
+                if (item.isBefore(LocalDate.now())) {
+                    setDisable(true);
+                    setStyle("-fx-background-color: #eeeeee;"); // Grisage visuel
+                }
+            }
+        };
+
+        // Appliquer la règle aux deux DatePickers
+        startDatePicker.setDayCellFactory(dayCellFactory);
+        endDatePicker.setDayCellFactory(dayCellFactory);
+    }
+}
+
