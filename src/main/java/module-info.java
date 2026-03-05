@@ -85,7 +85,7 @@ module com.example.pidev {
 
     // Sous-packages de services
     opens com.example.pidev.service.user to javafx.fxml;
-
+    opens com.example.pidev.service.questionnaire to javafx.fxml;
 
     opens com.example.pidev.service.facial to javafx.fxml;
     opens com.example.pidev.service.chat to javafx.fxml;
