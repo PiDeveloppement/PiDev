@@ -1,14 +1,22 @@
 package com.example.pidev.service.whatsapp;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
+import java.util.Properties;
 
 public class WhatsAppService {
+
+    private static final Properties LOCAL_CONFIG = loadLocalConfig();
 
     // Read from env vars (or JVM properties as fallback)
     private static final String ACCOUNT_SID = readConfig("TWILIO_ACCOUNT_SID");
@@ -97,8 +105,32 @@ public class WhatsAppService {
             value = System.getProperty(key);
         }
         if (value == null || value.isBlank()) {
+            value = LOCAL_CONFIG.getProperty(key);
+        }
+        if (value == null || value.isBlank()) {
             return defaultValue;
         }
         return value.trim();
+    }
+
+    private static Properties loadLocalConfig() {
+        Properties props = new Properties();
+        Path homeConfig = Paths.get(System.getProperty("user.home"), ".eventflow", "secrets.properties");
+        Path projectConfig = Paths.get(System.getProperty("user.dir"), "config", "local-secrets.properties");
+        loadPropertiesIfExists(props, homeConfig);
+        loadPropertiesIfExists(props, projectConfig);
+        return props;
+    }
+
+    private static void loadPropertiesIfExists(Properties target, Path path) {
+        if (path == null || !Files.exists(path) || !Files.isRegularFile(path)) {
+            return;
+        }
+        try (FileInputStream in = new FileInputStream(path.toFile())) {
+            Properties tmp = new Properties();
+            tmp.load(in);
+            target.putAll(tmp);
+        } catch (IOException ignored) {
+        }
     }
 }

@@ -3,16 +3,11 @@ package com.example.pidev.controller.sponsor;
 import com.example.pidev.model.event.Event;
 import com.example.pidev.model.sponsor.Sponsor;
 import com.example.pidev.service.currency.CurrencyService;
-import com.example.pidev.service.external.OpenStreetMapService;
 import com.example.pidev.service.sponsor.SponsorService;
 import com.example.pidev.service.upload.CloudinaryUploadService;
 import com.example.pidev.service.whatsapp.WhatsAppService;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.geometry.VPos;
-import javafx.scene.SnapshotParameters;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -20,16 +15,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
-import javafx.scene.image.PixelReader;
-import javafx.scene.paint.Color;
-import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -46,206 +36,205 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public class SponsorFormController {
 
-    @FXML private Label titleLabel;
+    private static final Properties LOCAL_CONFIG = loadLocalConfig();
+
+    // ── FXML ─────────────────────────────────────────────────────────────────
+    @FXML private Label     titleLabel;
     @FXML private TextField companyField;
     @FXML private TextField emailField;
     @FXML private TextField logoField;
-    @FXML private Label logoFileLabel;
+    @FXML private Label     logoFileLabel;
     @FXML private ImageView logoPreview;
     @FXML private TextField contributionField;
-    @FXML private Label errorLabel;
+    @FXML private Label     errorLabel;
     @FXML private ComboBox<String> currencyComboBox;
-    @FXML private Label convertedAmountLabel;
+    @FXML private Label     convertedAmountLabel;
     @FXML private TextField phoneField;
     @FXML private TextField industryField;
     @FXML private TextField taxIdField;
-    @FXML private Button uploadDocBtn;
-    @FXML private Label docFileLabel;
+    @FXML private Button    uploadDocBtn;
+    @FXML private Label     docFileLabel;
 
-    private Sponsor editing;
-    private Sponsor result;
-    private Integer selectedEventId;
-    private String fixedEmail;
+    // ── État ──────────────────────────────────────────────────────────────────
+    private Sponsor  editing;
+    private Sponsor  result;
+    private Integer  selectedEventId;
+    private String   fixedEmail;
 
-    private File selectedLogoFile;
-    private File selectedDocFile;
+    private File    selectedLogoFile;
+    private File    selectedDocFile;
     private boolean removeLogoRequested;
 
-    private Runnable onFormDone;
+    private Runnable          onFormDone;
     private Consumer<Sponsor> onSaved;
 
-    private final CloudinaryUploadService cloud = new CloudinaryUploadService();
-    private final SponsorService sponsorService = new SponsorService();
-    private final OpenStreetMapService osmService = new OpenStreetMapService();
+    /**
+     * Timer pour le debounce : on attend 800ms après la dernière frappe
+     * avant de lancer la recherche du logo.
+     */
+    private Timer debounceTimer;
 
-    private static final Pattern EMAIL_RX = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+    // ── Services ──────────────────────────────────────────────────────────────
+    private final CloudinaryUploadService cloud          = new CloudinaryUploadService();
+    private final SponsorService          sponsorService = new SponsorService();
+
+    // ── Constantes ────────────────────────────────────────────────────────────
+    private static final Pattern EMAIL_RX  = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     private static final Pattern TAX_ID_RX = Pattern.compile("^[0-9]{7}[A-Za-z]$");
+
+    /** Délai debounce en ms : on attend que l'utilisateur finisse de taper */
+    private static final long DEBOUNCE_MS = 800;
+
+    /** Longueur minimale du nom d'entreprise avant de chercher un logo */
+    private static final int MIN_COMPANY_LENGTH = 3;
+
     private static final HttpClient HTTP = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(4))
+            .connectTimeout(Duration.ofSeconds(5))
             .build();
+
+    /**
+     * Correspondances entreprise → domaine officiel.
+     * La clé DOIT être le nom exact normalisé (minuscules, sans accents).
+     * On utilise une correspondance EXACTE pour éviter les faux positifs.
+     */
     private static final Map<String, String> KNOWN_BRAND_DOMAINS = Map.ofEntries(
-            Map.entry("tunisie telecom", "tunisietelecom.tn"),
-            Map.entry("tunisietelecom", "tunisietelecom.tn"),
-            Map.entry("ooredoo", "ooredoo.tn"),
-            Map.entry("orange tunisie", "orange.tn"),
-            Map.entry("orange", "orange.tn"),
-            Map.entry("topnet", "topnet.tn")
+            Map.entry("tunisie telecom",  "tunisietelecom.tn"),
+            Map.entry("tunisietelecom",   "tunisietelecom.tn"),
+            Map.entry("ooredoo",          "ooredoo.tn"),
+            Map.entry("ooredoo tunisie",  "ooredoo.tn"),
+            Map.entry("orange",           "orange.tn"),
+            Map.entry("orange tunisie",   "orange.tn"),
+            Map.entry("topnet",           "topnet.tn"),
+            Map.entry("attijari",         "attijaribank.tn"),
+            Map.entry("biat",             "biat.com.tn"),
+            Map.entry("stb",              "stb.com.tn"),
+            Map.entry("amen bank",        "amenbank.com.tn"),
+            Map.entry("banque zitouna",   "banquezitouna.tn"),
+            Map.entry("poulina",          "poulinagroup.com"),
+            Map.entry("sfbt",             "sfbt.com.tn"),
+            Map.entry("actia",            "actia.fr"),
+            Map.entry("vermeg",           "vermeg.com"),
+            Map.entry("telnet",           "telnet.tn")
     );
 
-    public void setOnFormDone(Runnable callback) {
-        this.onFormDone = callback;
-    }
-
-    public void setOnSaved(Consumer<Sponsor> callback) {
-        this.onSaved = callback;
-    }
-
-    public Sponsor getResult() {
-        return result;
-    }
+    // =========================================================================
+    //  INITIALISATION
+    // =========================================================================
 
     @FXML
     private void initialize() {
         if (companyField != null) {
             companyField.textProperty().addListener((obs, old, value) -> {
-                if (value == null) {
-                    return;
-                }
+                if (value == null) return;
+                // Filtre les chiffres
                 String filtered = value.replaceAll("\\d", "");
-                if (filtered.length() > 150) {
-                    filtered = filtered.substring(0, 150);
-                }
+                if (filtered.length() > 150) filtered = filtered.substring(0, 150);
                 if (!filtered.equals(value)) {
                     companyField.setText(filtered);
+                    return; // le listener sera rappelé avec la valeur filtrée
                 }
-                applyAutoLogoFromEmailIfNeeded(false);
+                // ✅ Debounce : annule la recherche précédente, relance après 800ms
+                scheduleLogoSearch();
             });
         }
 
+        // Recherche logo quand l'email perd le focus (une seule fois)
         if (emailField != null) {
             emailField.focusedProperty().addListener((obs, old, focused) -> {
-                if (!focused) {
-                    applyAutoLogoFromEmailIfNeeded(false);
-                }
+                if (!focused) scheduleLogoSearch();
             });
         }
 
+        // Devises
         if (currencyComboBox != null) {
             currencyComboBox.getItems().addAll(
-                    "TND", "USD", "EUR", "GBP", "CHF", "CAD", "JPY", "CNY", "AUD", "NZD",
-                    "DKK", "NOK", "SEK", "TRY", "SAR", "AED", "KWD", "BHD", "QAR", "MAD",
-                    "EGP", "ZAR", "INR", "PKR", "BDT", "LKR", "MYR", "SGD", "HKD", "KRW",
-                    "RUB", "BRL", "MXN", "PLN", "CZK", "HUF", "ILS", "THB", "VND", "PHP"
+                    "TND","USD","EUR","GBP","CHF","CAD","JPY","CNY","AUD","NZD",
+                    "DKK","NOK","SEK","TRY","SAR","AED","KWD","BHD","QAR","MAD",
+                    "EGP","ZAR","INR","PKR","BDT","LKR","MYR","SGD","HKD","KRW",
+                    "RUB","BRL","MXN","PLN","CZK","HUF","ILS","THB","VND","PHP"
             );
             currencyComboBox.setValue("TND");
-            currencyComboBox.valueProperty().addListener((obs, old, value) -> updateConvertedAmount());
+            currencyComboBox.valueProperty().addListener((obs, old, v) -> updateConvertedAmount());
         }
 
-        if (contributionField != null) {
-            contributionField.textProperty().addListener((obs, old, value) -> updateConvertedAmount());
-        }
+        if (contributionField != null)
+            contributionField.textProperty().addListener((obs, old, v) -> updateConvertedAmount());
 
         if (phoneField != null) {
             phoneField.textProperty().addListener((obs, old, value) -> {
-                if (value == null) {
-                    return;
-                }
+                if (value == null) return;
                 String filtered = value.replaceAll("[^0-9]", "");
-                if (!filtered.equals(value)) {
-                    phoneField.setText(filtered);
-                }
+                if (!filtered.equals(value)) phoneField.setText(filtered);
             });
         }
 
-        if (uploadDocBtn != null) {
-            uploadDocBtn.setOnAction(e -> onChooseDocument());
-        }
+        if (uploadDocBtn != null) uploadDocBtn.setOnAction(e -> onChooseDocument());
 
-        if (taxIdField != null) {
+        if (taxIdField != null)
             taxIdField.focusedProperty().addListener((obs, old, focused) -> {
-                if (!focused) {
-                    validateTaxId();
-                }
+                if (!focused) validateTaxId();
             });
-        }
     }
+
+    // =========================================================================
+    //  API PUBLIQUE
+    // =========================================================================
+
+    public void setOnFormDone(Runnable callback)          { this.onFormDone = callback; }
+    public void setOnSaved(Consumer<Sponsor> callback)    { this.onSaved    = callback; }
+    public Sponsor getResult()                            { return result; }
 
     public void setFixedEmail(String email) {
         fixedEmail = safe(email);
-        if (fixedEmail.isEmpty()) {
-            fixedEmail = null;
-        }
+        if (fixedEmail.isEmpty()) fixedEmail = null;
         applyEmailLockState();
         if (fixedEmail != null) {
             emailField.setText(fixedEmail);
-            applyAutoLogoFromEmailIfNeeded(true);
+            // Ne pas chercher le logo ici — attendre que le nom d'entreprise soit saisi
         }
     }
 
     public void setModeAdd() {
         titleLabel.setText("Formulaire sponsor");
-        editing = null;
-        result = null;
-        selectedEventId = null;
+        editing = null; result = null; selectedEventId = null;
         clearErrors();
 
         companyField.clear();
-        if (fixedEmail != null) {
-            emailField.setText(fixedEmail);
-        } else {
-            emailField.clear();
-        }
+        emailField.setText(fixedEmail != null ? fixedEmail : "");
         applyEmailLockState();
         contributionField.clear();
         industryField.clear();
         phoneField.clear();
         taxIdField.clear();
 
-        selectedLogoFile = null;
-        selectedDocFile = null;
-        removeLogoRequested = false;
+        selectedLogoFile = null; selectedDocFile = null; removeLogoRequested = false;
         logoField.clear();
         logoPreview.setImage(null);
 
-        if (currencyComboBox != null) {
-            currencyComboBox.setValue("TND");
-        }
-        if (convertedAmountLabel != null) {
-            convertedAmountLabel.setText("");
-        }
-        if (logoFileLabel != null) {
-            logoFileLabel.setText("Aucun fichier");
-        }
-        if (docFileLabel != null) {
-            docFileLabel.setText("Aucun fichier");
-        }
-
-        applyAutoLogoFromEmailIfNeeded(true);
+        if (currencyComboBox     != null) currencyComboBox.setValue("TND");
+        if (convertedAmountLabel != null) convertedAmountLabel.setText("");
+        if (logoFileLabel        != null) logoFileLabel.setText("Aucun fichier");
+        if (docFileLabel         != null) docFileLabel.setText("Aucun fichier");
     }
 
     public void setModeEdit(Sponsor sponsor) {
         titleLabel.setText("Modifier Sponsor");
-        editing = sponsor;
-        result = null;
+        editing = sponsor; result = null;
         selectedEventId = sponsor == null ? null : sponsor.getEvent_id();
         clearErrors();
-
-        if (sponsor == null) {
-            return;
-        }
+        if (sponsor == null) return;
 
         companyField.setText(safe(sponsor.getCompany_name()));
-        if (fixedEmail != null) {
-            emailField.setText(fixedEmail);
-        } else {
-            emailField.setText(safe(sponsor.getContact_email()));
-        }
+        emailField.setText(fixedEmail != null ? fixedEmail : safe(sponsor.getContact_email()));
         applyEmailLockState();
         contributionField.setText(String.valueOf(sponsor.getContribution_name()));
         industryField.setText(safe(sponsor.getIndustry()));
@@ -254,316 +243,494 @@ public class SponsorFormController {
 
         String existingLogo = safe(sponsor.getLogo_url());
         logoField.setText(existingLogo);
-        selectedLogoFile = null;
-        selectedDocFile = null;
-        removeLogoRequested = false;
+        selectedLogoFile = null; selectedDocFile = null; removeLogoRequested = false;
 
-        try {
-            if (!existingLogo.isBlank()) {
-                Image existingImage = new Image(existingLogo, true);
-                existingImage.errorProperty().addListener((obs, wasError, isError) -> {
-                    if (Boolean.TRUE.equals(isError) && fixedEmail != null && !fixedEmail.isBlank()) {
-                        applyAutoLogoFromEmailIfNeeded(true);
-                    }
+        if (!existingLogo.isBlank()) {
+            try {
+                Image img = new Image(existingLogo, true);
+                img.errorProperty().addListener((obs, was, err) -> {
+                    // Si l'image existante ne charge pas, chercher le logo
+                    if (Boolean.TRUE.equals(err)) fetchLogoNow();
                 });
-                logoPreview.setImage(existingImage);
-            } else {
+                logoPreview.setImage(img);
+                if (logoFileLabel != null) logoFileLabel.setText("Logo actuel chargé.");
+            } catch (Exception e) {
                 logoPreview.setImage(null);
+                fetchLogoNow();
             }
-        } catch (Exception e) {
-            logoPreview.setImage(null);
-            if (fixedEmail != null && !fixedEmail.isBlank()) {
-                applyAutoLogoFromEmailIfNeeded(true);
+        } else {
+            // Pas de logo existant → chercher immédiatement
+            fetchLogoNow();
+        }
+
+        if (docFileLabel         != null) docFileLabel.setText("Garder document actuel (ou choisir nouveau)");
+        if (currencyComboBox     != null) currencyComboBox.setValue("TND");
+        if (convertedAmountLabel != null) convertedAmountLabel.setText("");
+    }
+
+    public void preSelectEvent(Event event) {
+        if (event != null) selectedEventId = event.getId();
+    }
+
+    // =========================================================================
+    //  ✅ LOGO — DEBOUNCE + RECHERCHE STRICTE (pas de fallback alphabet)
+    // =========================================================================
+
+    /**
+     * Planifie une recherche de logo après DEBOUNCE_MS ms d'inactivité.
+     * Annule toute recherche précédente en cours.
+     * → Évite de lancer 30 recherches pendant que l'utilisateur tape "Ooredoo".
+     */
+    private void scheduleLogoSearch() {
+        if (removeLogoRequested || selectedLogoFile != null) return;
+
+        // Annuler le timer précédent
+        if (debounceTimer != null) {
+            debounceTimer.cancel();
+            debounceTimer = null;
+        }
+
+        String company = safe(companyField == null ? null : companyField.getText());
+
+        // Ne pas chercher si le nom est trop court
+        if (company.length() < MIN_COMPANY_LENGTH) {
+            if (logoFileLabel != null)
+                Platform.runLater(() -> logoFileLabel.setText("Saisissez le nom de l'entreprise pour charger son logo."));
+            return;
+        }
+
+        // Afficher indicateur de chargement
+        if (logoFileLabel != null)
+            Platform.runLater(() -> logoFileLabel.setText("⏳ En attente…"));
+
+        // Lancer après le délai debounce
+        debounceTimer = new Timer(true); // daemon timer
+        debounceTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                fetchLogoNow();
+            }
+        }, DEBOUNCE_MS);
+    }
+
+    /**
+     * Lance la recherche du logo immédiatement (sans debounce).
+     * À utiliser pour setModeEdit() ou setFixedEmail().
+     */
+    private void fetchLogoNow() {
+        if (removeLogoRequested || selectedLogoFile != null) return;
+
+        String company = safe(companyField == null ? null : companyField.getText());
+        String email   = fixedEmail != null ? fixedEmail
+                : safe(emailField == null ? null : emailField.getText());
+        boolean hasLogoProvider = !resolveLogoDevImageToken().isBlank()
+                || !resolveConfig("BRANDFETCH_CLIENT_ID").isBlank();
+
+        if (company.isBlank() && email.isBlank()) return;
+
+        // Indicateur
+        Platform.runLater(() -> {
+            if (logoFileLabel != null) logoFileLabel.setText("🔍 Recherche du logo officiel…");
+        });
+
+        new Thread(() -> {
+            String logoUrl = findRealLogoUrl(company, email);
+            Platform.runLater(() -> {
+                if (logoUrl.isBlank()) {
+                    // Aucun logo trouvé — on ne génère RIEN
+                    logoField.clear();
+                    logoPreview.setImage(null);
+                    if (logoFileLabel != null) {
+                        if (!hasLogoProvider) {
+                            logoFileLabel.setText("Configurez LOGO_DEV_TOKEN (ex: -DLOGO_DEV_TOKEN=sk_...) ou BRANDFETCH_CLIENT_ID.");
+                        } else {
+                            logoFileLabel.setText("⚠️ Logo non trouvé. Vous pouvez en uploader un manuellement.");
+                        }
+                    }
+                } else {
+                    try {
+                        Image img = new Image(logoUrl, true);
+                        img.progressProperty().addListener((obs, old, progress) -> {
+                            if (progress.doubleValue() >= 1.0 && !img.isError()) {
+                                logoPreview.setImage(img);
+                                logoField.setText(logoUrl);
+                                if (logoFileLabel != null)
+                                    logoFileLabel.setText("✅ Logo officiel chargé automatiquement.");
+                            }
+                        });
+                        img.errorProperty().addListener((obs, was, err) -> {
+                            if (Boolean.TRUE.equals(err)) {
+                                logoField.clear();
+                                logoPreview.setImage(null);
+                                if (logoFileLabel != null)
+                                    logoFileLabel.setText("⚠️ Logo introuvable. Uploadez-en un manuellement.");
+                            }
+                        });
+                    } catch (Exception ex) {
+                        logoField.clear();
+                        logoPreview.setImage(null);
+                        if (logoFileLabel != null)
+                            logoFileLabel.setText("⚠️ Erreur chargement logo.");
+                    }
+                }
+            });
+        }, "logo-fetch").start();
+    }
+
+    /**
+     * Cherche un logo reel d'entreprise via APIs externes actives.
+     * Aucun fallback alphabet: toutes les requetes utilisent fallback=404.
+     */
+    private String findRealLogoUrl(String company, String email) {
+        String logoDevToken = resolveLogoDevImageToken();
+        String brandfetchClientId = resolveConfig("BRANDFETCH_CLIENT_ID");
+        List<String> domains = buildDomainCandidates(company, email);
+        for (String domain : domains) {
+            if (!logoDevToken.isBlank()) {
+                String logoDev = "https://img.logo.dev/" + domain
+                        + "?token=" + urlEncode(logoDevToken)
+                        + "&size=512&format=png&retina=true&fallback=404";
+                if (isReachable(logoDev)) {
+                    System.out.println("Logo Logo.dev trouve : " + logoDev);
+                    return logoDev;
+                }
+            }
+
+            if (!brandfetchClientId.isBlank()) {
+                String brandfetch = "https://cdn.brandfetch.io/" + domain
+                        + "/w/512/h/512/fallback/404/type/icon?c=" + urlEncode(brandfetchClientId);
+                if (isReachable(brandfetch)) {
+                    System.out.println("Logo Brandfetch trouve : " + brandfetch);
+                    return brandfetch;
+                }
             }
         }
 
-        if (logoFileLabel != null) {
-            logoFileLabel.setText("Garder logo actuel (ou choisir nouveau)");
-        }
-        if (docFileLabel != null) {
-            docFileLabel.setText("Garder document actuel (ou choisir nouveau)");
-        }
-        if (currencyComboBox != null) {
-            currencyComboBox.setValue("TND");
-        }
-        if (convertedAmountLabel != null) {
-            convertedAmountLabel.setText("");
+        if (!logoDevToken.isBlank() && !safe(company).isBlank()) {
+            String byName = "https://img.logo.dev/name/" + urlEncode(company)
+                    + "?token=" + urlEncode(logoDevToken)
+                    + "&size=512&format=png&retina=true&fallback=404";
+            if (isReachable(byName)) {
+                System.out.println("Logo Logo.dev (name) trouve : " + byName);
+                return byName;
+            }
         }
 
-        if (fixedEmail != null && (existingLogo.isBlank() || isAutoGeneratedLogo(existingLogo))) {
-            applyAutoLogoFromEmailIfNeeded(true);
+        System.out.println("Aucun logo officiel trouve : company='" + company + "' email='" + email + "'");
+        return "";
+    }
+
+    /**
+     * Construit les domaines candidats dans l'ordre de priorité.
+     *
+     * RÈGLE STRICTE :
+     * - On utilise la Map KNOWN_BRAND_DOMAINS uniquement si le nom normalisé
+     *   correspond EXACTEMENT à une clé (pas de contains partiel).
+     * - Le domaine de l'email n'est utilisé que si ce n'est pas un email générique
+     *   (gmail, yahoo, hotmail, outlook…).
+     */
+    private List<String> buildDomainCandidates(String company, String email) {
+        Set<String> out = new LinkedHashSet<>();
+
+        // 1. Correspondance EXACTE dans la map connue
+        String knownDomain = resolveKnownDomainExact(company);
+        if (!knownDomain.isBlank()) out.add(knownDomain);
+
+        // 2. Domaine de l'email (si professionnel)
+        String emailDomain = extractDomain(email);
+        if (!emailDomain.isBlank() && isBusinessEmail(emailDomain)) {
+            out.add(emailDomain);
+        }
+
+        // 3. Dérivé du nom de l'entreprise
+        String normalized = normalizeCompany(company).replace(" ", "");
+        if (!normalized.isBlank() && normalized.length() >= MIN_COMPANY_LENGTH) {
+            out.add(normalized + ".com");
+            out.add(normalized + ".tn");
+            out.add(normalized + ".fr");
+        }
+
+        // 4. Slug avec tirets (ex: "tunisie-telecom.tn")
+        String slug = normalizeCompany(company).replace(" ", "-");
+        if (!slug.isBlank() && !slug.equals(normalized) && slug.length() >= MIN_COMPANY_LENGTH) {
+            out.add(slug + ".com");
+            out.add(slug + ".tn");
+        }
+
+        return new ArrayList<>(out);
+    }
+
+    /**
+     * ✅ Correspondance EXACTE — évite "orange" de matcher "orange mobile corp"
+     * On compare le nom normalisé avec chaque clé de la map.
+     * On accepte une correspondance si la clé est égale au nom normalisé
+     * OU si le nom normalisé commence exactement par la clé suivie d'un espace/fin.
+     */
+    private String resolveKnownDomainExact(String company) {
+        String normalized = normalizeCompany(company);
+        if (normalized.isBlank()) return "";
+
+        // Correspondance exacte en priorité
+        if (KNOWN_BRAND_DOMAINS.containsKey(normalized))
+            return KNOWN_BRAND_DOMAINS.get(normalized);
+
+        // Correspondance si le nom tapé est exactement une des clés connues
+        for (Map.Entry<String, String> entry : KNOWN_BRAND_DOMAINS.entrySet()) {
+            String key = entry.getKey();
+            // Le nom normalisé DOIT être égal à la clé, ou commencer par "clé " (avec espace)
+            if (normalized.equals(key) || normalized.startsWith(key + " ") || normalized.endsWith(" " + key)) {
+                return entry.getValue();
+            }
+        }
+        return "";
+    }
+
+    /** Retourne false pour les boîtes mail personnelles (gmail, yahoo, etc.) */
+    private boolean isBusinessEmail(String domain) {
+        String d = domain.toLowerCase();
+        return !d.equals("gmail.com")   && !d.equals("yahoo.com")
+                && !d.equals("hotmail.com") && !d.equals("outlook.com")
+                && !d.equals("icloud.com")  && !d.equals("live.com")
+                && !d.equals("msn.com")     && !d.equals("yahoo.fr")
+                && !d.equals("hotmail.fr")  && !d.equals("laposte.net")
+                && !d.equals("wanadoo.fr");
+    }
+
+    /** Vérifie si l'URL répond HTTP 2xx/3xx */
+    private boolean isReachable(String url) {
+        if (url == null || url.isBlank()) return false;
+        try {
+            HttpRequest req = HttpRequest.newBuilder(URI.create(url))
+                    .timeout(Duration.ofSeconds(4))
+                    .header("User-Agent", "EventFlow/1.0")
+                    .GET().build();
+            HttpResponse<Void> resp = HTTP.send(req, HttpResponse.BodyHandlers.discarding());
+            return resp.statusCode() >= 200 && resp.statusCode() < 400;
+        } catch (Exception e) { return false; }
+    }
+
+    private String resolveConfig(String key) {
+        String env = System.getenv(key);
+        if (env != null && !env.isBlank()) return env.trim();
+        String prop = System.getProperty(key);
+        if (prop != null && !prop.isBlank()) return prop.trim();
+        String local = LOCAL_CONFIG.getProperty(key);
+        if (local != null && !local.isBlank()) return local.trim();
+        return "";
+    }
+
+    private String resolveLogoDevImageToken() {
+        String token = resolveConfig("LOGO_DEV_PUBLISHABLE_KEY");
+        if (token.isBlank()) {
+            token = resolveConfig("LOGO_DEV_TOKEN");
+        }
+        if (token.startsWith("sk_")) {
+            System.out.println("Logo.dev: cle sk_ detectee. Utilisez la cle publishable pk_ pour img.logo.dev.");
+            return "";
+        }
+        return token;
+    }
+
+    private String urlEncode(String value) {
+        if (value == null) return "";
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private static Properties loadLocalConfig() {
+        Properties props = new Properties();
+        Path homeConfig = Paths.get(System.getProperty("user.home"), ".eventflow", "secrets.properties");
+        Path projectConfig = Paths.get(System.getProperty("user.dir"), "config", "local-secrets.properties");
+        loadPropertiesIfExists(props, homeConfig);
+        loadPropertiesIfExists(props, projectConfig);
+        return props;
+    }
+
+    private static void loadPropertiesIfExists(Properties target, Path path) {
+        if (path == null || !Files.exists(path) || !Files.isRegularFile(path)) {
+            return;
+        }
+        try (FileInputStream in = new FileInputStream(path.toFile())) {
+            Properties tmp = new Properties();
+            tmp.load(in);
+            target.putAll(tmp);
+        } catch (IOException ignored) {
         }
     }
+
+    // =========================================================================
+    //  ACTIONS FXML — LOGO / DOCUMENT
+    // =========================================================================
 
     @FXML
     private void onChooseLogo() {
         clearErrors();
-
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Choisir un logo");
-        chooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.webp")
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Images", "*.png","*.jpg","*.jpeg","*.webp","*.svg")
         );
-
         File file = chooser.showOpenDialog(getStage());
-        if (file == null) {
-            return;
-        }
+        if (file == null) return;
 
         selectedLogoFile = file;
         removeLogoRequested = false;
-        if (logoFileLabel != null) {
-            logoFileLabel.setText(file.getName());
-        }
-
+        if (logoFileLabel != null) logoFileLabel.setText(file.getName());
         try {
-            Image image = new Image(file.toURI().toString(), true);
-            logoPreview.setImage(image);
+            logoPreview.setImage(new Image(file.toURI().toString(), true));
             logoField.clear();
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
     }
 
     @FXML
     private void onRemoveLogo() {
         clearErrors();
         selectedLogoFile = null;
+        removeLogoRequested = false;
         logoField.clear();
         logoPreview.setImage(null);
-        // Supprimer puis tenter de recharger le vrai logo entreprise.
-        removeLogoRequested = false;
-        applyAutoLogoFromEmailIfNeeded(true);
-        if (logoFileLabel != null && safe(logoField.getText()).isBlank()) {
-            logoFileLabel.setText("Logo supprime. Domaine officiel requis (ex: ooredoo.com).");
-        }
+        if (logoFileLabel != null) logoFileLabel.setText("Logo supprimé.");
+        // Re-chercher le logo officiel
+        fetchLogoNow();
     }
 
     @FXML
     private void onChooseDocument() {
         clearErrors();
-
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Choisir un justificatif (image ou PDF)");
+        chooser.setTitle("Choisir un justificatif");
         chooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg"),
-                new FileChooser.ExtensionFilter("PDF", "*.pdf")
+                new FileChooser.ExtensionFilter("Images", "*.png","*.jpg","*.jpeg"),
+                new FileChooser.ExtensionFilter("PDF",    "*.pdf")
         );
-
         File file = chooser.showOpenDialog(getStage());
         if (file != null) {
             selectedDocFile = file;
-            if (docFileLabel != null) {
-                docFileLabel.setText(file.getName());
-            }
+            if (docFileLabel != null) docFileLabel.setText(file.getName());
         }
     }
+
+    // =========================================================================
+    //  SAUVEGARDE
+    // =========================================================================
 
     @FXML
     private void onSave() {
         clearErrors();
 
+        // Annuler toute recherche de logo en cours
+        if (debounceTimer != null) { debounceTimer.cancel(); debounceTimer = null; }
+
         int eventId;
-        if (editing != null) {
-            eventId = editing.getEvent_id();
-        } else if (selectedEventId != null) {
-            eventId = selectedEventId;
-        } else if (fixedEmail == null || fixedEmail.isBlank()) {
-            // Admin form: event link is optional.
-            eventId = 0;
-        } else {
-            error("Choisissez un evenement via le bouton Sponsoriser.");
-            return;
-        }
+        if (editing != null)             eventId = editing.getEvent_id();
+        else if (selectedEventId != null) eventId = selectedEventId;
+        else if (fixedEmail == null || fixedEmail.isBlank()) eventId = 0;
+        else { error("Choisissez un événement via le bouton Sponsoriser."); return; }
 
-        String company = safe(companyField.getText());
-        String email = fixedEmail != null ? fixedEmail : safe(emailField.getText());
-        if (fixedEmail != null) {
-            emailField.setText(fixedEmail);
-        }
-        String contributionText = safe(contributionField.getText()).replace(",", ".");
-        String industry = safe(industryField.getText());
-        String phone = safe(phoneField.getText());
-        String taxId = safe(taxIdField.getText());
+        String company         = safe(companyField.getText());
+        String email           = fixedEmail != null ? fixedEmail : safe(emailField.getText());
+        String contributionTxt = safe(contributionField.getText()).replace(",", ".");
+        String industry        = safe(industryField.getText());
+        String phone           = safe(phoneField.getText());
+        String taxId           = safe(taxIdField.getText());
 
-        if (company.isEmpty()) {
-            error("Entreprise obligatoire");
-            return;
-        }
-        if (company.length() < 2) {
-            error("Entreprise trop courte");
-            return;
-        }
-        if (company.matches(".*\\d.*")) {
-            error("Entreprise: pas de chiffres");
-            return;
-        }
-
-        if (email.isEmpty()) {
-            error("Email obligatoire");
-            return;
-        }
-        if (!EMAIL_RX.matcher(email).matches()) {
-            error("Email invalide");
-            return;
-        }
-
-        if (!taxId.isEmpty() && !TAX_ID_RX.matcher(taxId).matches()) {
-            error("Format No Fiscal invalide (7 chiffres + 1 lettre)");
-            return;
-        }
+        if (company.isEmpty())               { error("Entreprise obligatoire");                             return; }
+        if (company.length() < 2)            { error("Entreprise trop courte");                             return; }
+        if (company.matches(".*\\d.*"))      { error("Entreprise : pas de chiffres");                       return; }
+        if (email.isEmpty())                 { error("Email obligatoire");                                   return; }
+        if (!EMAIL_RX.matcher(email).matches()) { error("Email invalide");                                  return; }
+        if (!taxId.isEmpty() && !TAX_ID_RX.matcher(taxId).matches())
+        { error("Format N° Fiscal invalide (7 chiffres + 1 lettre, ex: 1234567A)");                     return; }
 
         String currency = currencyComboBox == null ? "TND" : currencyComboBox.getValue();
         double originalAmount;
         try {
-            originalAmount = Double.parseDouble(contributionText);
-            if (originalAmount <= 0) {
-                error("Contribution doit etre > 0");
-                return;
-            }
-        } catch (NumberFormatException e) {
-            error("Contribution invalide (ex: 5000.00)");
-            return;
-        }
+            originalAmount = Double.parseDouble(contributionTxt);
+            if (originalAmount <= 0) { error("Contribution doit être > 0"); return; }
+        } catch (NumberFormatException e) { error("Contribution invalide (ex: 5000.00)"); return; }
 
-        double contributionInTnd;
-        if (currency == null || "TND".equals(currency)) {
-            contributionInTnd = originalAmount;
-        } else {
-            contributionInTnd = CurrencyService.convert(originalAmount, currency, "TND");
-            if (contributionInTnd < 0) {
-                error("Erreur de conversion de devise.");
-                return;
-            }
-        }
+        double contributionTnd = (currency == null || "TND".equals(currency))
+                ? originalAmount : CurrencyService.convert(originalAmount, currency, "TND");
+        if (contributionTnd < 0) { error("Erreur de conversion de devise."); return; }
 
-        String logoUrlFinal = safe(logoField.getText());
-        if (removeLogoRequested) {
-            logoUrlFinal = "";
-        }
+        String logoUrlFinal = removeLogoRequested ? "" : safe(logoField.getText());
         try {
             if (!removeLogoRequested && selectedLogoFile != null) {
                 logoUrlFinal = cloud.uploadLogo(selectedLogoFile);
                 logoField.setText(logoUrlFinal);
             }
-        } catch (Exception ex) {
-            error("Upload logo echoue: " + ex.getMessage());
-            return;
-        }
-        if (!removeLogoRequested && selectedLogoFile == null && logoUrlFinal.isEmpty()) {
-            applyAutoLogoFromEmailIfNeeded(true);
-            logoUrlFinal = safe(logoField.getText());
-        }
+        } catch (Exception ex) { error("Upload logo échoué : " + ex.getMessage()); return; }
 
         String docUrlFinal = editing == null ? null : editing.getDocument_url();
         try {
-            if (selectedDocFile != null) {
-                docUrlFinal = cloud.uploadDocument(selectedDocFile);
-            }
-        } catch (Exception ex) {
-            error("Upload document echoue: " + ex.getMessage());
-            return;
-        }
+            if (selectedDocFile != null) docUrlFinal = cloud.uploadDocument(selectedDocFile);
+        } catch (Exception ex) { error("Upload document échoué : " + ex.getMessage()); return; }
 
         Sponsor out = new Sponsor();
-        if (editing != null) {
-            out.setId(editing.getId());
-        }
-
+        if (editing != null) out.setId(editing.getId());
         out.setEvent_id(eventId);
         out.setCompany_name(company);
         out.setContact_email(email);
-        out.setContribution_name(contributionInTnd);
+        out.setContribution_name(contributionTnd);
         out.setLogo_url(logoUrlFinal.isEmpty() ? null : logoUrlFinal);
         out.setIndustry(industry);
         out.setPhone(phone);
         out.setTax_id(taxId);
         out.setDocument_url(docUrlFinal);
-
         out.setContract_url(editing == null ? null : editing.getContract_url());
-        out.setAccess_code(editing == null ? null : editing.getAccess_code());
-        out.setUser_id(editing == null ? null : editing.getUser_id());
-
-        if (!company.isEmpty()) {
-            new Thread(() -> {
-                try {
-                    String displayName = osmService.searchCompany(company);
-                    Platform.runLater(() -> {
-                        if (displayName != null) {
-                            showInfo("Verification OpenStreetMap", "Entreprise trouvee:\n" + displayName);
-                        } else {
-                            showWarning("Verification OpenStreetMap", "Aucune correspondance trouvee.");
-                        }
-                    });
-                } catch (Exception e) {
-                    Platform.runLater(() -> error("Erreur recherche entreprise: " + e.getMessage()));
-                }
-            }).start();
-        }
+        out.setAccess_code(editing  == null ? null : editing.getAccess_code());
+        out.setUser_id(editing      == null ? null : editing.getUser_id());
 
         try {
-            if (editing == null) {
-                sponsorService.addSponsor(out);
-            } else {
-                sponsorService.updateSponsor(out);
-            }
+            if (editing == null) sponsorService.addSponsor(out);
+            else                 sponsorService.updateSponsor(out);
 
             Sponsor saved = sponsorService.getSponsorById(out.getId());
             result = saved != null ? saved : out;
 
             if (!phone.isEmpty()) {
+                final String fc = company;
+                final double fv = contributionTnd;
                 new Thread(() -> {
-                    boolean sent = WhatsAppService.sendConfirmation(phone, company, contributionInTnd);
-                    if (sent) {
-                        System.out.println("Message WhatsApp envoye a " + phone);
-                    } else {
-                        System.err.println("Echec de l'envoi WhatsApp");
-                        String reason = WhatsAppService.getLastError();
-                        Platform.runLater(() -> showWarning(
-                                "WhatsApp indisponible",
-                                "Le message de confirmation n'a pas ete envoye.\n" +
-                                        (reason == null || reason.isBlank()
-                                                ? "Verifiez la configuration Twilio (SID, token, sandbox)."
-                                                : reason)
-                        ));
-                    }
+                    boolean sent = WhatsAppService.sendConfirmation(phone, fc, fv);
+                    Platform.runLater(() -> {
+                        if (sent)
+                            showInfo("WhatsApp", "Message envoyé à " + phone);
+                        else {
+                            String reason = WhatsAppService.getLastError();
+                            showWarning("WhatsApp indisponible",
+                                    "Message non envoyé.\n" +
+                                            (reason == null || reason.isBlank()
+                                                    ? "Vérifiez la configuration Twilio."
+                                                    : reason));
+                        }
+                    });
                 }).start();
             }
 
-            showSuccess("Succes", "Sponsor enregistre avec succes.");
-
-            if (onSaved != null) {
-                onSaved.accept(result);
-            }
-            if (onFormDone != null) {
-                onFormDone.run();
-            }
-
+            showSuccess("Succès", "Sponsor enregistré avec succès.");
+            if (onSaved    != null) onSaved.accept(result);
+            if (onFormDone != null) onFormDone.run();
             closeWindowIfModal();
-        } catch (Exception ex) {
-            error("Erreur sauvegarde: " + ex.getMessage());
-        }
+
+        } catch (Exception ex) { error("Erreur sauvegarde : " + ex.getMessage()); }
     }
 
     @FXML
     private void onCancel() {
-        if (onFormDone != null) {
-            onFormDone.run();
-        } else {
-            closeWindowIfModal();
-        }
+        if (debounceTimer != null) { debounceTimer.cancel(); debounceTimer = null; }
+        if (onFormDone != null) onFormDone.run();
+        else closeWindowIfModal();
     }
 
-    public void preSelectEvent(Event event) {
-        if (event != null) {
-            selectedEventId = event.getId();
-        }
-    }
+    // =========================================================================
+    //  UTILITAIRES
+    // =========================================================================
 
     private void validateTaxId() {
         String taxId = safe(taxIdField.getText());
         if (!taxId.isEmpty() && !TAX_ID_RX.matcher(taxId).matches()) {
             taxIdField.setStyle("-fx-border-color: #ef4444; -fx-border-width: 2;");
-            error("Format No Fiscal invalide (ex: 1234567A)");
+            error("Format N° Fiscal invalide (ex: 1234567A)");
         } else {
             taxIdField.setStyle("-fx-border-color: #cbd5e1; -fx-border-width: 1.5;");
             clearErrors();
@@ -571,463 +738,68 @@ public class SponsorFormController {
     }
 
     private void updateConvertedAmount() {
-        if (currencyComboBox == null || contributionField == null || convertedAmountLabel == null) {
-            return;
-        }
-
-        String currency = currencyComboBox.getValue();
+        if (currencyComboBox == null || contributionField == null || convertedAmountLabel == null) return;
+        String currency   = currencyComboBox.getValue();
         String amountText = contributionField.getText().trim().replace(",", ".");
-        if (amountText.isEmpty()) {
-            convertedAmountLabel.setText("");
-            return;
-        }
-
+        if (amountText.isEmpty()) { convertedAmountLabel.setText(""); return; }
         try {
             double amount = Double.parseDouble(amountText);
-            if (currency == null || "TND".equals(currency)) {
+            if (currency == null || "TND".equals(currency))
                 convertedAmountLabel.setText(String.format("= %,.2f TND", amount));
-            } else {
-                double converted = CurrencyService.convert(amount, currency, "TND");
-                if (converted >= 0) {
-                    convertedAmountLabel.setText(String.format("≈ %,.2f TND", converted));
-                } else {
-                    convertedAmountLabel.setText("Erreur conversion");
-                }
+            else {
+                double c = CurrencyService.convert(amount, currency, "TND");
+                convertedAmountLabel.setText(c >= 0 ? String.format("≈ %,.2f TND", c) : "Erreur conversion");
             }
-        } catch (NumberFormatException e) {
-            convertedAmountLabel.setText("Montant invalide");
-        }
-    }
-
-    private void closeWindowIfModal() {
-        if (onSaved != null) {
-            return;
-        }
-        try {
-            Stage stage = getStage();
-            if (stage != null && stage.isShowing()) {
-                stage.close();
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
-    private Stage getStage() {
-        try {
-            return (Stage) companyField.getScene().getWindow();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private String safe(String value) {
-        return value == null ? "" : value.trim();
+        } catch (NumberFormatException e) { convertedAmountLabel.setText("Montant invalide"); }
     }
 
     private void applyEmailLockState() {
-        if (emailField == null) {
-            return;
-        }
+        if (emailField == null) return;
         boolean locked = fixedEmail != null && !fixedEmail.isBlank();
         emailField.setDisable(false);
         emailField.setEditable(!locked);
         emailField.setFocusTraversable(!locked);
     }
 
-    private void applyAutoLogoFromEmailIfNeeded(boolean force) {
-        if (removeLogoRequested || selectedLogoFile != null) {
-            return;
-        }
-        if (logoField == null || logoPreview == null) {
-            return;
-        }
-        String currentLogo = safe(logoField.getText());
-        if (!force && !currentLogo.isEmpty() && !isAutoGeneratedLogo(currentLogo)) {
-            return;
-        }
-        String email = fixedEmail != null ? fixedEmail : safe(emailField == null ? null : emailField.getText());
-        String company = safe(companyField == null ? null : companyField.getText());
-        String domain = resolveBrandDomain(company, email);
-
-        String brandLogoUrl = findBestBrandLogoUrl(company, email);
-        if (brandLogoUrl.isBlank()) {
-            logoField.clear();
-            logoPreview.setImage(null);
-            if (logoFileLabel != null) {
-                if (domain.isBlank()) {
-                    logoFileLabel.setText("Domaine introuvable. Saisir entreprise comme domaine (ex: ooredoo.com).");
-                } else {
-                    logoFileLabel.setText("Logo reel introuvable pour: " + domain);
-                }
-            }
-            return;
-        }
-
-        logoField.setText(brandLogoUrl);
-        try {
-            Image brandImage = new Image(brandLogoUrl, true);
-            brandImage.errorProperty().addListener((obs, wasError, isError) -> {
-                if (Boolean.TRUE.equals(isError)) {
-                    logoField.clear();
-                    logoPreview.setImage(null);
-                    if (logoFileLabel != null) {
-                        logoFileLabel.setText("Logo reel indisponible. Verifier le domaine officiel.");
-                    }
-                }
-            });
-            logoPreview.setImage(brandImage);
-            if (logoFileLabel != null) {
-                logoFileLabel.setText("Logo marque par domaine: " + domain);
-            }
-        } catch (Exception ignored) {
-            logoField.clear();
-            logoPreview.setImage(null);
-            if (logoFileLabel != null) {
-                logoFileLabel.setText("Logo reel indisponible. Verifier le domaine officiel.");
-            }
-        }
-    }
-
-    private String findBestBrandLogoUrl(String company, String email) {
-        List<String> domains = buildDomainCandidates(company, email);
-        for (String d : domains) {
-            String clearbit = buildBrandLogoUrl(d);
-            if (isReachableImage(clearbit)) {
-                return clearbit;
-            }
-            String favicon = buildGoogleFaviconUrl(d);
-            if (isReachableImage(favicon)) {
-                return favicon;
-            }
-        }
-        return "";
-    }
-
-    private List<String> buildDomainCandidates(String company, String email) {
-        Set<String> out = new LinkedHashSet<>();
-
-        String domainFromMapping = resolveKnownDomain(company);
-        if (!domainFromMapping.isBlank()) {
-            out.add(domainFromMapping);
-        }
-
-        String domainFromCompany = extractDomainFromRaw(company);
-        if (!domainFromCompany.isBlank()) {
-            out.add(domainFromCompany);
-        }
-
-        String normalizedCompany = normalizeCompany(company).replace(" ", "");
-        if (!normalizedCompany.isBlank()) {
-            out.add(normalizedCompany + ".com");
-            out.add(normalizedCompany + ".tn");
-        }
-
-        String companySlug = normalizeCompany(company).replace(" ", "-");
-        if (!companySlug.isBlank()) {
-            out.add(companySlug + ".com");
-            out.add(companySlug + ".tn");
-        }
-
-        // Email domain is fallback only: company domain has priority.
-        String fromEmail = extractDomain(email);
-        if (!fromEmail.isBlank()) {
-            out.add(fromEmail);
-        }
-
-        return new ArrayList<>(out);
-    }
-
-    private boolean isReachableImage(String url) {
-        if (url == null || url.isBlank()) {
-            return false;
-        }
-        try {
-            HttpRequest req = HttpRequest.newBuilder(URI.create(url))
-                    .timeout(Duration.ofSeconds(5))
-                    .GET()
-                    .build();
-            HttpResponse<Void> resp = HTTP.send(req, HttpResponse.BodyHandlers.discarding());
-            int status = resp.statusCode();
-            return status >= 200 && status < 400;
-        } catch (Exception ignored) {
-            return false;
-        }
-    }
-
-    private String resolveBrandDomain(String company, String email) {
-        List<String> candidates = buildDomainCandidates(company, email);
-        if (!candidates.isEmpty()) {
-            return candidates.get(0);
-        }
-        return "";
-    }
-
-    private String resolveKnownDomain(String company) {
-        String normalized = normalizeCompany(company);
-        if (normalized.isBlank()) {
-            return "";
-        }
-        for (Map.Entry<String, String> entry : KNOWN_BRAND_DOMAINS.entrySet()) {
-            if (normalized.contains(entry.getKey())) {
-                return entry.getValue();
-            }
-        }
-        return "";
-    }
-
     private String normalizeCompany(String company) {
-        String value = safe(company).toLowerCase();
-        if (value.isBlank()) {
-            return "";
-        }
-        String ascii = Normalizer.normalize(value, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "");
+        String v = safe(company).toLowerCase();
+        if (v.isBlank()) return "";
+        String ascii = Normalizer.normalize(v, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         return ascii.replaceAll("[^a-z0-9]+", " ").trim();
     }
 
-    private String extractDomainFromRaw(String rawValue) {
-        String value = safe(rawValue).toLowerCase();
-        if (value.isBlank()) {
-            return "";
-        }
-        value = value.replace("https://", "")
-                .replace("http://", "")
-                .replace("www.", "");
-        int slash = value.indexOf('/');
-        if (slash > -1) {
-            value = value.substring(0, slash);
-        }
-        value = value.trim();
-        if (value.matches("^[a-z0-9][a-z0-9.-]*\\.[a-z]{2,}$")) {
-            return value;
-        }
-        return "";
-    }
-
-    private String buildBrandLogoUrl(String domain) {
-        if (domain == null || domain.isBlank()) {
-            return "";
-        }
-        return "https://logo.clearbit.com/" + domain + "?size=256";
-    }
-
-    private String buildGoogleFaviconUrl(String domain) {
-        if (domain == null || domain.isBlank()) {
-            return "";
-        }
-        String encoded = URLEncoder.encode(domain, StandardCharsets.UTF_8);
-        return "https://www.google.com/s2/favicons?domain=" + encoded + "&sz=128";
-    }
-
-    private String buildLogoUrlFromEmail(String email) {
-        String domain = extractDomain(email);
-        if (domain.isEmpty()) {
-            return buildAvatarUrlFromEmail(email);
-        }
-        return "https://logo.clearbit.com/" + domain + "?size=256";
-    }
-
-    private String buildAvatarUrlFromEmail(String email) {
-        String value = safe(email);
-        if (value.isEmpty()) {
-            return "";
-        }
-        String local = extractLocalPart(value);
-        if (isGenericLocalPart(local)) {
-            String domainRoot = extractDomainRoot(value);
-            if (!domainRoot.isBlank()) {
-                local = domainRoot;
-            }
-        }
-        String encoded = URLEncoder.encode(local, StandardCharsets.UTF_8);
-        return "https://ui-avatars.com/api/?name=" + encoded +
-                "&background=0D47A1&color=ffffff&size=256&bold=true&format=png";
-    }
-
     private String extractDomain(String email) {
-        String value = safe(email).toLowerCase();
-        int at = value.lastIndexOf('@');
-        if (at <= 0 || at >= value.length() - 1) {
-            return "";
-        }
-        String domain = value.substring(at + 1).trim();
-        if (domain.isEmpty() || !domain.contains(".")) {
-            return "";
-        }
-        return domain;
+        String v = safe(email).toLowerCase();
+        int at = v.lastIndexOf('@');
+        if (at <= 0 || at >= v.length() - 1) return "";
+        String domain = v.substring(at + 1).trim();
+        return (domain.isEmpty() || !domain.contains(".")) ? "" : domain;
     }
 
-    private void setGeneratedLocalLogo(String email) {
-        String initials = getInitialsFromEmail(email);
-        if (initials.isEmpty()) {
-            initials = "SP";
-        }
-
-        int hash = Math.abs(safe(email).toLowerCase().hashCode());
-        double hue = hash % 360;
-        Color background = Color.hsb(hue, 0.68, 0.74);
-
-        Canvas canvas = new Canvas(256, 256);
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.setFill(background);
-        gc.fillRoundRect(0, 0, 256, 256, 48, 48);
-        gc.setFill(Color.WHITE);
-        gc.setTextAlign(TextAlignment.CENTER);
-        gc.setTextBaseline(VPos.CENTER);
-        gc.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, 96));
-        gc.fillText(initials, 128, 136);
-
-        WritableImage image = new WritableImage(256, 256);
-        canvas.snapshot(new SnapshotParameters(), image);
-        logoPreview.setImage(image);
-
-        if (logoField != null) {
-            String localLogoUri = saveGeneratedLogoToLocal(image, email);
-            if (localLogoUri != null && !localLogoUri.isBlank()) {
-                logoField.setText(localLogoUri);
-            } else {
-                logoField.setText(buildAvatarUrlFromEmail(email));
-            }
-        }
-        if (logoFileLabel != null) {
-            logoFileLabel.setText("Logo local genere depuis l'email");
-        }
-    }
-
-    private String saveGeneratedLogoToLocal(WritableImage image, String email) {
+    private void closeWindowIfModal() {
+        if (onSaved != null) return;
         try {
-            String safeMail = safe(email).toLowerCase().replaceAll("[^a-z0-9@._-]", "");
-            if (safeMail.isBlank()) {
-                safeMail = "sponsor";
-            }
-            safeMail = safeMail.replace("@", "_at_");
-
-            Path logoDir = Paths.get(System.getProperty("user.home"), ".eventflow", "generated-logos");
-            Files.createDirectories(logoDir);
-
-            Path logoPath = logoDir.resolve("logo_" + safeMail + ".png");
-            BufferedImage buffered = toBufferedImage(image);
-            ImageIO.write(buffered, "png", logoPath.toFile());
-            return logoPath.toUri().toString();
-        } catch (IOException ignored) {
-            return "";
-        }
+            Stage s = getStage();
+            if (s != null && s.isShowing()) s.close();
+        } catch (Exception ignored) {}
     }
 
-    private BufferedImage toBufferedImage(WritableImage image) {
-        int width = (int) image.getWidth();
-        int height = (int) image.getHeight();
-        BufferedImage buffered = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        PixelReader reader = image.getPixelReader();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                buffered.setRGB(x, y, reader.getArgb(x, y));
-            }
-        }
-        return buffered;
+    private Stage getStage() {
+        try { return (Stage) companyField.getScene().getWindow(); }
+        catch (Exception e) { return null; }
     }
 
-    private String getInitialsFromEmail(String sourceValue) {
-        String value = safe(sourceValue);
-        if (value.isEmpty()) {
-            return "";
-        }
-        String source = value;
-        if (value.contains("@")) {
-            source = extractLocalPart(value);
-        }
-        if (isGenericLocalPart(source)) {
-            String domainRoot = extractDomainRoot(value);
-            if (!domainRoot.isBlank()) {
-                source = domainRoot;
-            }
-        }
+    private String safe(String value) { return value == null ? "" : value.trim(); }
+    private void error(String msg)    { if (errorLabel != null) errorLabel.setText("Erreur : " + msg); }
+    private void clearErrors()        { if (errorLabel != null) errorLabel.setText(""); }
 
-        String cleaned = source.replaceAll("[^A-Za-z0-9]", " ").trim();
-        if (cleaned.isEmpty()) {
-            return "";
-        }
-        String[] parts = cleaned.split("\\s+");
-        if (parts.length == 1) {
-            String p = parts[0].toUpperCase();
-            return p.length() >= 2 ? p.substring(0, 2) : p.substring(0, 1);
-        }
-        return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
-    }
+    private void showInfo(String t, String m)    { alert(Alert.AlertType.INFORMATION, t, m); }
+    private void showWarning(String t, String m) { alert(Alert.AlertType.WARNING,     t, m); }
+    private void showSuccess(String t, String m) { alert(Alert.AlertType.INFORMATION, t, m); }
 
-    private String extractLocalPart(String email) {
-        String value = safe(email);
-        int at = value.indexOf('@');
-        return at > 0 ? value.substring(0, at) : value;
-    }
-
-    private String extractDomainRoot(String email) {
-        String domain = extractDomain(email);
-        if (domain.isBlank()) {
-            return "";
-        }
-        String[] parts = domain.split("\\.");
-        if (parts.length == 0) {
-            return "";
-        }
-        return parts[0];
-    }
-
-    private boolean isGenericLocalPart(String localPart) {
-        String v = safe(localPart).toLowerCase();
-        return v.equals("sponsor")
-                || v.equals("admin")
-                || v.equals("user")
-                || v.equals("contact")
-                || v.equals("info")
-                || v.equals("support")
-                || v.equals("mail")
-                || v.equals("noreply")
-                || v.equals("no-reply");
-    }
-
-    private boolean isAutoGeneratedLogo(String logoUrl) {
-        String value = safe(logoUrl).toLowerCase();
-        return value.contains("logo.clearbit.com")
-                || value.contains("google.com/s2/favicons")
-                || value.contains("ui-avatars.com")
-                || value.contains("/.eventflow/generated-logos/")
-                || value.contains("\\.eventflow\\generated-logos\\");
-    }
-
-    private void error(String message) {
-        if (errorLabel != null) {
-            errorLabel.setText("Erreur: " + message);
-        }
-    }
-
-    private void clearErrors() {
-        if (errorLabel != null) {
-            errorLabel.setText("");
-        }
-    }
-
-    private void showInfo(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private void showWarning(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private void showSuccess(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+    private void alert(Alert.AlertType type, String title, String message) {
+        Alert a = new Alert(type);
+        a.setTitle(title); a.setHeaderText(null); a.setContentText(message);
+        a.showAndWait();
     }
 }

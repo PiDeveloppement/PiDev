@@ -4,7 +4,6 @@ import com.example.pidev.MainController;
 import com.example.pidev.model.sponsor.Sponsor;
 import com.example.pidev.service.sponsor.SponsorService;
 import com.example.pidev.service.pdf.LocalSponsorPdfService;
-import com.example.pidev.service.search.LuceneSearchService;
 import com.example.pidev.service.excel.ExcelExportService;
 import com.example.pidev.service.chart.QuickChartService;
 import com.google.gson.JsonObject;
@@ -90,7 +89,6 @@ public class SponsorAdminController implements Initializable {
         loadData();
         applyPredicate();
         initCharts();
-        reindexAllSponsors();
     }
 
     private int computeCols(double width) {
@@ -215,26 +213,19 @@ public class SponsorAdminController implements Initializable {
         }
     }
 
-    private void reindexAllSponsors() {
-        try {
-            List<Sponsor> all = sponsorService.getAllSponsors();
-            for (Sponsor s : all) {
-                LuceneSearchService.indexSponsor(
-                        s.getId(), s.getCompany_name(),
-                        s.getContact_email(), s.getContribution_name(), s.getEvent_id());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     private void searchSponsors(String query) {
         try {
-            List<Integer> ids = LuceneSearchService.searchSponsors(query);
+            String q = query == null ? "" : query.trim().toLowerCase();
+            List<Sponsor> all = sponsorService.getAllSponsors();
             List<Sponsor> found = new ArrayList<>();
-            for (Integer id : ids) {
-                Sponsor s = sponsorService.getSponsorById(id);
-                if (s != null) found.add(s);
+            for (Sponsor s : all) {
+                if (s == null) continue;
+                String id = String.valueOf(s.getId());
+                String company = s.getCompany_name() == null ? "" : s.getCompany_name().toLowerCase();
+                String email = s.getContact_email() == null ? "" : s.getContact_email().toLowerCase();
+                if (id.contains(q) || company.contains(q) || email.contains(q)) {
+                    found.add(s);
+                }
             }
             baseList.setAll(found);
             updateGlobalStats();

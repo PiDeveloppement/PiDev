@@ -65,12 +65,9 @@ module com.example.pidev {
     exports com.example.pidev.service.forecast;
     exports com.example.pidev.service.currency;
     exports com.example.pidev.service.whatsapp;
-    exports com.example.pidev.service.external;
     exports com.example.pidev.service.upload;
-    exports com.example.pidev.service.search;
     exports com.example.pidev.service.pdf;
     exports com.example.pidev.service.chart;
-    exports com.example.pidev.service.vision;
     exports com.example.pidev.utils;
 
     opens com.example.pidev to javafx.fxml;

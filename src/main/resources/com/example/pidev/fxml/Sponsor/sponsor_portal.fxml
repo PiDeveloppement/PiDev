@@ -10,7 +10,7 @@
             <VBox spacing="0" style="-fx-background-color: #f1f5f9;">
 
                 <VBox spacing="14" style="-fx-padding: 22 35;" styleClass="sponsor-header-block">
-                     <Button fx:id="homeBtn" prefHeight="45.0" prefWidth="112.0" styleClass="sponsor-top-btn" text="Back" visible="false" managed="false" />
+                     <Button fx:id="homeBtn" managed="false" prefHeight="45.0" prefWidth="112.0" styleClass="sponsor-top-btn" text="Back" visible="false" />
                     <HBox alignment="CENTER_LEFT" spacing="12">
                         <VBox spacing="2">
                             <Label styleClass="sponsor-title" text="Portail Sponsoring" />
@@ -48,12 +48,12 @@
                 </VBox>
 
                 <VBox style="-fx-padding: 0 35 28 35; -fx-background-color: #f1f5f9;">
-                    <VBox style="-fx-padding: 20;" styleClass="sponsor-section-card">
-                        <StackPane mouseTransparent="true" pickOnBounds="false" prefHeight="45.0" prefWidth="60.0" styleClass="sponsor-badge">
+                    <VBox prefHeight="111.0" prefWidth="1520.0" style="-fx-padding: 20;" styleClass="sponsor-section-card">
+                        <StackPane mouseTransparent="true" pickOnBounds="false" prefHeight="100.0" prefWidth="1484.0" styleClass="sponsor-badge">
                             <Label cacheShape="false" centerShape="false" focusTraversable="false" scaleShape="false" styleClass="sponsor-badge-text" visible="false" />
                            <Label style="-fx-font-size: 16px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 0 0 12 0;" text="Evenements recommandes " />
                         </StackPane>
-                        <FlowPane fx:id="recommendedEventsGrid" hgap="18" prefWrapLength="1080" vgap="18" styleClass="sponsor-events-grid" />
+                        <FlowPane fx:id="recommendedEventsGrid" hgap="18" prefWrapLength="1080" styleClass="sponsor-events-grid" vgap="18" />
                         <VBox fx:id="noRecommendedMessage" alignment="CENTER" managed="false" spacing="8" style="-fx-padding: 20 0 6 0;" visible="false">
                             <Label style="-fx-font-size: 14px; -fx-text-fill: #64748b; -fx-font-weight: 600;" text="Renseignez votre biographie (secteur) dans votre profil pour activer les recommandations." wrapText="true" />
                         </VBox>
@@ -61,15 +61,15 @@
                 </VBox>
 
                 <VBox style="-fx-padding: 0 35 28 35; -fx-background-color: #f1f5f9;">
-                    <VBox prefHeight="92.0" prefWidth="1516.0" style="-fx-padding: 20;" styleClass="sponsor-section-card">
-                  <StackPane mouseTransparent="true" pickOnBounds="false" prefHeight="45.0" prefWidth="60.0" styleClass="sponsor-badge">
+                    <VBox prefHeight="98.0" prefWidth="1529.0" style="-fx-padding: 20;" styleClass="sponsor-section-card">
+                  <StackPane mouseTransparent="true" pickOnBounds="false" prefHeight="116.0" prefWidth="1484.0" styleClass="sponsor-badge">
                      <children>
                         <Label cacheShape="false" centerShape="false" focusTraversable="false" scaleShape="false" styleClass="sponsor-badge-text" visible="false" />
                         <Label style="-fx-font-size: 16px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 0 0 12 0;" />
-                              <Label style="-fx-font-size: 16px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 0 0 12 0;" text="Catalogue des evenements a sponsoriser" />
+                              <Label prefHeight="80.0" prefWidth="305.0" style="-fx-font-size: 16px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 0 0 12 0;" text="Catalogue des evenements a sponsoriser" />
                      </children>
                   </StackPane>
-                        <FlowPane fx:id="allEventsGrid" hgap="18" prefWrapLength="1080" vgap="18" styleClass="sponsor-events-grid" />
+                        <FlowPane fx:id="allEventsGrid" hgap="18" prefWrapLength="1080" styleClass="sponsor-events-grid" vgap="18" />
                         <VBox fx:id="noEventsMessage" alignment="CENTER" managed="false" spacing="10" style="-fx-padding: 25 0 10 0;" visible="false">
                             <Label style="-fx-font-size: 16px; -fx-text-fill: #64748b;" text="Aucun evenement trouve" />
                         </VBox>

@@ -337,6 +337,7 @@
         <!-- ZONE CONTENU CENTRAL -->
         <VBox fx:id="pageContentContainer"
               styleClass="page-content"
+              minHeight="0.0"
               VBox.vgrow="ALWAYS"/>
 
     </VBox>
