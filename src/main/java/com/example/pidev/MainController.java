@@ -75,8 +75,8 @@ public class MainController {
     // Pages fonctionnelles (sponsors, budget, dépenses, dashboard)
     private static final String SPONSOR_PORTAL_FXML = "/com/example/pidev/fxml/Sponsor/sponsor_portal.fxml";
     private static final String SPONSOR_ADMIN_FXML  = "/com/example/pidev/fxml/Sponsor/sponsor_admin.fxml";
-    private static final String BUDGET_LIST_FXML    = "/com/example/pidev/fxml/budget/budget.fxml";
-    private static final String DEPENSE_LIST_FXML   = "/com/example/pidev/fxml/depense/depense-modern.fxml";
+    private static final String BUDGET_LIST_FXML    = "/com/example/pidev/fxml/Budget/budget.fxml";
+    private static final String DEPENSE_LIST_FXML   = "/com/example/pidev/fxml/Depense/depense-modern.fxml";
     private static final String DASHBOARD_FXML      = "/com/example/pidev/fxml/dashboard/dashboard.fxml";
 
     // Événements
@@ -99,10 +99,10 @@ public class MainController {
 
     // Ressources
     private static final String SALLE_LIST_FXML     = "/com/example/pidev/fxml/resource/salle.fxml";
-    private static final String SALLE_FORM_FXML     = "/com/example/pidev/fxml/resource/salle-form.fxml";
+    private static final String SALLE_FORM_FXML     = "/com/example/pidev/fxml/resource/form_salle.fxml";
     private static final String EQUIPEMENT_LIST_FXML = "/com/example/pidev/fxml/resource/equipement.fxml";
     private static final String RESERVATION_LIST_FXML = "/com/example/pidev/fxml/resource/reservation.fxml";
-    private static final String RESERVATION_FORM_FXML = "/com/example/pidev/fxml/resource/reservation-form.fxml";
+    private static final String RESERVATION_FORM_FXML = "/com/example/pidev/fxml/resource/reservation_form.fxml";
 
     // Questionnaires
     private static final String QUESTION_LIST_FXML  = "/com/example/pidev/fxml/questionnaire/list_question.fxml";
@@ -113,6 +113,14 @@ public class MainController {
 
     // Paramètres
     private static final String SETTINGS_FXML       = "/com/example/pidev/fxml/settings/settings.fxml";
+
+    // Temporary kill-switches for unstable modules (override with -D...=false)
+    private static final boolean DISABLE_TICKET_MODULE =
+            Boolean.parseBoolean(System.getProperty("app.disable.ticket.module", "false"));
+    private static final boolean DISABLE_RESERVATION_MODULE =
+            Boolean.parseBoolean(System.getProperty("app.disable.reservation.module", "false"));
+    private static final boolean DISABLE_QUESTIONNAIRE_MODULE =
+            Boolean.parseBoolean(System.getProperty("app.disable.questionnaire.module", "false"));
 
     // ===================== FXML FIELDS =====================
     // Center content
@@ -183,6 +191,16 @@ public class MainController {
     // Global search
     @FXML private TextField globalSearchField;
 
+    // Chat panel
+    @FXML private VBox chatPanel;
+    @FXML private Button chatFloatingButton;
+    @FXML private ScrollPane chatScrollPane;
+    @FXML private VBox chatBox;
+    @FXML private TextField inputField;
+    @FXML private Button sendButton;
+    @FXML private Button clearButton;
+    @FXML private Label statusIndicator;
+
     // ===================== OTHER FIELDS =====================
     private final Map<String, PageInfo> pageInfoMap = new HashMap<>();
     private Button activeButton;
@@ -225,6 +243,7 @@ public class MainController {
         configureSidebarButtons();
         hideAllButtons();
         configureSidebarByRole(); // ← sera remplacée par showAllButtons()
+        applyTemporaryModuleAvailability();
         configureDateTime();
         loadUserProfileInHeader();
         setupGlobalSearch();
@@ -348,7 +367,7 @@ public class MainController {
         boolean isVisible = submenu.isVisible();
         submenu.setVisible(!isVisible);
         submenu.setManaged(!isVisible);
-        if (arrow != null) arrow.setText(!isVisible ? "▼" : "▶");
+        if (arrow != null) arrow.setText(!isVisible ? "\u25BC" : "\u25B6");
         setActiveButton(active);
     }
 
@@ -356,27 +375,27 @@ public class MainController {
         if (!"events".equals(currentMenu) && eventsSubmenu != null) {
             eventsSubmenu.setVisible(false);
             eventsSubmenu.setManaged(false);
-            if (eventsArrow != null) eventsArrow.setText("▶");
+            if (eventsArrow != null) eventsArrow.setText("\u25B6");
         }
         if (!"users".equals(currentMenu) && usersSubmenu != null) {
             usersSubmenu.setVisible(false);
             usersSubmenu.setManaged(false);
-            if (usersArrow != null) usersArrow.setText("▶");
+            if (usersArrow != null) usersArrow.setText("\u25B6");
         }
         if (!"sponsors".equals(currentMenu) && sponsorsSubmenu != null) {
             sponsorsSubmenu.setVisible(false);
             sponsorsSubmenu.setManaged(false);
-            if (sponsorsArrow != null) sponsorsArrow.setText("▶");
+            if (sponsorsArrow != null) sponsorsArrow.setText("\u25B6");
         }
         if (!"resources".equals(currentMenu) && resourcesSubmenu != null) {
             resourcesSubmenu.setVisible(false);
             resourcesSubmenu.setManaged(false);
-            if (resourcesArrow != null) resourcesArrow.setText("▶");
+            if (resourcesArrow != null) resourcesArrow.setText("\u25B6");
         }
         if (!"questionnaires".equals(currentMenu) && questionnairesSubmenu != null) {
             questionnairesSubmenu.setVisible(false);
             questionnairesSubmenu.setManaged(false);
-            if (questionnairesArrow != null) questionnairesArrow.setText("▶");
+            if (questionnairesArrow != null) questionnairesArrow.setText("\u25B6");
         }
     }
 
@@ -384,27 +403,27 @@ public class MainController {
         if (eventsSubmenu != null) {
             eventsSubmenu.setVisible(false);
             eventsSubmenu.setManaged(false);
-            if (eventsArrow != null) eventsArrow.setText("▶");
+            if (eventsArrow != null) eventsArrow.setText("\u25B6");
         }
         if (usersSubmenu != null) {
             usersSubmenu.setVisible(false);
             usersSubmenu.setManaged(false);
-            if (usersArrow != null) usersArrow.setText("▶");
+            if (usersArrow != null) usersArrow.setText("\u25B6");
         }
         if (sponsorsSubmenu != null) {
             sponsorsSubmenu.setVisible(false);
             sponsorsSubmenu.setManaged(false);
-            if (sponsorsArrow != null) sponsorsArrow.setText("▶");
+            if (sponsorsArrow != null) sponsorsArrow.setText("\u25B6");
         }
         if (resourcesSubmenu != null) {
             resourcesSubmenu.setVisible(false);
             resourcesSubmenu.setManaged(false);
-            if (resourcesArrow != null) resourcesArrow.setText("▶");
+            if (resourcesArrow != null) resourcesArrow.setText("\u25B6");
         }
         if (questionnairesSubmenu != null) {
             questionnairesSubmenu.setVisible(false);
             questionnairesSubmenu.setManaged(false);
-            if (questionnairesArrow != null) questionnairesArrow.setText("▶");
+            if (questionnairesArrow != null) questionnairesArrow.setText("\u25B6");
         }
     }
 
@@ -412,7 +431,7 @@ public class MainController {
         if (sponsorsSubmenu != null) {
             sponsorsSubmenu.setVisible(true);
             sponsorsSubmenu.setManaged(true);
-            if (sponsorsArrow != null) sponsorsArrow.setText("▼");
+            if (sponsorsArrow != null) sponsorsArrow.setText("\u25BC");
         }
     }
 
@@ -641,19 +660,23 @@ public class MainController {
 
         if (role.contains("sponsor")) {
             showOnlySponsorButtons();
-            System.out.println("🔐 Sidebar sponsor activée");
+            System.out.println("Sidebar sponsor activee");
             return;
         }
 
         if (role.contains("participant")) {
             showOnlyParticipantButtons();
-            System.out.println("🔐 Sidebar participant activée");
+            System.out.println("Sidebar participant activee");
             return;
         }
 
-        // Admin / organisateur / autres rôles internes
+        // Admin / organisateur / autres roles internes
         showAllButtons();
-        System.out.println("🔧 Sidebar complète activée");
+        if (role.contains("admin")) {
+            openSponsorsSubmenu();
+            hideNode(sponsorPortalBtn);
+        }
+        System.out.println("Sidebar complete activee");
     }
 
     private void showOnlyParticipantButtons() {
@@ -695,10 +718,42 @@ public class MainController {
         Node[] main = {
                 dashboardBtn, eventsToggleBtn, usersToggleBtn, sponsorsBtn,
                 resourcesToggleBtn, questionnairesToggleBtn,
-                settingsBtn, budgetBtn, sponsorPortalBtn
+                budgetBtn
         };
         for (Node n : main) showNode(n);
+        hideNode(settingsBtn);
         collapseAllSubmenus();
+    }
+
+    private void applyTemporaryModuleAvailability() {
+        if (DISABLE_TICKET_MODULE) {
+            hideNode(ticketsBtn);
+        }
+
+        if (DISABLE_RESERVATION_MODULE) {
+            hideNode(reservationsBtn);
+        }
+
+        if (DISABLE_QUESTIONNAIRE_MODULE) {
+            hideNode(questionnairesToggleBtn);
+            hideNode(questionsBtn);
+            hideNode(reponsesBtn);
+            hideNode(participantQuizBtn);
+            hideNode(questionnairesSubmenu);
+        }
+    }
+
+    private boolean isQuestionnaireEntry(String selected) {
+        return selected.contains("Questionnaires")
+                || selected.contains("Questions")
+                || selected.contains("Résultats")
+                || selected.contains("Historique")
+                || selected.contains("Passer le Quiz");
+    }
+
+    private void showUnavailableModuleMessage(String moduleName) {
+        showSimpleAlert("Module temporairement indisponible",
+                moduleName + " est desactive pour le moment.");
     }
 
     private void hideNode(Node node) {
@@ -772,7 +827,9 @@ public class MainController {
             results.add("📅 Événements");
             results.add("   📋 Liste des événements");
             results.add("   🏷️ Catégories");
-            results.add("   🎫 Billets");
+            if (!DISABLE_TICKET_MODULE) {
+                results.add("   🎫 Billets");
+            }
         }
         if ("participants".contains(lowerQuery) || "users".contains(lowerQuery)) {
             results.add("👥 Participants");
@@ -789,9 +846,11 @@ public class MainController {
             results.add("📦 Ressources");
             results.add("   💻 Équipements");
             results.add("   🏢 Salles");
-            results.add("   📅 Réservations");
+            if (!DISABLE_RESERVATION_MODULE) {
+                results.add("   📅 Réservations");
+            }
         }
-        if ("questionnaires".contains(lowerQuery)) {
+        if ("questionnaires".contains(lowerQuery) && !DISABLE_QUESTIONNAIRE_MODULE) {
             results.add("📝 Questionnaires");
             results.add("   ❓ Questions");
             results.add("   📊 Résultats");
@@ -851,6 +910,20 @@ public class MainController {
     private void navigateFromSearch(String selected) {
         String role = UserSession.getInstance().getRole();
         boolean isSponsor = role != null && role.trim().toLowerCase().contains("sponsor");
+
+        if (DISABLE_TICKET_MODULE && selected.contains("Billets")) {
+            showUnavailableModuleMessage("Gestion des billets");
+            return;
+        }
+        if (DISABLE_RESERVATION_MODULE && selected.contains("Réservations")) {
+            showUnavailableModuleMessage("Gestion des réservations");
+            return;
+        }
+        if (DISABLE_QUESTIONNAIRE_MODULE && isQuestionnaireEntry(selected)) {
+            showUnavailableModuleMessage("Questionnaires");
+            return;
+        }
+
         if (isSponsor) {
             String lowerSelected = selected == null ? "" : selected.toLowerCase();
             boolean allowedForSponsor =
@@ -946,7 +1019,7 @@ public class MainController {
     public <T> void loadIntoCenter(String fxmlPath, Consumer<T> controllerConsumer) {
         try {
             if (pageContentContainer == null) {
-                throw new IllegalStateException("pageContentContainer est null. Vérifiez fx:id dans MainLayout.fxml");
+                throw new IllegalStateException("pageContentContainer est null. Vérifiez fx:id dans main_layout.fxml");
             }
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
@@ -1054,6 +1127,8 @@ public class MainController {
             if (pageTitle != null) pageTitle.setText(pageInfo.title);
             if (pageSubtitle != null) pageSubtitle.setText(pageInfo.subtitle);
         }
+        // Always reset KPI header when changing page; pages that need KPIs will re-enable them.
+        hideKPIs();
     }
 
     // ===================== CONTENT SETTERS =====================
@@ -1187,6 +1262,10 @@ public class MainController {
     }
 
     public void loadReservationsView() {
+        if (DISABLE_RESERVATION_MODULE) {
+            showUnavailableModuleMessage("Gestion des réservations");
+            return;
+        }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(RESERVATION_LIST_FXML));
             Parent root = loader.load();
@@ -1374,6 +1453,10 @@ public class MainController {
     }
 
     public void showTicketsList() {
+        if (DISABLE_TICKET_MODULE) {
+            showUnavailableModuleMessage("Gestion des billets");
+            return;
+        }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(TICKET_LIST_FXML));
             Parent page = loader.load();
@@ -1435,6 +1518,10 @@ public class MainController {
     }
 
     private void loadQuestionnairePage(String fxmlPath, String title, String subtitle) {
+        if (DISABLE_QUESTIONNAIRE_MODULE) {
+            showUnavailableModuleMessage("Questionnaires");
+            return;
+        }
         try {
             URL fileUrl = getClass().getResource(fxmlPath);
             if (fileUrl == null) {
@@ -1544,10 +1631,15 @@ public class MainController {
     }
 
     public void refreshSidebarForRole() {
-        System.out.println("🔄 Rafraîchissement de la sidebar");
+        System.out.println("Rafraichissement de la sidebar");
         configureSidebarByRole();
-        collapseAllSubmenus();
+        applyTemporaryModuleAvailability();
+        String role = UserSession.getInstance().getRole();
+        if (role == null || !role.trim().toLowerCase().contains("admin")) {
+            collapseAllSubmenus();
+        }
     }
+
 
     // ===================== PAGE DE SECOURS =====================
     private void showEmptyPage(String title, String subtitle) {
@@ -1782,6 +1874,109 @@ public class MainController {
             System.out.println("🔄 Rafraîchissement KPI Billets...");
             loadTicketData();
         }
+    }
+
+    // ===================== CHAT PANEL =====================
+    @FXML
+    private void toggleChatPanel() {
+        if (chatPanel == null) {
+            return;
+        }
+
+        boolean open = !chatPanel.isVisible();
+        chatPanel.setVisible(open);
+        chatPanel.setManaged(open);
+
+        if (chatFloatingButton != null) {
+            chatFloatingButton.setVisible(!open);
+            chatFloatingButton.setManaged(!open);
+        }
+
+        if (open && inputField != null) {
+            Platform.runLater(inputField::requestFocus);
+        }
+    }
+
+    @FXML
+    private void handleSuggestion(javafx.event.ActionEvent event) {
+        if (!(event.getSource() instanceof Button source)) {
+            return;
+        }
+
+        String message = source.getUserData() != null
+                ? source.getUserData().toString()
+                : source.getText();
+
+        if (inputField != null) {
+            inputField.setText(message);
+        }
+        handleSendMessage();
+    }
+
+    @FXML
+    private void handleSendMessage() {
+        if (inputField == null) {
+            return;
+        }
+
+        String message = inputField.getText();
+        if (message == null || message.trim().isEmpty()) {
+            return;
+        }
+
+        String cleanMessage = message.trim();
+        addChatBubble("Vous", cleanMessage, true);
+        inputField.clear();
+
+        String response = buildChatResponse(cleanMessage.toLowerCase());
+        addChatBubble("Assistant IA", response, false);
+
+        if (chatScrollPane != null) {
+            Platform.runLater(() -> chatScrollPane.setVvalue(1.0));
+        }
+    }
+
+    @FXML
+    private void handleClearChat() {
+        if (chatBox == null) {
+            return;
+        }
+
+        chatBox.getChildren().clear();
+        addChatBubble("Assistant IA", "Historique efface. Je suis pret a vous aider.", false);
+    }
+
+    private void addChatBubble(String author, String message, boolean isUser) {
+        if (chatBox == null) {
+            return;
+        }
+
+        Label bubble = new Label(author + " : " + message);
+        bubble.setWrapText(true);
+        bubble.setMaxWidth(320);
+        bubble.setStyle(isUser
+                ? "-fx-background-color: #1565C0; -fx-text-fill: white; -fx-background-radius: 16; -fx-padding: 10 14;"
+                : "-fx-background-color: #E3F2FD; -fx-text-fill: #1e293b; -fx-background-radius: 16; -fx-padding: 10 14;");
+
+        HBox row = new HBox(bubble);
+        row.setAlignment(isUser ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        chatBox.getChildren().add(row);
+    }
+
+    private String buildChatResponse(String lowerMessage) {
+        if (lowerMessage.contains("stat")) {
+            return "Consultez le dashboard pour les indicateurs globaux et les KPI.";
+        }
+        if (lowerMessage.contains("admin")) {
+            return "Ouvrez Participants > Roles pour consulter les administrateurs.";
+        }
+        if (lowerMessage.contains("nouveau") || lowerMessage.contains("mois")) {
+            return "Ouvrez Participants > Inscriptions pour voir les ajouts recents.";
+        }
+        if (lowerMessage.contains("event") || lowerMessage.contains("evenement")) {
+            return "Ouvrez Evenements pour gerer la liste, categories et billets.";
+        }
+        return "Commande comprise. Utilisez le menu de gauche pour acceder a la section souhaitee.";
     }
 
     // ===================== GETTERS =====================
