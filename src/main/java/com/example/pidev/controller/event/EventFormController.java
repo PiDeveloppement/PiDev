@@ -44,7 +44,7 @@ import javafx.scene.SnapshotParameters;
  * Controller pour le formulaire d'ajout/modification d'événement
  *
  * @author Ons Abdesslem
- * @version 4.0 - Gouvernorat → Faculté directe (sans Ville)
+ * @version 4.1 - Ajout blocage dates passées sur DatePicker
  */
 public class EventFormController {
 
@@ -59,10 +59,8 @@ public class EventFormController {
     @FXML private Spinner<Integer> endHourSpinner;
     @FXML private Spinner<Integer> endMinuteSpinner;
     @FXML private ComboBox<String> gouvernoratCombo;
-    // ✅ villeCombo supprimé du FXML — on garde le champ Java pour compatibilité setEvent()
     @FXML private ComboBox<String> locationCombo;
     @FXML private TextField capacityField;
-    @FXML private TextField imageUrlField;
     @FXML private ComboBox<String> categoryCombo;
     @FXML private CheckBox freeCheckbox;
     @FXML private TextField priceField;
@@ -110,7 +108,6 @@ public class EventFormController {
 
     // ==================== DONNÉES TUNISIENNES ====================
     private Map<String, List<String>> villesParGouvernorat;
-    // Map : ville → liste facultés
     private Map<String, List<String>> facultesParVille;
 
     // ==================== VALIDATION CONSTANTS ====================
@@ -135,7 +132,7 @@ public class EventFormController {
 
     @FXML
     public void initialize() {
-        System.out.println("✅ EventFormController v4.0 initialisé");
+        System.out.println("✅ EventFormController v4.1 initialisé");
 
         eventService = new EventService();
         categoryService = new EventCategoryService();
@@ -148,6 +145,7 @@ public class EventFormController {
         setupLocationListeners();
         setDefaultValues();
         setupWeatherListeners();
+        configurerCalendrier(); // ✅ AJOUTÉ : blocage visuel des dates passées
 
         saveBtn.setDisable(true);
 
@@ -158,6 +156,22 @@ public class EventFormController {
         );
         clock.setCycleCount(Timeline.INDEFINITE);
         clock.play();
+    }
+
+    // ✅ AJOUTÉ : Méthode qui grise et désactive les dates passées dans les deux DatePickers
+    private void configurerCalendrier() {
+        javafx.util.Callback<DatePicker, DateCell> dayCellFactory = dp -> new DateCell() {
+            @Override
+            public void updateItem(LocalDate item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item.isBefore(LocalDate.now())) {
+                    setDisable(true);
+                    setStyle("-fx-background-color: #eeeeee;");
+                }
+            }
+        };
+        startDatePicker.setDayCellFactory(dayCellFactory);
+        endDatePicker.setDayCellFactory(dayCellFactory);
     }
 
     private void updateDateTime() {
@@ -196,13 +210,11 @@ public class EventFormController {
                 endMinuteSpinner.getValueFactory().setValue(event.getEndDate().getMinute());
             }
 
-            // ✅ Gouvernorat → charge les facultés directement
             if (event.getGouvernorat() != null) {
                 gouvernoratCombo.setValue(event.getGouvernorat());
                 loadFacultesForGouvernorat(event.getGouvernorat());
             }
 
-            // ✅ Restaurer le lieu sauvegardé
             if (event.getLocation() != null) {
                 if (locationCombo.getItems().contains(event.getLocation())) {
                     locationCombo.setValue(event.getLocation());
@@ -212,7 +224,6 @@ public class EventFormController {
             }
 
             capacityField.setText(String.valueOf(event.getCapacity()));
-            imageUrlField.setText(event.getImageUrl());
 
             EventCategory cat = findCategoryById(event.getCategoryId());
             if (cat != null) categoryCombo.setValue(cat.getName());
@@ -368,7 +379,6 @@ public class EventFormController {
     // ==================== MÉTÉO ====================
 
     private void setupWeatherListeners() {
-        // ✅ Météo basée sur le gouvernorat maintenant (plus de villeCombo)
         gouvernoratCombo.valueProperty().addListener((obs, o, n) -> loadWeatherPreview());
         startDatePicker.valueProperty().addListener((obs, o, n) -> loadWeatherPreview());
     }
@@ -448,15 +458,25 @@ public class EventFormController {
         }
 
         if (!startDatePristine || !endDatePristine) {
-            if (startDatePicker.getValue() == null) { dateError.setText("La date de debut est requise"); dateError.setVisible(true); applyErrorStyle(startDatePicker); isValid = false; }
-            else if (endDatePicker.getValue() == null) { dateError.setText("La date de fin est requise"); dateError.setVisible(true); applyErrorStyle(endDatePicker); isValid = false; }
-            else {
+            if (startDatePicker.getValue() == null) {
+                dateError.setText("La date de debut est requise"); dateError.setVisible(true); applyErrorStyle(startDatePicker); isValid = false;
+            } else if (endDatePicker.getValue() == null) {
+                dateError.setText("La date de fin est requise"); dateError.setVisible(true); applyErrorStyle(endDatePicker); isValid = false;
+            } else {
                 LocalDateTime now = LocalDateTime.now();
                 LocalDateTime startDT = LocalDateTime.of(startDatePicker.getValue(), LocalTime.of(startHourSpinner.getValue(), startMinuteSpinner.getValue()));
                 LocalDateTime endDT = LocalDateTime.of(endDatePicker.getValue(), LocalTime.of(endHourSpinner.getValue(), endMinuteSpinner.getValue()));
-                if (currentEvent == null && startDT.isBefore(now)) { dateError.setText("La date ne peut pas etre dans le passe"); dateError.setVisible(true); applyErrorStyle(startDatePicker); isValid = false; }
-                else if (endDT.isBefore(startDT) || endDT.isEqual(startDT)) { dateError.setText("La fin doit etre apres le debut"); dateError.setVisible(true); applyErrorStyle(endDatePicker); isValid = false; }
-                else { applySuccessStyle(startDatePicker); applySuccessStyle(endDatePicker); }
+
+                // ✅ Déjà présent : blocage logique date passée (filet de sécurité)
+                if (currentEvent == null && startDT.isBefore(now)) {
+                    dateError.setText("La date ne peut pas etre dans le passe");
+                    dateError.setVisible(true); applyErrorStyle(startDatePicker); isValid = false;
+                } else if (endDT.isBefore(startDT) || endDT.isEqual(startDT)) {
+                    dateError.setText("La fin doit etre apres le debut");
+                    dateError.setVisible(true); applyErrorStyle(endDatePicker); isValid = false;
+                } else {
+                    applySuccessStyle(startDatePicker); applySuccessStyle(endDatePicker);
+                }
             }
         }
 
@@ -557,8 +577,6 @@ public class EventFormController {
                 java.net.URL urlObj = new java.net.URL("https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell");
                 conn = (java.net.HttpURLConnection) urlObj.openConnection();
                 conn.setRequestMethod("POST");
-                String hfToken = System.getenv("HF_TOKEN");
-                conn.setRequestProperty("Authorization", "Bearer " + System.getenv("HF_TOKEN"));
 
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setRequestProperty("Accept", "image/png");
@@ -566,7 +584,7 @@ public class EventFormController {
                 conn.setConnectTimeout(60000); conn.setReadTimeout(60000);
 
                 String safePrompt = prompt.replace("\\", "\\\\").replace("\"", "\\\"");
-                String body = String.format("{\"inputs\":\"%s\",\"parameters\":{\"num_inference_steps\":4}}", safePrompt);
+                String body = String.format("{\"inputs\": \"%s\", \"parameters\": {\"num_inference_steps\": 4}}", safePrompt);
                 try (java.io.OutputStream os = conn.getOutputStream()) { os.write(body.getBytes(StandardCharsets.UTF_8)); os.flush(); }
 
                 int responseCode = conn.getResponseCode();
@@ -651,18 +669,33 @@ public class EventFormController {
     private String saveAfficheToFile() {
         try {
             if (affichePreview == null || affichePreview.getChildren().isEmpty()) return null;
-            File postersDir = new File("src/main/resources/assets/posters");
+
+            // Sauvegarder dans le dossier assets/posters (qui sera au runtime dans target/classes)
+            File postersDir = new File("target/classes/assets/posters");
+
+            // Si target/classes n'existe pas, utiliser src/main/resources
+            if (!postersDir.exists()) {
+                postersDir = new File("src/main/resources/assets/posters");
+            }
+
             if (!postersDir.exists()) postersDir.mkdirs();
+
             String fileName = "poster_" + System.currentTimeMillis() + ".png";
             File outputFile = new File(postersDir, fileName);
+
             WritableImage snapshot = affichePreview.snapshot(new SnapshotParameters(), null);
             if (snapshot == null) return null;
+
             int w = (int) snapshot.getWidth(), h = (int) snapshot.getHeight();
             BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
             for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) img.setRGB(x, y, snapshot.getPixelReader().getArgb(x, y));
+
             if (!ImageIO.write(img, "png", outputFile)) return null;
+
+            // Retourner le chemin relatif pour le stockage en DB
             String path = "assets/posters/" + fileName;
-            System.out.println("✅ Affiche sauvegardée: " + path);
+            System.out.println("✅ Affiche sauvegardée à: " + outputFile.getAbsolutePath());
+            System.out.println("📊 Chemin stocké en DB: " + path);
             return path;
         } catch (IOException e) {
             System.err.println("❌ Erreur sauvegarde affiche: " + e.getMessage());
@@ -684,8 +717,6 @@ public class EventFormController {
         String title = titleField.getText().trim();
         String description = descriptionArea.getText().trim();
         String gouvernorat = gouvernoratCombo.getValue();
-
-        // ✅ ville = gouvernorat (on garde la compatibilité avec le modèle)
         String ville = gouvernorat;
 
         String location = locationCombo.getValue();
@@ -695,7 +726,7 @@ public class EventFormController {
         }
 
         int capacity = Integer.parseInt(capacityField.getText());
-        String imageUrl = imageUrlField.getText().trim();
+        String imageUrl = ""; // Initialiser à vide
 
         String afficheUrl = saveAfficheToFile();
         if (afficheUrl != null) { imageUrl = afficheUrl; System.out.println("✅ Affiche utilisée comme image"); }
@@ -751,7 +782,6 @@ public class EventFormController {
         villesParGouvernorat = new LinkedHashMap<>();
         facultesParVille = new LinkedHashMap<>();
 
-        // Villes par gouvernorat (gardées pour compatibilité setEvent)
         villesParGouvernorat.put("Tunis", Arrays.asList("Tunis", "La Marsa", "Carthage", "Le Bardo"));
         villesParGouvernorat.put("Ariana", Arrays.asList("Ariana", "Ettadhamen", "Raoued"));
         villesParGouvernorat.put("Ben Arous", Arrays.asList("Ben Arous", "Hammam Lif", "Rades"));
@@ -777,7 +807,6 @@ public class EventFormController {
         villesParGouvernorat.put("Medenine", Arrays.asList("Medenine", "Zarzis", "Djerba"));
         villesParGouvernorat.put("Tataouine", Arrays.asList("Tataouine", "Ghomrassen", "Remada"));
 
-        // ✅ Facultés par ville (pour lookup interne)
         facultesParVille.put("Tunis", Arrays.asList("FST Tunis", "FSEG Tunis", "FD Tunis", "FLSH Tunis", "ENIT", "ESSEC", "IHEC", "ISG Tunis"));
         facultesParVille.put("Ariana", Arrays.asList("ESPRIT", "ESB", "ENSI", "SUP'COM", "ISI", "SESAME University"));
         facultesParVille.put("Manouba", Arrays.asList("ISAMM", "ISBST", "FSHS Manouba", "ISBAM", "ISCAE Manouba"));
@@ -795,7 +824,6 @@ public class EventFormController {
 
     private void loadGouvernorats() {
         gouvernoratCombo.getItems().clear();
-        // ✅ Afficher seulement les gouvernorats qui ont au moins une ville avec des facultés
         for (String gouvernorat : villesParGouvernorat.keySet()) {
             List<String> villes = villesParGouvernorat.get(gouvernorat);
             boolean hasFaculte = villes.stream().anyMatch(v -> facultesParVille.containsKey(v));
@@ -813,10 +841,6 @@ public class EventFormController {
         });
     }
 
-    /**
-     * ✅ NOUVELLE MÉTHODE : charge toutes les facultés du gouvernorat
-     * (toutes ses villes confondues) directement dans locationCombo
-     */
     private void loadFacultesForGouvernorat(String gouvernorat) {
         locationCombo.getItems().clear();
         List<String> villes = villesParGouvernorat.get(gouvernorat);

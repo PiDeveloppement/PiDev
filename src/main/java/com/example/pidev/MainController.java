@@ -757,7 +757,11 @@ public class MainController {
 
     public void showEventForm(Event event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/pidev/fxml/event/event-form.fxml"));
+            // ✅ AJOUTER CETTE LIGNE POUR VÉRIFIER
+            java.net.URL fxmlUrl = getClass().getResource("/com/example/pidev/fxml/event/event-form.fxml");
+            System.out.println("🔍 Chargement du FXML depuis: " + fxmlUrl);
+
+            FXMLLoader loader = new FXMLLoader(fxmlUrl);
             Parent page = loader.load();
             Object controller = loader.getController();
             if (controller instanceof EventFormController) {
