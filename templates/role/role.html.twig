@@ -1,0 +1,171 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des rôles - EventFlow{% endblock %}
+
+{% block admin_content %}
+<div class="container mx-auto px-6 py-6">
+
+    <!-- Barre de recherche et bouton d'ajout -->
+    <div class="bg-gray-100 p-4 rounded-lg mb-6 flex items-center gap-4 border-b border-gray-200">
+        <input type="text" 
+               id="searchField"
+               placeholder="🔍 Rechercher un rôle..."
+               class="w-72 px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+
+        <div class="flex-1"></div>
+
+        <a href="{{ path('app_role_new') }}" 
+           class="bg-green-500 text-white font-bold px-6 py-2.5 rounded-lg hover:bg-green-600 transition shadow-sm">
+            ➕ Nouveau rôle
+        </a>
+
+        <span class="text-gray-500 text-sm ml-4">{{ totalRoles }} rôles</span>
+    </div>
+
+    <!-- Tableau des rôles -->
+    <div class="bg-white rounded-xl p-4 shadow-sm mb-6">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200">
+                    <th class="py-3 pl-6 text-left font-semibold text-gray-600">📝 Nom du Rôle</th>
+                    <th class="py-3 text-center font-semibold text-gray-600 w-32">⚡ Actions</th>
+                </tr>
+            </thead>
+            <tbody id="roleTableBody">
+                {% for role in roles %}
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                    <td class="py-4 pl-6">{{ role.roleName }}</td>
+                    <td class="py-4 text-center">
+                        <div class="flex justify-center space-x-3">
+                            <a href="{{ path('app_role_edit', {'id': role.id}) }}" 
+                               class="bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition shadow-sm">
+                                📝
+                            </a>
+                            <form method="post" 
+                                  action="{{ path('app_role_delete', {'id': role.id}) }}" 
+                                  onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce rôle ?');"
+                                  class="inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ role.id) }}">
+                                <button type="submit" 
+                                        class="bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition shadow-sm">
+                                    ✂
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2" class="py-8 text-center text-gray-500">Aucun rôle trouvé</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center space-x-4">
+        <div class="flex space-x-2">
+            <button onclick="goToPage({{ currentPage - 1 }})" 
+                    {{ currentPage == 1 ? 'disabled' : '' }}
+                    class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                «
+            </button>
+
+            <div class="flex space-x-1">
+                <button onclick="goToPage(1)" 
+                        class="w-10 h-10 rounded-lg transition {{ currentPage == 1 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' }}">
+                    1
+                </button>
+                {% if totalPages >= 2 %}
+                <button onclick="goToPage(2)" 
+                        class="w-10 h-10 rounded-lg transition {{ currentPage == 2 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' }}">
+                    2
+                </button>
+                {% endif %}
+                {% if totalPages >= 3 %}
+                <button onclick="goToPage(3)" 
+                        class="w-10 h-10 rounded-lg transition {{ currentPage == 3 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' }}">
+                    3
+                </button>
+                {% endif %}
+                {% if totalPages > 3 %}
+                <button onclick="goToPage({{ totalPages }})" 
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    Dernière
+                </button>
+                {% endif %}
+            </div>
+
+            <button onclick="goToPage({{ currentPage + 1 }})" 
+                    {{ currentPage == totalPages ? 'disabled' : '' }}
+                    class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                »
+            </button>
+        </div>
+
+        <span class="text-sm text-gray-500">Page {{ currentPage }} sur {{ totalPages }}</span>
+    </div>
+</div>
+
+<script>
+let currentPage = {{ currentPage }};
+let totalPages = {{ totalPages }};
+let searchTimeout = null;
+
+document.getElementById('searchField').addEventListener('input', function(e) {
+    clearTimeout(searchTimeout);
+    const query = e.target.value;
+    
+    searchTimeout = setTimeout(() => {
+        performSearch(query);
+    }, 300);
+});
+
+function performSearch(query) {
+    fetch('{{ path('app_role_search') }}?q=' + encodeURIComponent(query))
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('roleTableBody');
+            tbody.innerHTML = '';
+            
+            if (data.roles.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" class="py-8 text-center text-gray-500">Aucun rôle trouvé</td></tr>';
+                return;
+            }
+            
+            data.roles.forEach(role => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-100 hover:bg-gray-50 transition';
+                row.innerHTML = `
+                    <td class="py-4 pl-6">${role.roleName}</td>
+                    <td class="py-4 text-center">
+                        <div class="flex justify-center space-x-3">
+                            <a href="/admin/roles/${role.id}/edit" 
+                               class="bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition shadow-sm">
+                                📝
+                            </a>
+                            <form method="post" 
+                                  action="/admin/roles/${role.id}" 
+                                  onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce rôle ?');"
+                                  class="inline">
+                                <input type="hidden" name="_token" value="${role.csrfToken}">
+                                <button type="submit" 
+                                        class="bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition shadow-sm">
+                                    ✂
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        });
+}
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages) return;
+    window.location.href = '{{ path('app_role_index') }}?page=' + page;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,655 @@
+/* ============================================
+   EVENTFLOW - DESIGN SYSTEM COMPLET
+   Version fusionnée pour Symfony/Twig
+   ============================================ */
+
+/* =========================
+   0) GLOBAL
+   ========================= */
+* {
+    font-family: "Segoe UI", "Helvetica", "Arial", sans-serif;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+/* =========================
+   1) TYPO
+   ========================= */
+.label-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #0f172a;
+}
+.label-subtitle {
+    font-size: 16px;
+    font-weight: bold;
+    color: #1e293b;
+}
+.label-section {
+    font-size: 14px;
+    font-weight: bold;
+    color: #334155;
+}
+.label-description {
+    font-size: 13px;
+    color: #64748b;
+}
+.header-title {
+    font-size: 32px;
+    font-weight: bold;
+    color: #1e293b;
+}
+.header-subtitle {
+    font-size: 15px;
+    color: #64748b;
+}
+.table-header-label {
+    font-size: 22px;
+    font-weight: bold;
+    color: #334155;
+}
+.status-label {
+    color: #64748b;
+    font-size: 14px;
+}
+
+/* =========================
+   2) CARDS
+   ========================= */
+.card {
+    background-color: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: box-shadow 0.3s ease;
+}
+.card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+}
+.card-elevated {
+    background-color: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* Stat cards */
+.stat-card {
+    border-radius: 14px;
+    padding: 18px 24px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    border: 1px solid;
+}
+.stat-card-blue {
+    background-color: #eff6ff;
+    border-color: #93c5fd;
+}
+.stat-card-emerald {
+    background-color: #f0fdf4;
+    border-color: #86efac;
+}
+.stat-card-purple {
+    background-color: #faf5ff;
+    border-color: #d8b4fe;
+}
+.stat-card-rose {
+    background-color: #ffe4e6;
+    border-color: #f472b6;
+}
+.stat-card-orange {
+    background-color: #fff7ed;
+    border-color: #fdba74;
+}
+
+/* =========================
+   3) BUTTONS (generic)
+   ========================= */
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+    font-weight: bold;
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(30,58,138,0.25);
+    transition: all 0.2s ease;
+}
+.btn-primary:hover {
+    background-color: #2563eb;
+    box-shadow: 0 4px 10px rgba(30,58,138,0.35);
+}
+.btn-primary:active {
+    background-color: #0c4a6e;
+    box-shadow: 0 2px 4px rgba(30,58,138,0.15);
+}
+
+.btn-secondary {
+    background-color: #f1f5f9;
+    color: #475569;
+    font-weight: bold;
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-secondary:hover {
+    background-color: #e2e8f0;
+    border-color: #94a3b8;
+}
+
+.btn-success {
+    background-color: #059669;
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(5,150,105,0.25);
+    transition: all 0.2s ease;
+}
+.btn-success:hover {
+    background-color: #047857;
+    box-shadow: 0 4px 10px rgba(5,150,105,0.35);
+}
+
+.btn-danger {
+    background-color: #e11d48;
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(225,29,72,0.25);
+    transition: all 0.2s ease;
+}
+.btn-danger:hover {
+    background-color: #be123c;
+    box-shadow: 0 4px 10px rgba(225,29,72,0.35);
+}
+
+/* =========================
+   4) INPUTS
+   ========================= */
+.text-field, .text-area, .combo-box {
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #0f172a;
+    width: 100%;
+}
+.text-field:focus, .text-area:focus, .combo-box:focus {
+    border-color: #3b82f6;
+    border-width: 2px;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+}
+
+/* sponsor search specific */
+.search-field {
+    background-color: white;
+    border-radius: 10px;
+    padding: 12px 18px;
+    border: 1px solid #cbd5e1;
+    font-size: 14px;
+    width: 100%;
+}
+.search-field:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+}
+
+/* =========================
+   5) TABLE (generic + sponsor)
+   ========================= */
+.table-container {
+    background-color: white;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+/* Generic table */
+.table-view {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+}
+.table-view th {
+    background-color: #f8fafc;
+    padding: 12px 15px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #334155;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+.table-view td {
+    padding: 12px 15px;
+    font-size: 13px;
+    color: #0f172a;
+    border-bottom: 1px solid #f1f5f9;
+}
+.table-view tbody tr:hover {
+    background-color: #eff6ff;
+}
+.table-view tbody tr.selected {
+    background-color: #dbeafe;
+    font-weight: bold;
+    color: #1e40af;
+}
+.table-view tbody tr:nth-child(odd) {
+    background-color: #f8fafc;
+}
+
+/* Sponsor table */
+.sponsor-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: transparent;
+}
+.sponsor-table th {
+    background-color: #f8fafc;
+    padding: 12px 15px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #334155;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+.sponsor-table td {
+    padding: 12px 15px;
+    font-size: 14px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.sponsor-table tbody tr:hover {
+    background-color: #e2e8f0;
+}
+.sponsor-table tbody tr.selected {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+.sponsor-table tbody tr:nth-child(odd) {
+    background-color: #f8fafc;
+}
+
+/* =========================
+   6) ACTION BUTTONS (table)
+   ========================= */
+.action-button-update {
+    background-color: #3b82f6;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    min-width: 40px;
+    min-height: 30px;
+    transition: all 0.2s ease;
+}
+.action-button-update:hover {
+    background-color: #2563eb;
+    box-shadow: 0 2px 5px rgba(59,130,246,0.3);
+}
+
+.action-button-delete {
+    background-color: #ef4444;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    min-width: 40px;
+    min-height: 30px;
+    transition: all 0.2s ease;
+}
+.action-button-delete:hover {
+    background-color: #dc2626;
+    box-shadow: 0 2px 5px rgba(239,68,68,0.3);
+}
+
+/* =========================
+   7) PAGINATION
+   ========================= */
+.pagination-button {
+    background-color: white;
+    color: #475569;
+    font-size: 14px;
+    border-radius: 10px;
+    padding: 10px 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.pagination-button:hover {
+    background-color: #f8fafc;
+}
+
+.pagination-number {
+    min-width: 42px;
+    min-height: 42px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.pagination-active {
+    background-color: #2196F3;
+    color: white;
+    font-weight: bold;
+    border: 1px solid #2196F3;
+    box-shadow: 0 4px 6px rgba(33,150,243,0.2);
+}
+
+.pagination-inactive {
+    background-color: white;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* =========================
+   8) NEW SPONSOR BUTTON
+   ========================= */
+.new-sponsor-button {
+    background: linear-gradient(to right, #10b981, #059669);
+    color: white;
+    font-weight: bold;
+    font-size: 15px;
+    border-radius: 10px;
+    padding: 12px 26px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(16,185,129,0.3);
+    transition: all 0.2s ease;
+}
+.new-sponsor-button:hover {
+    background: linear-gradient(to right, #0da271, #047857);
+    box-shadow: 0 6px 10px rgba(16,185,129,0.4);
+}
+
+/* =========================
+   9) SCROLLBAR (global)
+   ========================= */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* =========================
+   10) ALERTS
+   ========================= */
+.alert-success {
+    background-color: #f0fdf4;
+    color: #166534;
+    border: 1px solid #86efac;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-weight: bold;
+}
+.alert-error {
+    background-color: #ffe4e6;
+    color: #831843;
+    border: 1px solid #f472b6;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-weight: bold;
+}
+.alert-warning {
+    background-color: #fef3c7;
+    color: #78350f;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-weight: bold;
+}
+.alert-info {
+    background-color: #eff6ff;
+    color: #0c4a6e;
+    border: 1px solid #93c5fd;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-weight: bold;
+}
+
+/* =========================================================
+   11) SIDEBAR + TOPBAR
+   ========================================================= */
+
+/* Sidebar */
+.sidebar-root {
+    background: linear-gradient(to bottom, #0D47A1, #1565C0);
+    min-width: 220px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-logo {
+    padding: 22px 14px 18px 14px;
+    background-color: rgba(0,0,0,0.08);
+    text-align: center;
+}
+
+.sidebar-appname {
+    color: white;
+    font-size: 18px;
+    font-weight: 800;
+    margin: 5px 0 0 0;
+}
+
+.sidebar-appsubtitle {
+    color: rgba(255,255,255,0.80);
+    font-size: 12px;
+    margin: 2px 0 0 0;
+}
+
+.sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-menu {
+    padding: 18px 14px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Boutons sidebar */
+.main-menu-button {
+    background-color: rgba(255,255,255,0.16);
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 12px 16px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    transition: background-color 0.2s ease;
+}
+.main-menu-button:hover {
+    background-color: rgba(255,255,255,0.22);
+}
+.main-menu-button.active {
+    background-color: rgba(255,255,255,0.30);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+}
+
+.submenu-button {
+    background-color: rgba(255,255,255,0.12);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 10px 16px 10px 22px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    transition: background-color 0.2s ease;
+}
+.submenu-button:hover {
+    background-color: rgba(255,255,255,0.18);
+}
+
+/* Logout */
+.logout-button {
+    background-color: rgba(255,255,255,0.18);
+    color: #ffebee;
+    font-size: 14px;
+    font-weight: 800;
+    border-radius: 10px;
+    padding: 12px 16px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    margin: 20px 14px;
+    transition: background-color 0.2s ease;
+}
+.logout-button:hover {
+    background-color: rgba(255,255,255,0.24);
+}
+
+/* Topbar */
+.topbar {
+    background-color: #1565C0;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.topbar-search {
+    width: 360px;
+    border-radius: 18px;
+    padding: 10px 14px;
+    border: none;
+    background-color: rgba(255,255,255,0.2);
+    color: white;
+}
+.topbar-search::placeholder {
+    color: rgba(255,255,255,0.5);
+}
+.topbar-search:focus {
+    outline: none;
+    background-color: rgba(255,255,255,0.3);
+}
+
+.topbar-date {
+    color: white;
+    font-size: 13px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.topbar-time {
+    color: rgba(255,255,255,0.75);
+    font-size: 11px;
+    margin: 2px 0 0 0;
+}
+
+.topbar-profile {
+    background-color: rgba(255,255,255,0.18);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.topbar-profile:hover {
+    background-color: rgba(255,255,255,0.25);
+}
+
+.topbar-username {
+    color: white;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.topbar-role {
+    color: rgba(255,255,255,0.75);
+    font-size: 11px;
+}
+
+/* Avatar styles */
+.avatar-container {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-initials {
+    background-color: #1565C0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.avatar-image {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}

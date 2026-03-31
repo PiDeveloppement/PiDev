@@ -1,0 +1,111 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier l'utilisateur - EventFlow{% endblock %}
+
+{# Définir les informations de la page pour le header #}
+{% set pageInfo = {
+    title: '✏️ Modifier l\'utilisateur',
+    subtitle: user.fullName
+} %}
+
+{# Optionnel : Ajouter des KPI spécifiques si nécessaire #}
+{% block kpi %}
+    <div class="kpi-card kpi-card-blue">
+        <span class="kpi-icon">👥</span>
+        <span class="kpi-value">{{ user.role.roleName|default('Utilisateur') }}</span>
+        <span class="kpi-label">Rôle actuel</span>
+    </div>
+    <div class="kpi-card kpi-card-green">
+        <span class="kpi-icon">📅</span>
+        <span class="kpi-value">{{ user.registrationDate|date('d/m/Y') }}</span>
+        <span class="kpi-label">Inscrit le</span>
+    </div>
+{% endblock %}
+
+{% block admin_content %}
+<div class="container mx-auto px-6 py-6 max-w-4xl">
+    {# L'en-tête a été déplacé dans pageInfo, donc on peut le supprimer ou le garder si besoin #}
+    {# Optionnel : si vous voulez garder un sous-titre supplémentaire #}
+    
+    <!-- Formulaire principal -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <form method="post" action="{{ path('app_user_edit', {'id': user.id}) }}" class="space-y-4">
+            <div class="grid grid-cols-2 gap-6">
+                <!-- Prénom -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Prénom <span class="text-red-500">*</span></label>
+                    <input type="text" 
+                           name="first_name" 
+                           value="{{ user.firstName }}"
+                           placeholder="Entrez le prénom"
+                           required
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                </div>
+
+                <!-- Nom -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Nom <span class="text-red-500">*</span></label>
+                    <input type="text" 
+                           name="last_name" 
+                           value="{{ user.lastName }}"
+                           placeholder="Entrez le nom"
+                           required
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Email <span class="text-red-500">*</span></label>
+                    <input type="email" 
+                           name="email" 
+                           value="{{ user.email }}"
+                           placeholder="exemple@universite.edu"
+                           required
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                </div>
+
+                <!-- Faculté -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Faculté</label>
+                    <input type="text" 
+                           name="faculte" 
+                           value="{{ user.faculte }}"
+                           placeholder="Faculté d'appartenance"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                </div>
+
+                <!-- Rôle -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Rôle <span class="text-red-500">*</span></label>
+                    <select name="role" 
+                            required
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white">
+                        {% for role in roles %}
+                            <option value="{{ role }}" {% if user.role and user.role.roleName == role %}selected{% endif %}>
+                                {{ role }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Boutons d'action -->
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-6">
+                <a href="{{ path('app_user_index') }}" 
+                   class="px-6 py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
+                    Annuler
+                </a>
+                <button type="submit" 
+                        class="px-6 py-2.5 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition shadow-sm">
+                    Enregistrer
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Pied de page avec indication -->
+    <div class="text-center text-sm text-gray-500">
+        ℹ️ Les champs marqués d'un * sont obligatoires
+    </div>
+</div>
+{% endblock %}
