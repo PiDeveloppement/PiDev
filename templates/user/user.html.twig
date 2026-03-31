@@ -1,0 +1,233 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des utilisateurs - EventFlow{% endblock %}
+
+{% block admin_content %}
+<div class="container mx-auto px-6 py-6">
+
+    <!-- Barre de recherche et filtres -->
+    <div class="bg-gray-100 p-4 rounded-lg mb-6 flex items-center gap-4 border-b border-gray-200">
+        <input type="text" 
+               id="searchField"
+               placeholder="🔍 Rechercher un utilisateur..."
+               class="w-72 px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+
+        <select id="faculteFilter" 
+                onchange="applyFilters()"
+                class="w-40 px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+            <option value="">📂 Toutes facultés</option>
+            {% for faculte in facultes %}
+                <option value="{{ faculte }}">{{ faculte }}</option>
+            {% endfor %}
+        </select>
+
+        <select id="roleFilter" 
+                onchange="applyFilters()"
+                class="w-40 px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+            <option value="">📊 Tous rôles</option>
+            {% for role in roles %}
+                <option value="{{ role }}">{{ role }}</option>
+            {% endfor %}
+        </select>
+
+        <button onclick="resetFilters()" 
+                class="px-3 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+            🔄
+        </button>
+
+        <span class="text-sm text-gray-500 ml-auto" id="statsLabel">{{ totalUsers }} utilisateurs</span>
+    </div>
+
+    <!-- Tableau des utilisateurs -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Prénom</th>
+                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Nom</th>
+                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Email</th>
+                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Faculté</th>
+                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Mot de passe</th>
+                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Rôle</th>
+                    <th class="py-3 px-4 text-center font-semibold text-gray-600">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                {% for user in users %}
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                    <td class="py-3 px-4">{{ user.firstName }}</td>
+                    <td class="py-3 px-4">{{ user.lastName }}</td>
+                    <td class="py-3 px-4">{{ user.email }}</td>
+                    <td class="py-3 px-4">{{ user.faculte }}</td>
+                    <td class="py-3 px-4">••••••••</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                            {{ user.role.roleName }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="flex justify-center space-x-2">
+                            <a href="{{ path('app_user_edit', {'id': user.id}) }}" 
+                               class="bg-blue-500 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-600 transition shadow-sm">
+                                📝
+                            </a>
+                            <form method="post" 
+                                  action="{{ path('app_user_delete', {'id': user.id}) }}" 
+                                  onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?');"
+                                  class="inline">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                <button type="submit" 
+                                        class="bg-red-500 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-red-600 transition shadow-sm">
+                                    ✂
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="py-8 text-center text-gray-500">Aucun utilisateur trouvé</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center space-x-4">
+        <div class="flex space-x-2">
+            <button onclick="goToPage({{ currentPage - 1 }})" 
+                    {{ currentPage == 1 ? 'disabled' : '' }}
+                    class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                «
+            </button>
+
+            <div class="flex space-x-1">
+                <button onclick="goToPage(1)" 
+                        class="w-10 h-10 rounded-lg transition {{ currentPage == 1 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' }}">
+                    1
+                </button>
+                {% if totalPages >= 2 %}
+                <button onclick="goToPage(2)" 
+                        class="w-10 h-10 rounded-lg transition {{ currentPage == 2 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' }}">
+                    2
+                </button>
+                {% endif %}
+                {% if totalPages >= 3 %}
+                <button onclick="goToPage(3)" 
+                        class="w-10 h-10 rounded-lg transition {{ currentPage == 3 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' }}">
+                    3
+                </button>
+                {% endif %}
+                {% if totalPages > 3 %}
+                <button onclick="goToPage({{ totalPages }})" 
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    Dernière
+                </button>
+                {% endif %}
+            </div>
+
+            <button onclick="goToPage({{ currentPage + 1 }})" 
+                    {{ currentPage == totalPages ? 'disabled' : '' }}
+                    class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                »
+            </button>
+        </div>
+
+        <span class="text-sm text-gray-500">Page {{ currentPage }} sur {{ totalPages }}</span>
+    </div>
+</div>
+
+<script>
+let currentPage = {{ currentPage }};
+let totalPages = {{ totalPages }};
+let searchTimeout = null;
+
+function applyFilters() {
+    const search = document.getElementById('searchField').value;
+    const faculte = document.getElementById('faculteFilter').value;
+    const role = document.getElementById('roleFilter').value;
+    
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        performSearch(search, faculte, role);
+    }, 300);
+}
+
+function performSearch(search, faculte, role) {
+    const params = new URLSearchParams({
+        q: search,
+        faculte: faculte,
+        role: role
+    });
+
+    fetch('{{ path('app_user_search') }}?' + params.toString())
+        .then(response => response.json())
+        .then(data => {
+            updateTable(data.users);
+            document.getElementById('statsLabel').textContent = data.total + ' utilisateurs';
+        });
+}
+
+function updateTable(users) {
+    const tbody = document.getElementById('userTableBody');
+    tbody.innerHTML = '';
+    
+    if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-gray-500">Aucun utilisateur trouvé</td></tr>';
+        return;
+    }
+    
+    users.forEach(user => {
+        const row = document.createElement('tr');
+        row.className = 'border-b border-gray-100 hover:bg-gray-50 transition';
+        row.innerHTML = `
+            <td class="py-3 px-4">${user.firstName}</td>
+            <td class="py-3 px-4">${user.lastName}</td>
+            <td class="py-3 px-4">${user.email}</td>
+            <td class="py-3 px-4">${user.faculte}</td>
+            <td class="py-3 px-4">••••••••</td>
+            <td class="py-3 px-4">
+                <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">${user.role}</span>
+            </td>
+            <td class="py-3 px-4">
+                <div class="flex justify-center space-x-2">
+                    <a href="/admin/users/${user.id}/edit" 
+                       class="bg-blue-500 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-600 transition shadow-sm">
+                        📝
+                    </a>
+                    <form method="post" 
+                          action="/admin/users/${user.id}" 
+                          onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?');"
+                          class="inline">
+                        <input type="hidden" name="_token" value="${user.csrfToken}">
+                        <button type="submit" 
+                                class="bg-red-500 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-red-600 transition shadow-sm">
+                            ✂
+                        </button>
+                    </form>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function resetFilters() {
+    document.getElementById('searchField').value = '';
+    document.getElementById('faculteFilter').value = '';
+    document.getElementById('roleFilter').value = '';
+    applyFilters();
+}
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages) return;
+    window.location.href = '{{ path('app_user_index') }}?page=' + page;
+}
+
+// Écouteurs d'événements
+document.getElementById('searchField').addEventListener('input', applyFilters);
+document.getElementById('faculteFilter').addEventListener('change', applyFilters);
+document.getElementById('roleFilter').addEventListener('change', applyFilters);
+</script>
+{% endblock %}
