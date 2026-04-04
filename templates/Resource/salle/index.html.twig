@@ -1,0 +1,152 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des Salles - EventFlow{% endblock %}
+
+{% block admin_content %}
+<div style="padding: 25px; background: #f1f5f9; min-height: 100vh;">
+
+    {# --- HEADER & STATS (Comme tes Labels JavaFX) --- #}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div style="display: flex; gap: 20px;">
+            <div style="background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #1565C0;">
+                <small style="color: #64748b; font-weight: bold; text-transform: uppercase; font-size: 11px;">Total Salles</small>
+                <div style="font-size: 24px; font-weight: bold; color: #1e293b;">{{ total }}</div>
+            </div>
+            <div style="background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #ef4444;">
+                <small style="color: #64748b; font-weight: bold; text-transform: uppercase; font-size: 11px;">Occupées</small>
+                <div style="font-size: 24px; font-weight: bold; color: #1e293b;">{{ occupees }}</div>
+            </div>
+        </div>
+        <a href="{{ path('app_resource_salle_new') }}" style="background: #1565C0; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: bold; transition: 0.3s;" onmouseover="this.style.background='#0d47a1'" onmouseout="this.style.background='#1565C0'">
+            <i class="fas fa-plus"></i> Ajouter une salle
+        </a>
+    </div>
+
+    {# --- FILTRES DE RECHERCHE (Comme setupSearchLogic) --- #}
+    <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 25px; display: flex; gap: 15px; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+        <div style="flex: 2; position: relative;">
+            <i class="fas fa-search" style="position: absolute; left: 15px; top: 12px; color: #94a3b8;"></i>
+            <input type="text" id="searchName" placeholder="Rechercher par nom..." style="width: 100%; padding: 10px 10px 10px 40px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none;">
+        </div>
+        <select id="filterBuilding" style="flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; color: #475569;">
+            <option value="Tous">Tous les Blocs</option>
+            <option value="A">Bloc A</option>
+            <option value="G">Bloc G</option>
+            <option value="M">Bloc M</option>
+        </select>
+        <button onclick="location.reload()" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 15px; border-radius: 8px; color: #64748b; cursor: pointer;">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 25px; align-items: start;">
+        
+        {# --- TABLEAU (Equivalent TableView) --- #}
+        <div style="background: white; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;" id="salleTable">
+                <thead>
+                    <tr style="background: #f8fafc; border-bottom: 2px solid #f1f5f9; color: #64748b; text-align: left; font-size: 13px;">
+                        <th style="padding: 15px 20px;">Aperçu</th>
+                        <th style="padding: 15px 20px;">Nom</th>
+                        <th style="padding: 15px 20px;">Localisation</th>
+                        <th style="padding: 15px 20px;">Statut</th>
+                        <th style="padding: 15px 20px; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for salle in salles %}
+                        <tr class="salle-row" 
+                            data-name="{{ salle.name|lower }}" 
+                            data-building="{{ salle.building }}" 
+                            style="border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: 0.2s;"
+                            onclick="updateMap({{ salle.latitude|default(36.8993) }}, {{ salle.longitude|default(10.1887) }}, '{{ salle.name|e('js') }}')">
+                            
+                            <td style="padding: 12px 20px;">
+                                <img src="{{ salle.imagePath|default('https://via.placeholder.com/45') }}" style="width: 45px; height: 45px; border-radius: 8px; object-fit: cover; border: 1px solid #eee;">
+                            </td>
+                            <td style="padding: 12px 20px;">
+                                <div style="font-weight: 700; color: #1e293b;">{{ salle.name }}</div>
+                                <small style="color: #94a3b8;"><i class="fas fa-users"></i> {{ salle.capacity }} pers.</small>
+                            </td>
+                            <td style="padding: 12px 20px;">
+                                <div style="color: #475569;">Bloc {{ salle.building }}</div>
+                                <small style="color: #94a3b8;">Étage {{ salle.floor }}</small>
+                            </td>
+                            <td style="padding: 12px 20px;">
+                                <span style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; background: {{ salle.status == 'DISPONIBLE' ? '#dcfce7' : '#fee2e2' }}; color: {{ salle.status == 'DISPONIBLE' ? '#166534' : '#991b1b' }};">
+                                    {{ salle.status }}
+                                </span>
+                            </td>
+                            <td style="padding: 12px 20px; text-align: center;">
+                                <div style="display: flex; gap: 12px; justify-content: center;">
+                                    <a href="{{ path('app_resource_salle_edit', {'id': salle.id}) }}" style="color: #1565C0;"><i class="fas fa-edit"></i></a>
+                                    
+                                    <form method="post" action="{{ path('app_resource_salle_delete', {'id': salle.id}) }}" onsubmit="return confirm('Voulez-vous vraiment supprimer cette salle ?');" style="display: inline;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ salle.id) }}">
+                                        <button style="border: none; background: none; color: #ef4444; cursor: pointer; padding: 0;"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# --- CARTE (Equivalent WebView) --- #}
+        <div style="position: sticky; top: 20px;">
+            <div style="background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+                <h4 style="margin: 0 0 15px 0; font-size: 15px; color: #1e293b;"><i class="fas fa-map-marker-alt" style="color: #ef4444;"></i> Localisation Campus Esprit</h4>
+                <div id="map" style="height: 400px; border-radius: 10px; border: 1px solid #e2e8f0;"></div>
+                <div style="margin-top: 15px; font-size: 12px; color: #64748b; background: #f8fafc; padding: 10px; border-radius: 8px;">
+                    <i class="fas fa-info-circle"></i> Cliquez sur une salle dans le tableau pour la localiser sur la carte.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# --- SCRIPTS POUR LA CARTE ET LA RECHERCHE --- #}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<script>
+    // 1. Initialisation Carte
+    var map = L.map('map').setView([36.8993, 10.1887], 17);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    var currentMarker = null;
+
+    function updateMap(lat, lon, title) {
+        if (currentMarker) map.removeLayer(currentMarker);
+        map.setView([lat, lon], 19);
+        currentMarker = L.marker([lat, lon]).addTo(map)
+            .bindPopup("<b>" + title + "</b><br>Esprit Campus").openPopup();
+    }
+
+    // 2. Recherche Dynamique (Similaire à ton setupSearchLogic JavaFX)
+    const searchInput = document.getElementById('searchName');
+    const filterSelect = document.getElementById('filterBuilding');
+
+    function applyFilters() {
+        const nameVal = searchInput.value.toLowerCase();
+        const buildingVal = filterSelect.value;
+        const rows = document.querySelectorAll('.salle-row');
+
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name');
+            const building = row.getAttribute('data-building');
+            
+            const matchesName = name.includes(nameVal);
+            const matchesBuilding = (buildingVal === "Tous" || building === buildingVal);
+
+            row.style.display = (matchesName && matchesBuilding) ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('keyup', applyFilters);
+    filterSelect.addEventListener('change', applyFilters);
+</script>
+{% endblock %}
