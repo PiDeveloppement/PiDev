@@ -1,0 +1,275 @@
+{# templates/resource/salle/new.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Ajouter une Salle - EventFlow{% endblock %}
+
+{% block admin_content %}
+<div style="display: flex; justify-content: center; padding: 40px; background: #f1f5f9; min-height: 100vh;">
+    
+    <div style="width: 100%; max-width: 550px; background: white; border-radius: 20px; padding: 35px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+        
+        {# --- HEADER --- #}
+        <div style="display: flex; align-items: center; margin-bottom: 25px; gap: 15px;">
+            <div style="background: #3b82f6; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px;">
+                🏠
+            </div>
+            <div style="flex-grow: 1;">
+                <h2 style="margin: 0; font-size: 22px; color: #1e293b; font-weight: bold;">{{ salle.id ? 'Modifier la Salle' : 'Ajouter une Salle' }}</h2>
+                <small style="color: #64748b;">Gestion des espaces de l'établissement</small>
+            </div>
+            
+            {# --- BOUTON VOCAL --- #}
+            <div style="text-align: center;">
+                <button id="voiceBtn" type="button" style="width: 45px; height: 45px; border-radius: 50%; border: none; background: #ef4444; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    🎙
+                </button>
+                <div id="voiceStatus" style="font-size: 9px; color: #94a3b8; font-weight: bold; margin-top: 5px;">Micro Off</div>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-bottom: 25px;">
+
+        {# --- FORMULAIRE SYMFONY --- #}
+        {{ form_start(form, {'attr': {'id': 'salleForm'}}) }}
+            
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+                
+                {# Nom de la salle + Auto recherche #}
+                <div>
+                    <label style="display: block; color: #475569; font-weight: bold; font-size: 13px; margin-bottom: 5px;">Nom de la salle</label>
+                    <div style="display: flex; gap: 10px;">
+                        {{ form_widget(form.name, {'attr': {'style': 'flex-grow: 1; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;', 'placeholder': 'Ex: Salle de conférence'}}) }}
+                        <button type="button" id="autoImageBtn" style="background: #3b82f6; color: white; border: none; border-radius: 8px; padding: 0 15px; font-weight: bold; cursor: pointer;">🔍 Auto</button>
+                    </div>
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.name) }}</div>
+                </div>
+
+                {# Capacité et Étage sur la même ligne #}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label style="display: block; color: #475569; font-weight: bold; font-size: 13px; margin-bottom: 5px;">Capacité</label>
+                        {{ form_widget(form.capacity, {'attr': {'style': 'width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;', 'placeholder': 'Ex: 30'}}) }}
+                        <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.capacity) }}</div>
+                    </div>
+                    <div>
+                        <label style="display: block; color: #475569; font-weight: bold; font-size: 13px; margin-bottom: 5px;">Étage</label>
+                        {{ form_widget(form.floor, {'attr': {'style': 'width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;', 'placeholder': 'Ex: 1'}}) }}
+                        <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.floor) }}</div>
+                    </div>
+                </div>
+
+                {# Bâtiment #}
+                <div>
+                    <label style="display: block; color: #475569; font-weight: bold; font-size: 13px; margin-bottom: 5px;">Bâtiment / Bloc</label>
+                    {{ form_widget(form.building, {'attr': {'style': 'width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;', 'placeholder': 'Ex: Bloc G'}}) }}
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.building) }}</div>
+                </div>
+
+                {# Statut #}
+                <div>
+                    <label style="display: block; color: #475569; font-weight: bold; font-size: 13px; margin-bottom: 5px;">Statut actuel</label>
+                    {{ form_widget(form.status, {'attr': {'style': 'width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;'}}) }}
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.status) }}</div>
+                </div>
+
+                {# Section Image avec onglets Unsplash/Upload #}
+                <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <label style="display: block; color: #475569; font-weight: bold; margin-bottom: 10px;">📸 Photo de la salle</label>
+                    
+                    {# Info: Génération automatique #}
+                    <div style="background: #dbeafe; padding: 8px 12px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; color: #1e40af;">
+                        <i class="fas fa-magic"></i> <strong>Auto-génération :</strong> Si vous ne choisissez pas d'image, une photo sera automatiquement générée depuis Unsplash !
+                    </div>
+                    
+                    {# Onglets #}
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button type="button" onclick="setMode('unsplash')" id="tabU" style="flex: 1; padding: 8px; border-radius: 6px; border: none; cursor: pointer; background: #3b82f6; color: white; font-weight: 600;">
+                            <i class="fas fa-search"></i> Unsplash Auto
+                        </button>
+                        <button type="button" onclick="setMode('upload')" id="tabL" style="flex: 1; padding: 8px; border-radius: 6px; border: none; cursor: pointer; background: #e2e8f0; font-weight: 600;">
+                            <i class="fas fa-upload"></i> Importer fichier
+                        </button>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="flex-grow: 1;">
+                            {# Mode Unsplash #}
+                            <div id="modeUnsplash">
+                                {{ form_widget(form.imagePath, {'attr': {
+                                    'id': 'imagePathInput',
+                                    'placeholder': 'URL Unsplash ou image externe (optionnel)...',
+                                    'style': 'width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 12px;'
+                                }}) }}
+                            </div>
+                            
+                            {# Mode Upload #}
+                            <div id="modeUpload" style="display: none;">
+                                {{ form_widget(form.imageUpload, {'attr': {
+                                    'id': 'imageFileInput',
+                                    'style': 'width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0;'
+                                }}) }}
+                            </div>
+                        </div>
+                        <div style="background: white; padding: 5px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <img id="imagePreview" src="{{ salle.imagePath|default('https://via.placeholder.com/70?text=Auto') }}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# --- BOUTONS D'ACTION --- #}
+            <div style="display: flex; justify-content: center; gap: 20px; margin-top: 30px;">
+                <a href="{{ path('app_resource_salle_index') }}" style="width: 150px; text-align: center; background: #f1f5f9; color: #64748b; padding: 12px; border-radius: 10px; text-decoration: none; font-weight: bold;">✖ Annuler</a>
+                <button type="submit" style="width: 180px; background: #22c55e; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(34,197,94,0.3);">💾 Enregistrer</button>
+            </div>
+
+        {{ form_end(form) }}
+    </div>
+</div>
+
+<script>
+    // 1. Logique des onglets Unsplash / Upload
+    function setMode(mode) {
+        const unsplashDiv = document.getElementById('modeUnsplash');
+        const uploadDiv = document.getElementById('modeUpload');
+        const tabUnsplash = document.getElementById('tabU');
+        const tabUpload = document.getElementById('tabL');
+        
+        if(mode === 'unsplash') {
+            unsplashDiv.style.display = 'block';
+            uploadDiv.style.display = 'none';
+            tabUnsplash.style.background = '#3b82f6';
+            tabUnsplash.style.color = 'white';
+            tabUpload.style.background = '#e2e8f0';
+            tabUpload.style.color = '#475569';
+        } else {
+            unsplashDiv.style.display = 'none';
+            uploadDiv.style.display = 'block';
+            tabUpload.style.background = '#3b82f6';
+            tabUpload.style.color = 'white';
+            tabUnsplash.style.background = '#e2e8f0';
+            tabUnsplash.style.color = '#475569';
+        }
+    }
+
+    // 2. Preview Image Dynamique (URL)
+    const imageInput = document.getElementById('imagePathInput');
+    const imagePreview = document.getElementById('imagePreview');
+
+    if(imageInput) {
+        imageInput.addEventListener('input', () => {
+            if(imageInput.value) imagePreview.src = imageInput.value;
+        });
+    }
+
+    // 3. Preview Upload Fichier
+    const fileInput = document.getElementById('imageFileInput');
+    if(fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            const [file] = e.target.files;
+            if (file) {
+                imagePreview.src = URL.createObjectURL(file);
+                // Vider le champ URL si un fichier est uploadé
+                if(imageInput) imageInput.value = '';
+            }
+        });
+    }
+
+    // 4. Recherche Auto Unsplash (bouton Auto)
+    document.getElementById('autoImageBtn').addEventListener('click', async () => {
+        const query = document.querySelector('[name*="[name]"]').value;
+        if (!query) {
+            alert("Veuillez entrer un nom de salle.");
+            return;
+        }
+        
+        document.getElementById('autoImageBtn').innerText = "⏳...";
+        const url = `https://source.unsplash.com/featured/200x200/?room,${encodeURIComponent(query)},conference`;
+        
+        if(imageInput) {
+            imageInput.value = url;
+            imagePreview.src = url;
+        }
+        document.getElementById('autoImageBtn').innerText = "🔍 Auto";
+    });
+
+    // 5. Commande Vocale
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voiceStatus = document.getElementById('voiceStatus');
+    
+    if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'fr-FR';
+        
+        voiceBtn.onclick = () => {
+            recognition.start();
+            voiceBtn.style.background = "#22c55e";
+            voiceStatus.innerText = "🎙️ Écoute...";
+        };
+
+        recognition.onresult = (event) => {
+            const cmd = event.results[0][0].transcript.toLowerCase();
+            voiceStatus.innerText = "🎙️: " + cmd;
+            
+            // Commandes vocales
+            if (cmd.includes("nom")) {
+                document.querySelector('[name*="[name]"]').value = cmd.replace("nom", "").trim();
+            }
+            if (cmd.includes("bâtiment") || cmd.includes("batiment")) {
+                document.querySelector('[name*="[building]"]').value = cmd.replace("bâtiment", "").replace("batiment", "").trim();
+            }
+            if (cmd.includes("capacité") || cmd.includes("capacite")) {
+                const capa = cmd.replace(/[^0-9]/g, "");
+                if(capa) document.querySelector('[name*="[capacity]"]').value = capa;
+            }
+            if (cmd.includes("étage") || cmd.includes("etage")) {
+                const floor = cmd.replace(/[^0-9]/g, "");
+                if(floor) document.querySelector('[name*="[floor]"]').value = floor;
+            }
+            
+            voiceBtn.style.background = "#ef4444";
+            setTimeout(() => { voiceStatus.innerText = "Micro Off"; }, 2000);
+        };
+        
+        recognition.onerror = () => {
+            voiceBtn.style.background = "#ef4444";
+            voiceStatus.innerText = "Erreur";
+        };
+    } else {
+        voiceStatus.innerText = "Non supporté";
+        voiceBtn.style.opacity = "0.5";
+        voiceBtn.disabled = true;
+    }
+</script>
+
+<style>
+    button[type="submit"]:hover {
+        background: #16a34a !important;
+        transform: translateY(-2px);
+    }
+    
+    a:hover {
+        background: #e2e8f0 !important;
+        transition: all 0.2s;
+    }
+    
+    input:focus, select:focus {
+        outline: none;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    #autoImageBtn:hover {
+        background: #2563eb !important;
+        transform: scale(1.02);
+    }
+    
+    #imagePreview {
+        transition: all 0.3s ease;
+    }
+    
+    #imagePreview:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %} 

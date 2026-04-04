@@ -1,0 +1,146 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier la Salle {{ salle.name }} - EventFlow{% endblock %}
+
+{% block admin_content %}
+<div style="display: flex; justify-content: center; padding: 40px; background: #f1f5f9; min-height: 100vh;">
+    
+    <div style="width: 100%; max-width: 550px; background: white; border-radius: 20px; padding: 35px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+        
+        {# --- HEADER (Identique à ton FXML, titre dynamique) --- #}
+        <div style="display: flex; align-items: center; margin-bottom: 25px; gap: 15px;">
+            <div style="background: #3b82f6; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px;">
+                🏠
+            </div>
+            <div style="flex-grow: 1;">
+                {# Titre dynamique (Modifier la Salle) #}
+                <h2 style="margin: 0; font-size: 22px; color: #1e293b; font-weight: bold;">Modifier la Salle</h2>
+                <small style="color: #64748b;">Modification de l'espace : {{ salle.name }}</small>
+            </div>
+            
+            {# --- BOUTON VOCAL (Imitation JavaFX) --- #}
+            <div style="text-align: center;">
+                <button id="voiceBtn" type="button" style="width: 45px; height: 45px; border-radius: 50%; border: none; background: #ef4444; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    🎙
+                </button>
+                <div id="voiceStatus" style="font-size: 9px; color: #94a3b8; font-weight: bold; margin-top: 5px;">Micro Off</div>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-bottom: 25px;">
+
+        {# --- FORMULAIRE SYMFONY (Les champs sont auto-remplis) --- #}
+        {{ form_start(form, {'attr': {'id': 'salleForm'}}) }}
+            
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+                
+                {# Nom de la salle + Auto recherche #}
+                <div>
+                    <label style="display: block; color: #475569; font-weight: bold; font-size: 13px; margin-bottom: 5px;">Nom de la salle</label>
+                    <div style="display: flex; gap: 10px;">
+                        {{ form_widget(form.name, {'attr': {'style': 'flex-grow: 1; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;'}}) }}
+                        <button type="button" id="autoImageBtn" style="background: #3b82f6; color: white; border: none; border-radius: 8px; padding: 0 15px; font-weight: bold; cursor: pointer;">🔍 Auto</button>
+                    </div>
+                </div>
+
+                {# Capacité et Étage sur la même ligne #}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label style="display: block; color: #475569; font-weight: bold; font-size: 13px; margin-bottom: 5px;">Capacité</label>
+                        {{ form_widget(form.capacity, {'attr': {'style': 'width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;'}}) }}
+                    </div>
+                    <div>
+                        <label style="display: block; color: #475569; font-weight: bold; font-size: 13px; margin-bottom: 5px;">Étage</label>
+                        {{ form_widget(form.floor, {'attr': {'style': 'width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;'}}) }}
+                    </div>
+                </div>
+
+                {# Bâtiment #}
+                <div>
+                    <label style="display: block; color: #475569; font-weight: bold; font-size: 13px; margin-bottom: 5px;">Bâtiment / Bloc</label>
+                    {{ form_widget(form.building, {'attr': {'style': 'width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;'}}) }}
+                </div>
+
+                {# Statut #}
+                <div>
+                    <label style="display: block; color: #475569; font-weight: bold; font-size: 13px; margin-bottom: 5px;">Statut actuel</label>
+                    {{ form_widget(form.status, {'attr': {'style': 'width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;'}}) }}
+                </div>
+
+                {# Section Image (Comme ton StackPane JavaFX) #}
+                <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                    <label style="display: block; color: #475569; font-weight: bold; margin-bottom: 10px;">Photo de la salle</label>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="flex-grow: 1;">
+                            {{ form_widget(form.imagePath, {'attr': {'id': 'imagePathInput', 'style': 'width: 90%; padding: 8px; border-radius: 5px; border: 1px solid #ddd; font-size: 11px;'}}) }}
+                        </div>
+                        <div style="background: white; padding: 5px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            {# Preview Image Dynamique #}
+                            <img id="imagePreview" src="{{ salle.imagePath ?: 'https://via.placeholder.com/70' }}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# --- BOUTONS D'ACTION (Édition) --- #}
+            <div style="display: flex; justify-content: center; gap: 20px; margin-top: 30px;">
+                <a href="{{ path('app_resource_salle_index') }}" style="width: 150px; text-align: center; background: #f1f5f9; color: #64748b; padding: 12px; border-radius: 10px; text-decoration: none; font-weight: bold;">✖ Annuler</a>
+                <button type="submit" style="width: 180px; background: #22c55e; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(34,197,94,0.3);">💾 Enregistrer</button>
+            </div>
+
+        {{ form_end(form) }}
+    </div>
+</div>
+
+{# --- LOGIQUE JAVASCRIPT (Identique à NEW) --- #}
+<script>
+    // 1. Preview Image Dynamique
+    const imageInput = document.getElementById('imagePathInput');
+    const imagePreview = document.getElementById('imagePreview');
+
+    imageInput.addEventListener('input', () => {
+        if(imageInput.value) imagePreview.src = imageInput.value;
+    });
+
+    // 2. Recherche Auto Unsplash
+    document.getElementById('autoImageBtn').addEventListener('click', async () => {
+        // En Web, on accède au champ par son nom généré par Symfony
+        const query = document.querySelector('[name*="[name]"]').value;
+        if (!query) return alert("Veuillez entrer un nom de salle.");
+        
+        document.getElementById('autoImageBtn').innerText = "⏳...";
+        const url = `https://source.unsplash.com/featured/?room,${query}`;
+        imageInput.value = url;
+        imagePreview.src = url;
+        document.getElementById('autoImageBtn').innerText = "🔍 Auto";
+    });
+
+    // 3. Commande Vocale (Web Speech API)
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voiceStatus = document.getElementById('voiceStatus');
+    
+    if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'fr-FR';
+        
+        voiceBtn.onclick = () => {
+            recognition.start();
+            voiceBtn.style.background = "#22c55e";
+            voiceStatus.innerText = "🎙️ Écoute...";
+        };
+
+        recognition.onresult = (event) => {
+            const cmd = event.results[0][0].transcript.toLowerCase();
+            voiceStatus.innerText = "🎙️: " + cmd;
+            
+            // Logique de commande (Comme ton JavaFX)
+            if (cmd.includes("nom")) document.querySelector('[name*="[name]"]').value = cmd.replace("nom", "").trim();
+            if (cmd.includes("bâtiment")) document.querySelector('[name*="[building]"]').value = cmd.replace("bâtiment", "").trim();
+            
+            voiceBtn.style.background = "#ef4444";
+        };
+    } else {
+        voiceStatus.innerText = "Non supporté";
+    }
+</script>
+{% endblock %}
