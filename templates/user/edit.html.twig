@@ -2,84 +2,147 @@
 
 {% block title %}Modifier l'utilisateur - EventFlow{% endblock %}
 
-{# Définir les informations de la page pour le header #}
-{% set pageInfo = {
-    title: '✏️ Modifier l\'utilisateur',
-    subtitle: user.fullName
-} %}
-
-{# Optionnel : Ajouter des KPI spécifiques si nécessaire #}
-{% block kpi %}
-    <div class="kpi-card kpi-card-blue">
-        <span class="kpi-icon">👥</span>
-        <span class="kpi-value">{{ user.role.roleName|default('Utilisateur') }}</span>
-        <span class="kpi-label">Rôle actuel</span>
-    </div>
-    <div class="kpi-card kpi-card-green">
-        <span class="kpi-icon">📅</span>
-        <span class="kpi-value">{{ user.registrationDate|date('d/m/Y') }}</span>
-        <span class="kpi-label">Inscrit le</span>
-    </div>
-{% endblock %}
-
 {% block admin_content %}
-<div class="container mx-auto px-6 py-6 max-w-4xl">
-    {# L'en-tête a été déplacé dans pageInfo, donc on peut le supprimer ou le garder si besoin #}
-    {# Optionnel : si vous voulez garder un sous-titre supplémentaire #}
-    
-    <!-- Formulaire principal -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-        <form method="post" action="{{ path('app_user_edit', {'id': user.id}) }}" class="space-y-4">
-            <div class="grid grid-cols-2 gap-6">
-                <!-- Prénom -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Prénom <span class="text-red-500">*</span></label>
+<div class="main-container" style="
+    background-color: #f8fafc;
+    width: 100%;
+    height: 100%;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+">
+    <!-- En-tête -->
+    <div style="padding: 20px 30px 10px 30px;">
+        <h1 style="font-size: 24px; font-weight: bold; color: #1e293b; margin: 0 0 8px 0;">
+            ✏️ Modifier l'utilisateur
+        </h1>
+        <p style="color: #64748b; font-size: 14px; margin: 0;">
+            {{ user.firstName }} {{ user.lastName }}
+        </p>
+    </div>
+
+    <!-- Contenu principal -->
+    <div style="flex: 1; padding: 0 30px 20px 30px;">
+        
+        <!-- Carte du formulaire -->
+        <div style="
+            background-color: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            padding: 25px;
+        ">
+            <form method="post" action="{{ path('app_user_edit', {'id': user.id}) }}">
+                
+                <!-- Grille 2 colonnes -->
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px 20px; align-items: center; padding: 10px 0;">
+                    
+                    <!-- Prénom -->
+                    <label style="color: #475569; font-size: 14px; font-weight: bold;">
+                        Prénom <span style="color: #ef4444;">*</span>
+                    </label>
                     <input type="text" 
                            name="first_name" 
                            value="{{ user.firstName }}"
                            placeholder="Entrez le prénom"
                            required
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                </div>
+                           style="
+                               background-color: white;
+                               border-radius: 8px;
+                               padding: 10px 15px;
+                               border: 1px solid #cbd5e1;
+                               font-size: 14px;
+                               outline: none;
+                               width: 100%;
+                               box-sizing: border-box;
+                           "
+                           onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 2px rgba(59,130,246,0.2)'"
+                           onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'">
 
-                <!-- Nom -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Nom <span class="text-red-500">*</span></label>
+                    <!-- Nom -->
+                    <label style="color: #475569; font-size: 14px; font-weight: bold;">
+                        Nom <span style="color: #ef4444;">*</span>
+                    </label>
                     <input type="text" 
                            name="last_name" 
                            value="{{ user.lastName }}"
                            placeholder="Entrez le nom"
                            required
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                </div>
+                           style="
+                               background-color: white;
+                               border-radius: 8px;
+                               padding: 10px 15px;
+                               border: 1px solid #cbd5e1;
+                               font-size: 14px;
+                               outline: none;
+                               width: 100%;
+                               box-sizing: border-box;
+                           "
+                           onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 2px rgba(59,130,246,0.2)'"
+                           onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'">
 
-                <!-- Email -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Email <span class="text-red-500">*</span></label>
+                    <!-- Email -->
+                    <label style="color: #475569; font-size: 14px; font-weight: bold;">
+                        Email <span style="color: #ef4444;">*</span>
+                    </label>
                     <input type="email" 
                            name="email" 
                            value="{{ user.email }}"
                            placeholder="exemple@universite.edu"
                            required
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                </div>
+                           style="
+                               background-color: white;
+                               border-radius: 8px;
+                               padding: 10px 15px;
+                               border: 1px solid #cbd5e1;
+                               font-size: 14px;
+                               outline: none;
+                               width: 100%;
+                               box-sizing: border-box;
+                           "
+                           onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 2px rgba(59,130,246,0.2)'"
+                           onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'">
 
-                <!-- Faculté -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Faculté</label>
+                    <!-- Faculté -->
+                    <label style="color: #475569; font-size: 14px; font-weight: bold;">
+                        Faculté
+                    </label>
                     <input type="text" 
                            name="faculte" 
                            value="{{ user.faculte }}"
                            placeholder="Faculté d'appartenance"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                </div>
+                           style="
+                               background-color: white;
+                               border-radius: 8px;
+                               padding: 10px 15px;
+                               border: 1px solid #cbd5e1;
+                               font-size: 14px;
+                               outline: none;
+                               width: 100%;
+                               box-sizing: border-box;
+                           "
+                           onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 2px rgba(59,130,246,0.2)'"
+                           onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'">
 
-                <!-- Rôle -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Rôle <span class="text-red-500">*</span></label>
+                    <!-- Rôle -->
+                    <label style="color: #475569; font-size: 14px; font-weight: bold;">
+                        Rôle <span style="color: #ef4444;">*</span>
+                    </label>
                     <select name="role" 
                             required
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white">
+                            style="
+                                background-color: white;
+                                border-radius: 8px;
+                                padding: 10px 15px;
+                                border: 1px solid #cbd5e1;
+                                font-size: 14px;
+                                outline: none;
+                                width: 100%;
+                                box-sizing: border-box;
+                                cursor: pointer;
+                            "
+                            onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 2px rgba(59,130,246,0.2)'"
+                            onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'">
                         {% for role in roles %}
                             <option value="{{ role }}" {% if user.role and user.role.roleName == role %}selected{% endif %}>
                                 {{ role }}
@@ -87,25 +150,51 @@
                         {% endfor %}
                     </select>
                 </div>
-            </div>
 
-            <!-- Boutons d'action -->
-            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-6">
-                <a href="{{ path('app_user_index') }}" 
-                   class="px-6 py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
-                    Annuler
-                </a>
-                <button type="submit" 
-                        class="px-6 py-2.5 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition shadow-sm">
-                    Enregistrer
-                </button>
-            </div>
-        </form>
+                <!-- Boutons d'action -->
+                <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 25px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                    <a href="{{ path('app_user_index') }}" 
+                       style="
+                           background-color: #e5e7eb;
+                           color: #374151;
+                           font-weight: bold;
+                           font-size: 14px;
+                           border-radius: 8px;
+                           padding: 10px 24px;
+                           text-decoration: none;
+                           cursor: pointer;
+                           transition: background 0.2s;
+                       "
+                       onmouseover="this.style.backgroundColor='#d1d5db'"
+                       onmouseout="this.style.backgroundColor='#e5e7eb'">
+                        Annuler
+                    </a>
+                    <button type="submit" 
+                            style="
+                                background-color: #3b82f6;
+                                color: white;
+                                font-weight: bold;
+                                font-size: 14px;
+                                border-radius: 8px;
+                                padding: 10px 24px;
+                                border: none;
+                                cursor: pointer;
+                                transition: background 0.2s;
+                            "
+                            onmouseover="this.style.backgroundColor='#2563eb'"
+                            onmouseout="this.style.backgroundColor='#3b82f6'">
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <!-- Pied de page avec indication -->
-    <div class="text-center text-sm text-gray-500">
-        ℹ️ Les champs marqués d'un * sont obligatoires
+    <!-- Pied de page -->
+    <div style="padding: 10px 30px 20px 30px; text-align: center;">
+        <span style="color: #64748b; font-size: 12px;">
+            ℹ️ Les champs marqués d'un * sont obligatoires
+        </span>
     </div>
 </div>
 {% endblock %}
