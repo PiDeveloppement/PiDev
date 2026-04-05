@@ -2,6 +2,7 @@
 // src/Entity/Role.php
 
 namespace App\Entity\Role;
+
 use App\Entity\User\UserModel;
 use App\Repository\Role\RoleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
