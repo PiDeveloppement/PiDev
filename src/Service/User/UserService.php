@@ -141,19 +141,81 @@ class UserService
 
     // ==================== STATISTIQUES ====================
 
-    public function getTotalUsersCount(): int
+     public function getTotalUsersCount(): int
     {
-        return $this->userRepository->countAll();
+        try {
+            return $this->entityManager
+                ->getRepository(UserModel::class)
+                ->count([]);
+        } catch (\Exception $e) {
+            $this->logger->error('❌ Erreur getTotalUsersCount: ' . $e->getMessage());
+            return 0;
+        }
     }
 
-    public function getNewUsersThisMonthCount(): int
+       public function getNewUsersThisMonthCount(): int
     {
-        return $this->userRepository->countNewThisMonth();
+        try {
+            $start = new \DateTime('first day of this month');
+            $start->setTime(0, 0, 0);
+            $end = new \DateTime();
+ 
+            return (int) $this->entityManager
+                ->getRepository(UserModel::class)
+                ->createQueryBuilder('u')
+                ->select('COUNT(u.id)')
+                ->where('u.registrationDate >= :start AND u.registrationDate <= :end')
+                ->setParameter('start', $start)
+                ->setParameter('end', $end)
+                ->getQuery()
+                ->getSingleScalarResult();
+        } catch (\Exception $e) {
+            // Essayer avec createdAt si registrationDate n'existe pas
+            try {
+                $start = new \DateTime('first day of this month');
+                $start->setTime(0, 0, 0);
+                $end = new \DateTime();
+ 
+                return (int) $this->entityManager
+                    ->getRepository(UserModel::class)
+                    ->createQueryBuilder('u')
+                    ->select('COUNT(u.id)')
+                    ->where('u.createdAt >= :start AND u.createdAt <= :end')
+                    ->setParameter('start', $start)
+                    ->setParameter('end', $end)
+                    ->getQuery()
+                    ->getSingleScalarResult();
+            } catch (\Exception $e2) {
+                $this->logger->error('❌ Erreur getNewUsersThisMonthCount: ' . $e2->getMessage());
+                return 0;
+            }
+        }
     }
 
-    public function getUsersCountByRole(): array
+       public function getUsersCountByRole(): array
     {
-        return $this->userRepository->countByRole();
+        try {
+            $results = $this->entityManager
+                ->getRepository(UserModel::class)
+                ->createQueryBuilder('u')
+                ->select('r.roleName as roleName, COUNT(u.id) as cnt')
+                ->leftJoin('u.role', 'r')
+                ->groupBy('r.roleName')
+                ->getQuery()
+                ->getResult();
+ 
+            $byRole = [];
+            foreach ($results as $row) {
+                $byRole[$row['roleName']] = (int) $row['cnt'];
+            }
+ 
+            $this->logger->info('📊 getUsersCountByRole:', $byRole);
+ 
+            return $byRole;
+        } catch (\Exception $e) {
+            $this->logger->error('❌ Erreur getUsersCountByRole: ' . $e->getMessage());
+            return [];
+        }
     }
 
     // ==================== FILTRES ET RECHERCHE ====================
@@ -176,26 +238,26 @@ class UserService
     /**
      * Recherche avancée d'utilisateurs (pour le contrôleur)
      */
-    public function searchUsers(
-        ?string $keyword = null,
-        ?string $faculte = null,
-        ?string $role = null,
-        int $page = 1,
-        int $limit = 5
-    ): array {
-        return $this->userRepository->searchUsers($keyword, $faculte, $role, $page, $limit);
-    }
+public function searchUsers(
+    ?string $keyword = null,
+    ?string $faculte = null,
+    ?string $role = null,
+    int $page = 1,
+    int $limit = 5
+): array {
+    return $this->userRepository->searchUsers($keyword, $faculte, $role, $page, $limit);
+}
 
     /**
      * Compte les utilisateurs avec filtres (pour le contrôleur)
      */
-    public function countUsers(
-        ?string $keyword = null,
-        ?string $faculte = null,
-        ?string $role = null
-    ): int {
-        return $this->userRepository->countUsers($keyword, $faculte, $role);
-    }
+   public function countUsers(
+    ?string $keyword = null,
+    ?string $faculte = null,
+    ?string $role = null
+): int {
+    return $this->userRepository->countUsers($keyword, $faculte, $role);
+}
 
     // ==================== GESTION DU TÉLÉPHONE ====================
 
@@ -245,4 +307,25 @@ class UserService
     {
         return $this->roleRepository->find($id);
     }
+        public function getAllStats(): array
+    {
+        $total = $this->getTotalUsersCount();
+        $newThisMonth = $this->getNewUsersThisMonthCount();
+        $byRole = $this->getUsersCountByRole();
+ 
+        return [
+            'total'           => $total,
+            'new_this_month'  => $newThisMonth,
+            'by_role'         => $byRole,
+            'admins_count'    => $byRole['Admin'] ?? 0,
+            'organizers_count'=> $byRole['Organisateur'] ?? 0,
+            'default_count'   => $byRole['Default'] ?? 0,
+            'sponsors_count'  => $byRole['Sponsor'] ?? 0,
+            'admins_percent'  => $total > 0 ? round(($byRole['Admin'] ?? 0) / $total * 100) : 0,
+            'organizers_percent' => $total > 0 ? round(($byRole['Organisateur'] ?? 0) / $total * 100) : 0,
+            'default_percent' => $total > 0 ? round(($byRole['Default'] ?? 0) / $total * 100) : 0,
+            'sponsors_percent'=> $total > 0 ? round(($byRole['Sponsor'] ?? 0) / $total * 100) : 0,
+        ];
+    }
+
 }
