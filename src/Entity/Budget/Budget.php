@@ -23,7 +23,7 @@ class Budget
     #[ORM\Column(name: 'initial_budget', type: Types::DECIMAL, precision: 10, scale: 2)]
     #[Assert\NotBlank(message: 'Le budget initial est obligatoire.')]
     #[Assert\PositiveOrZero(message: 'Le budget initial doit etre positif.')]
-    private string $initialBudget = '0.00';
+    private string $initialBudget = '';
 
     #[ORM\Column(name: 'total_expenses', type: Types::DECIMAL, precision: 10, scale: 2, options: ['default' => '0.00'])]
     #[Assert\PositiveOrZero(message: 'Les depenses doivent etre positives.')]
@@ -31,7 +31,7 @@ class Budget
 
     #[ORM\Column(name: 'total_revenue', type: Types::DECIMAL, precision: 10, scale: 2, options: ['default' => '0.00'])]
     #[Assert\PositiveOrZero(message: 'Les revenus doivent etre positifs.')]
-    private string $totalRevenue = '0.00';
+    private string $totalRevenue = '';
 
     #[ORM\Column(name: 'rentabilite', type: Types::DECIMAL, precision: 10, scale: 2, options: ['default' => '0.00'])]
     private string $rentabilite = '0.00';
@@ -60,6 +60,12 @@ class Budget
 
     public function setInitialBudget(float|string $initialBudget): self
     {
+        if ($initialBudget === '') {
+            $this->initialBudget = '';
+
+            return $this;
+        }
+
         $this->initialBudget = number_format((float) $initialBudget, 2, '.', '');
 
         return $this;
@@ -84,6 +90,12 @@ class Budget
 
     public function setTotalRevenue(float|string $totalRevenue): self
     {
+        if ($totalRevenue === '') {
+            $this->totalRevenue = '';
+
+            return $this;
+        }
+
         $this->totalRevenue = number_format((float) $totalRevenue, 2, '.', '');
 
         return $this;

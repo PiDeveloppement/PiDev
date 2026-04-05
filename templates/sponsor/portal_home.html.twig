@@ -57,6 +57,8 @@
                 <div class="portal-stat-info">
                     <div class="portal-stat-label">TOTAL ÉVÉNEMENTS</div>
                     <div class="portal-stat-value">{{ eventCounts.total }}</div>
+                    <div class="portal-stat-note">Catalogue visible pour votre prospection</div>
+                    <div class="portal-stat-meter"><span style="width: 88%;"></span></div>
                 </div>
             </div>
             <div class="portal-stat-card">
@@ -64,6 +66,8 @@
                 <div class="portal-stat-info">
                     <div class="portal-stat-label">À SPONSORISER</div>
                     <div class="portal-stat-value">{{ eventCounts.sponsorable }}</div>
+                    <div class="portal-stat-note">Opportunites actuellement ouvertes</div>
+                    <div class="portal-stat-meter"><span style="width: 72%;"></span></div>
                 </div>
             </div>
             <div class="portal-stat-card">
@@ -71,6 +75,8 @@
                 <div class="portal-stat-info">
                     <div class="portal-stat-label">EN COURS</div>
                     <div class="portal-stat-value">0</div>
+                    <div class="portal-stat-note">Partenariats actifs sur le terrain</div>
+                    <div class="portal-stat-meter"><span style="width: 24%;"></span></div>
                 </div>
             </div>
             <div class="portal-stat-card">
@@ -78,21 +84,25 @@
                 <div class="portal-stat-info">
                     <div class="portal-stat-label">HISTORIQUE</div>
                     <div class="portal-stat-value">{{ isSponsorSession ? mySponsors|length : 0 }}</div>
+                    <div class="portal-stat-note">Vos collaborations deja enregistrees</div>
+                    <div class="portal-stat-meter"><span style="width: {{ isSponsorSession and mySponsors|length > 0 ? 62 : 18 }}%;"></span></div>
                 </div>
             </div>
         </div>
 
         <form class="portal-search" method="get" action="{{ path('app_sponsor_portal') }}">
-            <input type="text" name="q" value="{{ search|default('') }}" placeholder="Rechercher un evenement..." autocomplete="off" data-live-search-input>
-            <select name="sort">
+            <div class="portal-search-main">
+                <input type="text" name="q" value="{{ search|default('') }}" placeholder="Rechercher un evenement..." autocomplete="off" data-live-search-input>
+                <select name="sort" onchange="this.form.requestSubmit()">
                 <option value="date_asc" {{ sort == 'date_asc' ? 'selected' : '' }}>Tri: Date proche</option>
                 <option value="date_desc" {{ sort == 'date_desc' ? 'selected' : '' }}>Tri: Date lointaine</option>
                 <option value="title_asc" {{ sort == 'title_asc' ? 'selected' : '' }}>Tri: Titre A-Z</option>
                 <option value="title_desc" {{ sort == 'title_desc' ? 'selected' : '' }}>Tri: Titre Z-A</option>
                 <option value="location_asc" {{ sort == 'location_asc' ? 'selected' : '' }}>Tri: Lieu</option>
-            </select>
+                </select>
+            </div>
             {% if isSponsorSession %}
-                <select name="my_sort">
+                <select name="my_sort" onchange="this.form.requestSubmit()">
                     <option value="recent" {{ mySort == 'recent' ? 'selected' : '' }}>Mes partenariats: recents</option>
                     <option value="amount_desc" {{ mySort == 'amount_desc' ? 'selected' : '' }}>Montant decroissant</option>
                     <option value="amount_asc" {{ mySort == 'amount_asc' ? 'selected' : '' }}>Montant croissant</option>
@@ -111,44 +121,77 @@
         <h2 class="portal-section-title">Distribution des evenements</h2>
         <div class="distribution-grid">
             <div class="distribution-card">
+                <div class="distribution-accent atelier"></div>
                 <div class="distribution-chart">
-                    <svg viewBox="0 0 100 100" class="pie-chart">
-                        <circle cx="50" cy="50" r="45" class="pie-bg"></circle>
-                        <circle cx="50" cy="50" r="45" class="pie-segment pie-1" style="--percentage: 35;"></circle>
-                        <text x="50" y="50" class="pie-label pie-label-1">35%</text>
+                    <svg viewBox="0 0 120 120" class="pie-chart modern">
+                        <defs>
+                            <linearGradient id="distAtelier" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#4f8cff"/>
+                                <stop offset="100%" stop-color="#38bdf8"/>
+                            </linearGradient>
+                        </defs>
+                        <circle cx="60" cy="60" r="44" class="pie-bg"></circle>
+                        <circle cx="60" cy="60" r="44" class="pie-segment pie-segment-modern" style="--percentage: 35; --circumference: 276.46; stroke: url(#distAtelier);"></circle>
+                        <circle cx="60" cy="60" r="31" class="pie-inner-ring"></circle>
+                        <text x="60" y="57" class="pie-label modern">35%</text>
+                        <text x="60" y="72" class="pie-caption">part</text>
                     </svg>
                 </div>
                 <div class="distribution-info">
+                    <div class="distribution-chip atelier">Segment principal</div>
                     <h3>Ateliers</h3>
                     <p>Les ateliers representent la majorite des evenements a soutenir</p>
+                    <div class="distribution-bar"><span class="atelier" style="width: 35%;"></span></div>
                     <div class="distribution-value">{{ eventCounts.sponsorable }} evenements</div>
                 </div>
             </div>
             <div class="distribution-card">
+                <div class="distribution-accent conference"></div>
                 <div class="distribution-chart">
-                    <svg viewBox="0 0 100 100" class="pie-chart">
-                        <circle cx="50" cy="50" r="45" class="pie-bg"></circle>
-                        <circle cx="50" cy="50" r="45" class="pie-segment pie-2" style="--percentage: 25;"></circle>
-                        <text x="50" y="50" class="pie-label pie-label-2">25%</text>
+                    <svg viewBox="0 0 120 120" class="pie-chart modern">
+                        <defs>
+                            <linearGradient id="distConference" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#18c29c"/>
+                                <stop offset="100%" stop-color="#10b981"/>
+                            </linearGradient>
+                        </defs>
+                        <circle cx="60" cy="60" r="44" class="pie-bg"></circle>
+                        <circle cx="60" cy="60" r="44" class="pie-segment pie-segment-modern" style="--percentage: 25; --circumference: 276.46; stroke: url(#distConference);"></circle>
+                        <circle cx="60" cy="60" r="31" class="pie-inner-ring"></circle>
+                        <text x="60" y="57" class="pie-label modern">25%</text>
+                        <text x="60" y="72" class="pie-caption">part</text>
                     </svg>
                 </div>
                 <div class="distribution-info">
+                    <div class="distribution-chip conference">Visibilite forte</div>
                     <h3>Conferences</h3>
                     <p>Opportunites de networking et de B2B a forte visibilite</p>
+                    <div class="distribution-bar"><span class="conference" style="width: 25%;"></span></div>
                     <div class="distribution-value">Haute visibilite</div>
                 </div>
             </div>
             <div class="distribution-card">
+                <div class="distribution-accent autres"></div>
                 <div class="distribution-chart">
-                    <svg viewBox="0 0 100 100" class="pie-chart">
-                        <circle cx="50" cy="50" r="45" class="pie-bg"></circle>
-                        <circle cx="50" cy="50" r="45" class="pie-segment pie-3" style="--percentage: 40;"></circle>
-                        <text x="50" y="50" class="pie-label pie-label-3">40%</text>
+                    <svg viewBox="0 0 120 120" class="pie-chart modern">
+                        <defs>
+                            <linearGradient id="distAutres" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#f6b23c"/>
+                                <stop offset="100%" stop-color="#fb7185"/>
+                            </linearGradient>
+                        </defs>
+                        <circle cx="60" cy="60" r="44" class="pie-bg"></circle>
+                        <circle cx="60" cy="60" r="44" class="pie-segment pie-segment-modern" style="--percentage: 40; --circumference: 276.46; stroke: url(#distAutres);"></circle>
+                        <circle cx="60" cy="60" r="31" class="pie-inner-ring"></circle>
+                        <text x="60" y="57" class="pie-label modern">40%</text>
+                        <text x="60" y="72" class="pie-caption">part</text>
                     </svg>
                 </div>
                 <div class="distribution-info">
+                    <div class="distribution-chip autres">Mix etendu</div>
                     <h3>Autres</h3>
                     <p>Seminaires, formations et evenements specialises</p>
+                    <div class="distribution-bar"><span class="autres" style="width: 40%;"></span></div>
                     <div class="distribution-value">Diversifiees</div>
                 </div>
             </div>
@@ -163,20 +206,48 @@
             <div class="portal-catalog-grid">
                 {% for event in recommendedEvents %}
                     {% set t = event.title|lower %}
-                    {% set type = 'conference' %}
-                    {% set cls = '' %}
-                    {% if 'atelier' in t %}{% set type = 'Atelier' %}{% set cls = 'atelier' %}{% endif %}
-                    {% if 'seminaire' in t or 'séminaire' in t %}{% set type = 'Seminaire' %}{% set cls = 'seminaire' %}{% endif %}
-                    {% if 'formation' in t or 'workshop' in t %}{% set type = 'Formation' %}{% set cls = 'formation' %}{% endif %}
+                    {% set type = 'Conference' %}
+                    {% set cls = 'conference' %}
+                    {% set mood = 'Echange academique' %}
+                    {% if 'atelier' in t %}
+                        {% set type = 'Atelier' %}
+                        {% set cls = 'atelier' %}
+                        {% set mood = 'Pratique collaborative' %}
+                    {% elseif 'seminaire' in t or 'séminaire' in t %}
+                        {% set type = 'Seminaire' %}
+                        {% set cls = 'seminaire' %}
+                        {% set mood = 'Prise de parole inspiree' %}
+                    {% elseif 'formation' in t %}
+                        {% set type = 'Formation' %}
+                        {% set cls = 'formation' %}
+                        {% set mood = 'Montee en competences' %}
+                    {% elseif 'workshop' in t %}
+                        {% set type = 'Workshop' %}
+                        {% set cls = 'workshop' %}
+                        {% set mood = 'Laboratoire d idees' %}
+                    {% elseif 'carriere' in t or 'career' in t or 'emploi' in t %}
+                        {% set type = 'Carriere' %}
+                        {% set cls = 'carriere' %}
+                        {% set mood = 'Projection professionnelle' %}
+                    {% endif %}
 
-                    <article class="portal-event-card {{ loop.index == 3 ? 'highlight' : '' }}" data-live-search-item data-search="{{ event.title }}" data-live-suggest="{{ event.title }}">
-                        <span class="portal-badge {{ cls }}">{{ type }}</span>
-                        <h3 class="portal-event-title">{{ event.title }}</h3>
-                        <div class="portal-event-meta">Date: {{ event.startDate ? event.startDate|date('Y-m-d H:i') : '-' }}</div>
-                        <div class="portal-event-meta">Lieu: {{ event.location ?: '-' }}</div>
-                        <div class="portal-card-actions">
-                            <a class="portal-btn-secondary" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir details</a>
-                            <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
+                    <article class="portal-event-card {{ cls }} {{ loop.index == 3 ? 'highlight' : '' }}" data-live-search-item data-search="{{ event.title }}" data-live-suggest="{{ event.title }}">
+                        <div class="portal-event-visual"></div>
+                        <div class="portal-event-content">
+                            <div class="portal-event-topline">
+                                <span class="portal-badge {{ cls }}">{{ type }}</span>
+                                <span class="portal-event-mood">{{ mood }}</span>
+                            </div>
+                            <h3 class="portal-event-title">{{ event.title }}</h3>
+                            <p class="portal-event-description">{{ event.description ?: 'Une experience universitaire soigneusement pensee pour reunir apprentissage, rencontres et nouvelles opportunites.' }}</p>
+                            <div class="portal-event-meta-row">
+                                <div class="portal-event-meta">Date: {{ event.startDate ? event.startDate|date('Y-m-d H:i') : '-' }}</div>
+                                <div class="portal-event-meta">Lieu: {{ event.location ?: '-' }}</div>
+                            </div>
+                            <div class="portal-card-actions">
+                                <a class="portal-btn-secondary" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir details</a>
+                                <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
+                            </div>
                         </div>
                     </article>
                 {% endfor %}
@@ -192,20 +263,48 @@
             <div class="portal-catalog-grid">
                 {% for event in sponsorableEvents %}
                     {% set t = event.title|lower %}
-                    {% set type = 'conference' %}
-                    {% set cls = '' %}
-                    {% if 'atelier' in t %}{% set type = 'Atelier' %}{% set cls = 'atelier' %}{% endif %}
-                    {% if 'seminaire' in t or 'séminaire' in t %}{% set type = 'Seminaire' %}{% set cls = 'seminaire' %}{% endif %}
-                    {% if 'formation' in t or 'workshop' in t %}{% set type = 'Formation' %}{% set cls = 'formation' %}{% endif %}
+                    {% set type = 'Conference' %}
+                    {% set cls = 'conference' %}
+                    {% set mood = 'Scene institutionnelle' %}
+                    {% if 'atelier' in t %}
+                        {% set type = 'Atelier' %}
+                        {% set cls = 'atelier' %}
+                        {% set mood = 'Experimentation concrete' %}
+                    {% elseif 'seminaire' in t or 'séminaire' in t %}
+                        {% set type = 'Seminaire' %}
+                        {% set cls = 'seminaire' %}
+                        {% set mood = 'Temps fort academique' %}
+                    {% elseif 'formation' in t %}
+                        {% set type = 'Formation' %}
+                        {% set cls = 'formation' %}
+                        {% set mood = 'Apprentissage guide' %}
+                    {% elseif 'workshop' in t %}
+                        {% set type = 'Workshop' %}
+                        {% set cls = 'workshop' %}
+                        {% set mood = 'Co-creation active' %}
+                    {% elseif 'carriere' in t or 'career' in t or 'emploi' in t %}
+                        {% set type = 'Carriere' %}
+                        {% set cls = 'carriere' %}
+                        {% set mood = 'Orientation et avenir' %}
+                    {% endif %}
 
-                    <article class="portal-event-card {{ loop.index == 3 ? 'highlight' : '' }}" data-live-search-item data-search="{{ event.title }}" data-live-suggest="{{ event.title }}">
-                        <span class="portal-badge {{ cls }}">{{ type }}</span>
-                        <h3 class="portal-event-title">{{ event.title }}</h3>
-                        <div class="portal-event-meta">Date: {{ event.startDate ? event.startDate|date('Y-m-d H:i') : '-' }}</div>
-                        <div class="portal-event-meta">Lieu: {{ event.location ?: '-' }}</div>
-                        <div class="portal-card-actions">
-                            <a class="portal-btn-secondary" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir details</a>
-                            <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
+                    <article class="portal-event-card {{ cls }} {{ loop.index == 3 ? 'highlight' : '' }}" data-live-search-item data-search="{{ event.title }}" data-live-suggest="{{ event.title }}">
+                        <div class="portal-event-visual"></div>
+                        <div class="portal-event-content">
+                            <div class="portal-event-topline">
+                                <span class="portal-badge {{ cls }}">{{ type }}</span>
+                                <span class="portal-event-mood">{{ mood }}</span>
+                            </div>
+                            <h3 class="portal-event-title">{{ event.title }}</h3>
+                            <p class="portal-event-description">{{ event.description ?: 'Une occasion soigneusement cadree pour soutenir la vie universitaire, valoriser les talents et renforcer votre presence.' }}</p>
+                            <div class="portal-event-meta-row">
+                                <div class="portal-event-meta">Date: {{ event.startDate ? event.startDate|date('Y-m-d H:i') : '-' }}</div>
+                                <div class="portal-event-meta">Lieu: {{ event.location ?: '-' }}</div>
+                            </div>
+                            <div class="portal-card-actions">
+                                <a class="portal-btn-secondary" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir details</a>
+                                <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
+                            </div>
                         </div>
                     </article>
                 {% endfor %}

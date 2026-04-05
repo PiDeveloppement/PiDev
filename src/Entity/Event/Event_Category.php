@@ -1,10 +1,7 @@
 <?php
+// src/Entity/Category.php
 
 namespace App\Entity\Event;
-
-use App\Entity\User\UserModel;
-use App\Entity\Questionnaire\Question;
-use App\Entity\Questionnaire\Feedback;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -12,14 +9,9 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity]
-#[ORM\Table(name: "event")]
-class Event
+#[ORM\Table(name: "event_category")]
+class Category
 {
-    // ==================== CONSTANTES ====================
-
-    public const STATUS_DRAFT = 'DRAFT';
-    public const STATUS_PUBLISHED = 'PUBLISHED';
-
     // ==================== ATTRIBUTS ====================
 
     #[ORM\Id]
@@ -27,73 +19,25 @@ class Event
     #[ORM\Column(type: "integer")]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: "Le titre est requis")]
+    #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: "Le nom de la catégorie est requis")]
     #[Assert\Length(
-        min: 5,
         max: 100,
-        minMessage: "Le titre doit faire au moins {{ limit }} caractères",
-        maxMessage: "Le titre ne peut pas dépasser {{ limit }} caractères"
+        maxMessage: "Le nom ne peut pas dépasser {{ limit }} caractères"
     )]
-    private ?string $title = null;
+    private ?string $name = null;
 
-    #[ORM\Column(type: Types::TEXT)]
-    #[Assert\NotBlank(message: "La description est requise")]
-    #[Assert\Length(
-        min: 10,
-        max: 1000,
-        minMessage: "La description doit faire au moins {{ limit }} caractères",
-        maxMessage: "La description ne peut pas dépasser {{ limit }} caractères"
-    )]
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(name: "start_date", type: Types::DATETIME_MUTABLE)]
-    #[Assert\NotNull(message: "La date de début est requise")]
-    private ?\DateTimeInterface $startDate = null;
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $icon = null;
 
-    #[ORM\Column(name: "end_date", type: Types::DATETIME_MUTABLE)]
-    #[Assert\NotNull(message: "La date de fin est requise")]
-    #[Assert\GreaterThan(propertyPath: "startDate", message: "La date de fin doit être après la date de début")]
-    private ?\DateTimeInterface $endDate = null;
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $color = null;
 
-    #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: "Le lieu est requis")]
-    #[Assert\Length(
-        min: 3,
-        max: 100,
-        minMessage: "Le lieu doit faire au moins {{ limit }} caractères",
-        maxMessage: "Le lieu ne peut pas dépasser {{ limit }} caractères"
-    )]
-    private ?string $location = null;
-
-    #[ORM\Column(length: 100, nullable: true)]
-    private ?string $gouvernorat = null;
-
-    #[ORM\Column(length: 100, nullable: true)]
-    private ?string $ville = null;
-
-    #[ORM\Column(type: Types::INTEGER)]
-    #[Assert\Positive(message: "La capacité doit être d'au moins 1 place")]
-    private ?int $capacity = 50;
-
-    #[ORM\Column(name: "image_url", length: 500, nullable: true)]
-    private ?string $imageUrl = null;
-
-    #[ORM\Column(name: "category_id", type: Types::INTEGER)]
-    #[Assert\Positive(message: "La catégorie est requise")]
-    private ?int $categoryId = null;
-
-    #[ORM\Column(name: "created_by", type: Types::INTEGER)]
-    private ?int $createdBy = null;
-
-    #[ORM\Column(length: 20, options: ["default" => "DRAFT"])]
-    private ?string $status = self::STATUS_DRAFT;
-
-    #[ORM\Column(name: "is_free", type: Types::BOOLEAN, options: ["default" => true])]
-    private ?bool $isFree = true;
-
-    #[ORM\Column(name: "ticket_price", type: Types::DECIMAL, precision: 10, scale: 2, options: ["default" => 0])]
-    private ?float $ticketPrice = 0.0;
+    #[ORM\Column(name: "is_active", type: Types::BOOLEAN, options: ["default" => true])]
+    private ?bool $isActive = true;
 
     #[ORM\Column(name: "created_at", type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $createdAt = null;
@@ -103,44 +47,19 @@ class Event
 
     // ==================== RELATIONS ====================
 
-    #[ORM\ManyToOne(targetEntity: Category::class)]
-    #[ORM\JoinColumn(name: "category_id", referencedColumnName: "id", nullable: true)]
-    private ?Category $category = null;
-
-    #[ORM\ManyToOne(targetEntity: UserModel::class)]
-    #[ORM\JoinColumn(name: "created_by", referencedColumnName: "Id_User", nullable: true)]
-    private ?UserModel $creator = null;
-
     /**
-     * @var Collection<int, Ticket>
+     * @var Collection<int, Event>
      */
-    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Ticket::class)]
-    private Collection $tickets;
-
-    /**
-     * @var Collection<int, Question>
-     */
-    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Question::class)]
-    private Collection $questions;
-
-    /**
-     * @var Collection<int, Feedback>
-     */
-    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Feedback::class)]
-    private Collection $feedbacks;
+    #[ORM\OneToMany(mappedBy: 'category', targetEntity: Event::class)]
+    private Collection $events;
 
     // ==================== CONSTRUCTEUR ====================
 
     public function __construct()
     {
-        $this->status = self::STATUS_DRAFT;
-        $this->isFree = true;
-        $this->ticketPrice = 0.0;
-        $this->capacity = 50;
+        $this->isActive = true;
+        $this->events = new ArrayCollection();
         $this->createdAt = new \DateTime();
-        $this->tickets = new ArrayCollection();
-        $this->questions = new ArrayCollection();
-        $this->feedbacks = new ArrayCollection();
     }
 
     // ==================== GETTERS & SETTERS ====================
@@ -150,14 +69,14 @@ class Event
         return $this->id;
     }
 
-    public function getTitle(): ?string
+    public function getName(): ?string
     {
-        return $this->title;
+        return $this->name;
     }
 
-    public function setTitle(string $title): self
+    public function setName(string $name): self
     {
-        $this->title = $title;
+        $this->name = $name;
         return $this;
     }
 
@@ -166,144 +85,42 @@ class Event
         return $this->description;
     }
 
-    public function setDescription(string $description): self
+    public function setDescription(?string $description): self
     {
         $this->description = $description;
         return $this;
     }
 
-    public function getStartDate(): ?\DateTimeInterface
+    public function getIcon(): ?string
     {
-        return $this->startDate;
+        return $this->icon;
     }
 
-    public function setStartDate(\DateTimeInterface $startDate): self
+    public function setIcon(?string $icon): self
     {
-        $this->startDate = $startDate;
+        $this->icon = $icon;
         return $this;
     }
 
-    public function getEndDate(): ?\DateTimeInterface
+    public function getColor(): ?string
     {
-        return $this->endDate;
+        return $this->color;
     }
 
-    public function setEndDate(\DateTimeInterface $endDate): self
+    public function setColor(?string $color): self
     {
-        $this->endDate = $endDate;
+        $this->color = $color;
         return $this;
     }
 
-    public function getLocation(): ?string
+    public function isActive(): ?bool
     {
-        return $this->location;
+        return $this->isActive;
     }
 
-    public function setLocation(string $location): self
+    public function setIsActive(bool $isActive): self
     {
-        $this->location = $location;
-        return $this;
-    }
-
-    public function getGouvernorat(): ?string
-    {
-        return $this->gouvernorat;
-    }
-
-    public function setGouvernorat(?string $gouvernorat): self
-    {
-        $this->gouvernorat = $gouvernorat;
-        return $this;
-    }
-
-    public function getVille(): ?string
-    {
-        return $this->ville;
-    }
-
-    public function setVille(?string $ville): self
-    {
-        $this->ville = $ville;
-        return $this;
-    }
-
-    public function getCapacity(): ?int
-    {
-        return $this->capacity;
-    }
-
-    public function setCapacity(int $capacity): self
-    {
-        $this->capacity = $capacity;
-        return $this;
-    }
-
-    public function getImageUrl(): ?string
-    {
-        return $this->imageUrl;
-    }
-
-    public function setImageUrl(?string $imageUrl): self
-    {
-        $this->imageUrl = $imageUrl;
-        return $this;
-    }
-
-    public function getCategoryId(): ?int
-    {
-        return $this->categoryId;
-    }
-
-    public function setCategoryId(int $categoryId): self
-    {
-        $this->categoryId = $categoryId;
-        return $this;
-    }
-
-    public function getCreatedBy(): ?int
-    {
-        return $this->createdBy;
-    }
-
-    public function setCreatedBy(int $createdBy): self
-    {
-        $this->createdBy = $createdBy;
-        return $this;
-    }
-
-    public function getStatus(): ?string
-    {
-        return $this->status;
-    }
-
-    public function setStatus(string $status): self
-    {
-        if (!in_array($status, [self::STATUS_DRAFT, self::STATUS_PUBLISHED])) {
-            $status = self::STATUS_DRAFT;
-        }
-        $this->status = $status;
-        return $this;
-    }
-
-    public function isFree(): ?bool
-    {
-        return $this->isFree;
-    }
-
-    public function setIsFree(bool $isFree): self
-    {
-        $this->isFree = $isFree;
-        return $this;
-    }
-
-    public function getTicketPrice(): ?float
-    {
-        return $this->ticketPrice;
-    }
-
-    public function setTicketPrice(float $ticketPrice): self
-    {
-        $this->ticketPrice = $ticketPrice;
+        $this->isActive = $isActive;
         return $this;
     }
 
@@ -331,111 +148,29 @@ class Event
 
     // ==================== RELATIONS ====================
 
-    public function getCategory(): ?Category
-    {
-        return $this->category;
-    }
-
-    public function setCategory(?Category $category): self
-    {
-        $this->category = $category;
-        if ($category) {
-            $this->categoryId = $category->getId();
-        }
-        return $this;
-    }
-
-    public function getCreator(): ?UserModel
-    {
-        return $this->creator;
-    }
-
-    public function setCreator(?UserModel $creator): self
-    {
-        $this->creator = $creator;
-        if ($creator) {
-            $this->createdBy = $creator->getId();
-        }
-        return $this;
-    }
-
     /**
-     * @return Collection<int, Ticket>
+     * @return Collection<int, Event>
      */
-    public function getTickets(): Collection
+    public function getEvents(): Collection
     {
-        return $this->tickets;
+        return $this->events;
     }
 
-    public function addTicket(Ticket $ticket): self
+    public function addEvent(Event $event): self
     {
-        if (!$this->tickets->contains($ticket)) {
-            $this->tickets->add($ticket);
-            $ticket->setEvent($this);
+        if (!$this->events->contains($event)) {
+            $this->events->add($event);
+            $event->setCategory($this);
         }
         return $this;
     }
 
-    public function removeTicket(Ticket $ticket): self
+    public function removeEvent(Event $event): self
     {
-        if ($this->tickets->removeElement($ticket)) {
-            if ($ticket->getEvent() === $this) {
-                $ticket->setEvent(null);
+        if ($this->events->removeElement($event)) {
+            if ($event->getCategory() === $this) {
+                $event->setCategory(null);
             }
-        }
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Question>
-     */
-    public function getQuestions(): Collection
-    {
-        return $this->questions;
-    }
-
-    public function addQuestion(Question $question): self
-    {
-        if (!$this->questions->contains($question)) {
-            $this->questions->add($question);
-            $question->setEvent($this);
-        }
-        return $this;
-    }
-
-    public function removeQuestion(Question $question): self
-    {
-        if ($this->questions->removeElement($question)) {
-            if ($question->getEvent() === $this) {
-                $question->setEvent(null);
-            }
-        }
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Feedback>
-     */
-    public function getFeedbacks(): Collection
-    {
-        return $this->feedbacks;
-    }
-
-    public function addFeedback(Feedback $feedback): self
-    {
-        if (!$this->feedbacks->contains($feedback)) {
-            $this->feedbacks->add($feedback);
-           // $feedback->setEvent($this);
-        }
-        return $this;
-    }
-
-    public function removeFeedback(Feedback $feedback): self
-    {
-        if ($this->feedbacks->removeElement($feedback)) {
-           // if ($feedback->getEvent() === $this) {
-             //   $feedback->setEvent(null);
-           // }
         }
         return $this;
     }
@@ -443,128 +178,39 @@ class Event
     // ==================== MÉTHODES UTILITAIRES ====================
 
     /**
-     * Vérifie si l'événement est valide
+     * Retourne le nombre d'événements dans cette catégorie
+     */
+    public function getEventCount(): int
+    {
+        return $this->events->count();
+    }
+
+    /**
+     * Retourne le statut sous forme de badge texte
+     */
+    public function getStatusBadge(): string
+    {
+        return $this->isActive ? "✅ Active" : "❌ Inactive";
+    }
+
+    /**
+     * Retourne l'icône avec le nom (pour affichage)
+     */
+    public function getDisplayName(): string
+    {
+        return ($this->icon ? $this->icon . " " : "") . $this->name;
+    }
+
+    /**
+     * Vérifie si la catégorie est valide
      */
     public function isValid(): bool
     {
-        return !empty($this->title) &&
-               $this->startDate !== null &&
-               $this->endDate !== null &&
-               $this->startDate < $this->endDate &&
-               $this->categoryId > 0 &&
-               $this->createdBy > 0;
-    }
-
-    /**
-     * Vérifie si l'événement est complet
-     */
-    public function isFull(): bool
-    {
-        return $this->getParticipantsCount() >= $this->capacity;
-    }
-
-    /**
-     * Retourne le nombre de participants
-     */
-    public function getParticipantsCount(): int
-    {
-        return $this->tickets->count();
-    }
-
-    /**
-     * Retourne la durée en heures
-     */
-    public function getDurationInHours(): float
-    {
-        if (!$this->startDate || !$this->endDate) {
-            return 0;
-        }
-        $interval = $this->startDate->diff($this->endDate);
-        return $interval->h + ($interval->days * 24);
-    }
-
-    /**
-     * Retourne le statut affichable
-     */
-    public function getStatusDisplay(): string
-    {
-        return match($this->status) {
-            self::STATUS_DRAFT => 'Brouillon',
-            self::STATUS_PUBLISHED => 'Publié',
-            default => 'Inconnu'
-        };
-    }
-
-    /**
-     * Retourne le type de prix
-     */
-    public function getPriceDisplay(): string
-    {
-        if ($this->isFree) {
-            return 'Gratuit';
-        }
-        return sprintf('%.2f DT', $this->ticketPrice);
-    }
-
-    /**
-     * Retourne la date de début formatée
-     */
-    public function getFormattedStartDate(): string
-    {
-        if (!$this->startDate) {
-            return '';
-        }
-        return $this->startDate->format('d/m/Y H:i');
-    }
-
-    /**
-     * Retourne la date de fin formatée
-     */
-    public function getFormattedEndDate(): string
-    {
-        if (!$this->endDate) {
-            return '';
-        }
-        return $this->endDate->format('d/m/Y H:i');
-    }
-
-    /**
-     * Retourne la date de création formatée
-     */
-    public function getFormattedCreatedAt(): string
-    {
-        if (!$this->createdAt) {
-            return '';
-        }
-        return $this->createdAt->format('d/m/Y H:i');
-    }
-
-    /**
-     * Retourne le statut temporel de l'événement
-     */
-    public function getTemporalStatus(): string
-    {
-        $now = new \DateTime();
-        
-        if ($this->endDate < $now) {
-            return 'Terminé';
-        }
-        if ($this->startDate > $now) {
-            return 'À venir';
-        }
-        if ($this->startDate <= $now && $this->endDate >= $now) {
-            return 'En cours';
-        }
-        return 'Inconnu';
-    }
-
-    public function getDisplayName(): string
-    {
-        return sprintf('%s (%s)', $this->title, $this->getStatusDisplay());
+        return !empty($this->name) && strlen($this->name) <= 100;
     }
 
     public function __toString(): string
     {
-        return $this->title ?? 'Événement #' . $this->id;
+        return $this->getDisplayName();
     }
 }

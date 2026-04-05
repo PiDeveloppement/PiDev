@@ -18,6 +18,7 @@ class Sponsor
     private ?int $id = null;
 
     #[ORM\Column(name: 'event_id', type: Types::INTEGER)]
+    #[Assert\NotNull(message: 'Veuillez selectionner un evenement.')]
     #[Assert\Positive(message: 'L\'evenement est obligatoire.')]
     private ?int $eventId = null;
 
@@ -57,10 +58,18 @@ class Sponsor
 
     #[ORM\Column(name: 'industry', length: 255, nullable: true)]
     #[Assert\Length(max: 255, maxMessage: 'Le secteur est trop long.')]
+    #[Assert\Regex(
+        pattern: '/^$|^[A-Za-zÀ-ÿ\\s\\-&,]+$/u',
+        message: 'Le secteur doit contenir uniquement des lettres.'
+    )]
     private ?string $industry = null;
 
     #[ORM\Column(name: 'phone', length: 20, nullable: true)]
-    #[Assert\Regex(pattern: '/^$|^\\+?[0-9]{8,20}$/', message: 'Telephone invalide.')]
+    #[Assert\NotBlank(message: 'Le telephone est obligatoire.')]
+    #[Assert\Regex(
+        pattern: '/^216[0-9]{8}$/',
+        message: 'Le telephone doit contenir 11 chiffres et commencer par 216.'
+    )]
     private ?string $phone = null;
 
     #[ORM\Column(name: 'document_url', length: 500, nullable: true)]
@@ -69,7 +78,11 @@ class Sponsor
     private ?string $documentUrl = null;
 
     #[ORM\Column(name: 'tax_id', length: 50, nullable: true)]
-    #[Assert\Regex(pattern: '/^$|^[0-9]{7}[A-Za-z]$/', message: 'Format N fiscal invalide (ex: 1234567A).')]
+    #[Assert\NotBlank(message: 'Le code fiscal est obligatoire.')]
+    #[Assert\Regex(
+        pattern: '/^[0-9]{7}[A-Z]$/',
+        message: 'Le code fiscal doit contenir 7 chiffres suivis d une lettre majuscule (ex: 1234567A).'
+    )]
     private ?string $taxId = null;
 
     public function getId(): ?int
@@ -204,7 +217,14 @@ class Sponsor
 
     public function setPhone(?string $phone): self
     {
-        $this->phone = $phone !== null && trim($phone) !== '' ? trim($phone) : null;
+        if ($phone === null || trim($phone) === '') {
+            $this->phone = null;
+
+            return $this;
+        }
+
+        $normalized = preg_replace('/\\D+/', '', $phone) ?? '';
+        $this->phone = $normalized;
 
         return $this;
     }
@@ -228,7 +248,7 @@ class Sponsor
 
     public function setTaxId(?string $taxId): self
     {
-        $this->taxId = $taxId !== null && trim($taxId) !== '' ? trim($taxId) : null;
+        $this->taxId = $taxId !== null && trim($taxId) !== '' ? strtoupper(trim($taxId)) : null;
 
         return $this;
     }

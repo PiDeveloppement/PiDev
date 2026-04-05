@@ -29,7 +29,7 @@
                 </div>
             </div>
 
-            {{ form_start(form) }}
+            {{ form_start(form, { attr: { novalidate: 'novalidate' } }) }}
             <div class="budget-form-grid">
                 <div class="budget-field full">
                     {{ form_label(form.eventId) }}

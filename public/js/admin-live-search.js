@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('[data-live-search-root]').forEach((root) => {
         const input = root.querySelector('[data-live-search-input]');
+        const hiddenInput = root.querySelector('[data-live-search-hidden]');
         const items = Array.from(root.querySelectorAll('[data-live-search-item]'));
         const emptyState = root.querySelector('[data-live-search-empty]');
 
@@ -27,6 +28,17 @@ document.addEventListener('DOMContentLoaded', () => {
         panel.hidden = true;
         wrapper.appendChild(panel);
 
+        const syncPanelSpace = () => {
+            if (panel.hidden || panel.childElementCount === 0) {
+                wrapper.classList.remove('is-open');
+                wrapper.style.marginBottom = '0px';
+                return;
+            }
+
+            wrapper.classList.add('is-open');
+            wrapper.style.marginBottom = `${panel.offsetHeight + 12}px`;
+        };
+
         const suggestions = Array.from(new Set(
             items.flatMap((item) =>
                 (item.dataset.liveSuggest || item.dataset.search || '')
@@ -39,10 +51,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const closeSuggestions = () => {
             panel.hidden = true;
             panel.innerHTML = '';
+            syncPanelSpace();
         };
 
         const applyFilter = () => {
             const query = normalize(input.value);
+            if (hiddenInput) {
+                hiddenInput.value = input.value;
+            }
             let visibleCount = 0;
 
             items.forEach((item) => {
@@ -85,6 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.addEventListener('mousedown', (event) => {
                     event.preventDefault();
                     input.value = value;
+                    if (hiddenInput) {
+                        hiddenInput.value = value;
+                    }
                     applyFilter();
                     closeSuggestions();
                 });
@@ -92,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             panel.hidden = false;
+            requestAnimationFrame(syncPanelSpace);
         };
 
         input.addEventListener('input', () => {
@@ -124,5 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         applyFilter();
+        syncPanelSpace();
     });
 });

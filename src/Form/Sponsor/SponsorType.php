@@ -12,6 +12,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Image;
+use Symfony\Component\Validator\Constraints as Assert;
 
 class SponsorType extends AbstractType
 {
@@ -70,12 +71,14 @@ class SponsorType extends AbstractType
             ->add('contributionName', NumberType::class, [
                 'label' => 'Contribution (TND)',
                 'scale' => 2,
+                'html5' => false,
                 'invalid_message' => 'Veuillez saisir un montant valide.',
                 'attr' => [
                     'step' => '0.01',
                     'min' => '0',
                     'placeholder' => 'ex: 1500.00',
                     'class' => 'form-control',
+                    'inputmode' => 'decimal',
                 ],
             ])
             ->add('industry', TextType::class, [
@@ -83,8 +86,9 @@ class SponsorType extends AbstractType
                 'required' => false,
                 'invalid_message' => 'Veuillez saisir un secteur valide.',
                 'attr' => [
-                    'placeholder' => 'ex: Marketing',
+                    'placeholder' => 'ex: Technologie',
                     'class' => 'form-control',
+                    'pattern' => '[A-Za-zÀ-ÿ\\s\\-&,]+',
                 ],
             ])
             ->add('phone', TextType::class, [
@@ -94,6 +98,9 @@ class SponsorType extends AbstractType
                 'attr' => [
                     'placeholder' => 'ex: 21612345678',
                     'class' => 'form-control',
+                    'maxlength' => '11',
+                    'inputmode' => 'numeric',
+                    'pattern' => '216[0-9]{8}',
                 ],
             ])
             ->add('taxId', TextType::class, [
@@ -103,6 +110,9 @@ class SponsorType extends AbstractType
                 'attr' => [
                     'placeholder' => 'ex: 1234567A',
                     'class' => 'form-control',
+                    'maxlength' => '8',
+                    'style' => 'text-transform: uppercase;',
+                    'pattern' => '[0-9]{7}[A-Z]',
                 ],
             ])
             ->add('logoUrl', TextType::class, [
