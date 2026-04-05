@@ -1,0 +1,419 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ currentEvent is defined and currentEvent.id is defined ? 'Modifier' : 'Nouvel' }} Événement{% endblock %}
+
+{% block admin_content %}
+<style>
+    .form-card {
+        background: white; border: 1px solid #e9ecef; border-radius: 16px;
+        padding: 25px; margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+    .section-title {
+        font-size: 16px; font-weight: 700; color: #1e293b;
+        margin-bottom: 15px; display: flex; align-items: center; gap: 8px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+        font-size: 14px; font-weight: 600; color: #2c3e50;
+        display: flex; align-items: center; gap: 4px; margin-bottom: 6px;
+    }
+    .required { color: #dc3545; }
+    .form-control {
+        width: 100%; padding: 10px 14px; border: 1px solid #ced4da;
+        border-radius: 8px; font-size: 14px; background: #f8f9fa;
+        outline: none; transition: border-color 0.2s;
+    }
+    .form-control:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    .error-msg { color: #ef4444; font-size: 12px; margin-top: 4px; display: none; }
+    .error-msg.show { display: block; }
+    .form-control.error { border-color: #ef4444; background: #fff5f5; }
+    .form-control.success { border-color: #10b981; background: #f0fdf4; }
+
+    .price-toggle {
+        display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    }
+    .toggle-switch {
+        position: relative; width: 46px; height: 24px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+        position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+        background: #cbd5e1; border-radius: 24px; transition: 0.3s;
+    }
+    .toggle-slider:before {
+        content: ""; position: absolute; height: 18px; width: 18px;
+        left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: #10b981; }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
+
+    .weather-box {
+        background: #fffbeb; border: 1px solid #fbbf24; border-radius: 12px;
+        padding: 15px; margin-top: 10px; display: none;
+    }
+    .weather-box.show { display: block; }
+
+    .char-counter { font-size: 12px; color: #6c757d; }
+
+    .btn-back {
+        background: transparent; border: 1px solid #cbd5e1; border-radius: 8px;
+        padding: 8px 16px; color: #64748b; font-size: 14px; cursor: pointer;
+        text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-save {
+        background: #2196F3; border: none; border-radius: 8px;
+        padding: 8px 20px; color: white; font-size: 14px; font-weight: 600;
+        cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-save:hover { background: #1976D2; }
+    .btn-cancel {
+        background: transparent; border: 1px solid #cbd5e1; border-radius: 8px;
+        padding: 8px 20px; color: #64748b; font-size: 14px; cursor: pointer;
+        text-decoration: none;
+    }
+</style>
+
+<form method="post" id="eventForm">
+
+    <!-- Boutons Header -->
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:20px;">
+        <a href="{{ path('app_event_index') }}" class="btn-cancel">✖ Annuler</a>
+        <button type="submit" class="btn-save">
+            <i class="fas fa-save"></i>
+            {{ event.id is defined and event.id ? 'Mettre à jour' : 'Enregistrer' }}
+        </button>
+    </div>
+
+    <!-- SECTION 1: INFORMATIONS GÉNÉRALES -->
+    <div class="form-card">
+        <div class="section-title">📝 INFORMATIONS GÉNÉRALES</div>
+
+        <div class="form-group">
+            <label class="form-label">Titre <span class="required">*</span></label>
+            <input type="text" name="title" class="form-control" id="titleInput"
+                   placeholder="Ex: Conférence IA, Hackathon 2025..."
+                   value="{{ event.title ?? '' }}" />
+            <div class="error-msg" id="titleError">Le titre est requis (5-100 caractères)</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">
+                Description <span class="required">*</span>
+                <span class="char-counter" id="descCounter">(0/1000)</span>
+            </label>
+            <textarea name="description" class="form-control" id="descInput"
+                      rows="4" placeholder="Décrivez cet événement...">{{ event.description ?? '' }}</textarea>
+            <div class="error-msg" id="descError">La description est requise (10-1000 caractères)</div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: DATES ET HORAIRES -->
+    <div class="form-card">
+        <div class="section-title">⏰ DATES ET HORAIRES</div>
+
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label class="form-label">Date de début <span class="required">*</span></label>
+                {% set selectedStartHour = event.startDate ? event.startDate|date('H') : '09' %}
+                {% set selectedStartMinute = event.startDate ? event.startDate|date('i') : '00' %}
+              <div class="form-grid-2" style="gap:10px;">
+                  <input type="date" class="form-control" id="startDateOnly"
+                      value="{{ event.startDate ? event.startDate|date('Y-m-d') : '' }}"
+                      min="{{ 'now'|date('Y-m-d') }}" />
+                    <div class="form-grid-2" style="gap:10px;">
+                        <select class="form-control" id="startHour">
+                            {% for h in 0..23 %}
+                                {% set hh = '%02d'|format(h) %}
+                                <option value="{{ hh }}" {{ hh == selectedStartHour ? 'selected' : '' }}>{{ hh }} h</option>
+                            {% endfor %}
+                        </select>
+                        <select class="form-control" id="startMinute">
+                            {% for i in 0..11 %}
+                                {% set mm = '%02d'|format(i * 5) %}
+                                <option value="{{ mm }}" {{ mm == selectedStartMinute ? 'selected' : '' }}>{{ mm }} min</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+              </div>
+              <input type="hidden" name="startDate" id="startDate"
+                  value="{{ event.startDate ? event.startDate|date('Y-m-d\\TH:i') : '' }}" />
+                <div class="error-msg" id="startDateError">La date de début est requise</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Date de fin <span class="required">*</span></label>
+                {% set selectedEndHour = event.endDate ? event.endDate|date('H') : '18' %}
+                {% set selectedEndMinute = event.endDate ? event.endDate|date('i') : '00' %}
+              <div class="form-grid-2" style="gap:10px;">
+                  <input type="date" class="form-control" id="endDateOnly"
+                      value="{{ event.endDate ? event.endDate|date('Y-m-d') : '' }}"
+                      min="{{ 'now'|date('Y-m-d') }}" />
+                    <div class="form-grid-2" style="gap:10px;">
+                        <select class="form-control" id="endHour">
+                            {% for h in 0..23 %}
+                                {% set hh = '%02d'|format(h) %}
+                                <option value="{{ hh }}" {{ hh == selectedEndHour ? 'selected' : '' }}>{{ hh }} h</option>
+                            {% endfor %}
+                        </select>
+                        <select class="form-control" id="endMinute">
+                            {% for i in 0..11 %}
+                                {% set mm = '%02d'|format(i * 5) %}
+                                <option value="{{ mm }}" {{ mm == selectedEndMinute ? 'selected' : '' }}>{{ mm }} min</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+              </div>
+              <input type="hidden" name="endDate" id="endDate"
+                  value="{{ event.endDate ? event.endDate|date('Y-m-d\\TH:i') : '' }}" />
+                <div class="error-msg" id="endDateError">La date de fin doit être après le début</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: LIEU ET CAPACITÉ -->
+    <div class="form-card">
+        <div class="section-title">📍 LIEU ET CAPACITÉ</div>
+
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label class="form-label">Gouvernorat <span class="required">*</span></label>
+                <select name="gouvernorat" class="form-control" id="gouvernoratSelect">
+                    <option value="">Sélectionner un gouvernorat</option>
+                    {% for gov in ['Tunis','Ariana','Ben Arous','Manouba','Nabeul','Bizerte',
+                                   'Béja','Jendouba','Le Kef','Siliana','Kairouan','Kasserine',
+                                   'Sidi Bouzid','Sousse','Monastir','Mahdia','Sfax','Gafsa',
+                                   'Tozeur','Kebili','Gabès','Medenine','Tataouine','Zaghouan'] %}
+                        <option value="{{ gov }}" {{ (event.gouvernorat ?? '') == gov ? 'selected' : '' }}>
+                            {{ gov }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Capacité max <span class="required">*</span></label>
+                <input type="number" name="capacity" class="form-control" id="capacityInput"
+                       placeholder="Ex: 100" min="1"
+                       value="{{ event.capacity ?? 50 }}" />
+                <div class="error-msg" id="capacityError">Minimum 1 place</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Lieu (Faculté/Salle) <span class="required">*</span></label>
+            <select name="location" class="form-control" id="locationSelect">
+                <option value="">Sélectionner d'abord un gouvernorat</option>
+            </select>
+            <div class="error-msg" id="locationError">Le lieu est requis</div>
+        </div>
+
+        <!-- Météo -->
+        <div class="weather-box" id="weatherBox">
+            <div style="font-weight:700; color:#92400e; margin-bottom:10px;">🌤️ MÉTÉO PRÉVUE</div>
+            <div id="weatherContent" style="color:#64748b; font-size:13px;">
+                Chargement de la météo...
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 4: CATÉGORIE -->
+    <div class="form-card">
+        <div class="section-title">🏷️ CATÉGORIE</div>
+        <div class="form-group">
+            <label class="form-label">Catégorie <span class="required">*</span></label>
+            <select name="categoryId" class="form-control" id="categorySelect">
+                <option value="">Sélectionner une catégorie</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}"
+                        {{ (event.categoryId ?? '') == category.id ? 'selected' : '' }}>
+                        {{ category.icon ?? '📌' }} {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="error-msg" id="categoryError">La catégorie est requise</div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: PRIX -->
+    <div class="form-card">
+        <div class="section-title">💰 PRIX</div>
+        <div class="price-toggle">
+            <label class="toggle-switch">
+                <input type="checkbox" id="isFreeToggle" name="isFree"
+                       {{ (event.isFree ?? true) ? 'checked' : '' }} />
+                <span class="toggle-slider"></span>
+            </label>
+            <span style="font-size:14px; color:#2c3e50;">Événement gratuit</span>
+        </div>
+        <div class="form-group" id="priceGroup" style="{{ (event.isFree ?? true) ? 'display:none' : '' }}">
+            <label class="form-label">Prix (DT) <span class="required">*</span></label>
+            <input type="number" name="ticketPrice" class="form-control" id="priceInput"
+                   placeholder="Ex: 25.00" min="0" step="0.01"
+                   value="{{ event.ticketPrice ?? 0 }}" />
+            <div class="error-msg" id="priceError">Le prix doit être positif</div>
+        </div>
+    </div>
+
+</form>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+// ==================== DONNÉES TUNISIENNES ====================
+const facultesParGouvernorat = {
+    'Tunis': ['FST Tunis','FSEG Tunis','FD Tunis','FLSH Tunis','ENIT','ESSEC','IHEC','ISG Tunis'],
+    'Ariana': ['ESPRIT','ESB','ENSI',"SUP'COM",'ISI','SESAME University'],
+    'Manouba': ['ISAMM','ISBST','FSHS Manouba','ISBAM','ISCAE Manouba'],
+    'Sousse': ['FSM Sousse','ESSTHS','ISITCom','ISSAT Sousse','IHEC Sousse'],
+    'Sfax': ['FSS Sfax','ENIS Sfax','ISIMS','FSEGS Sfax','ISET Sfax'],
+    'Monastir': ['FM Monastir','FSM Monastir','ISIM','ISET Monastir'],
+    'Bizerte': ['INSAT','FSB Bizerte','ISSAT Bizerte'],
+    'Nabeul': ['ISSAT Nabeul','ISET Nabeul'],
+    'Kairouan': ['FSHS Kairouan','ISET Kairouan'],
+    'Gafsa': ['FSL Gafsa','ISET Gafsa'],
+    'Gabès': ['FSS Gabès','ISSAT Gabès','ISET Gabès']
+};
+
+const currentLocation = "{{ event.location ?? '' }}";
+
+function syncDateTimeFields() {
+    const startDateOnly = document.getElementById('startDateOnly').value;
+    const startHour = document.getElementById('startHour').value;
+    const startMinute = document.getElementById('startMinute').value;
+    const endDateOnly = document.getElementById('endDateOnly').value;
+    const endHour = document.getElementById('endHour').value;
+    const endMinute = document.getElementById('endMinute').value;
+
+    const startTimeOnly = `${startHour}:${startMinute}`;
+    const endTimeOnly = `${endHour}:${endMinute}`;
+
+    document.getElementById('startDate').value = (startDateOnly && startTimeOnly)
+        ? `${startDateOnly}T${startTimeOnly}`
+        : '';
+    document.getElementById('endDate').value = (endDateOnly && endTimeOnly)
+        ? `${endDateOnly}T${endTimeOnly}`
+        : '';
+}
+
+// Gouvernorat → Facultés
+document.getElementById('gouvernoratSelect').addEventListener('change', function() {
+    const gov = this.value;
+    const locationSelect = document.getElementById('locationSelect');
+    locationSelect.innerHTML = '<option value="">Sélectionner une faculté</option>';
+
+    if (gov && facultesParGouvernorat[gov]) {
+        facultesParGouvernorat[gov].forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f;
+            opt.textContent = f;
+            if (f === currentLocation) opt.selected = true;
+            locationSelect.appendChild(opt);
+        });
+        document.getElementById('weatherBox').classList.add('show');
+    } else {
+        locationSelect.innerHTML = '<option value="">Saisir le lieu manuellement</option>';
+        document.getElementById('weatherBox').classList.remove('show');
+    }
+});
+
+// Trigger au chargement si gouvernorat déjà sélectionné
+window.addEventListener('load', function() {
+    const gov = document.getElementById('gouvernoratSelect').value;
+    if (gov) {
+        document.getElementById('gouvernoratSelect').dispatchEvent(new Event('change'));
+    }
+
+    syncDateTimeFields();
+});
+
+['startDateOnly', 'startHour', 'startMinute', 'endDateOnly', 'endHour', 'endMinute'].forEach(id => {
+    const element = document.getElementById(id);
+    element.addEventListener('input', syncDateTimeFields);
+    element.addEventListener('change', syncDateTimeFields);
+});
+
+// ==================== TOGGLE PRIX ====================
+document.getElementById('isFreeToggle').addEventListener('change', function() {
+    document.getElementById('priceGroup').style.display = this.checked ? 'none' : 'block';
+});
+
+// ==================== COMPTEUR DESCRIPTION ====================
+document.getElementById('descInput').addEventListener('input', function() {
+    const len = this.value.length;
+    const counter = document.getElementById('descCounter');
+    counter.textContent = `(${len}/1000)`;
+    counter.style.color = len > 1000 ? '#ef4444' : len > 900 ? '#f59e0b' : '#6c757d';
+});
+
+// ==================== VALIDATION ====================
+document.getElementById('eventForm').addEventListener('submit', function(e) {
+    let valid = true;
+
+    syncDateTimeFields();
+
+    // Titre
+    const title = document.getElementById('titleInput').value.trim();
+    if (title.length < 5 || title.length > 100) {
+        document.getElementById('titleError').classList.add('show');
+        document.getElementById('titleInput').classList.add('error');
+        valid = false;
+    } else {
+        document.getElementById('titleError').classList.remove('show');
+        document.getElementById('titleInput').classList.remove('error');
+        document.getElementById('titleInput').classList.add('success');
+    }
+
+    // Description
+    const desc = document.getElementById('descInput').value.trim();
+    if (desc.length < 10 || desc.length > 1000) {
+        document.getElementById('descError').classList.add('show');
+        document.getElementById('descInput').classList.add('error');
+        valid = false;
+    } else {
+        document.getElementById('descError').classList.remove('show');
+        document.getElementById('descInput').classList.remove('error');
+        document.getElementById('descInput').classList.add('success');
+    }
+
+    // Dates
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const now = new Date().toISOString().slice(0,16);
+
+    if (!startDate || startDate < now) {
+        document.getElementById('startDateError').classList.add('show');
+        valid = false;
+    } else {
+        document.getElementById('startDateError').classList.remove('show');
+    }
+
+    if (!endDate || endDate <= startDate) {
+        document.getElementById('endDateError').classList.add('show');
+        valid = false;
+    } else {
+        document.getElementById('endDateError').classList.remove('show');
+    }
+
+    // Capacité
+    const capacity = parseInt(document.getElementById('capacityInput').value);
+    if (!capacity || capacity < 1) {
+        document.getElementById('capacityError').classList.add('show');
+        valid = false;
+    } else {
+        document.getElementById('capacityError').classList.remove('show');
+    }
+
+    // Catégorie
+    if (!document.getElementById('categorySelect').value) {
+        document.getElementById('categoryError').classList.add('show');
+        valid = false;
+    } else {
+        document.getElementById('categoryError').classList.remove('show');
+    }
+
+    if (!valid) e.preventDefault();
+});
+</script>
+{% endblock %}

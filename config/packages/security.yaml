@@ -1,0 +1,31 @@
+# config/packages/security.yaml
+security:
+    password_hashers:
+        App\Entity\User\UserModel: 'auto'
+
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Entity\User\UserModel
+                property: email
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            lazy: true
+            provider: app_user_provider
+            # ⚠️ SUPPRIMEZ form_login
+            logout:
+                path: app_logout
+                target: app_landing
+
+    access_control:
+        - { path: ^/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/$, roles: PUBLIC_ACCESS }
+        - { path: ^/register$, roles: PUBLIC_ACCESS }
+        - { path: ^/forgot-password, roles: PUBLIC_ACCESS }
+        - { path: ^/reset-password, roles: PUBLIC_ACCESS }
+        - { path: ^/dashboard, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/admin, roles: ROLE_ADMIN }

@@ -1,0 +1,251 @@
+{# templates/auth/demo_video.html.twig #}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Démo - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        /* Gardez tous les styles existants */
+        .demo-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 40px;
+        }
+        
+        .back-button {
+            margin-bottom: 30px;
+        }
+        
+        .back-button a {
+            display: inline-block;
+            background: transparent;
+            color: #0D47A1;
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: none;
+            border: 1px solid #0D47A1;
+            border-radius: 20px;
+            padding: 8px 20px;
+            transition: all 0.2s ease;
+        }
+        
+        .back-button a:hover {
+            background: #0D47A1;
+            color: white;
+        }
+        
+        .demo-card {
+            background: white;
+            border-radius: 30px;
+            padding: 50px;
+            max-width: 1000px;
+            margin: 0 auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .demo-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #0A1929;
+            margin-bottom: 20px;
+        }
+        
+        .demo-subtitle {
+            font-size: 18px;
+            color: #546e7a;
+            margin-bottom: 40px;
+        }
+        
+        /* Style pour la vraie vidéo */
+        .video-container {
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 30px 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .video-controls {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 0 0 20px 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .video-btn {
+            background: #0D47A1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .video-btn:hover {
+            background: #0A3A80;
+        }
+        
+        .features-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin: 50px 0;
+            text-align: left;
+        }
+        
+        .feature-demo-item {
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 15px;
+        }
+        
+        .feature-demo-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .feature-demo-title {
+            font-weight: bold;
+            color: #0A1929;
+            margin-bottom: 5px;
+        }
+        
+        .feature-demo-desc {
+            color: #64748b;
+            font-size: 14px;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+        
+        .btn-primary {
+            background: #0D47A1;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 35px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(13, 71, 161, 0.4);
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary:hover {
+            background: #0A3A80;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(13, 71, 161, 0.5);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #1e293b;
+            font-weight: 500;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 15px 35px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-secondary:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+    </style>
+{% endblock %}
+
+{% block public_content %}
+<div class="demo-container">
+    <!-- Bouton retour -->
+    <div class="back-button">
+        <a href="{{ path('app_landing') }}">← Retour à l'accueil</a>
+    </div>
+    
+    <!-- Carte de démo avec VRAIE vidéo -->
+    <div class="demo-card">
+        <h1 class="demo-title">Découvrez EventFlow en action</h1>
+        <p class="demo-subtitle">Regardez comment notre plateforme simplifie la gestion d'événements</p>
+        
+        <!-- VRAIE VIDÉO ICI -->
+        <div class="video-container">
+            <video id="demoVideo" poster="{{ asset('images/video-thumbnail.jpg') }}" controls>
+                <source src="{{ asset('videos/demo.mp4') }}" type="video/mp4">
+                Votre navigateur ne supporte pas la lecture de vidéos.
+            </video>
+            
+            <!-- Contrôles personnalisés (optionnel) -->
+            <div class="video-controls">
+                <button class="video-btn" onclick="document.getElementById('demoVideo').play()">▶ Lecture</button>
+                <button class="video-btn" onclick="document.getElementById('demoVideo').pause()">⏸ Pause</button>
+               
+            </div>
+        </div>
+        
+        <!-- Fonctionnalités présentées dans la vidéo -->
+        <div class="features-list">
+            <div class="feature-demo-item">
+                <div class="feature-demo-icon">📅</div>
+                <div class="feature-demo-title">Création d'événements</div>
+                <div class="feature-demo-desc">Créez un événement en moins de 2 minutes</div>
+            </div>
+            <div class="feature-demo-item">
+                <div class="feature-demo-icon">👥</div>
+                <div class="feature-demo-title">Gestion des participants</div>
+                <div class="feature-demo-desc">Suivez les inscriptions en temps réel</div>
+            </div>
+            <div class="feature-demo-item">
+                <div class="feature-demo-icon">📊</div>
+                <div class="feature-demo-title">Tableau de bord</div>
+                <div class="feature-demo-desc">Visualisez vos statistiques clés</div>
+            </div>
+        </div>
+        
+        <!-- Appels à l'action -->
+        <div class="cta-buttons">
+            <a href="{{ path('app_register') }}" class="btn-primary">Commencer maintenant</a>
+            <a href="{{ path('app_landing') }}" class="btn-secondary">En savoir plus</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Script optionnel pour des fonctionnalités vidéo avancées
+    const video = document.getElementById('demoVideo');
+    
+    // Sauvegarder la position de la vidéo si l'utilisateur quitte la page
+    video.addEventListener('timeupdate', function() {
+        localStorage.setItem('demoVideoTime', video.currentTime);
+    });
+    
+    // Restaurer la position de la vidéo
+    window.addEventListener('load', function() {
+        const savedTime = localStorage.getItem('demoVideoTime');
+        if (savedTime) {
+            video.currentTime = savedTime;
+        }
+    });
+</script>
+{% endblock %}
