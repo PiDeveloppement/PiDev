@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Details depense - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="sponsor-page depense-page">
+    {% set amount = depense.amount + 0 %}
+    {% set level = 'low' %}
+    {% set levelText = 'Faible' %}
+    {% if amount > 1000 %}
+        {% set level = 'high' %}
+        {% set levelText = 'Eleve' %}
+    {% elseif amount >= 100 %}
+        {% set level = 'medium' %}
+        {% set levelText = 'Moyen' %}
+    {% endif %}
+
+    <section class="depense-detail-shell">
+        <div class="depense-detail-hero {{ level }}">
+            <div>
+                <span class="depense-detail-kicker">Vue depense</span>
+                <h2>{{ depense.description ?: 'Depense sans description' }}</h2>
+                <p>Une fiche plus lisible pour voir rapidement le budget rattache, la categorie, le montant final et la devise d'origine.</p>
+            </div>
+            <div class="depense-detail-amount-box">
+                <span>Niveau {{ levelText }}</span>
+                <strong>{{ depense.amount|number_format(2, ',', ' ') }} DT</strong>
+                <small>{{ depense.expenseDate ? depense.expenseDate|date('d/m/Y') : 'Date non definie' }}</small>
+            </div>
+        </div>
+
+        <div class="depense-detail-grid-modern">
+            <article class="depense-detail-panel">
+                <div class="depense-section-head form-head">
+                    <div>
+                        <h3>Informations generales</h3>
+                        <p>Les donnees utiles pour suivre et justifier cette sortie financiere.</p>
+                    </div>
+                </div>
+
+                <dl class="depense-detail-list">
+                    <div><dt>Budget / Evenement</dt><dd>{{ eventTitle }}</dd></div>
+                    <div><dt>Categorie</dt><dd>{{ depense.category ?: '-' }}</dd></div>
+                    <div><dt>Date</dt><dd>{{ depense.expenseDate ? depense.expenseDate|date('Y-m-d') : '-' }}</dd></div>
+                    <div><dt>Montant (TND)</dt><dd>{{ depense.amount|number_format(2, ',', ' ') }} DT</dd></div>
+                    <div><dt>Devise originale</dt><dd>{{ depense.originalCurrency ?: 'TND' }}</dd></div>
+                    <div>
+                        <dt>Montant original</dt>
+                        <dd>
+                            {% if depense.originalAmount is not null %}
+                                {{ depense.originalAmount|number_format(2, ',', ' ') }} {{ depense.originalCurrency }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </article>
+
+            <aside class="depense-detail-side">
+                <article class="depense-side-card">
+                    <span>Statut</span>
+                    <strong>Enregistree</strong>
+                    <small>Cette depense est integree dans le suivi budgetaire.</small>
+                </article>
+
+                <article class="depense-side-card">
+                    <span>Lecture rapide</span>
+                    <strong>{{ levelText }}</strong>
+                    <small>{{ amount < 100 ? 'Impact leger sur le budget' : (amount <= 1000 ? 'Montant moyen a surveiller' : 'Montant eleve a suivre de pres') }}</small>
+                </article>
+            </aside>
+        </div>
+
+        <div class="depense-form-actions">
+            <a class="btn-sponsor outline" href="{{ path('app_depenses_index') }}">Retour</a>
+            <a class="btn-sponsor warning" href="{{ path('app_depenses_edit', {id: depense.id}) }}">Modifier</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

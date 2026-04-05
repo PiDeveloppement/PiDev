@@ -1,0 +1,88 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ isEdit ? 'Modifier depense' : 'Nouvelle depense' }} - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="sponsor-page depense-page">
+    <section class="depense-form-shell">
+        <aside class="depense-form-side">
+            <span class="depense-form-kicker">{{ isEdit ? 'Edition' : 'Creation' }}</span>
+            <h2>{{ isEdit ? 'Ajuster une depense existante' : 'Ajouter une nouvelle depense' }}</h2>
+            <p>Cette vue est pensee pour aller vite: choisissez le budget, saisissez le montant, puis laissez la plateforme gerer la conversion si la devise d'origine n'est pas le TND.</p>
+
+            <div class="depense-form-hints">
+                <div class="depense-hint-card">
+                    <strong>Montant principal</strong>
+                    <span>Le montant final enregistre est toujours normalise pour le suivi global.</span>
+                </div>
+                <div class="depense-hint-card">
+                    <strong>Date</strong>
+                    <span>Gardez une chronologie claire pour les analyses futures.</span>
+                </div>
+                <div class="depense-hint-card">
+                    <strong>Categorie</strong>
+                    <span>Une bonne categorie rend les graphiques plus utiles et plus lisibles.</span>
+                </div>
+            </div>
+        </aside>
+
+        <div class="depense-form-card">
+            <div class="depense-section-head form-head">
+                <div>
+                    <h3>{{ isEdit ? 'Modifier la fiche depense' : 'Formulaire depense' }}</h3>
+                    <p>Remplissez les champs ci-dessous avec une lecture claire et aerée.</p>
+                </div>
+            </div>
+
+            {{ form_start(form) }}
+            <div class="depense-form-grid">
+                <div class="depense-field">
+                    {{ form_label(form.budgetId) }}
+                    {{ form_widget(form.budgetId) }}
+                    {{ form_errors(form.budgetId) }}
+                </div>
+                <div class="depense-field">
+                    {{ form_label(form.category) }}
+                    {{ form_widget(form.category) }}
+                    {{ form_errors(form.category) }}
+                </div>
+                <div class="depense-field depense-field-full">
+                    {{ form_label(form.description) }}
+                    {{ form_widget(form.description) }}
+                    {{ form_errors(form.description) }}
+                </div>
+                <div class="depense-field">
+                    {{ form_label(form.amount) }}
+                    {{ form_widget(form.amount) }}
+                    {{ form_errors(form.amount) }}
+                </div>
+                <div class="depense-field">
+                    {{ form_label(form.originalCurrency) }}
+                    {{ form_widget(form.originalCurrency) }}
+                    {{ form_errors(form.originalCurrency) }}
+                </div>
+                <div class="depense-field">
+                    {{ form_label(form.expenseDate) }}
+                    {{ form_widget(form.expenseDate) }}
+                    {{ form_errors(form.expenseDate) }}
+                </div>
+            </div>
+
+            <div class="depense-form-note">
+                Si la devise source est differente du TND, la conversion est appliquee automatiquement avant enregistrement.
+            </div>
+
+            <div class="depense-form-actions">
+                <a class="btn-sponsor outline" href="{{ path('app_depenses_index') }}">Annuler</a>
+                <button class="btn-sponsor success" type="submit">{{ isEdit ? 'Enregistrer' : 'Creer la depense' }}</button>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </section>
+</div>
+{% endblock %}

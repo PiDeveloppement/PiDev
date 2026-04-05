@@ -1,0 +1,137 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Portail Sponsoring - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="sponsor-page">
+    <div class="flash-wrap">
+        {% for message in app.flashes('success') %}
+            <div class="flash-success">{{ message }}</div>
+        {% endfor %}
+        {% for message in app.flashes('error') %}
+            <div class="flash-error">{{ message }}</div>
+        {% endfor %}
+    </div>
+
+    <div class="sponsor-toolbar">
+        <form method="get" action="{{ path('app_sponsor_portal') }}">
+            <input type="text" name="q" value="{{ search }}" placeholder="Recherche par evenement / entreprise / email">
+            <button class="btn-sponsor outline" type="submit">Rechercher</button>
+        </form>
+
+        <a class="btn-sponsor primary" href="{{ path('app_sponsor_portal_export_csv') }}">Exporter CSV</a>
+    </div>
+
+    <div class="sponsor-stats">
+        <div class="sponsor-stat">
+            <h4>Ma contribution</h4>
+            <strong>{{ stats.total|number_format(2, ',', ' ') }} DT</strong>
+        </div>
+        <div class="sponsor-stat">
+            <h4>Mes evenements</h4>
+            <strong>{{ stats.events }}</strong>
+        </div>
+        <div class="sponsor-stat">
+            <h4>Mes sponsorships</h4>
+            <strong>{{ stats.count }}</strong>
+        </div>
+    </div>
+
+    <div class="sponsor-chart-card">
+        <h3>Contributions par evenement</h3>
+        {% if contributionsByEvent is empty %}
+            <p class="sponsor-muted">Aucune contribution pour le moment.</p>
+        {% else %}
+            {% set maxValue = 0 %}
+            {% for amount in contributionsByEvent %}
+                {% if amount > maxValue %}{% set maxValue = amount %}{% endif %}
+            {% endfor %}
+            <div class="sponsor-bars">
+                {% for eventTitle, amount in contributionsByEvent %}
+                    <div class="sponsor-bar-item">
+                        <div>
+                            <div><strong>{{ eventTitle }}</strong></div>
+                            <div class="sponsor-bar-track">
+                                <div class="sponsor-bar-fill" style="width: {{ maxValue > 0 ? (amount * 100 / maxValue) : 0 }}%"></div>
+                            </div>
+                        </div>
+                        <div style="text-align:right; font-weight:700;">{{ amount|number_format(2, ',', ' ') }} DT</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="sponsor-portal-sections">
+        <div class="sponsor-grid-card">
+            <h3>Evenements recommandes</h3>
+            {% if recommendedEvents is empty %}
+                <p class="sponsor-muted">Renseignez votre bio (secteur) pour ameliorer les recommandations.</p>
+            {% else %}
+                <div class="event-cards">
+                    {% for event in recommendedEvents %}
+                        <article class="event-card">
+                            <h4>{{ event.title }}</h4>
+                            <div class="sponsor-muted">Date: {{ event.startDate ? event.startDate|date('Y-m-d H:i') : '-' }}</div>
+                            <div class="sponsor-muted">Lieu: {{ event.location ?: '-' }}</div>
+                            <a class="btn-sponsor primary" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="sponsor-grid-card">
+            <h3>Catalogue des evenements a sponsoriser</h3>
+            {% if allEvents is empty %}
+                <p class="sponsor-muted">Aucun evenement actif trouve.</p>
+            {% else %}
+                <div class="event-cards">
+                    {% for event in allEvents %}
+                        <article class="event-card">
+                            <h4>{{ event.title }}</h4>
+                            <div class="sponsor-muted">Date: {{ event.startDate ? event.startDate|date('Y-m-d H:i') : '-' }}</div>
+                            <div class="sponsor-muted">Lieu: {{ event.location ?: '-' }}</div>
+                            <a class="btn-sponsor primary" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="sponsor-grid-card">
+            <h3>Mes sponsorships</h3>
+            {% if mySponsors is empty %}
+                <p class="sponsor-muted">Aucun sponsoring pour le moment.</p>
+            {% else %}
+                <div class="sponsor-cards">
+                    {% for sponsor in mySponsors %}
+                        <article class="sponsor-card">
+                            <div class="top">
+                                <div>
+                                    <h4>{{ sponsor.companyName }}</h4>
+                                    <div class="sponsor-muted">{{ mySponsorEventTitleMap[sponsor.eventId]|default('-') }}</div>
+                                </div>
+                                <span class="sponsor-badge">{{ sponsor.contributionAmount|number_format(2, ',', ' ') }} DT</span>
+                            </div>
+                            <div class="sponsor-actions">
+                                <a class="btn-sponsor light" href="{{ path('app_sponsor_portal_details', {id: sponsor.id}) }}">Details</a>
+                                <a class="btn-sponsor warning" href="{{ path('app_sponsor_portal_edit', {id: sponsor.id}) }}">Modifier</a>
+                                <form method="post" action="{{ path('app_sponsor_portal_delete', {id: sponsor.id}) }}" onsubmit="return confirm('Supprimer ce sponsoring ?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete_sponsor_' ~ sponsor.id) }}">
+                                    <button class="btn-sponsor danger" type="submit">Supprimer</button>
+                                </form>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

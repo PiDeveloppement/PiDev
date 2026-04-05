@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Details de l entreprise - EventFlow</title>
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+    <style>
+        body { margin: 0; font-family: Inter, Arial, sans-serif; background: #eef3f9; color: #0f172a; }
+        .topbar { background: #fff; border-bottom: 1px solid #dbe3ee; padding: 14px 26px; display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-weight: 800; color: #1d4ed8; font-size: 22px; }
+        .wrap { max-width: 1180px; margin: 20px auto; padding: 0 14px 24px; }
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <div class="brand">EventFlow</div>
+    <a class="btn-sponsor outline" href="{{ path(backRoute) }}">Retour portail</a>
+</div>
+
+<div class="wrap sponsor-page">
+    <div class="sponsor-detail-card sponsor-detail-card-rich">
+        <div class="sponsor-detail-head">
+            <div class="sponsor-detail-brand">
+                <img class="sponsor-detail-eventflow" src="{{ asset('images/logo.png') }}" alt="EventFlow">
+                <div>
+                    <h3>Details de l entreprise</h3>
+                    <p>Votre espace detaille de partenariat avec resume utile et contrat PDF visible directement.</p>
+                </div>
+            </div>
+            <div class="sponsor-detail-logo-box">
+                {% if sponsor.logoUrl %}
+                    <img src="{{ sponsor.logoUrl }}" alt="{{ sponsor.companyName }}">
+                {% else %}
+                    <span>{{ sponsor.companyName|slice(0, 2)|upper }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="sponsor-overview-grid">
+            <article class="sponsor-overview-card accent-blue">
+                <span>Entreprise</span>
+                <strong>{{ sponsor.companyName ?: '-' }}</strong>
+                <small>{{ sponsor.contactEmail ?: '-' }}</small>
+            </article>
+            <article class="sponsor-overview-card accent-green">
+                <span>Contribution</span>
+                <strong>{{ sponsor.contributionAmount|number_format(2, ',', ' ') }} DT</strong>
+                <small>Votre contribution enregistree</small>
+            </article>
+            <article class="sponsor-overview-card accent-amber">
+                <span>Evenement</span>
+                <strong>{{ eventTitle|default('-') }}</strong>
+                <small>{{ event and event.startDate ? event.startDate|date('d/m/Y H:i') : 'Date non precisee' }}</small>
+            </article>
+        </div>
+
+        <div class="sponsor-detail-panels">
+            <section class="sponsor-info-panel">
+                <div class="sponsor-panel-title">Informations generales</div>
+                <dl class="sponsor-detail-grid compact">
+                    <dt>Entreprise</dt><dd>{{ sponsor.companyName ?: '-' }}</dd>
+                    <dt>Email</dt><dd>{{ sponsor.contactEmail ?: '-' }}</dd>
+                    <dt>Evenement</dt><dd>{{ eventTitle|default('-') }}</dd>
+                    <dt>Lieu</dt><dd>{{ event and event.location ? event.location : '-' }}</dd>
+                    <dt>Secteur</dt><dd>{{ sponsor.industry ?: '-' }}</dd>
+                    <dt>Telephone</dt><dd>{{ sponsor.phone ?: '-' }}</dd>
+                    <dt>N Fiscal</dt><dd>{{ sponsor.taxId ?: '-' }}</dd>
+                    <dt>Justificatif</dt>
+                    <dd>
+                        {% if sponsor.documentUrl %}
+                            <a href="{{ sponsor.documentUrl }}" target="_blank" rel="noopener noreferrer">Voir le justificatif</a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </dd>
+                </dl>
+            </section>
+
+            <section class="sponsor-doc-panel">
+                <div class="sponsor-panel-title">Logo de l entreprise</div>
+                {% if sponsor.logoUrl %}
+                    <img class="sponsor-doc-preview large" src="{{ sponsor.logoUrl }}" alt="{{ sponsor.companyName }}">
+                    <a class="btn-sponsor light" href="{{ sponsor.logoUrl }}" target="_blank" rel="noopener noreferrer">Ouvrir logo</a>
+                {% else %}
+                    <div class="sponsor-empty-state">Aucun logo disponible.</div>
+                {% endif %}
+            </section>
+        </div>
+
+        <section class="sponsor-contract-panel">
+            <div class="sponsor-contract-head">
+                <div>
+                    <div class="sponsor-panel-title">Contrat de partenariat</div>
+                    <p>Le bouton <strong>Contrat</strong> telecharge directement le PDF genere a partir de votre fiche.</p>
+                </div>
+                <a class="btn-sponsor primary" href="{{ contractDownloadUrl }}">Contrat</a>
+            </div>
+
+            <div class="sponsor-pdf-viewer">
+                <iframe src="{{ contractPreviewUrl }}" title="Contrat de partenariat PDF"></iframe>
+            </div>
+        </section>
+
+        <div class="sponsor-form-footer">
+            <a class="btn-sponsor outline" href="{{ path(backRoute) }}">Retour</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

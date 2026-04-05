@@ -1,0 +1,268 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Depenses - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('js/admin-live-search.js') }}" defer></script>
+{% endblock %}
+
+{% block admin_content %}
+<div class="sponsor-page depense-page" data-live-search-root>
+    {% set lowCount = 0 %}
+    {% set mediumCount = 0 %}
+    {% set highCount = 0 %}
+    {% set latestDate = null %}
+    {% for depense in depenses %}
+        {% set amountLoop = depense.amount + 0 %}
+        {% if amountLoop < 100 %}
+            {% set lowCount = lowCount + 1 %}
+        {% elseif amountLoop <= 1000 %}
+            {% set mediumCount = mediumCount + 1 %}
+        {% else %}
+            {% set highCount = highCount + 1 %}
+        {% endif %}
+        {% if depense.expenseDate %}
+            {% set latestDate = latestDate is null or depense.expenseDate > latestDate ? depense.expenseDate : latestDate %}
+        {% endif %}
+    {% endfor %}
+
+    <div class="flash-wrap">
+        {% for message in app.flashes('success') %}
+            <div class="flash-success">{{ message }}</div>
+        {% endfor %}
+        {% for message in app.flashes('error') %}
+            <div class="flash-error">{{ message }}</div>
+        {% endfor %}
+    </div>
+
+    <section class="depense-overview">
+        <article class="depense-overview-main">
+            <span class="depense-overview-kicker">Pilotage des depenses</span>
+            <h2>Lecture rapide des sorties financieres</h2>
+            <p>Suivez les montants, reperez les categories les plus actives et gardez une vue nette sur chaque depense sans passer par un tableau lourd.</p>
+            <div class="depense-overview-meta">
+                <span>{{ depenses|length }} depense(s) affichee(s)</span>
+                <span>{{ latestDate ? 'Derniere mise a jour: ' ~ latestDate|date('d/m/Y') : 'Aucune date disponible' }}</span>
+            </div>
+        </article>
+
+        <div class="depense-stat-stack">
+            <article class="depense-stat-card coral">
+                <span class="depense-stat-label">Volume total</span>
+                <strong>{{ stats.total|number_format(2, ',', ' ') }} DT</strong>
+                <small>Somme de toutes les depenses visibles</small>
+            </article>
+            <article class="depense-stat-card navy">
+                <span class="depense-stat-label">Ticket moyen</span>
+                <strong>{{ stats.average|number_format(2, ',', ' ') }} DT</strong>
+                <small>{{ stats.count }} operation(s) sur {{ stats.categories }} categorie(s)</small>
+            </article>
+            <article class="depense-stat-card mint">
+                <span class="depense-stat-label">Rythme</span>
+                <strong>{{ highCount }}</strong>
+                <small>depense(s) elevee(s) actuellement</small>
+            </article>
+        </div>
+    </section>
+
+    <section class="depense-filter-shell">
+        <form method="get" action="{{ path('app_depenses_index') }}" class="depense-filter-form">
+            <div class="depense-field wide">
+                <label for="depense-search">Recherche</label>
+                <input id="depense-search" type="text" name="q" value="{{ search }}" placeholder="Nom de l evenement..." autocomplete="off" data-live-search-input>
+            </div>
+
+            <div class="depense-field">
+                <label for="depense-budget-filter">Budget</label>
+                <select id="depense-budget-filter" name="budget_id">
+                    <option value="">Tous les budgets</option>
+                    {% for budget in budgets %}
+                        <option value="{{ budget.id }}" {{ selectedBudgetId == budget.id ? 'selected' : '' }}>
+                            {{ budgetDisplayMap[budget.id]|default('Event ' ~ budget.eventId) }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="depense-field">
+                <label for="depense-category-filter">Categorie</label>
+                <select id="depense-category-filter" name="category">
+                    <option value="">Toutes les categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}" {{ selectedCategory == cat ? 'selected' : '' }}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="depense-field">
+                <label for="depense-period-filter">Periode</label>
+                <select id="depense-period-filter" name="period">
+                    <option value="all" {{ selectedPeriod == 'all' ? 'selected' : '' }}>Toutes</option>
+                    <option value="month" {{ selectedPeriod == 'month' ? 'selected' : '' }}>Ce mois</option>
+                    <option value="quarter" {{ selectedPeriod == 'quarter' ? 'selected' : '' }}>Ce trimestre</option>
+                    <option value="year" {{ selectedPeriod == 'year' ? 'selected' : '' }}>Cette annee</option>
+                </select>
+            </div>
+
+            <div class="depense-field">
+                <label for="depense-state-filter">Niveau</label>
+                <select id="depense-state-filter" name="state">
+                    <option value="all" {{ selectedState == 'all' ? 'selected' : '' }}>Tous</option>
+                    <option value="low" {{ selectedState == 'low' ? 'selected' : '' }}>Faible</option>
+                    <option value="medium" {{ selectedState == 'medium' ? 'selected' : '' }}>Moyen</option>
+                    <option value="high" {{ selectedState == 'high' ? 'selected' : '' }}>Eleve</option>
+                </select>
+            </div>
+
+            <div class="depense-filter-actions">
+                <button class="btn-sponsor outline" type="submit">Filtrer</button>
+                <a class="btn-sponsor success" href="{{ path('app_depenses_new') }}">Nouvelle depense</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="depense-visual-grid">
+        <article class="depense-visual-card">
+            <div class="depense-section-head">
+                <div>
+                    <h3>Categories les plus actives</h3>
+                    <p>Les categories qui consomment le plus de budget.</p>
+                </div>
+            </div>
+
+            {% if stats.byCategory is empty %}
+                <p class="sponsor-muted">Aucune depense pour le moment.</p>
+            {% else %}
+                {% set maxValue = 0 %}
+                {% for amount in stats.byCategory %}
+                    {% if amount > maxValue %}{% set maxValue = amount %}{% endif %}
+                {% endfor %}
+                <div class="depense-lane-list">
+                    {% for cat, amount in stats.byCategory|slice(0, 5) %}
+                        <div class="depense-lane-item">
+                            <div class="depense-lane-top">
+                                <span>{{ cat }}</span>
+                                <strong>{{ amount|number_format(2, ',', ' ') }} DT</strong>
+                            </div>
+                            <div class="depense-lane-track">
+                                <i style="width: {{ maxValue > 0 ? (amount * 100 / maxValue) : 0 }}%"></i>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </article>
+
+        <article class="depense-visual-card tone-soft">
+            <div class="depense-section-head">
+                <div>
+                    <h3>Repartition des montants</h3>
+                    <p>Comprenez vite si les depenses sont faibles, moyennes ou elevees.</p>
+                </div>
+            </div>
+
+            {% set totalRange = lowCount + mediumCount + highCount %}
+            <div class="depense-band-card">
+                <div class="depense-band-track">
+                    <i class="low" style="width: {{ totalRange > 0 ? ((lowCount / totalRange) * 100) : 0 }}%"></i>
+                    <i class="medium" style="width: {{ totalRange > 0 ? ((mediumCount / totalRange) * 100) : 0 }}%"></i>
+                    <i class="high" style="width: {{ totalRange > 0 ? ((highCount / totalRange) * 100) : 0 }}%"></i>
+                </div>
+                <div class="depense-band-legend">
+                    <span><i class="dot low"></i> Faible: {{ lowCount }}</span>
+                    <span><i class="dot medium"></i> Moyen: {{ mediumCount }}</span>
+                    <span><i class="dot high"></i> Eleve: {{ highCount }}</span>
+                </div>
+            </div>
+
+            <div class="depense-focus-grid">
+                <div class="depense-focus-card">
+                    <span>Depense max utile</span>
+                    <strong>{{ highCount > 0 ? 'Surveiller les operations elevees' : 'Aucune depense elevee' }}</strong>
+                </div>
+                <div class="depense-focus-card">
+                    <span>Lecture rapide</span>
+                    <strong>{{ stats.categories }} categorie(s) actives</strong>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="depense-list-shell">
+        <div class="depense-section-head">
+            <div>
+                <h3>Depenses recentes</h3>
+                <p>{{ depenses|length }} element(s) avec une lecture carte plus fluide.</p>
+            </div>
+        </div>
+
+        {% if depenses is empty %}
+            <p class="sponsor-muted">Aucune depense trouvee.</p>
+        {% else %}
+            <div class="depense-card-grid">
+                {% for depense in depenses %}
+                    {% set amount = depense.amount + 0 %}
+                    {% set level = 'low' %}
+                    {% set levelText = 'Faible' %}
+                    {% if amount > 1000 %}
+                        {% set level = 'high' %}
+                        {% set levelText = 'Eleve' %}
+                    {% elseif amount >= 100 %}
+                        {% set level = 'medium' %}
+                        {% set levelText = 'Moyen' %}
+                    {% endif %}
+                    {% set budgetLabel = depense.budget ? budgetDisplayMap[depense.budget.id]|default('Budget') : '-' %}
+                    {% set eventLabel = budgetLabel|split(' (')|first %}
+
+                    <article class="depense-card-modern {{ level }}" data-live-search-item data-search="{{ eventLabel }}" data-live-suggest="{{ eventLabel }}">
+                        <div class="depense-card-head">
+                            <div>
+                                <span class="depense-card-category">{{ depense.category ?: 'Sans categorie' }}</span>
+                                <h4>{{ depense.description ?: 'Depense sans description' }}</h4>
+                            </div>
+                            <span class="depense-level-badge {{ level }}">{{ levelText }}</span>
+                        </div>
+
+                        <div class="depense-card-amount">
+                            <strong>{{ depense.amount|number_format(2, ',', ' ') }} DT</strong>
+                            <span>{{ depense.expenseDate ? depense.expenseDate|date('d/m/Y') : 'Date non definie' }}</span>
+                        </div>
+
+                        <div class="depense-card-meta">
+                            <div>
+                                <span>Budget</span>
+                                <strong>{{ budgetLabel }}</strong>
+                            </div>
+                            <div>
+                                <span>Devise source</span>
+                                <strong>
+                                    {{ depense.originalCurrency ?: 'TND' }}
+                                    {% if depense.originalAmount is not null %}
+                                        ({{ depense.originalAmount|number_format(2, ',', ' ') }})
+                                    {% endif %}
+                                </strong>
+                            </div>
+                        </div>
+
+                        <div class="depense-card-actions">
+                            <a class="btn-sponsor light" href="{{ path('app_depenses_details', {id: depense.id}) }}">Details</a>
+                            <a class="btn-sponsor warning" href="{{ path('app_depenses_edit', {id: depense.id}) }}">Modifier</a>
+                            <form method="post" action="{{ path('app_depenses_delete', {id: depense.id}) }}" onsubmit="return confirm('Supprimer cette depense ?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_depense_' ~ depense.id) }}">
+                                <button class="btn-sponsor danger" type="submit">Supprimer</button>
+                            </form>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+            <p class="sponsor-muted" data-live-search-empty hidden>Aucune depense ne correspond a votre recherche.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
