@@ -288,8 +288,9 @@
                 <!-- Page Header -->
                 <div style="background: white; padding: 15px 30px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
                     <div>
-                        <h1 style="font-size: 24px; font-weight: bold; color: #1e293b; margin: 0;">{{ pageInfo.title|default('EventFlow') }}</h1>
-                        <p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0;">{{ pageInfo.subtitle|default('') }}</p>
+                        {# APRÈS #}
+<h1 style="font-size: 24px; font-weight: bold; color: #1e293b; margin: 0;">{% block page_title %}{% endblock %}</h1>
+<p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0;">{% block page_subtitle %}{% endblock %}</p>
                     </div>
                     
                     <!-- KPI Container -->

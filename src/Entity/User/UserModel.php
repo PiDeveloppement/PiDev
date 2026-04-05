@@ -59,9 +59,9 @@ class UserModel implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $bio = null;
 
-    #[ORM\ManyToOne(targetEntity: Role::class)]
-    #[ORM\JoinColumn(name: "Role_Id", referencedColumnName: "Id_Role", nullable: false)]
-    private ?Role $role = null;
+#[ORM\ManyToOne(targetEntity: Role::class, inversedBy: "users")] // <-- Ajoute inversedBy
+#[ORM\JoinColumn(name: "Role_Id", referencedColumnName: "Id_Role", nullable: false)]
+private ?Role $role = null;
 
     #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
     private ?PasswordResetToken $resetToken = null;

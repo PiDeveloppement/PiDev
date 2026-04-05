@@ -71,11 +71,10 @@ class UserRepository extends ServiceEntityRepository
 
     // ==================== MÉTHODES DE RECHERCHE AVANCÉE ====================
 
- // ✅ CORRECT
 public function searchUsers(
     ?string $keyword = null,
     ?string $faculte = null,
-    ?string $roleName = null,
+    ?string $role = null,
     int $page = 1,
     int $limit = 5
 ): array {
@@ -83,52 +82,56 @@ public function searchUsers(
         ->leftJoin('u.role', 'r')
         ->addSelect('r');
 
-    // Filtres
-    if ($keyword && !empty($keyword)) {
+    // Filtre par mot-clé (prénom, nom, email)
+    if ($keyword && $keyword !== '') {
         $qb->andWhere('u.firstName LIKE :keyword OR u.lastName LIKE :keyword OR u.email LIKE :keyword')
-            ->setParameter('keyword', '%' . $keyword . '%');
+           ->setParameter('keyword', '%' . $keyword . '%');
     }
 
-    if ($faculte && !empty($faculte)) {
+    // Filtre par faculté
+    if ($faculte && $faculte !== '') {
         $qb->andWhere('u.faculte = :faculte')
-            ->setParameter('faculte', $faculte);
+           ->setParameter('faculte', $faculte);
     }
 
-    if ($roleName && !empty($roleName)) {
-        $qb->andWhere('r.roleName = :roleName')
-            ->setParameter('roleName', $roleName);
+    // Filtre par rôle
+    if ($role && $role !== '') {
+        $qb->andWhere('r.roleName = :role')
+           ->setParameter('role', $role);
     }
 
-    // ✅ CORRECT - Utilisation des variables, pas de chiffres littéraux
+    // Pagination
     $qb->setFirstResult(($page - 1) * $limit)
        ->setMaxResults($limit)
        ->orderBy('u.id', 'DESC');
 
     return $qb->getQuery()->getResult();
 }
-// ✅ CORRECT
 public function countUsers(
     ?string $keyword = null,
     ?string $faculte = null,
-    ?string $roleName = null
+    ?string $role = null
 ): int {
     $qb = $this->createQueryBuilder('u')
         ->select('COUNT(u.id)')
         ->leftJoin('u.role', 'r');
 
-    if ($keyword && !empty($keyword)) {
+    // Filtre par mot-clé
+    if ($keyword && $keyword !== '') {
         $qb->andWhere('u.firstName LIKE :keyword OR u.lastName LIKE :keyword OR u.email LIKE :keyword')
-            ->setParameter('keyword', '%' . $keyword . '%');
+           ->setParameter('keyword', '%' . $keyword . '%');
     }
 
-    if ($faculte && !empty($faculte)) {
+    // Filtre par faculté
+    if ($faculte && $faculte !== '') {
         $qb->andWhere('u.faculte = :faculte')
-            ->setParameter('faculte', $faculte);
+           ->setParameter('faculte', $faculte);
     }
 
-    if ($roleName && !empty($roleName)) {
-        $qb->andWhere('r.roleName = :roleName')
-            ->setParameter('roleName', $roleName);
+    // Filtre par rôle
+    if ($role && $role !== '') {
+        $qb->andWhere('r.roleName = :role')
+           ->setParameter('role', $role);
     }
 
     return (int) $qb->getQuery()->getSingleScalarResult();
@@ -204,14 +207,16 @@ public function findAllFacultes(): array
 {
     $result = $this->createQueryBuilder('u')
         ->select('DISTINCT u.faculte')
-        ->andWhere('u.faculte IS NOT NULL')
-        ->andWhere('u.faculte != :empty')
-        ->setParameter('empty', '')
+        ->where('u.faculte IS NOT NULL')
+        ->andWhere('u.faculte != \'\'')
         ->orderBy('u.faculte', 'ASC')
         ->getQuery()
-        ->getSingleColumnResult();
-
-    return $result;
+        ->getResult();
+    
+    // Convertir le résultat en tableau simple de strings
+    return array_map(function($item) {
+        return $item['faculte'];
+    }, $result);
 }
 
     /**

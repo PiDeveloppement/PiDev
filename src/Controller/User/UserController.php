@@ -16,6 +16,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+
 #[Route('/admin/users')]
 #[IsGranted('ROLE_ADMIN')]
 class UserController extends AbstractController
@@ -44,10 +45,24 @@ class UserController extends AbstractController
         $facultes = $this->userService->getAllFacultes();
         $roles = $this->roleRepository->findAllNames();
 
+        // Récupération correcte des statistiques par rôle
+        $allRoles = $this->roleRepository->findAll();
+        $statsByRole = [];
+        
+        foreach ($allRoles as $roleEntity) {
+            $roleName = $roleEntity->getRoleName();
+            $count = $this->userRepository->count(['role' => $roleEntity]);
+            $statsByRole[$roleName] = $count;
+        }
+        
+        // Ajouter les utilisateurs sans rôle
+        $defaultCount = $this->userRepository->count(['role' => null]);
+        $statsByRole['Default'] = $defaultCount;
+
         $stats = [
-            'total' => $this->userService->getTotalUsersCount(),
-            'new_this_month' => $this->userService->getNewUsersThisMonthCount(),
-            'by_role' => $this->userService->getUsersCountByRole()
+            'total' => $this->userRepository->count([]),
+            'new_this_month' => $this->getNewUsersThisMonthCount(),
+            'by_role' => $statsByRole
         ];
 
         return $this->render('user/user.html.twig', [
@@ -62,6 +77,24 @@ class UserController extends AbstractController
             'selectedFaculte' => $faculte,
             'selectedRole' => $role
         ]);
+    }
+
+    /**
+     * Récupère le nombre de nouveaux utilisateurs ce mois
+     * Utilise registrationDate au lieu de createdAt
+     */
+    private function getNewUsersThisMonthCount(): int
+    {
+        $now = new \DateTime();
+        $startOfMonth = new \DateTime($now->format('Y-m-01 00:00:00'));
+        
+        // Utilisez le QueryBuilder car registrationDate peut être nullable
+        $qb = $this->userRepository->createQueryBuilder('u');
+        $qb->select('COUNT(u.id)')
+           ->where('u.registrationDate >= :startOfMonth')
+           ->setParameter('startOfMonth', $startOfMonth);
+        
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
     // ==================== NEW & CREATE ====================
@@ -106,6 +139,7 @@ class UserController extends AbstractController
             $user->setLastName($lastName);
             $user->setEmail($email);
             $user->setFaculte($faculte);
+            $user->setRegistrationDate(new \DateTime()); // Définit la date d'inscription
             
             // Hasher le mot de passe
             $hashedPassword = $passwordHasher->hashPassword($user, $password);
@@ -231,36 +265,60 @@ class UserController extends AbstractController
     }
 
     // ==================== SEARCH & AJAX ====================
-// Dans UserController.php, ajoutez cette méthode si elle n'existe pas :
-// REMPLACEZ votre méthode search par celle-ci :
-// Ensuite, corrigez la méthode search :
-#[Route('/search', name: 'app_user_search', methods: ['GET'])]
-public function search(Request $request): JsonResponse
-{
-    $query = $request->query->get('q', '');
-    $faculte = $request->query->get('faculte', '');
-    $role = $request->query->get('role', '');
-
-    $users = $this->userService->searchUsers($query, $faculte, $role, 1, 100);
     
-    $data = [];
-    foreach ($users as $user) {
-        $data[] = [
-            'id' => $user->getId(),
-            'firstName' => $user->getFirstName(),
-            'lastName' => $user->getLastName(),
-            'email' => $user->getEmail(),
-            'faculte' => $user->getFaculte(),
-            'role' => $user->getRole()?->getRoleName() ?? 'Utilisateur',
-            'csrfToken' => $this->csrfTokenManager->getToken('delete' . $user->getId())->getValue()  // ← Correction ici
+    #[Route('/search', name: 'app_user_search', methods: ['GET'])]
+    public function search(Request $request): JsonResponse
+    {
+        $query = trim($request->query->get('q', ''));
+        $faculte = trim($request->query->get('faculte', ''));
+        $role = trim($request->query->get('role', ''));
+        $page = max(1, $request->query->getInt('page', 1));
+        $limit = 5;
+        
+        $users = $this->userService->searchUsers($query, $faculte, $role, $page, $limit);
+        $totalResults = $this->userService->countUsers($query, $faculte, $role);
+        $totalPages = ceil($totalResults / $limit);
+        
+        // Récupération correcte des statistiques par rôle
+        $allRoles = $this->roleRepository->findAll();
+        $statsByRole = [];
+        
+        foreach ($allRoles as $roleEntity) {
+            $roleName = $roleEntity->getRoleName();
+            $count = $this->userRepository->count(['role' => $roleEntity]);
+            $statsByRole[$roleName] = $count;
+        }
+        
+        $defaultCount = $this->userRepository->count(['role' => null]);
+        $statsByRole['Default'] = $defaultCount;
+        
+        $stats = [
+            'total' => $this->userRepository->count([]),
+            'new_this_month' => $this->getNewUsersThisMonthCount(),
+            'by_role' => $statsByRole
         ];
+        
+        $data = [];
+        foreach ($users as $user) {
+            $data[] = [
+                'id' => $user->getId(),
+                'firstName' => $user->getFirstName(),
+                'lastName' => $user->getLastName(),
+                'email' => $user->getEmail(),
+                'faculte' => $user->getFaculte(),
+                'role' => $user->getRole()?->getRoleName() ?? 'Default',
+                'csrfToken' => $this->csrfTokenManager->getToken('delete' . $user->getId())->getValue(),
+            ];
+        }
+        
+        return $this->json([
+            'users' => $data,
+            'total' => $totalResults,
+            'totalPages' => $totalPages,
+            'currentPage' => $page,
+            'stats' => $stats
+        ]);
     }
-
-    return $this->json([
-        'users' => $data,
-        'total' => count($data)
-    ]);
-}
 
     // ==================== UTILS ====================
     
@@ -308,10 +366,30 @@ public function search(Request $request): JsonResponse
     #[Route('/refresh', name: 'app_user_refresh', methods: ['POST'])]
     public function refresh(): JsonResponse
     {
-        return $this->json([
-            'total' => $this->userService->getTotalUsersCount(),
-            'new_this_month' => $this->userService->getNewUsersThisMonthCount()
-        ]);
+        $stats = [
+            'total' => $this->userRepository->count([]),
+            'new_this_month' => $this->getNewUsersThisMonthCount(),
+            'by_role' => $this->getStatsByRole()
+        ];
+        
+        return $this->json($stats);
+    }
+
+    private function getStatsByRole(): array
+    {
+        $allRoles = $this->roleRepository->findAll();
+        $statsByRole = [];
+        
+        foreach ($allRoles as $roleEntity) {
+            $roleName = $roleEntity->getRoleName();
+            $count = $this->userRepository->count(['role' => $roleEntity]);
+            $statsByRole[$roleName] = $count;
+        }
+        
+        $defaultCount = $this->userRepository->count(['role' => null]);
+        $statsByRole['Default'] = $defaultCount;
+        
+        return $statsByRole;
     }
 
     #[Route('/export', name: 'app_user_export')]
@@ -324,5 +402,4 @@ public function search(Request $request): JsonResponse
             'count' => count($users)
         ]);
     }
-    
 }

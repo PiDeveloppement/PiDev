@@ -2,13 +2,58 @@
 
 {% block title %}Gestion des utilisateurs - EventFlow{% endblock %}
 
+{% block page_title %}Gestion des utilisateurs{% endblock %}
+{% block page_subtitle %}Liste et gestion de tous les utilisateurs{% endblock %}
+
 {% block admin_content %}
-<div class="main-container" style="
-    background-color: #f8fafc;
-    width: 100%;
-    height: 100%;
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+<div style="
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    padding: 20px 30px 0 30px;
 ">
+    {% set kpis = [
+        {'label': 'Total Utilisateurs', 'id': 'totalUsersCount', 'value': stats.total|default(0), 'icon': '👥', 'bg': '#e0e7ff', 'text': '#4338ca'},
+        {'label': 'Nouveaux (Mois)', 'id': 'newUsersCount', 'value': stats.new_this_month|default(0), 'icon': '📅', 'bg': '#dcfce7', 'text': '#15803d'},
+        {'label': 'Administrateurs', 'id': 'adminsCount', 'value': stats.by_role.Admin|default(0), 'icon': '👑', 'bg': '#f3e8ff', 'text': '#7e22ce'},
+        {'label': 'Organisateurs', 'id': 'organizersCount', 'value': stats.by_role.Organisateur|default(0), 'icon': '🎯', 'bg': '#fef3c7', 'text': '#b45309'}
+    ] %}
+
+    {% for kpi in kpis %}
+    <div style="
+        background-color: {{ kpi.bg }};
+        border: 1px solid rgba(0,0,0,0.05);
+        border-radius: 12px;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    ">
+        <div>
+            <p style="margin: 0; font-size: 12px; color: {{ kpi.text }}; opacity: 0.8; font-weight: 600; text-transform: uppercase;">
+                {{ kpi.label }}
+            </p>
+            <h2 style="margin: 5px 0 0 0; font-size: 26px; font-weight: 800; color: {{ kpi.text }};" id="{{ kpi.id }}">
+                {{ kpi.value }}
+            </h2>
+        </div>
+        <div style="
+            font-size: 24px; 
+            background: white; 
+            width: 45px; 
+            height: 45px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        ">
+            {{ kpi.icon }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
     <!-- Barre de recherche et filtres -->
     <div style="
         background-color: #f1f5f9;
@@ -17,6 +62,7 @@
         display: flex;
         align-items: center;
         gap: 15px;
+        margin-top: 20px;
     ">
         <input type="text" 
                id="searchField"
@@ -87,7 +133,7 @@
     </div>
 
     <!-- Contenu principal scrollable -->
-    <div style="padding: 20px 30px; height: calc(100% - 80px); overflow-y: auto;">
+    <div style="padding: 20px 30px; height: calc(100% - 280px); overflow-y: auto;">
         
         <!-- Tableau des utilisateurs -->
         <div style="
@@ -275,11 +321,21 @@ function performSearch(search, faculte, role) {
         .then(data => {
             updateTable(data.users);
             document.getElementById('statsLabel').textContent = data.total + ' utilisateurs';
+            updateKPIs(data.stats);
         })
         .catch(error => {
             console.error('Erreur:', error);
             tbody.innerHTML = '<tr><td colspan="7" style="padding: 50px; text-align: center; color: #ef4444;">❌ Erreur lors de la recherche</td></tr>';
         });
+}
+
+function updateKPIs(stats) {
+    if (stats) {
+        document.getElementById('totalUsersCount').textContent = stats.total || 0;
+        document.getElementById('newUsersCount').textContent = stats.new_this_month || 0;
+        document.getElementById('adminsCount').textContent = stats.by_role?.Admin || 0;
+        document.getElementById('organizersCount').textContent = stats.by_role?.Organisateur || 0;
+    }
 }
 
 function updateTable(users) {

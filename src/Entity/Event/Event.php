@@ -92,8 +92,8 @@ class Event
     #[ORM\Column(name: "is_free", type: Types::BOOLEAN, options: ["default" => true])]
     private ?bool $isFree = true;
 
-    #[ORM\Column(name: "ticket_price", type: Types::DECIMAL, precision: 10, scale: 2, options: ["default" => 0])]
-    private ?float $ticketPrice = 0.0;
+    #[ORM\Column(name: "ticket_price", type: Types::FLOAT, options: ["default" => 0])]
+private ?float $ticketPrice = 0.0;
 
     #[ORM\Column(name: "created_at", type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $createdAt = null;
@@ -103,9 +103,9 @@ class Event
 
     // ==================== RELATIONS ====================
 
-    #[ORM\ManyToOne(targetEntity: Category::class)]
-    #[ORM\JoinColumn(name: "category_id", referencedColumnName: "id", nullable: true)]
-    private ?Category $category = null;
+    #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: "events")] // <-- Ajoute inversedBy
+#[ORM\JoinColumn(name: "category_id", referencedColumnName: "id", nullable: true)]
+private ?Category $category = null;
 
     #[ORM\ManyToOne(targetEntity: UserModel::class)]
     #[ORM\JoinColumn(name: "created_by", referencedColumnName: "Id_User", nullable: true)]

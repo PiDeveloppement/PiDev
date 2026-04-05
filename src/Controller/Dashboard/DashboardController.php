@@ -4,6 +4,7 @@ namespace App\Controller\Dashboard;
 
 use App\Entity\Event\Event;
 use App\Entity\User\UserModel;
+use App\Service\User\UserService;  // Ajoutez cette ligne
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,13 +20,16 @@ class DashboardController extends AbstractController
     private EntityManagerInterface $entityManager;
     private LoggerInterface $logger;
     private \DateTime $lastUpdate;
+    private UserService $userService;  // Ajoutez cette ligne
 
     public function __construct(
         EntityManagerInterface $entityManager,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        UserService $userService  // Ajoutez ce paramètre
     ) {
         $this->entityManager = $entityManager;
         $this->logger = $logger;
+        $this->userService = $userService;  // Ajoutez cette ligne
         $this->lastUpdate = new \DateTime();
     }
 
@@ -80,6 +84,18 @@ class DashboardController extends AbstractController
                 'enCoursCount' => $stats['ongoing'],
                 'terminePercent' => $stats['completed_percent'],
                 'termineCount' => $stats['completed'],
+                // Ajout des stats utilisateurs pour le refresh AJAX
+                'totalUsers' => $stats['total_users_stats'] ?? 0,
+                'newUsersThisMonth' => $stats['new_users_this_month'] ?? 0,
+                'usersEvolution' => $stats['users_evolution'] ?? 0,
+                'adminsPercent' => $stats['admins_percent'] ?? 0,
+                'adminsCount' => $stats['admins_count'] ?? 0,
+                'organizersPercent' => $stats['organizers_percent'] ?? 0,
+                'organizersCount' => $stats['organizers_count'] ?? 0,
+                'defaultPercent' => $stats['default_percent'] ?? 0,
+                'defaultCount' => $stats['default_count'] ?? 0,
+                'sponsorsPercent' => $stats['sponsors_percent'] ?? 0,
+                'sponsorsCount' => $stats['sponsors_count'] ?? 0,
                 'lastUpdate' => $this->lastUpdate->format('H:i:s')
             ]);
         } catch (\Exception $e) {
@@ -94,8 +110,7 @@ class DashboardController extends AbstractController
         $eventRepository = $this->entityManager->getRepository(Event::class);
         $userRepository = $this->entityManager->getRepository(UserModel::class);
         
-        // Récupérer l'entité Ticket - Adapter le nom selon votre entité
-        // Essayez différentes possibilités :
+        // Récupérer l'entité Ticket
         try {
             $ticketRepository = $this->entityManager->getRepository('App\Entity\Event\EventTicket');
         } catch (\Exception $e) {
@@ -107,6 +122,7 @@ class DashboardController extends AbstractController
             }
         }
         
+        // ==================== STATS ÉVÉNEMENTS ====================
         // Compter les événements
         $totalEvents = $eventRepository->count([]);
         $this->logger->info('📊 Total événements trouvés: ' . $totalEvents);
@@ -114,9 +130,6 @@ class DashboardController extends AbstractController
         // Récupérer TOUS les événements pour les statistiques
         $allEvents = $eventRepository->findAll();
         $this->logger->info('📊 Nombre événements récupérés: ' . count($allEvents));
-        
-        // Compter les utilisateurs
-        $totalUsers = $userRepository->count([]);
         
         // Compter les billets si le repository existe
         $totalTickets = 0;
@@ -135,7 +148,7 @@ class DashboardController extends AbstractController
         
         // Calculer les statistiques des événements
         $eventStats = $this->calculateEventStats($allEvents);
-        $this->logger->info('📊 Statistiques calculées:', $eventStats);
+        $this->logger->info('📊 Statistiques événements calculées:', $eventStats);
         
         // Calculer le nombre de participants uniques
         $totalParticipants = $this->countUniqueParticipants($ticketRepository);
@@ -143,15 +156,39 @@ class DashboardController extends AbstractController
         // Calculer le taux de participation
         $participationRate = $this->calculateAverageParticipationRate($allEvents, $totalParticipants);
         
-        // Calculer les évolutions
+        // ==================== STATS UTILISATEURS (NOUVEAU) ====================
+        // Récupérer les statistiques utilisateurs via UserService
+        $totalUsers = $this->userService->getTotalUsersCount();
+        $newUsersThisMonth = $this->userService->getNewUsersThisMonthCount();
+        $usersByRole = $this->userService->getUsersCountByRole();
+        
+        // Données utilisateurs
+        $userStats = [
+            'total_users_stats' => $totalUsers,
+            'new_users_this_month' => $newUsersThisMonth,
+            'admins_count' => $usersByRole['Admin'] ?? 0,
+            'organizers_count' => $usersByRole['Organisateur'] ?? 0,
+            'default_count' => $usersByRole['Default'] ?? 0,
+            'sponsors_count' => $usersByRole['Sponsor'] ?? 0,
+            'admins_percent' => ($totalUsers > 0) ? round(($usersByRole['Admin'] ?? 0) / $totalUsers * 100) : 0,
+            'organizers_percent' => ($totalUsers > 0) ? round(($usersByRole['Organisateur'] ?? 0) / $totalUsers * 100) : 0,
+            'default_percent' => ($totalUsers > 0) ? round(($usersByRole['Default'] ?? 0) / $totalUsers * 100) : 0,
+            'sponsors_percent' => ($totalUsers > 0) ? round(($usersByRole['Sponsor'] ?? 0) / $totalUsers * 100) : 0,
+        ];
+        
+        $this->logger->info('📊 Statistiques utilisateurs:', $userStats);
+        
+        // ==================== ÉVOLUTIONS ====================
         $eventsEvolution = $this->calculateEventsEvolution($eventRepository);
         $participantsEvolution = $this->calculateParticipantsEvolution($userRepository);
         $participationEvolution = $this->calculateParticipationEvolution($eventRepository, $userRepository);
         $ticketsEvolution = $this->calculateTicketsEvolution($ticketRepository);
+        $usersEvolution = $this->calculateUsersEvolution($userRepository);
 
         $this->lastUpdate = new \DateTime();
 
-        return [
+        // Fusionner toutes les statistiques
+        return array_merge([
             'total_events' => $totalEvents,
             'total_users' => $totalParticipants,
             'total_tickets' => $totalTickets,
@@ -160,6 +197,7 @@ class DashboardController extends AbstractController
             'participants_evolution' => $participantsEvolution,
             'participation_evolution' => $participationEvolution,
             'tickets_evolution' => $ticketsEvolution,
+            'users_evolution' => $usersEvolution,
             'planned' => $eventStats['planned'],
             'ongoing' => $eventStats['ongoing'],
             'completed' => $eventStats['completed'],
@@ -168,9 +206,47 @@ class DashboardController extends AbstractController
             'completed_percent' => $eventStats['total'] > 0 ? round(($eventStats['completed'] / $eventStats['total']) * 100) : 0,
             'upcoming_events' => array_map([$this, 'formatEventForDisplay'], $upcomingEvents),
             'total' => $eventStats['total']
-        ];
+        ], $userStats);
     }
 
+    // ==================== NOUVELLE MÉTHODE ====================
+    private function calculateUsersEvolution($userRepository): int
+    {
+        try {
+            $now = new \DateTime();
+            $monthAgo = (clone $now)->modify('-1 month');
+            $twoMonthsAgo = (clone $now)->modify('-2 months');
+
+            $usersThisMonth = $userRepository->createQueryBuilder('u')
+                ->where('u.registrationDate BETWEEN :start AND :end')
+                ->setParameter('start', $monthAgo)
+                ->setParameter('end', $now)
+                ->getQuery()
+                ->getResult();
+
+            $usersLastMonth = $userRepository->createQueryBuilder('u')
+                ->where('u.registrationDate BETWEEN :start AND :end')
+                ->setParameter('start', $twoMonthsAgo)
+                ->setParameter('end', $monthAgo)
+                ->getQuery()
+                ->getResult();
+
+            $countThisMonth = count($usersThisMonth);
+            $countLastMonth = count($usersLastMonth);
+
+            if ($countLastMonth === 0) {
+                return $countThisMonth > 0 ? 100 : 0;
+            }
+
+            return round((($countThisMonth - $countLastMonth) / $countLastMonth) * 100);
+        } catch (\Exception $e) {
+            $this->logger->error('❌ Erreur calcul évolution utilisateurs: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    // ==================== MÉTHODES EXISTANTES (gardez-les) ====================
+    
     private function calculateEventStats(array $events): array
     {
         $planned = 0;
@@ -208,7 +284,6 @@ class DashboardController extends AbstractController
         }
         
         try {
-            // Essayer différentes possibilités pour le nom du champ
             try {
                 $qb = $ticketRepository->createQueryBuilder('t')
                     ->select('COUNT(DISTINCT t.userId) as unique_participants');
@@ -395,7 +470,6 @@ class DashboardController extends AbstractController
 
     private function formatEventForDisplay($event): array
     {
-        // Adapter selon votre structure
         $participantsCount = 0;
         
         return [
@@ -454,6 +528,7 @@ class DashboardController extends AbstractController
             'participants_evolution' => 0,
             'participation_evolution' => 0,
             'tickets_evolution' => 0,
+            'users_evolution' => 0,
             'planned' => 0,
             'ongoing' => 0,
             'completed' => 0,
@@ -461,7 +536,17 @@ class DashboardController extends AbstractController
             'ongoing_percent' => 0,
             'completed_percent' => 0,
             'total' => 0,
-            'upcoming_events' => []
+            'upcoming_events' => [],
+            'total_users_stats' => 0,
+            'new_users_this_month' => 0,
+            'admins_count' => 0,
+            'organizers_count' => 0,
+            'default_count' => 0,
+            'sponsors_count' => 0,
+            'admins_percent' => 0,
+            'organizers_percent' => 0,
+            'default_percent' => 0,
+            'sponsors_percent' => 0,
         ];
     }
 }
