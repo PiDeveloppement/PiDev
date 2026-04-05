@@ -28,10 +28,14 @@ class BudgetType extends AbstractType
             ->add('initialBudget', NumberType::class, [
                 'label' => 'Budget initial (TND)',
                 'scale' => 2,
+                'html5' => false,
+                'invalid_message' => 'Veuillez saisir un budget initial valide.',
                 'attr' => [
                     'step' => '0.01',
                     'min' => '0',
                     'class' => 'form-control',
+                    'placeholder' => 'Ex: 12000.00',
+                    'inputmode' => 'decimal',
                 ],
                 'constraints' => [
                     new Assert\NotBlank(message: 'Le budget initial est obligatoire.'),
@@ -41,10 +45,14 @@ class BudgetType extends AbstractType
             ->add('totalRevenue', NumberType::class, [
                 'label' => 'Revenu total (TND)',
                 'scale' => 2,
+                'html5' => false,
+                'invalid_message' => 'Veuillez saisir un revenu total valide.',
                 'attr' => [
                     'step' => '0.01',
                     'min' => '0',
                     'class' => 'form-control',
+                    'placeholder' => 'Ex: 8000.00',
+                    'inputmode' => 'decimal',
                 ],
                 'constraints' => [
                     new Assert\NotBlank(message: 'Le revenu total est obligatoire.'),

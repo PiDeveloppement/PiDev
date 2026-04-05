@@ -7,6 +7,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -34,20 +35,14 @@ class DepenseType extends AbstractType
 
         $builder
             ->add('budgetId', ChoiceType::class, $budgetFieldOptions)
-            ->add('description', TextType::class, [
+            ->add('description', TextareaType::class, [
                 'label' => 'Description',
                 'attr' => [
                     'class' => 'form-control',
-                    'placeholder' => 'Description de la depense',
-                ],
-                'constraints' => [
-                    new Assert\NotBlank(message: 'La description est obligatoire.'),
-                    new Assert\Length(
-                        min: 3,
-                        max: 255,
-                        minMessage: 'La description est trop courte.',
-                        maxMessage: 'La description est trop longue.'
-                    ),
+                    'placeholder' => 'Decrivez la depense',
+                    'maxlength' => '1000',
+                    'rows' => 4,
+                    'data-char-count' => '1000',
                 ],
             ])
             ->add('category', ChoiceType::class, [
@@ -62,10 +57,14 @@ class DepenseType extends AbstractType
             ->add('amount', NumberType::class, [
                 'label' => 'Montant',
                 'scale' => 2,
+                'html5' => false,
+                'invalid_message' => 'Veuillez saisir un montant valide.',
                 'attr' => [
                     'step' => '0.01',
                     'min' => '0',
                     'class' => 'form-control',
+                    'placeholder' => 'Ex: 150.00',
+                    'inputmode' => 'decimal',
                 ],
                 'constraints' => [
                     new Assert\NotBlank(message: 'Le montant est obligatoire.'),

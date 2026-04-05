@@ -16,6 +16,9 @@
             const previewPlaceholder = document.getElementById('admin-logo-preview-placeholder');
             const fileName = document.getElementById('admin-logo-file-name');
             const clearBtn = document.getElementById('admin-clear-logo-btn');
+            const phoneInput = document.getElementById('{{ form.phone.vars.id }}');
+            const taxInput = document.getElementById('{{ form.taxId.vars.id }}');
+            const industryInput = document.getElementById('{{ form.industry.vars.id }}');
 
             if (!input || !previewImg || !previewPlaceholder || !fileName) {
                 return;
@@ -57,6 +60,32 @@
             if (clearBtn) {
                 clearBtn.addEventListener('click', function () {
                     resetPreview();
+                });
+            }
+
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function () {
+                    let value = phoneInput.value.replace(/\D+/g, '');
+                    if (value.length > 11) {
+                        value = value.slice(0, 11);
+                    }
+                    phoneInput.value = value;
+                });
+            }
+
+            if (taxInput) {
+                taxInput.addEventListener('input', function () {
+                    let value = taxInput.value.toUpperCase().replace(/[^0-9A-Z]/g, '');
+                    if (value.length > 8) {
+                        value = value.slice(0, 8);
+                    }
+                    taxInput.value = value;
+                });
+            }
+
+            if (industryInput) {
+                industryInput.addEventListener('input', function () {
+                    industryInput.value = industryInput.value.replace(/[^A-Za-zÀ-ÿ\s\-\&,]/g, '');
                 });
             }
         });

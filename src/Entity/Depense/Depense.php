@@ -22,15 +22,24 @@ class Depense
     #[Assert\NotNull(message: 'Le budget est obligatoire.')]
     private ?Budget $budget = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 1000)]
     #[Assert\NotBlank(message: 'La description est obligatoire.')]
-    #[Assert\Length(max: 255, maxMessage: 'Description trop longue.')]
+    #[Assert\Length(
+        min: 3,
+        max: 1000,
+        minMessage: 'La description doit contenir au moins 3 caracteres.',
+        maxMessage: 'La description ne doit pas depasser 1000 caracteres.'
+    )]
+    #[Assert\Regex(
+        pattern: '/[A-Za-zÀ-ÿ]/u',
+        message: 'La description doit contenir des lettres et ne peut pas etre uniquement numerique.'
+    )]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     #[Assert\NotBlank(message: 'Le montant est obligatoire.')]
     #[Assert\Positive(message: 'Le montant doit etre > 0.')]
-    private string $amount = '0.00';
+    private string $amount = '';
 
     #[ORM\Column(length: 60)]
     #[Assert\NotBlank(message: 'La categorie est obligatoire.')]
@@ -84,6 +93,12 @@ class Depense
 
     public function setAmount(float|string $amount): self
     {
+        if ($amount === '') {
+            $this->amount = '';
+
+            return $this;
+        }
+
         $this->amount = number_format((float) $amount, 2, '.', '');
 
         return $this;

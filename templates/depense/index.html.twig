@@ -168,27 +168,50 @@
             </div>
 
             {% set totalRange = lowCount + mediumCount + highCount %}
-            <div class="depense-band-card">
-                <div class="depense-band-track">
-                    <i class="low" style="width: {{ totalRange > 0 ? ((lowCount / totalRange) * 100) : 0 }}%"></i>
-                    <i class="medium" style="width: {{ totalRange > 0 ? ((mediumCount / totalRange) * 100) : 0 }}%"></i>
-                    <i class="high" style="width: {{ totalRange > 0 ? ((highCount / totalRange) * 100) : 0 }}%"></i>
-                </div>
-                <div class="depense-band-legend">
-                    <span><i class="dot low"></i> Faible: {{ lowCount }}</span>
-                    <span><i class="dot medium"></i> Moyen: {{ mediumCount }}</span>
-                    <span><i class="dot high"></i> Eleve: {{ highCount }}</span>
-                </div>
-            </div>
+            {% set lowPct = totalRange > 0 ? (lowCount * 100 / totalRange) : 0 %}
+            {% set mediumPct = totalRange > 0 ? (mediumCount * 100 / totalRange) : 0 %}
+            {% set highPct = totalRange > 0 ? (highCount * 100 / totalRange) : 0 %}
+            {% set circ = 282.74 %}
+            {% set lowDash = circ * lowPct / 100 %}
+            {% set mediumDash = circ * mediumPct / 100 %}
+            {% set highDash = circ * highPct / 100 %}
+            {% set mediumOffset = -(lowDash) %}
+            {% set highOffset = -(lowDash + mediumDash) %}
 
-            <div class="depense-focus-grid">
-                <div class="depense-focus-card">
-                    <span>Depense max utile</span>
-                    <strong>{{ highCount > 0 ? 'Surveiller les operations elevees' : 'Aucune depense elevee' }}</strong>
+            <div class="depense-donut-card">
+                <div class="depense-donut-chart">
+                    <svg viewBox="0 0 120 120" class="depense-donut-svg">
+                        <circle cx="60" cy="60" r="45" class="depense-donut-bg"></circle>
+                        <circle cx="60" cy="60" r="45" class="depense-donut-segment low" style="stroke-dasharray: {{ lowDash }} {{ circ - lowDash }}; stroke-dashoffset: 0;"></circle>
+                        <circle cx="60" cy="60" r="45" class="depense-donut-segment medium" style="stroke-dasharray: {{ mediumDash }} {{ circ - mediumDash }}; stroke-dashoffset: {{ mediumOffset }};"></circle>
+                        <circle cx="60" cy="60" r="45" class="depense-donut-segment high" style="stroke-dasharray: {{ highDash }} {{ circ - highDash }}; stroke-dashoffset: {{ highOffset }};"></circle>
+                        <circle cx="60" cy="60" r="31" class="depense-donut-inner"></circle>
+                        <text x="60" y="56" class="depense-donut-total">{{ totalRange }}</text>
+                        <text x="60" y="71" class="depense-donut-caption">depenses</text>
+                    </svg>
                 </div>
-                <div class="depense-focus-card">
-                    <span>Lecture rapide</span>
-                    <strong>{{ stats.categories }} categorie(s) actives</strong>
+                <div class="depense-donut-legend">
+                    <div class="depense-donut-item">
+                        <span class="swatch low"></span>
+                        <div>
+                            <strong>Faible</strong>
+                            <small>{{ lowCount }} depense(s) · {{ lowPct|round }}%</small>
+                        </div>
+                    </div>
+                    <div class="depense-donut-item">
+                        <span class="swatch medium"></span>
+                        <div>
+                            <strong>Moyen</strong>
+                            <small>{{ mediumCount }} depense(s) · {{ mediumPct|round }}%</small>
+                        </div>
+                    </div>
+                    <div class="depense-donut-item">
+                        <span class="swatch high"></span>
+                        <div>
+                            <strong>Eleve</strong>
+                            <small>{{ highCount }} depense(s) · {{ highPct|round }}%</small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </article>
