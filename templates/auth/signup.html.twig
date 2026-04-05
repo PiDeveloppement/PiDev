@@ -1,0 +1,639 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inscription - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow-x: hidden;
+        }
+        
+        .signup-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f0f8ff, #e6f2ff);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Bouton retour */
+        .back-button {
+            padding: 20px 0 0 40px;
+        }
+        
+        .back-button a {
+            display: inline-block;
+            background: transparent;
+            color: #2196F3;
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: none;
+            border: 1px solid #2196F3;
+            border-radius: 20px;
+            padding: 8px 20px;
+            transition: all 0.2s ease;
+        }
+        
+        .back-button a:hover {
+            background: #2196F3;
+            color: white;
+        }
+        
+        /* Grille principale */
+        .main-grid {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: 45% 55%;
+            gap: 60px;
+            max-width: 1200px;
+            width: 100%;
+            align-items: center;
+        }
+        
+        /* Partie gauche */
+        .left-panel {
+            padding: 40px 60px 40px 40px;
+        }
+        
+        .logo-container {
+            margin-bottom: 40px;
+        }
+        
+        .logo-container img {
+            width: 222px;
+            height: auto;
+        }
+        
+        .features {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            max-width: 380px;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .feature-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(33, 150, 243, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #2196F3;
+        }
+        
+        .feature-text h3 {
+            color: #333333;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 3px;
+        }
+        
+        .feature-text p {
+            color: #666666;
+            font-size: 13px;
+            margin: 0;
+        }
+        
+        /* Partie droite */
+        .right-panel {
+            padding: 60px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .signup-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 45px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+        
+        .card-header {
+            text-align: center;
+        }
+        
+        .card-header h2 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2d3748;
+            margin: 0 0 8px 0;
+        }
+        
+        .card-header p {
+            color: #718096;
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .form-container {
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        
+        .form-group {
+            width: 100%;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+            background: white;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+        
+        .validation-message {
+            font-size: 12px;
+            margin-top: 4px;
+            min-height: 18px;
+        }
+        
+        .validation-message.error {
+            color: #ef4444;
+        }
+        
+        .validation-message.success {
+            color: #10b981;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #4a5568;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e0;
+            cursor: pointer;
+        }
+        
+        .btn-submit {
+            background: #2196F3;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 40px;
+            font-size: 14px;
+            cursor: pointer;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
+        }
+        
+        .btn-submit:hover {
+            background: #1976D2;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+        }
+        
+        .login-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .login-link span {
+            color: #718096;
+            font-size: 13px;
+        }
+        
+        .login-link a {
+            color: #2196F3;
+            font-weight: bold;
+            font-size: 13px;
+            text-decoration: none;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Footer */
+        .footer {
+            background: rgba(33, 150, 243, 0.05);
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .footer p {
+            color: #666666;
+            font-size: 12px;
+            margin: 0 0 10px 0;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .footer-links a {
+            color: #2196F3;
+            font-size: 12px;
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Messages flash */
+        .flash-message {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .flash-message.error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #dc2626;
+        }
+        
+        .flash-message.success {
+            background: #dcfce7;
+            border: 1px solid #10b981;
+            color: #059669;
+        }
+    </style>
+{% endblock %}
+
+{% block public_content %}
+<div class="signup-container">
+    <!-- BOUTON RETOUR -->
+    <div class="back-button">
+        <a href="{{ path('app_landing') }}">← Retour à l'accueil</a>
+    </div>
+
+    <!-- CONTENU PRINCIPAL -->
+    <div class="main-grid">
+        <div class="grid-container">
+            <!-- Partie gauche : Présentation avec logo -->
+            <div class="left-panel">
+                <div class="logo-container">
+                    <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+                </div>
+
+                <div class="features">
+                    <!-- Point 1 -->
+                    <div class="feature-item">
+                        <div class="feature-icon">📅</div>
+                        <div class="feature-text">
+                            <h3>Créez des événements</h3>
+                            <p>Organisez et planifiez facilement</p>
+                        </div>
+                    </div>
+
+                    <!-- Point 2 -->
+                    <div class="feature-item">
+                        <div class="feature-icon">👥</div>
+                        <div class="feature-text">
+                            <h3>Gérez les participants</h3>
+                            <p>Suivi en temps réel des inscriptions</p>
+                        </div>
+                    </div>
+
+                    <!-- Point 3 -->
+                    <div class="feature-item">
+                        <div class="feature-icon">💰</div>
+                        <div class="feature-text">
+                            <h3>Suivez votre budget</h3>
+                            <p>Contrôlez les dépenses et recettes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Partie droite : Formulaire d'inscription -->
+            <div class="right-panel">
+                <div class="signup-card">
+                    <!-- En-tête -->
+                    <div class="card-header">
+                        <h2>Inscription</h2>
+                        <p>Rejoignez notre communauté universitaire</p>
+                    </div>
+
+                    <!-- Messages flash -->
+                    {% for message in app.flashes('error') %}
+                        <div class="flash-message error">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+
+                    {% for message in app.flashes('success') %}
+                        <div class="flash-message success">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+
+                    <!-- Formulaire -->
+                    <div class="form-container">
+                        {{ form_start(registrationForm) }}
+                            
+                            <!-- Prénom (correspond à First_Name dans JavaFX) -->
+                            <div class="form-group">
+                                {{ form_widget(registrationForm.firstName, {
+                                    'attr': {
+                                        'class': 'form-control',
+                                        'placeholder': 'Prénom *'
+                                    }
+                                }) }}
+                                <div class="validation-message error">
+                                    {{ form_errors(registrationForm.firstName) }}
+                                </div>
+                            </div>
+
+                            <!-- Nom (correspond à Last_Name dans JavaFX) -->
+                            <div class="form-group">
+                                {{ form_widget(registrationForm.lastName, {
+                                    'attr': {
+                                        'class': 'form-control',
+                                        'placeholder': 'Nom *'
+                                    }
+                                }) }}
+                                <div class="validation-message error">
+                                    {{ form_errors(registrationForm.lastName) }}
+                                </div>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="form-group">
+                                {{ form_widget(registrationForm.email, {
+                                    'attr': {
+                                        'class': 'form-control',
+                                        'placeholder': 'Email universitaire *',
+                                        'data-email-field': 'true'
+                                    }
+                                }) }}
+                                <div id="emailValidation" class="validation-message"></div>
+                            </div>
+
+                            <!-- Faculté -->
+                            <div class="form-group">
+                                {{ form_widget(registrationForm.faculte, {
+                                    'attr': {
+                                        'class': 'form-control',
+                                        'placeholder': 'Faculté (optionnel)'
+                                    }
+                                }) }}
+                            </div>
+
+                            <!-- Téléphone (optionnel) - équivalent à ce qui manque dans JavaFX 
+                            <div class="form-group">
+                                {{ form_widget(registrationForm.phone, {
+                                    'attr': {
+                                        'class': 'form-control',
+                                        'placeholder': 'Téléphone (optionnel)'
+                                    }
+                                }) }}
+                            </div>-->
+
+                            <!-- Mot de passe -->
+                            <div class="form-group">
+                                {{ form_widget(registrationForm.plainPassword.first, {
+                                    'attr': {
+                                        'class': 'form-control',
+                                        'placeholder': 'Mot de passe *',
+                                        'data-password-field': 'true'
+                                    }
+                                }) }}
+                                <div id="passwordValidation" class="validation-message"></div>
+                            </div>
+
+                            <!-- Confirmation mot de passe -->
+                            <div class="form-group">
+                                {{ form_widget(registrationForm.plainPassword.second, {
+                                    'attr': {
+                                        'class': 'form-control',
+                                        'placeholder': 'Confirmer le mot de passe *',
+                                        'data-confirm-field': 'true'
+                                    }
+                                }) }}
+                                <div id="confirmValidation" class="validation-message"></div>
+                            </div>
+
+                            <!-- Conditions d'utilisation -->
+                            <div class="checkbox-container">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="conditions" required>
+                                    <span>J'accepte les conditions d'utilisation</span>
+                                </label>
+                            </div>
+
+                            <!-- Bouton de soumission -->
+                            <button type="submit" class="btn-submit">
+                                Créer mon compte
+                            </button>
+
+                            <!-- Lien de connexion -->
+                            <div class="login-link">
+                                <span>Déjà membre?</span>
+                                <a href="{{ path('app_login') }}">Se connecter</a>
+                            </div>
+
+                        {{ form_end(registrationForm) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p>© 2026 EventFlow - Tous droits réservés</p>
+        <div class="footer-links">
+            <a href="#">Conditions d'utilisation</a>
+            <a href="#">Politique de confidentialité</a>
+            <a href="#">Support</a>
+        </div>
+    </footer>
+</div>
+
+<!-- Scripts de validation (conservés de votre version) -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const emailField = document.querySelector('[data-email-field]');
+    const passwordField = document.querySelector('[data-password-field]');
+    const confirmField = document.querySelector('[data-confirm-field]');
+    
+    if (emailField) {
+        emailField.addEventListener('input', function() {
+            validateEmail(this.value);
+        });
+    }
+    
+    if (passwordField) {
+        passwordField.addEventListener('input', function() {
+            validatePassword(this.value);
+            if (confirmField && confirmField.value) {
+                validatePasswordMatch(this.value, confirmField.value);
+            }
+        });
+    }
+    
+    if (confirmField) {
+        confirmField.addEventListener('input', function() {
+            if (passwordField) {
+                validatePasswordMatch(passwordField.value, this.value);
+            }
+        });
+    }
+});
+
+function validateEmail(email) {
+    const validationDiv = document.getElementById('emailValidation');
+    const emailField = document.querySelector('[data-email-field]');
+    
+    if (!email || email.trim() === '') {
+        validationDiv.textContent = '';
+        emailField.classList.remove('error', 'success');
+        return false;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        validationDiv.textContent = 'Format d\'email invalide';
+        validationDiv.className = 'validation-message error';
+        emailField.classList.add('error');
+        emailField.classList.remove('success');
+        return false;
+    }
+    
+    fetch('{{ path('app_check_email') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'email=' + encodeURIComponent(email)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.exists) {
+            validationDiv.textContent = 'Cet email est déjà utilisé';
+            validationDiv.className = 'validation-message error';
+            emailField.classList.add('error');
+            emailField.classList.remove('success');
+        } else {
+            validationDiv.textContent = '';
+            validationDiv.className = 'validation-message success';
+            emailField.classList.add('success');
+            emailField.classList.remove('error');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+    });
+    
+    return true;
+}
+
+function validatePassword(password) {
+    const validationDiv = document.getElementById('passwordValidation');
+    const passwordField = document.querySelector('[data-password-field]');
+    
+    if (!password || password.trim() === '') {
+        validationDiv.textContent = '';
+        passwordField.classList.remove('error', 'success');
+        return false;
+    }
+    
+    const regex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{6,}$/;
+    
+    if (!regex.test(password)) {
+        validationDiv.textContent = '6+ caractères avec lettre, chiffre ET symbole';
+        validationDiv.className = 'validation-message error';
+        passwordField.classList.add('error');
+        passwordField.classList.remove('success');
+        return false;
+    }
+    
+    validationDiv.textContent = '';
+    validationDiv.className = 'validation-message success';
+    passwordField.classList.add('success');
+    passwordField.classList.remove('error');
+    return true;
+}
+
+function validatePasswordMatch(password, confirm) {
+    const validationDiv = document.getElementById('confirmValidation');
+    const confirmField = document.querySelector('[data-confirm-field]');
+    
+    if (!confirm || confirm.trim() === '') {
+        validationDiv.textContent = '';
+        confirmField.classList.remove('error', 'success');
+        return false;
+    }
+    
+    if (password !== confirm) {
+        validationDiv.textContent = 'Les mots de passe ne correspondent pas';
+        validationDiv.className = 'validation-message error';
+        confirmField.classList.add('error');
+        confirmField.classList.remove('success');
+        return false;
+    }
+    
+    validationDiv.textContent = '';
+    validationDiv.className = 'validation-message success';
+    confirmField.classList.add('success');
+    confirmField.classList.remove('error');
+    return true;
+}
+</script>
+{% endblock %}

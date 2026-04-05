@@ -1,0 +1,290 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ category.name }}{% endblock %}
+
+{% block kpi %}
+<div style="background:#ecfeff; border-radius:12px; padding:12px 20px; text-align:center; min-width:130px;">
+    <i class="fas fa-signal" style="color:#0e7490; font-size:20px;"></i>
+    <div style="font-size:1.8rem; font-weight:700; color:#0e7490;">{{ category.isActive ? 'Actif' : 'Inactif' }}</div>
+    <div style="color:#64748b; font-size:12px;">Statut</div>
+</div>
+<div style="background:#eef2ff; border-radius:12px; padding:12px 20px; text-align:center; min-width:130px;">
+    <i class="fas fa-palette" style="color:#3730a3; font-size:20px;"></i>
+    <div style="font-size:1.2rem; font-weight:700; color:#3730a3;">{{ category.color ?? '#cbd5e1' }}</div>
+    <div style="color:#64748b; font-size:12px;">Couleur</div>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+<style>
+    .category-show-shell {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid #dbeafe;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+        background: linear-gradient(160deg, #f8fbff 0%, #ffffff 48%, #f8fafc 100%);
+    }
+
+    .category-ribbon {
+        height: 6px;
+        background: linear-gradient(90deg, {{ category.color ?? '#3b82f6' }} 0%, #0ea5e9 100%);
+    }
+
+    .category-hero {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 24px;
+        border-bottom: 1px solid #e2e8f0;
+        align-items: center;
+    }
+
+    .category-main {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .category-icon {
+        width: 78px;
+        height: 78px;
+        border-radius: 16px;
+        font-size: 36px;
+        display: grid;
+        place-items: center;
+        background: color-mix(in srgb, {{ category.color ?? '#3b82f6' }} 16%, #ffffff 84%);
+        border: 1px solid color-mix(in srgb, {{ category.color ?? '#3b82f6' }} 32%, #e2e8f0 68%);
+    }
+
+    .category-title {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+    }
+
+    .category-subtitle {
+        color: #64748b;
+        font-size: 0.92rem;
+        margin: 6px 0 0;
+    }
+
+    .status-pill {
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .status-pill.active {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-pill.inactive {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .category-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .btn-modern {
+        border: none;
+        border-radius: 10px;
+        padding: 9px 14px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .btn-modern:hover {
+        transform: translateY(-1px);
+    }
+
+    .btn-modern.back {
+        color: #334155;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+    }
+
+    .btn-modern.edit {
+        color: #ffffff;
+        background: #2563eb;
+        box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3);
+    }
+
+    .category-metrics {
+        padding: 22px 24px 10px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .metric-item {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px;
+    }
+
+    .metric-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        color: #94a3b8;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .metric-value {
+        font-size: 15px;
+        color: #0f172a;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .color-swatch {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1px solid #cbd5e1;
+        display: inline-block;
+    }
+
+    .category-description {
+        padding: 10px 24px 24px;
+    }
+
+    .description-card {
+        background: #ffffff;
+        border: 1px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 15px;
+        color: #334155;
+        line-height: 1.55;
+        min-height: 84px;
+    }
+
+    .category-meta {
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 14px 24px;
+        color: #64748b;
+        font-size: 12px;
+        background: #f8fafc;
+    }
+
+    @media (max-width: 900px) {
+        .category-hero {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .category-actions {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        .category-metrics {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="category-show-shell">
+    <div class="category-ribbon"></div>
+
+    <div class="category-hero">
+        <div class="category-main">
+            <div class="category-icon">
+                {{ category.icon ?? '📌' }}
+            </div>
+            <div>
+                <h1 class="category-title">{{ category.name }}</h1>
+                <p class="category-subtitle">Détails de la catégorie d'événement</p>
+                <div style="margin-top: 10px;">
+                    <span class="status-pill {{ category.isActive ? 'active' : 'inactive' }}">
+                        <i class="fas {{ category.isActive ? 'fa-circle-check' : 'fa-circle-xmark' }}"></i>
+                        {{ category.isActive ? 'Catégorie active' : 'Catégorie inactive' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-actions">
+            <a href="{{ path('app_category_index') }}" class="btn-modern back">
+                <i class="fas fa-arrow-left"></i>
+                Retour liste
+            </a>
+            <a href="{{ path('app_category_edit', {'id': category.id}) }}" class="btn-modern edit">
+                <i class="fas fa-pen"></i>
+                Modifier
+            </a>
+        </div>
+    </div>
+
+    <div class="category-metrics">
+        <div class="metric-item">
+            <div class="metric-label">Couleur visuelle</div>
+            <div class="metric-value">
+                <span class="color-swatch" style="background: {{ category.color ?? '#cbd5e1' }};"></span>
+                {{ category.color ?? 'Non définie' }}
+            </div>
+        </div>
+
+        <div class="metric-item">
+            <div class="metric-label">Icône sélectionnée</div>
+            <div class="metric-value">{{ category.icon ?? '📌' }}</div>
+        </div>
+    </div>
+
+    <div class="category-description">
+        <div class="metric-label" style="margin-bottom: 10px;">Description</div>
+        <div class="description-card">
+            {{ category.description ?: 'Aucune description disponible pour cette catégorie.' }}
+        </div>
+    </div>
+
+    <div class="category-meta">
+        <div>
+            <strong>Créée le:</strong>
+            {{ category.createdAt ? category.createdAt|date('d/m/Y H:i') : '-' }}
+        </div>
+        <div>
+            <strong>Mise à jour:</strong>
+            {{ category.updatedAt ? category.updatedAt|date('d/m/Y H:i') : '-' }}
+        </div>
+        <div>
+            <strong>Nom système:</strong>
+            <span style="font-family:monospace; color:#334155;">{{ category.name|lower|replace({' ':'-'}) }}</span>
+        </div>
+    </div>
+
+</div>
+
+<div style="margin-top: 14px;">
+    <form method="post" action="{{ path('app_category_delete', {'id': category.id}) }}" onsubmit="return confirm('Supprimer cette catégorie ?');" style="display:inline;">
+        <button type="submit" style="border:1px solid #fecaca; background:#fff1f2; color:#be123c; border-radius:10px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer;">
+            <i class="fas fa-trash" style="margin-right:6px;"></i>
+            Supprimer la catégorie
+        </button>
+    </form>
+</div>
+{% endblock %}

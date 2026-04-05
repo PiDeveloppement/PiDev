@@ -1,0 +1,360 @@
+{% extends 'base.html.twig' %}
+{% block title %}Gestion des événements{% endblock %}
+
+{% block kpi %}
+<div style="background:#e3f2fd; border-radius:12px; padding:12px 20px; text-align:center; min-width:120px;">
+    <i class="fas fa-calendar-alt" style="color:#1565c0; font-size:20px;"></i>
+    <div style="font-size:1.8rem; font-weight:700; color:#1565c0;">{{ totalEvents }}</div>
+    <div style="color:#64748b; font-size:12px;">Événements</div>
+</div>
+<div style="background:#fff8e1; border-radius:12px; padding:12px 20px; text-align:center; min-width:120px;">
+    <i class="fas fa-ticket-alt" style="color:#f59e0b; font-size:20px;"></i>
+    <div style="font-size:1.8rem; font-weight:700; color:#f59e0b;">{{ totalTickets }}</div>
+    <div style="color:#64748b; font-size:12px;">Billets</div>
+</div>
+<div style="background:#e8f5e9; border-radius:12px; padding:12px 20px; text-align:center; min-width:120px;">
+    <i class="fas fa-clock" style="color:#16a34a; font-size:20px;"></i>
+    <div style="font-size:1.8rem; font-weight:700; color:#16a34a;">{{ totalAvenir }}</div>
+    <div style="color:#64748b; font-size:12px;">À venir</div>
+</div>
+<div style="background:#fce4ec; border-radius:12px; padding:12px 20px; text-align:center; min-width:120px;">
+    <i class="fas fa-check-circle" style="color:#dc2626; font-size:20px;"></i>
+    <div style="font-size:1.8rem; font-weight:700; color:#dc2626;">{{ totalTermine }}</div>
+    <div style="color:#64748b; font-size:12px;">Terminés</div>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+<style>
+    .ev-toolbar {
+        display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+        background:#fff; border:1px solid #e2e8f0; border-radius:14px;
+        padding:12px 16px; margin-bottom:16px;
+    }
+    .ev-input, .ev-select {
+        border:1px solid #cbd5e1; border-radius:8px;
+        padding:8px 12px; font-size:13px; color:#0f172a; outline:none;
+    }
+    .ev-input { width:280px; }
+    .ev-select { width:150px; }
+    .ev-spacer { flex:1; }
+
+    .ev-table-wrap {
+        background:#fff; border:1px solid #e2e8f0; border-radius:16px;
+        overflow:hidden; box-shadow:0 2px 10px rgba(2,6,23,.04);
+    }
+    .ev-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .ev-table thead th {
+        background:#f8fafc; color:#334155; border-bottom:1px solid #e2e8f0;
+        padding:12px 14px; text-align:left; font-weight:700;
+    }
+    .ev-table tbody td {
+        border-bottom:1px solid #f1f5f9; padding:11px 14px;
+        color:#334155; vertical-align:middle;
+    }
+    .ev-table tbody tr:hover { background:#f8fbff; }
+
+    .badge-status {
+        border-radius:999px; padding:4px 12px;
+        font-size:11px; font-weight:700; display:inline-block;
+    }
+    .s-avenir { background:#dbeafe; color:#1e40af; }
+    .s-encours { background:#dcfce7; color:#166534; }
+    .s-termine { background:#e2e8f0; color:#334155; }
+
+    .btn-action {
+        border:none; border-radius:8px; color:#fff;
+        width:32px; height:32px; cursor:pointer;
+        display:inline-flex; align-items:center; justify-content:center;
+        text-decoration:none; font-size:13px;
+    }
+    .btn-view { background:#0891b2; }
+    .btn-edit { background:#2563eb; }
+    .btn-delete { background:#dc2626; }
+    .btn-view:hover { background:#0e7490; }
+    .btn-edit:hover { background:#1d4ed8; }
+    .btn-delete:hover { background:#b91c1c; }
+
+    .result-pill {
+        color:#64748b; font-size:13px; background:#fff;
+        border:1px solid #e2e8f0; border-radius:20px; padding:5px 14px;
+    }
+
+    .pagination-shell {
+        margin-top: 16px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .pagination-info {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 500;
+        text-align: center;
+        width: 100%;
+    }
+    .pagination-nav {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .page-btn {
+        min-width: 52px;
+        height: 46px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        color: #6b7280;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 14px;
+        transition: all .15s ease;
+    }
+    .page-btn:hover {
+        background: #f8fafc;
+        border-color: #d1d5db;
+        color: #475569;
+    }
+    .page-btn.current {
+        background: #2196f3;
+        color: #fff;
+        border-color: #2196f3;
+        box-shadow: 0 6px 14px rgba(33,150,243,.28);
+        font-weight: 700;
+    }
+    .page-btn.disabled {
+        color: #9ca3af;
+        background: #f9fafb;
+        border-color: #e5e7eb;
+        pointer-events: none;
+    }
+
+    .page-btn.arrow {
+        min-width: 132px;
+        font-size: 13px;
+    }
+
+    @media (max-width: 760px) {
+        .pagination-shell {
+            justify-content: center;
+        }
+        .pagination-info {
+            width: 100%;
+            text-align: center;
+        }
+        .pagination-nav {
+            justify-content: center;
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="ev-toolbar">
+    <input class="ev-input" type="text" id="searchInput" placeholder="🔍 Rechercher par titre, lieu..."/>
+    <select class="ev-select" id="statusFilter">
+        <option value="">📊 Tous les statuts</option>
+        <option value="avenir">À venir</option>
+        <option value="encours">En cours</option>
+        <option value="termine">Terminé</option>
+    </select>
+    <select class="ev-select" id="categoryFilter" title="Filtrer par catégorie">
+        <option value="">🏷️ Toutes les catégories</option>
+        {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.icon ?? '📁' }} {{ category.name }}</option>
+        {% endfor %}
+    </select>
+    <select class="ev-select" id="priceFilter">
+        <option value="">💰 Prix</option>
+        <option value="free">Gratuit</option>
+        <option value="paid">Payant</option>
+    </select>
+    <div class="ev-spacer"></div>
+    <span class="result-pill" id="resultCount">{{ events.getTotalItemCount }} résultat(s)</span>
+    <a href="{{ path('app_event_export_pdf') }}"
+       style="background:#1e293b; color:#fff; border:none; border-radius:8px;
+              padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+              text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fas fa-file-pdf"></i> Exporter PDF
+    </a>
+    <a href="{{ path('app_event_new') }}"
+       style="background:#1565c0; color:#fff; border:none; border-radius:8px;
+              padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+              text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fas fa-plus"></i> Créer événement
+    </a>
+</div>
+
+<div class="ev-table-wrap">
+    <table class="ev-table" id="eventsTable">
+        <thead>
+            <tr>
+                <th>📅 Titre</th>
+                <th>⏱️ Début</th>
+                <th>⏱️ Fin</th>
+                <th>📍 Lieu</th>
+                <th>🏷️ Catégorie</th>
+                <th>📊 Statut</th>
+                <th>💰 Prix</th>
+                <th>⚡ Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for event in events %}
+            {% set now = "now"|date('U') %}
+            {% set start = event.startDate ? event.startDate|date('U') : 0 %}
+            {% set end = event.endDate ? event.endDate|date('U') : 0 %}
+
+            {% if end < now %}
+                {% set temporalStatus = 'termine' %}
+                {% set statusLabel = 'Terminé' %}
+            {% elseif start > now %}
+                {% set temporalStatus = 'avenir' %}
+                {% set statusLabel = 'À venir' %}
+            {% else %}
+                {% set temporalStatus = 'encours' %}
+                {% set statusLabel = 'En cours' %}
+            {% endif %}
+
+            <tr class="event-row"
+                data-search="{{ (event.title ~ ' ' ~ (event.location ?? '') ~ ' ' ~ (event.gouvernorat ?? ''))|lower }}"
+                data-status="{{ temporalStatus }}"
+                data-price="{{ event.isFree ? 'free' : 'paid' }}"
+                data-category="{{ event.category ? event.category.id : '' }}">
+                <td><strong>{{ event.title }}</strong></td>
+                <td>{{ event.startDate ? event.startDate|date('d/m/Y H:i') : '-' }}</td>
+                <td>{{ event.endDate ? event.endDate|date('d/m/Y H:i') : '-' }}</td>
+                <td>{{ event.location ?: '-' }}</td>
+                <td>{{ event.category ? ((event.category.icon ?? '📁') ~ ' ' ~ event.category.name) : '-' }}</td>
+                <td>
+                    <span class="badge-status s-{{ temporalStatus }}">{{ statusLabel }}</span>
+                </td>
+                <td>
+                    {% if event.isFree %}
+                        <strong style="color:#16a34a;">Gratuit</strong>
+                    {% else %}
+                        <strong style="color:#d97706;">{{ event.ticketPrice }} DT</strong>
+                    {% endif %}
+                </td>
+                <td style="display:flex; gap:6px;">
+                    <a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn-action btn-view" title="Voir">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{{ path('app_event_edit', {'id': event.id}) }}" class="btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-pen"></i>
+                    </a>
+                    <form method="post" action="{{ path('app_event_delete', {'id': event.id}) }}"
+                          onsubmit="return confirm('Supprimer cet événement ?')" style="margin:0;">
+                        <button type="submit" class="btn-action btn-delete" title="Supprimer">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="8" style="text-align:center; color:#64748b; padding:32px;">
+                    <i class="fas fa-calendar-times" style="font-size:2rem; margin-bottom:8px;"></i>
+                    <div>Aucun événement trouvé</div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% set p = events.paginationData %}
+{% set startItem = events.getTotalItemCount > 0 ? ((p.current - 1) * events.getItemNumberPerPage + 1) : 0 %}
+{% set endItem = events.getTotalItemCount > 0 ? (startItem + events|length - 1) : 0 %}
+
+<div class="pagination-shell">
+    <div class="pagination-info">
+        Affichage {{ startItem }}-{{ endItem }} sur {{ events.getTotalItemCount }}
+    </div>
+
+    <div class="pagination-nav" aria-label="Pagination événements">
+        {% if p.previous is defined %}
+            <a class="page-btn arrow" href="{{ path('app_event_index', app.request.query.all|merge({'page': p.previous})) }}" aria-label="Page précédente">
+                &laquo; Précédent
+            </a>
+        {% else %}
+            <span class="page-btn arrow disabled" aria-hidden="true">&laquo; Précédent</span>
+        {% endif %}
+
+        {% if events.pageCount > 1 %}
+            {% for page in p.pagesInRange %}
+                {% if page == p.current %}
+                    <span class="page-btn current">{{ page }}</span>
+                {% else %}
+                    <a class="page-btn" href="{{ path('app_event_index', app.request.query.all|merge({'page': page})) }}">{{ page }}</a>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <span class="page-btn current">1</span>
+        {% endif %}
+
+        {% if p.next is defined %}
+            <a class="page-btn arrow" href="{{ path('app_event_index', app.request.query.all|merge({'page': p.next})) }}" aria-label="Page suivante">
+                Suivant &raquo;
+            </a>
+        {% else %}
+            <span class="page-btn arrow disabled" aria-hidden="true">Suivant &raquo;</span>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+(() => {
+    const search = document.getElementById('searchInput');
+    const status = document.getElementById('statusFilter');
+    const category = document.getElementById('categoryFilter');
+    const price = document.getElementById('priceFilter');
+    const rows = [...document.querySelectorAll('.event-row')];
+    const count = document.getElementById('resultCount');
+    const totalCount = {{ events.getTotalItemCount }};
+
+    function applyFilters() {
+        const q = search.value.toLowerCase().trim();
+        const s = status.value;
+        const c = category.value;
+        const p = price.value;
+        let visible = 0;
+
+        rows.forEach(row => {
+            const okSearch = !q || row.dataset.search.includes(q);
+            const okStatus = !s || row.dataset.status === s;
+            const okCategory = !c || row.dataset.category === c;
+            const okPrice = !p || row.dataset.price === p;
+            const show = okSearch && okStatus && okCategory && okPrice;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        if (!q && !s && !c && !p) {
+            count.textContent = totalCount + ' événement(s) au total';
+            return;
+        }
+
+        count.textContent = visible + ' résultat(s) sur cette page';
+    }
+
+    [search, status, category, price].forEach(el => {
+        el.addEventListener('input', applyFilters);
+        el.addEventListener('change', applyFilters);
+    });
+    applyFilters();
+})();
+</script>
+{% endblock %}
