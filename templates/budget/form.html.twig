@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ isEdit ? 'Modifier budget' : 'Nouveau budget' }} - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="sponsor-page budget-page">
+    <section class="budget-form-shell">
+        <div class="budget-form-side">
+            <span class="budget-kicker">{{ isEdit ? 'Mise a jour' : 'Creation' }}</span>
+            <h2>{{ isEdit ? 'Modifier un budget' : 'Creer un nouveau budget' }}</h2>
+            <p>Renseignez les montants de base, associez le budget a un evenement et gardez une structure propre pour le suivi.</p>
+
+            <div class="budget-form-note">
+                <strong>Conseil</strong>
+                <span>Le budget initial sert de reference visuelle sur toute la gestion budget et depense.</span>
+            </div>
+        </div>
+
+        <div class="budget-form-card-modern">
+            <div class="budget-section-head compact">
+                <div>
+                    <h3>{{ isEdit ? 'Edition du budget' : 'Formulaire budget' }}</h3>
+                    <p>{{ isEdit ? 'Mettez a jour les informations du budget existant.' : 'Ajoutez un budget clair et bien structure.' }}</p>
+                </div>
+            </div>
+
+            {{ form_start(form) }}
+            <div class="budget-form-grid">
+                <div class="budget-field full">
+                    {{ form_label(form.eventId) }}
+                    {{ form_widget(form.eventId) }}
+                    {{ form_errors(form.eventId) }}
+                </div>
+
+                <div class="budget-field">
+                    {{ form_label(form.initialBudget) }}
+                    {{ form_widget(form.initialBudget) }}
+                    {{ form_errors(form.initialBudget) }}
+                </div>
+
+                <div class="budget-field">
+                    {{ form_label(form.totalRevenue) }}
+                    {{ form_widget(form.totalRevenue) }}
+                    {{ form_errors(form.totalRevenue) }}
+                </div>
+            </div>
+
+            <div class="sponsor-form-footer budget-form-footer">
+                <a class="btn-sponsor outline" href="{{ path('app_budget_index') }}">Annuler</a>
+                <button class="btn-sponsor success" type="submit">{{ isEdit ? 'Enregistrer les modifications' : 'Creer le budget' }}</button>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </section>
+</div>
+{% endblock %}

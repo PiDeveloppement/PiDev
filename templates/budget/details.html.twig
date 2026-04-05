@@ -1,0 +1,114 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Details budget - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="sponsor-page budget-page">
+    <section class="budget-detail-hero">
+        <div>
+            <span class="budget-kicker">Analyse budget</span>
+            <h2>{{ eventTitle }}</h2>
+            <p>Lecture detaillee du budget, de la rentabilite et de la simulation billetterie pour cet evenement.</p>
+        </div>
+        <div class="budget-health-badge {{ budget.rentabilite >= 0 ? 'good' : 'critical' }}">
+            {{ budget.rentabilite >= 0 ? 'Rentable' : 'Deficit' }}
+        </div>
+    </section>
+
+    <section class="budget-stat-grid">
+        <article class="budget-stat-card tone-blue">
+            <span>Budget initial</span>
+            <strong>{{ budget.initialBudget|number_format(2, ',', ' ') }} DT</strong>
+            <small>Montant de reference</small>
+        </article>
+        <article class="budget-stat-card tone-rose">
+            <span>Depenses</span>
+            <strong>{{ budget.totalExpenses|number_format(2, ',', ' ') }} DT</strong>
+            <small>Charges cumulees</small>
+        </article>
+        <article class="budget-stat-card tone-green">
+            <span>Revenus</span>
+            <strong>{{ budget.totalRevenue|number_format(2, ',', ' ') }} DT</strong>
+            <small>Entrees generees</small>
+        </article>
+    </section>
+
+    <section class="budget-detail-grid">
+        <article class="budget-detail-panel">
+            <div class="budget-section-head compact">
+                <div>
+                    <h3>Synthese financiere</h3>
+                    <p>Vue simple des indicateurs les plus importants.</p>
+                </div>
+            </div>
+
+            <dl class="budget-detail-list">
+                <div>
+                    <dt>Rentabilite</dt>
+                    <dd class="{{ budget.rentabilite >= 0 ? 'value-positive' : 'value-negative' }}">{{ budget.rentabilite|number_format(2, ',', ' ') }} DT</dd>
+                </div>
+                <div>
+                    <dt>Montant restant</dt>
+                    <dd>{{ remaining|number_format(2, ',', ' ') }} DT</dd>
+                </div>
+                <div>
+                    <dt>Prevision</dt>
+                    <dd>{{ forecast.forecastText }}</dd>
+                </div>
+                <div>
+                    <dt>Ajuste inflation</dt>
+                    <dd>
+                        {% if forecast.adjustedRemaining is not null %}
+                            {{ forecast.adjustedRemaining|number_format(2, ',', ' ') }} DT
+                        {% else %}
+                            -
+                        {% endif %}
+                    </dd>
+                </div>
+            </dl>
+        </article>
+
+        <article class="budget-detail-panel accent-panel">
+            <div class="budget-section-head compact">
+                <div>
+                    <h3>Billetterie et capacite</h3>
+                    <p>Simulation du seuil cible et du break-even.</p>
+                </div>
+            </div>
+
+            <dl class="budget-detail-list">
+                <div>
+                    <dt>Prix billet</dt>
+                    <dd>{{ ticketPrice > 0 ? ticketPrice|number_format(2, ',', ' ') ~ ' DT' : '-' }}</dd>
+                </div>
+                <div>
+                    <dt>Tickets vendus</dt>
+                    <dd>{{ soldTickets }}</dd>
+                </div>
+                <div>
+                    <dt>Participants cible budget</dt>
+                    <dd>{{ participantsToTarget is not null ? participantsToTarget : '-' }}</dd>
+                </div>
+                <div>
+                    <dt>Participants break-even</dt>
+                    <dd>{{ participantsToBreakEven is not null ? participantsToBreakEven : '-' }}</dd>
+                </div>
+                <div class="full">
+                    <dt>Alerte capacite</dt>
+                    <dd>{{ capacityAlert }}</dd>
+                </div>
+            </dl>
+        </article>
+    </section>
+
+    <section class="budget-detail-footer">
+        <a class="btn-sponsor outline" href="{{ path('app_budget_index') }}">Retour</a>
+        <a class="btn-sponsor warning" href="{{ path('app_budget_edit', {id: budget.id}) }}">Modifier</a>
+    </section>
+</div>
+{% endblock %}

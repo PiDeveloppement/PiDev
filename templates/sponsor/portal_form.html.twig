@@ -1,0 +1,228 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ isEdit ? 'Modifier le partenariat' : 'Sponsoriser un evenement' }} - EventFlow</title>
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+</head>
+<body class="portal-form-body">
+<div class="portal-form-topbar">
+    <div class="portal-form-brand">
+        <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+        <strong>{{ isEdit ? 'Modifier le partenariat' : 'Formulaire entreprise partenaire' }}</strong>
+    </div>
+    <a class="btn-sponsor outline" href="{{ path(backRoute) }}">&lt; Retour</a>
+</div>
+
+<div class="portal-form-wrap sponsor-page">
+    <div class="flash-wrap">
+        {% for message in app.flashes('success') %}<div class="flash-success">{{ message }}</div>{% endfor %}
+        {% for message in app.flashes('error') %}<div class="flash-error">{{ message }}</div>{% endfor %}
+    </div>
+
+    <div class="portal-form-card">
+        <div class="portal-form-header">
+            <div class="title-wrap">
+                <span class="portal-form-badge">{{ isEdit ? '✎' : '✚' }}</span>
+                <div>
+                    <h3>{{ isEdit ? 'Modifier le partenariat' : 'Nouveau partenariat' }}</h3>
+                    <p>{{ isEdit ? 'Mettez a jour les informations de votre sponsoring' : 'Remplissez les informations de l entreprise partenaire' }}</p>
+                </div>
+            </div>
+            <strong>EventFlow</strong>
+        </div>
+
+        <div class="portal-form-content">
+            {{ form_start(form) }}
+
+            <section class="portal-form-section blue">
+                <h4 class="portal-form-section-title">📋 Informations générales</h4>
+                <div class="portal-form-grid">
+                    <div>
+                        {{ form_label(form.eventId) }}
+                        {{ form_widget(form.eventId) }}
+                        <div class="form-errors">{{ form_errors(form.eventId) }}</div>
+                    </div>
+                    <div>
+                        {{ form_label(form.companyName) }}
+                        {{ form_widget(form.companyName, {'attr': {'placeholder': 'Nom entreprise'}}) }}
+                        <div class="form-errors">{{ form_errors(form.companyName) }}</div>
+                    </div>
+                    <div>
+                        {{ form_label(form.contactEmail) }}
+                        {{ form_widget(form.contactEmail, {'attr': {'placeholder': 'contact@entreprise.com'}}) }}
+                        <div class="form-errors">{{ form_errors(form.contactEmail) }}</div>
+                    </div>
+                    <div>
+                        {{ form_label(form.phone) }}
+                        {{ form_widget(form.phone, {'attr': {'placeholder': '216XXXXXXXX'}}) }}
+                        <div class="form-errors">{{ form_errors(form.phone) }}</div>
+                    </div>
+                    <div>
+                        {{ form_label(form.industry) }}
+                        {{ form_widget(form.industry, {'attr': {'placeholder': 'ex: Technologie, Marketing'}}) }}
+                        <div class="form-errors">{{ form_errors(form.industry) }}</div>
+                    </div>
+                    <div>
+                        {{ form_label(form.taxId) }}
+                        {{ form_widget(form.taxId, {'attr': {'placeholder': 'ex: 1234567A'}}) }}
+                        <div class="form-errors">{{ form_errors(form.taxId) }}</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="portal-form-section purple">
+                <h4 class="portal-form-section-title">Logo de l entreprise</h4>
+                <div class="logo-toolbar">
+                    <button type="button" class="btn-sponsor light" id="pick-logo-btn">Choisir logo</button>
+                    <button type="button" class="btn-sponsor danger" id="clear-logo-btn">Supprimer logo</button>
+                    <div style="display:none;">
+                        {{ form_widget(form.logoFile) }}
+                    </div>
+                    <span class="logo-file-name" id="logo-file-name">Aucun fichier</span>
+                </div>
+                <div class="form-errors">{{ form_errors(form.logoFile) }}</div>
+
+                <div class="logo-layout">
+                    <div class="logo-preview" id="logo-preview-box">
+                        <img id="logo-preview-img" alt="Logo preview">
+                        <span class="placeholder" id="logo-preview-placeholder">Aperçu logo</span>
+                    </div>
+
+                    <div>
+                        {{ form_label(form.logoUrl) }}
+                        {{ form_widget(form.logoUrl, {'attr': {'placeholder': 'URL logo (auto)'}}) }}
+                        <div class="form-errors">{{ form_errors(form.logoUrl) }}</div>
+                        <div class="field-help">Vous pouvez coller une URL du logo ou choisir un fichier pour l apercu visuel.</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="portal-form-section green">
+                <h4 class="portal-form-section-title">Contribution financiere</h4>
+                <div class="finance-row">
+                    <div>
+                        {{ form_label(form.contributionName) }}
+                        {{ form_widget(form.contributionName, {'attr': {'id': 'contribution-input', 'placeholder': 'ex: 3500'}}) }}
+                        <div class="form-errors">{{ form_errors(form.contributionName) }}</div>
+                    </div>
+                    <div>
+                        <label for="currency-view">Devise</label>
+                        <select id="currency-view">
+                            <option value="TND" selected>TND</option>
+                            <option value="EUR">EUR</option>
+                            <option value="USD">USD</option>
+                            <option value="GBP">GBP</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="finance-result">En TND: <span id="contribution-tnd">-</span></div>
+            </section>
+
+            <div class="portal-form-footer">
+                <a class="btn-sponsor outline" href="{{ path(backRoute) }}">Annuler</a>
+                <button class="btn-sponsor success" type="submit">{{ isEdit ? 'Enregistrer les modifications' : 'Enregistrer le partenariat' }}</button>
+            </div>
+
+            {{ form_end(form, {'render_rest': true}) }}
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const logoUrlInput = document.getElementById('{{ form.logoUrl.vars.id }}');
+    const contributionInput = document.getElementById('contribution-input');
+    const currencyView = document.getElementById('currency-view');
+    const contributionOut = document.getElementById('contribution-tnd');
+
+    const pickLogoBtn = document.getElementById('pick-logo-btn');
+    const clearLogoBtn = document.getElementById('clear-logo-btn');
+    const logoFileInput = document.getElementById('{{ form.logoFile.vars.id }}');
+    const logoFileName = document.getElementById('logo-file-name');
+    const logoPreviewImg = document.getElementById('logo-preview-img');
+    const logoPreviewPlaceholder = document.getElementById('logo-preview-placeholder');
+
+    const ratesToTnd = {
+        TND: 1,
+        EUR: 3.40,
+        USD: 3.15,
+        GBP: 3.95
+    };
+
+    function parseAmount(value) {
+        if (!value) return null;
+        const normalized = String(value).replace(',', '.').trim();
+        const n = parseFloat(normalized);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    function updateContribution() {
+        if (!contributionInput || !currencyView || !contributionOut) return;
+        const amount = parseAmount(contributionInput.value);
+        if (amount === null) {
+            contributionOut.textContent = '-';
+            return;
+        }
+        const currency = currencyView.value || 'TND';
+        const rate = ratesToTnd[currency] || 1;
+        const tnd = amount * rate;
+        contributionOut.textContent = tnd.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' DT';
+    }
+
+    function setLogoPreview(src) {
+        if (!logoPreviewImg || !logoPreviewPlaceholder) return;
+        if (src && src.trim() !== '') {
+            logoPreviewImg.src = src;
+            logoPreviewImg.style.display = 'block';
+            logoPreviewPlaceholder.style.display = 'none';
+        } else {
+            logoPreviewImg.removeAttribute('src');
+            logoPreviewImg.style.display = 'none';
+            logoPreviewPlaceholder.style.display = 'block';
+        }
+    }
+
+    if (logoUrlInput) {
+        logoUrlInput.addEventListener('input', function () {
+            setLogoPreview(logoUrlInput.value);
+        });
+        setLogoPreview(logoUrlInput.value);
+    }
+
+    if (pickLogoBtn && logoFileInput) {
+        pickLogoBtn.addEventListener('click', function () {
+            logoFileInput.click();
+        });
+
+        logoFileInput.addEventListener('change', function () {
+            const file = logoFileInput.files && logoFileInput.files[0] ? logoFileInput.files[0] : null;
+            logoFileName.textContent = file ? file.name : 'Aucun fichier';
+
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                setLogoPreview(String(e.target && e.target.result ? e.target.result : ''));
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    if (clearLogoBtn) {
+        clearLogoBtn.addEventListener('click', function () {
+            if (logoFileInput) logoFileInput.value = '';
+            if (logoUrlInput) logoUrlInput.value = '';
+            if (logoFileName) logoFileName.textContent = 'Aucun fichier';
+            setLogoPreview('');
+        });
+    }
+
+    if (contributionInput) contributionInput.addEventListener('input', updateContribution);
+    if (currencyView) currencyView.addEventListener('change', updateContribution);
+
+    updateContribution();
+})();
+</script>
+</body>
+</html>

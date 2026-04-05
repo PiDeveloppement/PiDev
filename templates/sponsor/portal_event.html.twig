@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ event.title }} - EventFlow</title>
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+</head>
+<body class="portal-body">
+<nav class="portal-navbar">
+    <div class="portal-logo-wrap">
+        <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+    </div>
+
+    <div class="portal-nav-links">
+        <a class="portal-nav-link" href="{{ path('app_landing') }}">Accueil</a>
+        <a class="portal-nav-link" href="{{ path('app_public_events') }}">Evenements</a>
+        <a class="portal-nav-link active" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
+        <a class="portal-nav-link" href="{{ path('app_landing') }}#features">Fonctionnalites</a>
+        <a class="portal-nav-link" href="{{ path('app_feedback_view') }}">Feedback</a>
+        <a class="portal-nav-link" href="{{ path('app_landing') }}#contact">Contact</a>
+    </div>
+
+    <div>
+        {% if app.user %}
+            <a class="portal-user-btn" href="{{ path('app_logout') }}">{{ app.user.fullName ?: 'Compte' }} ▾</a>
+        {% else %}
+            <a class="portal-user-btn" href="{{ path('app_login') }}">Connexion</a>
+        {% endif %}
+    </div>
+</nav>
+
+<main class="portal-page">
+    <section class="portal-history-page-head">
+        <a class="btn-sponsor outline" href="{{ path('app_sponsor_portal') }}">&lt; Retour</a>
+        <div>
+            <h1>📋 Détails de l'événement</h1>
+            <p>Consultez les informations de l'événement avant de proposer votre sponsoring.</p>
+        </div>
+    </section>
+
+    <section class="event-detail-shell">
+        <article class="event-detail-hero">
+            <div class="event-detail-copy">
+                <span class="history-status {{ status.class }}">{{ status.label }}</span>
+                <h2>{{ event.title }}</h2>
+                <p>{{ event.description ?: 'Aucune description disponible pour cet événement.' }}</p>
+            </div>
+            <div class="event-detail-side">
+                <div class="event-detail-stat">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-content">
+                        <span>Date début</span>
+                        <strong>{{ event.startDate ? event.startDate|date('d/m/Y H:i') : '-' }}</strong>
+                    </div>
+                </div>
+                <div class="event-detail-stat">
+                    <div class="stat-icon">⏰</div>
+                    <div class="stat-content">
+                        <span>Date fin</span>
+                        <strong>{{ event.endDate ? event.endDate|date('d/m/Y H:i') : '-' }}</strong>
+                    </div>
+                </div>
+                <div class="event-detail-stat">
+                    <div class="stat-icon">📍</div>
+                    <div class="stat-content">
+                        <span>Lieu</span>
+                        <strong>{{ event.location ?: '-' }}</strong>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <article class="event-detail-section">
+            <h3>🎯 Pourquoi sponsoriser cet événement ?</h3>
+            <div class="event-detail-points">
+                <div class="event-detail-point">
+                    <div class="point-icon">🌍</div>
+                    <div class="point-content">
+                        <strong>Visibilité</strong>
+                        <span>Associez votre marque à un événement public et ciblé.</span>
+                    </div>
+                </div>
+                <div class="event-detail-point">
+                    <div class="point-icon">👥</div>
+                    <div class="point-content">
+                        <strong>Audience</strong>
+                        <span>Mettez en avant votre entreprise auprès des participants et partenaires.</span>
+                    </div>
+                </div>
+                <div class="event-detail-point">
+                    <div class="point-icon">🤝</div>
+                    <div class="point-content">
+                        <strong>Partenariat</strong>
+                        <span>Construisez une relation durable avec l'écosystème EventFlow.</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <div class="event-detail-footer">
+            {% if status.key == 'termine' %}
+                <span class="portal-btn-disabled">Événement terminé</span>
+            {% else %}
+                <a class="portal-btn-sponso large" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">✨ Sponsoriser cet événement</a>
+            {% endif %}
+        </div>
+    </section>
+</main>
+</body>
+</html>
