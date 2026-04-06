@@ -54,9 +54,16 @@ class EventService
         ];
     }
 
-    public function getCalendarEvents(): array
+    public function getCalendarEvents(?string $googleApiKey = null, ?string $googleCalendarId = null): array
     {
-        return $this->buildCalendarEvents($this->eventRepository->findAllOrderedByDate());
+        $events = $this->buildCalendarEvents($this->eventRepository->findAllOrderedByDate());
+        $events = array_merge($events, $this->fetchGoogleCalendarEvents($googleApiKey, $googleCalendarId));
+
+        usort($events, static function (array $left, array $right): int {
+            return strcmp((string) ($left['start'] ?? ''), (string) ($right['start'] ?? ''));
+        });
+
+        return $events;
     }
 
     public function getCategoriesForSelect(): array
@@ -136,10 +143,90 @@ class EventService
                 'status' => $status,
                 'backgroundColor' => $backgroundColor,
                 'borderColor' => $backgroundColor,
+                'textColor' => '#ffffff',
             ];
         }
 
         return $result;
+    }
+
+    private function fetchGoogleCalendarEvents(?string $googleApiKey, ?string $googleCalendarId): array
+    {
+        if (!$googleApiKey || !$googleCalendarId) {
+            return [];
+        }
+
+        try {
+            $timeMin = (new \DateTimeImmutable('-1 year'))->format(DATE_ATOM);
+            $timeMax = (new \DateTimeImmutable('+1 year'))->format(DATE_ATOM);
+            $endpoint = sprintf(
+                'https://www.googleapis.com/calendar/v3/calendars/%s/events?key=%s&singleEvents=true&orderBy=startTime&timeMin=%s&timeMax=%s&maxResults=50',
+                rawurlencode($googleCalendarId),
+                rawurlencode($googleApiKey),
+                rawurlencode($timeMin),
+                rawurlencode($timeMax)
+            );
+
+            $payload = $this->fetchJson($endpoint);
+            $items = $payload['items'] ?? [];
+            $result = [];
+
+            foreach ($items as $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+
+                $start = $item['start']['dateTime'] ?? $item['start']['date'] ?? null;
+                $end = $item['end']['dateTime'] ?? $item['end']['date'] ?? null;
+
+                if (!$start) {
+                    continue;
+                }
+
+                $result[] = [
+                    'id' => 'google-' . substr(sha1((string) ($item['id'] ?? $start . ($item['summary'] ?? 'google'))), 0, 12),
+                    'title' => (string) ($item['summary'] ?? 'Google Calendar'),
+                    'start' => $start,
+                    'end' => $end ?: $start,
+                    'location' => (string) ($item['location'] ?? '-'),
+                    'status' => 'Google Calendar',
+                    'backgroundColor' => '#0ea5e9',
+                    'borderColor' => '#0ea5e9',
+                    'textColor' => '#ffffff',
+                    'sourceType' => 'google',
+                    'url' => $item['htmlLink'] ?? null,
+                ];
+            }
+
+            return $result;
+        } catch (\Throwable $exception) {
+            return [];
+        }
+    }
+
+    private function fetchJson(string $url): array
+    {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'timeout' => 6,
+                'header' => "Accept: application/json\r\n",
+            ],
+        ]);
+
+        $response = @file_get_contents($url, false, $context);
+
+        if ($response === false) {
+            throw new \RuntimeException('Google Calendar API request failed.');
+        }
+
+        $decoded = json_decode($response, true);
+
+        if (!is_array($decoded)) {
+            throw new \RuntimeException('Google Calendar API returned invalid JSON.');
+        }
+
+        return $decoded;
     }
 
     private function prepareEventBeforeSave(Event $event, ?Category $category, bool $isNew): void
