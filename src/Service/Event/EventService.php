@@ -27,7 +27,7 @@ class EventService
         $events = $paginator->paginate(
             $this->eventRepository->createBackOfficeListQueryBuilder(),
             $page,
-            8,
+            6,
             ['wrap-queries' => true]
         );
 

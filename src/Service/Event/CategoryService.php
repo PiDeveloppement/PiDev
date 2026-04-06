@@ -22,7 +22,7 @@ class CategoryService
         $categories = $paginator->paginate(
             $this->categoryRepository->createBackOfficeListQueryBuilder(),
             $page,
-            8,
+            6,
             ['wrap-queries' => true]
         );
 
