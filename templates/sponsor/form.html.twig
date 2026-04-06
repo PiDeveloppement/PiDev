@@ -1,0 +1,208 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ isEdit ? 'Modifier sponsor' : 'Nouveau sponsor' }} - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script defer>
+        document.addEventListener('DOMContentLoaded', function () {
+            const input = document.getElementById('{{ form.logoFile.vars.id }}');
+            const previewImg = document.getElementById('admin-logo-preview-img');
+            const previewPlaceholder = document.getElementById('admin-logo-preview-placeholder');
+            const fileName = document.getElementById('admin-logo-file-name');
+            const clearBtn = document.getElementById('admin-clear-logo-btn');
+            const phoneInput = document.getElementById('{{ form.phone.vars.id }}');
+            const taxInput = document.getElementById('{{ form.taxId.vars.id }}');
+            const industryInput = document.getElementById('{{ form.industry.vars.id }}');
+
+            if (!input || !previewImg || !previewPlaceholder || !fileName) {
+                return;
+            }
+
+            const resetPreview = () => {
+                input.value = '';
+                previewImg.removeAttribute('src');
+                previewImg.style.display = 'none';
+                previewPlaceholder.style.display = 'block';
+                fileName.textContent = 'Aucun fichier';
+            };
+
+            input.addEventListener('change', function () {
+                const file = input.files && input.files[0] ? input.files[0] : null;
+                if (!file) {
+                    resetPreview();
+                    return;
+                }
+
+                fileName.textContent = file.name;
+
+                if (!file.type.startsWith('image/')) {
+                    previewImg.removeAttribute('src');
+                    previewImg.style.display = 'none';
+                    previewPlaceholder.style.display = 'block';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    previewImg.src = event.target?.result || '';
+                    previewImg.style.display = 'block';
+                    previewPlaceholder.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            });
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function () {
+                    resetPreview();
+                });
+            }
+
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function () {
+                    let value = phoneInput.value.replace(/\D+/g, '');
+                    if (value.length > 11) {
+                        value = value.slice(0, 11);
+                    }
+                    phoneInput.value = value;
+                });
+            }
+
+            if (taxInput) {
+                taxInput.addEventListener('input', function () {
+                    let value = taxInput.value.toUpperCase().replace(/[^0-9A-Z]/g, '');
+                    if (value.length > 8) {
+                        value = value.slice(0, 8);
+                    }
+                    taxInput.value = value;
+                });
+            }
+
+            if (industryInput) {
+                industryInput.addEventListener('input', function () {
+                    industryInput.value = industryInput.value.replace(/[^A-Za-zÀ-ÿ\s\-\&,]/g, '');
+                });
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block admin_content %}
+<div class="sponsor-page">
+    <div class="flash-wrap">
+        {% for message in app.flashes('success') %}
+            <div class="flash-success">{{ message }}</div>
+        {% endfor %}
+        {% for message in app.flashes('error') %}
+            <div class="flash-error">{{ message }}</div>
+        {% endfor %}
+    </div>
+
+    <div class="sponsor-form-card sponsor-form-card-fancy">
+        <div class="sponsor-form-hero">
+            <span class="sponsor-form-hero-kicker">
+                {% if isEdit %}
+                    <span class="sponsor-inline-icon">&#9998;</span> Modification en cours
+                {% else %}
+                    <span class="sponsor-inline-icon">&#129309;</span> Nouveau partenariat
+                {% endif %}
+            </span>
+            <h3>{{ isEdit ? 'Modifier l entreprise partenaire' : 'Ajouter Entreprise Partenaire' }}</h3>
+            <p>Une fiche plus claire, plus coloree et plus simple pour enregistrer rapidement une entreprise et sa contribution.</p>
+        </div>
+
+        {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+        <div class="sponsor-form-grid sponsor-form-grid-fancy">
+            <section class="full sponsor-form-panel tone-blue">
+                <h4 class="sponsor-form-panel-title"><span class="sponsor-inline-icon">&#127919;</span> Evenement & contribution</h4>
+                <div class="sponsor-form-subgrid">
+                    <div>
+                        <label class="sponsor-rich-label" for="{{ form.eventId.vars.id }}"><span class="sponsor-inline-icon">&#127917;</span> Evenement</label>
+                        {{ form_widget(form.eventId) }}
+                        {{ form_errors(form.eventId) }}
+                    </div>
+                    <div>
+                        <label class="sponsor-rich-label" for="{{ form.contributionName.vars.id }}"><span class="sponsor-inline-icon">&#128184;</span> Contribution (TND)</label>
+                        {{ form_widget(form.contributionName) }}
+                        {{ form_errors(form.contributionName) }}
+                    </div>
+                </div>
+            </section>
+
+            <section class="full sponsor-form-panel tone-violet">
+                <h4 class="sponsor-form-panel-title"><span class="sponsor-inline-icon">&#127970;</span> Identite de l entreprise</h4>
+                <div class="sponsor-form-subgrid">
+                    <div>
+                        <label class="sponsor-rich-label" for="{{ form.companyName.vars.id }}"><span class="sponsor-inline-icon">&#127991;</span> Entreprise</label>
+                        {{ form_widget(form.companyName) }}
+                        {{ form_errors(form.companyName) }}
+                    </div>
+                    <div>
+                        <label class="sponsor-rich-label" for="{{ form.industry.vars.id }}"><span class="sponsor-inline-icon">&#127760;</span> Secteur</label>
+                        {{ form_widget(form.industry) }}
+                        {{ form_errors(form.industry) }}
+                    </div>
+                    <div>
+                        <label class="sponsor-rich-label" for="{{ form.contactEmail.vars.id }}"><span class="sponsor-inline-icon">&#128231;</span> Email de contact</label>
+                        {{ form_widget(form.contactEmail) }}
+                        {{ form_errors(form.contactEmail) }}
+                    </div>
+                    <div>
+                        <label class="sponsor-rich-label" for="{{ form.phone.vars.id }}"><span class="sponsor-inline-icon">&#128241;</span> Telephone</label>
+                        {{ form_widget(form.phone) }}
+                        {{ form_errors(form.phone) }}
+                    </div>
+                    <div>
+                        <label class="sponsor-rich-label" for="{{ form.taxId.vars.id }}"><span class="sponsor-inline-icon">&#129534;</span> N fiscal</label>
+                        {{ form_widget(form.taxId) }}
+                        {{ form_errors(form.taxId) }}
+                    </div>
+                </div>
+            </section>
+
+            <section class="full sponsor-form-panel tone-emerald">
+                <h4 class="sponsor-form-panel-title"><span class="sponsor-inline-icon">&#128444;</span> Identite visuelle</h4>
+                <p class="sponsor-form-panel-text">Ajoutez le logo de l entreprise pour le retrouver directement dans les cards, les details et le contrat.</p>
+                <div class="sponsor-form-subgrid sponsor-form-subgrid-single">
+                    <div>
+                        <label class="sponsor-rich-label" for="{{ form.logoUrl.vars.id }}"><span class="sponsor-inline-icon">&#128279;</span> URL logo</label>
+                        {{ form_widget(form.logoUrl) }}
+                        {{ form_errors(form.logoUrl) }}
+                    </div>
+                </div>
+                <div class="full">
+                    <label class="sponsor-rich-label" for="{{ form.logoFile.vars.id }}"><span class="sponsor-inline-icon">&#128193;</span> Fichier logo (image)</label>
+                    <div class="logo-toolbar">
+                        {{ form_widget(form.logoFile) }}
+                        <button type="button" class="btn-sponsor outline" id="admin-clear-logo-btn">Retirer</button>
+                        <span class="logo-file-name" id="admin-logo-file-name">Aucun fichier</span>
+                    </div>
+                    {{ form_errors(form.logoFile) }}
+                    <div class="logo-layout sponsor-logo-layout">
+                        <div class="logo-preview sponsor-logo-preview">
+                            <img id="admin-logo-preview-img" alt="Apercu logo">
+                            <span class="placeholder" id="admin-logo-preview-placeholder">Apercu logo</span>
+                        </div>
+                        <div class="field-help sponsor-form-tip">
+                            <strong><span class="sponsor-inline-icon">&#10024;</span> Conseil rapide</strong>
+                            <span>Choisissez un logo lisible, de preference sur fond clair ou transparent, pour un rendu plus propre dans toute l interface.</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="sponsor-form-footer">
+            <a class="btn-sponsor outline" href="{{ path(backRoute) }}">Annuler</a>
+            <button class="btn-sponsor success" type="submit">{{ isEdit ? 'Enregistrer les modifications' : 'Creer l entreprise' }}</button>
+        </div>
+        {{ form_row(form._token) }}
+        {{ form_end(form, {'render_rest': false}) }}
+    </div>
+</div>
+{% endblock %}
