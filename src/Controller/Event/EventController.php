@@ -8,6 +8,7 @@ use App\Form\Event\EventType;
 use App\Service\Event\EventService;
 use Knp\Component\Pager\PaginatorInterface;
 use Knp\Snappy\Pdf;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -20,7 +21,9 @@ class EventController extends AbstractController
 {
     public function __construct(
         private FormFactoryInterface $formFactory,
-        private EventService $eventService
+        private EventService $eventService,
+        #[Autowire('%env(default::GOOGLE_API_KEY)%')] private readonly ?string $googleApiKey = null,
+        #[Autowire('%env(default::GOOGLE_CALENDAR_ID)%')] private readonly ?string $googleCalendarId = null
     ) {}
 
     #[Route('/', name: 'app_event_index', methods: ['GET'])]
@@ -92,6 +95,20 @@ class EventController extends AbstractController
             'pageInfo' => [
                 'title' => 'Nouvel Événement',
                 'subtitle' => 'Créez un nouvel événement',
+            ],
+        ]);
+    }
+
+    #[Route('/calendar', name: 'app_event_calendar', methods: ['GET'])]
+    public function calendar(): Response
+    {
+        return $this->render('event/calendar.html.twig', [
+            'calendarEvents' => $this->eventService->getCalendarEvents(),
+            'googleApiKey' => $this->googleApiKey,
+            'googleCalendarId' => $this->googleCalendarId,
+            'pageInfo' => [
+                'title' => 'Calendrier des événements',
+                'subtitle' => 'Vue interactive des événements',
             ],
         ]);
     }
