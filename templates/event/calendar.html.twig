@@ -1,0 +1,248 @@
+{% extends 'base.html.twig' %}
+{% block title %}Calendrier des événements{% endblock %}
+
+{% block admin_content %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css" rel="stylesheet">
+<style>
+    .calendar-page {
+        padding: 4px 0 6px;
+    }
+
+    .calendar-shell {
+        position: relative;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at top left, rgba(21, 101, 192, 0.12), transparent 32%),
+            radial-gradient(circle at top right, rgba(14, 165, 233, 0.08), transparent 28%),
+            linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border: 1px solid #dbe7f3;
+        border-radius: 22px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+        padding: 22px;
+    }
+
+    .btn-back {
+        background: linear-gradient(135deg, #0f766e 0%, #0ea5e9 100%);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 12px 24px rgba(14, 165, 233, 0.2);
+        transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .btn-back:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 28px rgba(14, 165, 233, 0.26);
+    }
+
+    #eventCalendarView {
+        min-height: 680px;
+        margin-top: 14px;
+    }
+
+    .fc .fc-toolbar-title {
+        font-size: 1.15rem;
+        color: #0f172a;
+        font-weight: 900;
+    }
+
+    .fc .fc-button-primary {
+        background: linear-gradient(135deg, #1565c0 0%, #0ea5e9 100%);
+        border-color: transparent;
+        border-radius: 10px;
+        box-shadow: 0 10px 22px rgba(21, 101, 192, .18);
+    }
+
+    .fc .fc-button-primary:hover,
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+        background: linear-gradient(135deg, #0d47a1 0%, #0284c7 100%);
+        border-color: transparent;
+    }
+
+    .fc .fc-scrollgrid,
+    .fc .fc-col-header,
+    .fc .fc-daygrid-body {
+        border-color: #e2e8f0;
+    }
+
+    .fc .fc-daygrid-day-frame {
+        padding: 6px 4px;
+    }
+
+    .fc .fc-daygrid-day-number,
+    .fc .fc-col-header-cell-cushion {
+        color: #334155;
+        font-weight: 700;
+    }
+
+    .fc .fc-event {
+        border: none;
+        border-radius: 10px;
+        padding: 4px 8px;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, .12);
+        cursor: pointer;
+    }
+
+    .fc .fc-event:hover {
+        filter: brightness(1.02);
+    }
+
+    .fc .fc-list-event:hover td {
+        background: #f8fbff;
+    }
+
+    .calendar-hero {
+        display: grid;
+        grid-template-columns: 1.3fr .7fr;
+        gap: 14px;
+        margin-bottom: 16px;
+    }
+
+    .calendar-card {
+        background: rgba(255,255,255,.82);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(148,163,184,.18);
+        border-radius: 18px;
+        padding: 16px;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, .06);
+    }
+
+    .calendar-pill-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+
+    .calendar-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .calendar-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    @media (max-width: 960px) {
+        .calendar-shell {
+            padding: 16px;
+        }
+    }
+</style>
+
+<section class="calendar-page">
+    <div style="display:flex; justify-content:flex-end; margin-bottom: 14px;">
+        <a href="{{ path('app_event_index') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Retour liste
+        </a>
+    </div>
+
+    <div class="calendar-shell">
+        <div id="eventCalendarView"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/google-calendar@6.1.15/index.global.min.js"></script>
+<script>
+(() => {
+    const root = document.getElementById('eventCalendarView');
+    if (!root) {
+        return;
+    }
+
+    const localEvents = {{ calendarEvents|json_encode|raw }};
+    const googleApiKey = {{ (googleApiKey ?? '')|json_encode|raw }};
+    const googleCalendarId = {{ (googleCalendarId ?? '')|json_encode|raw }};
+    const showEventBaseUrl = '{{ path('app_event_show', {'id': 0}) }}';
+
+    const eventSources = [
+        {
+            id: 'internal-events',
+            events: localEvents,
+            color: '#2563eb'
+        }
+    ];
+
+    if (googleApiKey && googleCalendarId) {
+        eventSources.push({
+            id: 'google-events',
+            googleCalendarId: googleCalendarId,
+            color: '#0ea5e9'
+        });
+    }
+
+    const calendar = new FullCalendar.Calendar(root, {
+        initialView: 'dayGridMonth',
+        locale: 'fr',
+        firstDay: 1,
+        height: 'auto',
+        googleCalendarApiKey: googleApiKey || undefined,
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+        },
+        buttonText: {
+            today: 'Aujourd\'hui',
+            month: 'Mois',
+            week: 'Semaine',
+            day: 'Jour',
+            list: 'Liste'
+        },
+        eventSources: eventSources,
+        eventTimeFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        },
+        eventDidMount: function(info) {
+            const ext = info.event.extendedProps || {};
+            const tooltip = [
+                info.event.title,
+                ext.status ? ('Statut: ' + ext.status) : '',
+                ext.location ? ('Lieu: ' + ext.location) : ''
+            ].filter(Boolean).join(' | ');
+            info.el.setAttribute('title', tooltip);
+        },
+        eventClick: function(info) {
+            if (info.event.id) {
+                window.location.href = showEventBaseUrl.replace(/0$/, String(info.event.id));
+                return;
+            }
+
+            if (info.event.url) {
+                return;
+            }
+        },
+        eventSourceFailure: function() {
+            console.warn('Google Calendar source could not be loaded.');
+        }
+    });
+
+    calendar.render();
+})();
+</script>
+{% endblock %}

@@ -179,6 +179,12 @@
     </select>
     <div class="ev-spacer"></div>
     <span class="result-pill" id="resultCount">{{ events.getTotalItemCount }} résultat(s)</span>
+    <a href="{{ path('app_event_calendar') }}"
+       style="background:#0f766e; color:#fff; border:none; border-radius:8px;
+              padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+              text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fas fa-calendar-week"></i> Calendrier
+    </a>
     <a href="{{ path('app_event_export_pdf') }}"
        style="background:#1e293b; color:#fff; border:none; border-radius:8px;
               padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;

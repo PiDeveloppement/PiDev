@@ -54,6 +54,11 @@ class EventService
         ];
     }
 
+    public function getCalendarEvents(): array
+    {
+        return $this->buildCalendarEvents($this->eventRepository->findAllOrderedByDate());
+    }
+
     public function getCategoriesForSelect(): array
     {
         return $this->categoryRepository->findAllOrderedByName();
@@ -99,6 +104,42 @@ class EventService
     public function getEventsForExport(): array
     {
         return $this->eventRepository->findAllOrderedByDate();
+    }
+
+    private function buildCalendarEvents(array $events): array
+    {
+        $now = new \DateTimeImmutable();
+        $result = [];
+
+        foreach ($events as $event) {
+            if (!$event instanceof Event || !$event->getStartDate() || !$event->getEndDate()) {
+                continue;
+            }
+
+            $status = 'À venir';
+            $backgroundColor = '#2563eb';
+
+            if ($event->getEndDate() < $now) {
+                $status = 'Terminé';
+                $backgroundColor = '#64748b';
+            } elseif ($event->getStartDate() <= $now && $event->getEndDate() >= $now) {
+                $status = 'En cours';
+                $backgroundColor = '#16a34a';
+            }
+
+            $result[] = [
+                'id' => $event->getId(),
+                'title' => (string) ($event->getTitle() ?? 'Événement'),
+                'start' => $event->getStartDate()->format('Y-m-d\\TH:i:s'),
+                'end' => $event->getEndDate()->format('Y-m-d\\TH:i:s'),
+                'location' => (string) ($event->getLocation() ?? '-'),
+                'status' => $status,
+                'backgroundColor' => $backgroundColor,
+                'borderColor' => $backgroundColor,
+            ];
+        }
+
+        return $result;
     }
 
     private function prepareEventBeforeSave(Event $event, ?Category $category, bool $isNew): void
