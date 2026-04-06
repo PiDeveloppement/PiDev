@@ -48,6 +48,11 @@ class CategoryService
         $this->entityManager->flush();
     }
 
+    public function hydrateCategoryFromRequestData(Category $category, array $data, bool $isNew): void
+    {
+        $this->mapRequestDataToCategory($category, $data, $isNew);
+    }
+
     public function delete(Category $category): void
     {
         $categoryId = $category->getId();
