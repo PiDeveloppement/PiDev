@@ -31,7 +31,7 @@ class TicketController extends AbstractController
             $eventFilter,
             $statusFilter,
             $request->query->getInt('page', 1),
-            10,
+            6,
             $paginator
         );
 
