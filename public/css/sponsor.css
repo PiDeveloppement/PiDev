@@ -1346,6 +1346,19 @@
     z-index: 61;
 }
 
+.sponsor-toolbar .live-search-panel {
+    position: static;
+    margin-top: 10px;
+    right: auto;
+    left: auto;
+    top: auto;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08), 0 6px 14px rgba(59, 130, 246, 0.06);
+}
+
+.sponsor-toolbar .live-search-shell.is-open {
+    z-index: 1;
+}
+
 .budget-filter-form .live-search-shell,
 .depense-filter-form .live-search-shell {
     width: 100%;
