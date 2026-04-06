@@ -4,6 +4,7 @@ namespace App\Controller\Event;
 
 use App\Entity\Event\Category;
 use App\Service\Event\CategoryService;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,7 +15,7 @@ use Knp\Component\Pager\PaginatorInterface;
 #[Route('/category')]
 class CategoryController extends AbstractController
 {
-    public function __construct(private CategoryService $categoryService)
+    public function __construct(private CategoryService $categoryService, private ValidatorInterface $validator)
     {
     }
 
@@ -43,9 +44,24 @@ class CategoryController extends AbstractController
         $category = new Category();
 
         if ($request->isMethod('POST')) {
-            $this->categoryService->createFromRequestData($request->request->all());
+            $this->categoryService->hydrateCategoryFromRequestData($category, $request->request->all(), true);
+            $violations = $this->validator->validate($category);
 
-            return $this->redirectToRoute('app_category_index');
+            if (count($violations) === 0 && $category->isValid()) {
+                $this->categoryService->createFromRequestData($request->request->all());
+
+                $this->addFlash('success', 'Catégorie créée avec succès.');
+                return $this->redirectToRoute('app_category_index');
+            }
+
+            return $this->render('category/new.html.twig', [
+                'category' => $category,
+                'pageInfo' => [
+                    'title' => 'Créer une catégorie',
+                    'subtitle' => 'Ajouter une nouvelle catégorie',
+                ],
+                'errors' => $this->groupViolations($violations),
+            ]);
         }
 
         return $this->render('category/new.html.twig', [
@@ -73,9 +89,24 @@ class CategoryController extends AbstractController
     public function edit(Category $category, Request $request): Response
     {
         if ($request->isMethod('POST')) {
-            $this->categoryService->updateFromRequestData($category, $request->request->all());
+            $this->categoryService->hydrateCategoryFromRequestData($category, $request->request->all(), false);
+            $violations = $this->validator->validate($category);
 
-            return $this->redirectToRoute('app_category_index');
+            if (count($violations) === 0 && $category->isValid()) {
+                $this->categoryService->updateFromRequestData($category, $request->request->all());
+
+                $this->addFlash('success', 'Catégorie mise à jour avec succès.');
+                return $this->redirectToRoute('app_category_index');
+            }
+
+            return $this->render('category/edit.html.twig', [
+                'category' => $category,
+                'pageInfo' => [
+                    'title' => 'Modifier la catégorie',
+                    'subtitle' => $category->getName(),
+                ],
+                'errors' => $this->groupViolations($violations),
+            ]);
         }
 
         return $this->render('category/edit.html.twig', [
@@ -122,5 +153,17 @@ class CategoryController extends AbstractController
         }
 
         return $this->redirectToRoute('app_category_index');
+    }
+
+    private function groupViolations(iterable $violations): array
+    {
+        $errors = [];
+
+        foreach ($violations as $violation) {
+            $field = $violation->getPropertyPath();
+            $errors[$field][] = $violation->getMessage();
+        }
+
+        return $errors;
     }
 }
