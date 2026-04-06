@@ -103,9 +103,7 @@ class EventController extends AbstractController
     public function calendar(): Response
     {
         return $this->render('event/calendar.html.twig', [
-            'calendarEvents' => $this->eventService->getCalendarEvents(),
-            'googleApiKey' => $this->googleApiKey,
-            'googleCalendarId' => $this->googleCalendarId,
+            'calendarEvents' => $this->eventService->getCalendarEvents($this->googleApiKey, $this->googleCalendarId),
             'pageInfo' => [
                 'title' => 'Calendrier des événements',
                 'subtitle' => 'Vue interactive des événements',

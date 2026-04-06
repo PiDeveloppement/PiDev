@@ -21,6 +21,37 @@
         padding: 22px;
     }
 
+    .calendar-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: stretch;
+        margin-bottom: 14px;
+    }
+
+    .calendar-filters {
+        flex: 1 1 320px;
+        background: rgba(255,255,255,.82);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(148,163,184,.18);
+        border-radius: 18px;
+        padding: 14px 16px;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, .06);
+    }
+
+    .calendar-panel-title {
+        margin: 0 0 10px;
+        font-size: 15px;
+        font-weight: 900;
+        color: #0f172a;
+    }
+
+    .calendar-pill-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
     .btn-back {
         background: linear-gradient(135deg, #0f766e 0%, #0ea5e9 100%);
         color: #fff;
@@ -91,6 +122,26 @@
         cursor: pointer;
     }
 
+    .calendar-event-content {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        font-weight: 700;
+    }
+
+    .calendar-event-icon {
+        font-size: 12px;
+        opacity: .95;
+        flex: 0 0 auto;
+    }
+
+    .calendar-event-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .fc .fc-event:hover {
         filter: brightness(1.02);
     }
@@ -133,6 +184,34 @@
         color: #334155;
         font-size: 12px;
         font-weight: 700;
+        cursor: pointer;
+        transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background-color .18s ease;
+    }
+
+    .calendar-pill:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(15, 23, 42, .08);
+    }
+
+    .calendar-pill.is-active {
+        border-color: currentColor;
+        box-shadow: 0 10px 18px rgba(15, 23, 42, .08);
+    }
+
+    .calendar-pill[data-status="all"] {
+        color: #0f172a;
+    }
+
+    .calendar-pill[data-status="upcoming"] {
+        color: #2563eb;
+    }
+
+    .calendar-pill[data-status="running"] {
+        color: #16a34a;
+    }
+
+    .calendar-pill[data-status="finished"] {
+        color: #64748b;
     }
 
     .calendar-dot {
@@ -156,6 +235,34 @@
         </a>
     </div>
 
+    <div class="calendar-toolbar">
+        <div class="calendar-filters">
+            <h3 class="calendar-panel-title">Filtres par statut</h3>
+            <div class="calendar-pill-row" id="calendarFilterButtons">
+                <button type="button" class="calendar-pill is-active" data-status="all">
+                    <span class="calendar-dot" style="background:#0f172a;"></span>Tous
+                </button>
+                <button type="button" class="calendar-pill" data-status="upcoming">
+                    <span class="calendar-dot" style="background:#2563eb;"></span>À venir
+                </button>
+                <button type="button" class="calendar-pill" data-status="running">
+                    <span class="calendar-dot" style="background:#16a34a;"></span>En cours
+                </button>
+                <button type="button" class="calendar-pill" data-status="finished">
+                    <span class="calendar-dot" style="background:#64748b;"></span>Terminés
+                </button>
+            </div>
+        </div>
+
+        <div id="googleImportStatus" style="display: none; flex: 1 1 320px; background: rgba(14, 165, 233, 0.1); border: 1px solid #0ea5e9; border-radius: 18px; padding: 14px 16px; box-shadow: 0 10px 26px rgba(15, 23, 42, .06);">
+            <h3 class="calendar-panel-title">Import Google Calendar</h3>
+            <p style="margin: 0; font-size: 13px; color: #0f172a;">
+                <i class="fab fa-google" style="margin-right: 6px; color: #0ea5e9;"></i>
+                <span id="googleEventCount">Chargement...</span>
+            </p>
+        </div>
+    </div>
+
     <div class="calendar-shell">
         <div id="eventCalendarView"></div>
     </div>
@@ -165,84 +272,187 @@
 {% block javascripts %}
 {{ parent() }}
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/google-calendar@6.1.15/index.global.min.js"></script>
 <script>
 (() => {
     const root = document.getElementById('eventCalendarView');
+    const filterButtons = document.getElementById('calendarFilterButtons');
     if (!root) {
         return;
     }
 
-    const localEvents = {{ calendarEvents|json_encode|raw }};
-    const googleApiKey = {{ (googleApiKey ?? '')|json_encode|raw }};
-    const googleCalendarId = {{ (googleCalendarId ?? '')|json_encode|raw }};
+    const calendarEvents = {{ calendarEvents|json_encode|raw }};
     const showEventBaseUrl = '{{ path('app_event_show', {'id': 0}) }}';
+    let activeStatusFilter = 'all';
+    let calendarInstance = null;
 
-    const eventSources = [
-        {
-            id: 'internal-events',
-            events: localEvents,
-            color: '#2563eb'
+    const normalizeStatus = (status) => {
+        switch ((status || '').toString()) {
+            case 'Terminé':
+                return 'finished';
+            case 'En cours':
+                return 'running';
+            default:
+                return 'upcoming';
         }
-    ];
+    };
 
-    if (googleApiKey && googleCalendarId) {
-        eventSources.push({
-            id: 'google-events',
-            googleCalendarId: googleCalendarId,
-            color: '#0ea5e9'
+    const getFilteredEvents = () => {
+        if (activeStatusFilter === 'all') {
+            return calendarEvents;
+        }
+
+        return calendarEvents.filter((event) => {
+            if (event.sourceType === 'google') {
+                return true;
+            }
+
+            return normalizeStatus(event.status) === activeStatusFilter;
+        });
+    };
+
+    const updateFilterButtons = () => {
+        if (!filterButtons) {
+            return;
+        }
+
+        filterButtons.querySelectorAll('[data-status]').forEach((button) => {
+            button.classList.toggle('is-active', button.dataset.status === activeStatusFilter);
+        });
+    };
+
+    const buildEventSources = () => {
+        const sources = [
+            {
+                id: 'internal-events',
+                events: getFilteredEvents()
+            }
+        ];
+
+        return sources;
+    };
+
+    const renderCalendar = () => {
+        const googleEvents = calendarEvents.filter(e => e.sourceType === 'google');
+        const statusDiv = document.getElementById('googleImportStatus');
+        const countSpan = document.getElementById('googleEventCount');
+
+        if (googleEvents.length > 0 || calendarEvents.some(e => !e.sourceType)) {
+            statusDiv.style.display = 'block';
+            countSpan.textContent = googleEvents.length > 0 
+                ? googleEvents.length + ' événement' + (googleEvents.length > 1 ? 's' : '') + ' importé' + (googleEvents.length > 1 ? 's' : '') 
+                : 'Aucun événement Google';
+        }
+
+        if (calendarInstance) {
+            calendarInstance.destroy();
+        }
+
+        calendarInstance = new FullCalendar.Calendar(root, {
+            initialView: 'dayGridMonth',
+            locale: 'fr',
+            firstDay: 1,
+            height: 'auto',
+            eventDisplay: 'block',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+            },
+            buttonText: {
+                today: 'Aujourd\'hui',
+                month: 'Mois',
+                week: 'Semaine',
+                day: 'Jour',
+                list: 'Liste'
+            },
+            eventSources: buildEventSources(),
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            },
+            eventContent: function(arg) {
+                const sourceType = arg.event.extendedProps?.sourceType || '';
+                let iconClass = 'fas fa-calendar-day';
+
+                if (sourceType === 'google') {
+                    iconClass = 'fab fa-google';
+                } else if (arg.event.extendedProps?.status === 'Terminé') {
+                    iconClass = 'fas fa-flag-checkered';
+                } else if (arg.event.extendedProps?.status === 'En cours') {
+                    iconClass = 'fas fa-circle-play';
+                }
+
+                const timeText = arg.timeText ? `<span>${arg.timeText}</span>` : '';
+                const titleText = `<span class="calendar-event-title">${arg.event.title}</span>`;
+
+                return {
+                    html: `<div class="calendar-event-content"><i class="calendar-event-icon ${iconClass}"></i>${timeText}${titleText}</div>`
+                };
+            },
+            eventClassNames: function(info) {
+                const sourceType = info.event.extendedProps?.sourceType || '';
+                const status = info.event.extendedProps?.status || '';
+                const classes = [];
+
+                if (sourceType === 'google') {
+                    classes.push('calendar-event--google');
+                }
+
+                if (status) {
+                    classes.push('calendar-event--' + status.toString().toLowerCase().replace(/\s+/g, '-'));
+                }
+
+                return classes;
+            },
+            eventDidMount: function(info) {
+                const backgroundColor = info.event.backgroundColor || info.event.color;
+                const textColor = info.event.textColor || '#ffffff';
+
+                if (backgroundColor) {
+                    info.el.style.backgroundColor = backgroundColor;
+                    info.el.style.borderColor = backgroundColor;
+                    info.el.style.color = textColor;
+                }
+
+                const ext = info.event.extendedProps || {};
+                const tooltip = [
+                    info.event.title,
+                    ext.status ? ('Statut: ' + ext.status) : '',
+                    ext.location ? ('Lieu: ' + ext.location) : ''
+                ].filter(Boolean).join(' | ');
+                info.el.setAttribute('title', tooltip);
+            },
+            eventClick: function(info) {
+                if (info.event.extendedProps?.sourceType === 'google' && info.event.url) {
+                    window.open(info.event.url, '_blank', 'noopener');
+                    return;
+                }
+
+                if (info.event.id && String(info.event.id).indexOf('google-') !== 0) {
+                    window.location.href = showEventBaseUrl.replace(/0$/, String(info.event.id));
+                    return;
+                }
+            },
+        });
+
+        calendarInstance.render();
+        updateFilterButtons();
+    }
+
+    if (filterButtons) {
+        filterButtons.addEventListener('click', (event) => {
+            const target = event.target.closest('[data-status]');
+            if (!target) {
+                return;
+            }
+
+            activeStatusFilter = target.dataset.status || 'all';
+            renderCalendar();
         });
     }
 
-    const calendar = new FullCalendar.Calendar(root, {
-        initialView: 'dayGridMonth',
-        locale: 'fr',
-        firstDay: 1,
-        height: 'auto',
-        googleCalendarApiKey: googleApiKey || undefined,
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
-        },
-        buttonText: {
-            today: 'Aujourd\'hui',
-            month: 'Mois',
-            week: 'Semaine',
-            day: 'Jour',
-            list: 'Liste'
-        },
-        eventSources: eventSources,
-        eventTimeFormat: {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        },
-        eventDidMount: function(info) {
-            const ext = info.event.extendedProps || {};
-            const tooltip = [
-                info.event.title,
-                ext.status ? ('Statut: ' + ext.status) : '',
-                ext.location ? ('Lieu: ' + ext.location) : ''
-            ].filter(Boolean).join(' | ');
-            info.el.setAttribute('title', tooltip);
-        },
-        eventClick: function(info) {
-            if (info.event.id) {
-                window.location.href = showEventBaseUrl.replace(/0$/, String(info.event.id));
-                return;
-            }
-
-            if (info.event.url) {
-                return;
-            }
-        },
-        eventSourceFailure: function() {
-            console.warn('Google Calendar source could not be loaded.');
-        }
-    });
-
-    calendar.render();
+    renderCalendar();
 })();
 </script>
 {% endblock %}
