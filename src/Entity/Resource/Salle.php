@@ -4,6 +4,7 @@ namespace App\Entity\Resource;
 
 use App\Repository\Resource\SalleRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: SalleRepository::class)]
 class Salle
@@ -14,18 +15,35 @@ class Salle
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "Le nom de la salle est obligatoire")]
+    #[Assert\Length(min: 2, max: 255, minMessage: "Le nom doit contenir au moins {{ limit }} caractères", maxMessage: "Le nom ne peut pas dépasser {{ limit }} caractères")]
+    #[Assert\Type(type: "string", message: "Le nom doit être une chaîne de caractères")]
     private ?string $name = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank(message: "La capacité est obligatoire")]
+    #[Assert\Positive(message: "La capacité doit être un nombre positif")]
+    #[Assert\Type(type: "integer", message: "La capacité doit être un nombre entier")]
+    #[Assert\Range(min: 1, max: 1000, notInRangeMessage: "La capacité doit être entre {{ min }} et {{ max }} places")]
     private ?int $capacity = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank(message: "Le bâtiment est obligatoire")]
+    #[Assert\Length(min: 2, max: 50, minMessage: "Le nom du bâtiment doit contenir au moins {{ limit }} caractères", maxMessage: "Le nom du bâtiment ne peut pas dépasser {{ limit }} caractères")]
+    #[Assert\Type(type: "string", message: "Le bâtiment doit être une chaîne de caractères")]
     private ?string $building = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank(message: "L'étage est obligatoire")]
+    #[Assert\Positive(message: "L'étage doit être un nombre positif")]
+    #[Assert\Type(type: "integer", message: "L'étage doit être un nombre entier")]
+    #[Assert\Range(min: 0, max: 50, notInRangeMessage: "L'étage doit être entre {{ min }} et {{ max }}")]
     private ?int $floor = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank(message: "Le statut est obligatoire")]
+    #[Assert\Choice(choices: ["DISPONIBLE", "INDISPONIBLE", "MAINTENANCE"], message: "Le statut doit être 'DISPONIBLE', 'INDISPONIBLE' ou 'MAINTENANCE'")]
+    #[Assert\Type(type: "string", message: "Le statut doit être une chaîne de caractères")]
     private ?string $status = null;
 
     #[ORM\Column(length: 255, nullable: true)]

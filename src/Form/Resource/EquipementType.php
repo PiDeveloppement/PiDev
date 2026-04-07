@@ -19,20 +19,24 @@ class EquipementType extends AbstractType
         $builder
             ->add('name', TextType::class, [
                 'label' => 'Désignation',
+                'required' => false,
                 'attr' => ['placeholder' => 'Ex: Projecteur LED']
             ])
             ->add('equipementType', TextType::class, [ // Changé pour matcher le Twig
-                'label' => 'Catégorie'
+                'label' => 'Catégorie',
+                'required' => false,
             ])
             ->add('status', ChoiceType::class, [
                 'choices'  => [
                     'Disponible' => 'DISPONIBLE',
                     'En Panne'   => 'EN_PANNE',
                 ],
-                'label' => 'Statut'
+                'label' => 'Statut',
+                'required' => false,
             ])
             ->add('quantity', IntegerType::class, [
                 'label' => 'Quantité',
+                'required' => false,
                 'attr' => ['min' => 0]
             ])
             ->add('imagePath', FileType::class, [ // Changé pour matcher le Twig

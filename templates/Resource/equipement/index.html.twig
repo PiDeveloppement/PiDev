@@ -2,555 +2,171 @@
 {% extends 'base.html.twig' %}
 
 {% block admin_content %}
-<div class="dashboard-container">
-    
-    {# --- HEADER --- #}
-    <div class="header-section mb-4">
-        <div>
-            <h1 class="main-title">Inventaire</h1>
-            <p class="subtitle">Gérez vos ressources EventFlow</p>
-        </div>
-        
-        <div class="stats-group">
-            <div class="stat-card">
-                <div class="stat-icon bg-primary-light">
-                    <i class="fas fa-boxes text-primary"></i>
-                </div>
-                <div>
-                    <span class="stat-label">Total</span>
-                    <span class="stat-number">{{ equipements|length }}</span>
-                </div>
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 2px; margin-bottom: 20px;">
+    <div style="background: white; border-radius: 14px; padding: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <div>
+                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px;">
+                    <i class="fas fa-microchip" style="color: #667eea; margin-right: 10px;"></i>
+                    Inventaire des Équipements
+                </h3>
+                <p style="color: #64748b; font-size: 14px;">Gérez votre inventaire EventFlow</p>
             </div>
-            
+            <a href="{{ path('app_resource_equipement_new') }}" 
+               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: transform 0.2s;">
+                <i class="fas fa-plus" style="margin-right: 8px;"></i>
+                Ajouter un Équipement
+            </a>
+        </div>
+
+        <!-- Stats -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+            <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 12px; padding: 20px; color: white;">
+                <p style="font-size: 12px; opacity: 0.9; margin: 0;"><i class="fas fa-boxes" style="margin-right: 8px;"></i>Total d'Équipements</p>
+                <h4 style="font-size: 28px; font-weight: 700; margin: 10px 0 0 0;">{{ equipements|length }}</h4>
+            </div>
             {% set enPanne = equipements|filter(e => e.status|upper == 'EN_PANNE')|length %}
             {% if enPanne > 0 %}
-            <div class="stat-card">
-                <div class="stat-icon bg-danger-light">
-                    <i class="fas fa-exclamation-triangle text-danger"></i>
-                </div>
-                <div>
-                    <span class="stat-label">Alertes</span>
-                    <span class="stat-number text-danger">{{ enPanne }}</span>
-                </div>
+            <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 12px; padding: 20px; color: white;">
+                <p style="font-size: 12px; opacity: 0.9; margin: 0;"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>Alertes</p>
+                <h4 style="font-size: 28px; font-weight: 700; margin: 10px 0 0 0;">{{ enPanne }}</h4>
             </div>
             {% endif %}
         </div>
-    </div>
 
-    {# --- BARRE D'OUTILS --- #}
-    <div class="toolbar mb-4">
-        <div class="search-wrapper">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" id="searchInput" class="search-input" placeholder="Rechercher un équipement...">
+        <!-- Search and Filter -->
+        <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid #e2e8f0;">
+            <h4 style="font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 15px;">
+                <i class="fas fa-search" style="color: #667eea; margin-right: 8px;"></i>
+                Recherche et Filtres
+            </h4>
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">Nom de l'équipement</label>
+                    <input type="text" id="searchInput" placeholder="Rechercher..." 
+                           style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">Catégorie</label>
+                    <select id="categoryFilter" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
+                        <option value="">Toutes catégories</option>
+                        <option value="Informatique">Informatique</option>
+                        <option value="Sonorisation">Sonorisation</option>
+                        <option value="Vidéo">Vidéo</option>
+                        <option value="Lumière">Lumière</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">Statut</label>
+                    <select id="statusFilter" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
+                        <option value="">Tous les statuts</option>
+                        <option value="DISPONIBLE">Disponible</option>
+                        <option value="EN_PANNE">En panne</option>
+                    </select>
+                </div>
+                <div style="align-self: flex-end;">
+                    <button onclick="location.reload()" style="background: #ef4444; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+                        <i class="fas fa-redo" style="margin-right: 5px;"></i>Réinitialiser
+                    </button>
+                </div>
+            </div>
         </div>
-        
-        <div class="toolbar-actions">
-            <select id="categoryFilter" class="filter-select">
-                <option value="">Toutes catégories</option>
-                <option value="Informatique">Informatique</option>
-                <option value="Sonorisation">Sonorisation</option>
-                <option value="Vidéo">Vidéo</option>
-                <option value="Lumière">Lumière</option>
-            </select>
-            
-            <a href="{{ path('app_resource_equipement_new') }}" class="btn-primary">
-                <i class="fas fa-plus-circle me-2"></i>Ajouter
-            </a>
-        </div>
-    </div>
 
-    {# --- TABLEAU --- #}
-    <div class="table-wrapper">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th class="col-preview"></th>
-                    <th>Équipement</th>
-                    <th>Catégorie</th>
-                    <th class="text-center">Stock</th>
-                    <th>Statut</th>
-                    <th class="text-center">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="equipementTable">
-                {% for eq in equipements %}
-                <tr>
-                    <td class="preview-cell">
-                        <div class="image-placeholder">
-                            {% if eq.getImagePath %}
-                                <img src="{{ eq.getImagePath starts with 'http' ? eq.getImagePath : asset('uploads/images/' ~ eq.getImagePath) }}" alt="{{ eq.name }}">
-                            {% else %}
-                                <i class="fas fa-microchip"></i>
-                            {% endif %}
-                        </div>
-                    </td>
-                    <td>
-                        <div class="equipment-name">{{ eq.name }}</div>
-                        <div class="equipment-ref">#{{ eq.id|format("%04d") }}</div>
-                    </td>
-                    {# CORRECTION ICI : Utilisation du getter correct #}
-                    <td><span class="category-badge">{{ eq.getEquipementType }}</span></td>
+        <!-- Equipements Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+            {% for eq in equipements %}
+                <div class="equipement-card" 
+                     data-name="{{ eq.name|lower }}" 
+                     data-category="{{ eq.getEquipementType|lower }}"
+                     data-status="{{ eq.status }}"
+                     style="background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;" 
+                     onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 30px rgba(0,0,0,0.15)'" 
+                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 10px rgba(0,0,0,0.08)'">
                     
-                    <td class="text-center">
-                        <span class="stock-badge">{{ eq.quantity }}</span>
-                    </td>
-                    <td>
-                        {% if eq.status|upper == 'EN_PANNE' %}
-                            <span class="status-badge status-panne">
-                                <i class="fas fa-times-circle me-1"></i>En panne
-                            </span>
+                    <!-- Image Header -->
+                    <div style="position: relative; height: 160px; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                        {% if eq.getImagePath %}
+                            <img src="{{ eq.getImagePath starts with 'http' ? eq.getImagePath : asset('uploads/images/' ~ eq.getImagePath) }}" 
+                                 style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;">
                         {% else %}
-                            <span class="status-badge status-dispo">
-                                <i class="fas fa-check-circle me-1"></i>Disponible
-                            </span>
+                            <i class="fas fa-microchip" style="font-size: 48px; color: white; opacity: 0.5;"></i>
                         {% endif %}
-                    </td>
-                    <td class="actions-cell">
-                        <a href="{{ path('app_resource_equipement_edit', {'id': eq.id}) }}" class="action-btn edit-btn" title="Modifier">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                        <form method="post" action="{{ path('app_resource_equipement_delete', {'id': eq.id}) }}" style="display:inline-block" onsubmit="return confirm('Supprimer cet équipement ?')">
-                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ eq.id) }}">
-                            <button class="action-btn delete-btn" title="Supprimer">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        <div style="position: absolute; top: 10px; right: 10px; background: {{ eq.status|upper == 'EN_PANNE' ? '#ef4444' : '#10b981' }}; color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">
+                            {{ eq.status|upper == 'EN_PANNE' ? 'En panne' : 'Disponible' }}
+                        </div>
+                    </div>
+
+                    <div style="padding: 20px;">
+                        <h4 style="font-size: 16px; font-weight: 600; color: #1f2937; margin: 0 0 8px 0;">{{ eq.name }}</h4>
+                        <p style="font-size: 13px; color: #6b7280; margin: 0 0 15px 0;">#{{ eq.id|format("%04d") }}</p>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <div style="background: #f8fafc; padding: 12px; border-radius: 8px; text-align: center;">
+                                <p style="font-size: 11px; color: #6b7280; margin: 0;">Catégorie</p>
+                                <p style="font-size: 14px; font-weight: 600; color: #1f2937; margin: 5px 0 0 0;">{{ eq.getEquipementType }}</p>
+                            </div>
+                            <div style="background: #f8fafc; padding: 12px; border-radius: 8px; text-align: center;">
+                                <p style="font-size: 11px; color: #6b7280; margin: 0;">Stock</p>
+                                <p style="font-size: 18px; font-weight: 700; color: #667eea; margin: 5px 0 0 0;">{{ eq.quantity }}</p>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+                            <a href="{{ path('app_resource_equipement_edit', {'id': eq.id}) }}" 
+                               style="flex: 1; color: #667eea; text-decoration: none; padding: 10px; text-align: center; border-radius: 6px; transition: background 0.2s; font-weight: 500;"
+                               onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                                <i class="fas fa-edit" style="margin-right: 5px;"></i>Modifier
+                            </a>
+                            <form method="post" action="{{ path('app_resource_equipement_delete', {'id': eq.id}) }}" 
+                                  onsubmit="return confirm('Supprimer cet équipement ?');" style="flex: 1;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ eq.id) }}">
+                                <button style="width: 100%; background: none; border: none; color: #ef4444; cursor: pointer; padding: 10px; border-radius: 6px; transition: background 0.2s; font-weight: 500;"
+                                        onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                                    <i class="fas fa-trash" style="margin-right: 5px;"></i>Supprimer
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: white; border-radius: 12px; border: 2px dashed #d1d5db;">
+                    <i class="fas fa-inbox" style="font-size: 48px; color: #9ca3af; margin-bottom: 15px;"></i>
+                    <h4 style="font-size: 18px; color: #6b7280; margin-bottom: 5px;">Aucun équipement trouvé</h4>
+                    <p style="color: #9ca3af;">Essayez de modifier vos filtres de recherche.</p>
+                </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
-<style>
-    :root {
-        --primary: #4f46e5;
-        --primary-dark: #4338ca;
-        --primary-light: #eef2ff;
-        --danger: #ef4444;
-        --danger-light: #fef2f2;
-        --success: #10b981;
-        --success-light: #ecfdf5;
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-200: #e5e7eb;
-        --gray-300: #d1d5db;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-        --gray-900: #111827;
-    }
-
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    .dashboard-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 32px 24px;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background: var(--gray-50);
-        min-height: 100vh;
-    }
-
-    /* Header */
-    .header-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        flex-wrap: wrap;
-        gap: 20px;
-        margin-bottom: 32px;
-    }
-
-    .main-title {
-        font-size: 28px;
-        font-weight: 700;
-        color: var(--gray-900);
-        margin: 0 0 4px 0;
-        letter-spacing: -0.5px;
-    }
-
-    .subtitle {
-        color: var(--gray-600);
-        font-size: 14px;
-        margin: 0;
-    }
-
-    /* Stats Cards */
-    .stats-group {
-        display: flex;
-        gap: 12px;
-    }
-
-    .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 12px 20px;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        border: 1px solid var(--gray-200);
-        transition: all 0.2s;
-    }
-
-    .stat-card:hover {
-        box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-        transform: translateY(-1px);
-    }
-
-    .stat-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .bg-primary-light { background: var(--primary-light); }
-    .bg-danger-light { background: var(--danger-light); }
-
-    .stat-label {
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--gray-600);
-        display: block;
-    }
-
-    .stat-number {
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--gray-900);
-        line-height: 1;
-    }
-
-    /* Toolbar */
-    .toolbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap;
-    }
-
-    .search-wrapper {
-        flex: 1;
-        max-width: 360px;
-        position: relative;
-    }
-
-    .search-input {
-        width: 100%;
-        height: 42px;
-        padding: 0 16px 0 42px;
-        border: 1px solid var(--gray-200);
-        border-radius: 10px;
-        font-size: 14px;
-        background: white;
-        transition: all 0.2s;
-    }
-
-    .search-input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px var(--primary-light);
-    }
-
-    .search-icon {
-        position: absolute;
-        left: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--gray-400);
-        font-size: 14px;
-    }
-
-    .toolbar-actions {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-    }
-
-    .filter-select {
-        height: 42px;
-        padding: 0 32px 0 16px;
-        border: 1px solid var(--gray-200);
-        border-radius: 10px;
-        font-size: 14px;
-        background: white;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .filter-select:focus {
-        outline: none;
-        border-color: var(--primary);
-    }
-
-    .btn-primary {
-        background: var(--primary);
-        color: white;
-        padding: 0 20px;
-        height: 42px;
-        border-radius: 10px;
-        display: inline-flex;
-        align-items: center;
-        text-decoration: none;
-        font-size: 13px;
-        font-weight: 600;
-        transition: all 0.2s;
-        border: none;
-        cursor: pointer;
-    }
-
-    .btn-primary:hover {
-        background: var(--primary-dark);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-    }
-
-    /* Table */
-    .table-wrapper {
-        background: white;
-        border-radius: 16px;
-        border: 1px solid var(--gray-200);
-        overflow-x: auto;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .data-table thead th {
-        text-align: left;
-        padding: 16px 20px;
-        background: var(--gray-50);
-        font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--gray-600);
-        border-bottom: 1px solid var(--gray-200);
-    }
-
-    .data-table tbody tr {
-        transition: background 0.2s;
-    }
-
-    .data-table tbody tr:hover {
-        background: var(--gray-50);
-    }
-
-    .data-table td {
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--gray-100);
-    }
-
-    /* Table cells */
-    .preview-cell {
-        width: 60px;
-        padding-right: 0;
-    }
-
-    .image-placeholder {
-        width: 48px;
-        height: 48px;
-        border-radius: 10px;
-        background: var(--gray-100);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-
-    .image-placeholder img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .image-placeholder i {
-        font-size: 20px;
-        color: var(--gray-400);
-    }
-
-    .equipment-name {
-        font-weight: 600;
-        color: var(--gray-900);
-        margin-bottom: 4px;
-    }
-
-    .equipment-ref {
-        font-size: 12px;
-        color: var(--gray-500);
-        font-family: monospace;
-    }
-
-    .category-badge {
-        display: inline-block;
-        padding: 4px 12px;
-        background: var(--gray-100);
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--gray-700);
-    }
-
-    .stock-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 48px;
-        padding: 4px 12px;
-        background: var(--gray-100);
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--gray-700);
-    }
-
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 500;
-    }
-
-    .status-dispo {
-        background: var(--success-light);
-        color: var(--success);
-    }
-
-    .status-panne {
-        background: var(--danger-light);
-        color: var(--danger);
-    }
-
-    .actions-cell {
-        white-space: nowrap;
-    }
-
-    .action-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        text-decoration: none;
-        transition: all 0.2s;
-        margin: 0 2px;
-    }
-
-    .edit-btn {
-        background: var(--primary-light);
-        color: var(--primary);
-    }
-
-    .edit-btn:hover {
-        background: var(--primary);
-        color: white;
-        transform: scale(1.05);
-    }
-
-    .delete-btn {
-        background: var(--danger-light);
-        color: var(--danger);
-    }
-
-    .delete-btn:hover {
-        background: var(--danger);
-        color: white;
-        transform: scale(1.05);
-    }
-
-    .text-center {
-        text-align: center;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .dashboard-container {
-            padding: 20px 16px;
-        }
-
-        .header-section {
-            flex-direction: column;
-        }
-
-        .stats-group {
-            width: 100%;
-        }
-
-        .stat-card {
-            flex: 1;
-        }
-
-        .toolbar {
-            flex-direction: column;
-        }
-
-        .search-wrapper {
-            max-width: 100%;
-            width: 100%;
-        }
-
-        .toolbar-actions {
-            width: 100%;
-        }
-
-        .filter-select {
-            flex: 1;
-        }
-
-        .data-table thead th,
-        .data-table td {
-            padding: 12px 16px;
-        }
-
-        .preview-cell {
-            display: none;
-        }
-    }
-</style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('searchInput');
-        const categoryFilter = document.getElementById('categoryFilter');
-        const tableRows = document.querySelectorAll('#equipementTable tr');
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const statusFilter = document.getElementById('statusFilter');
 
-        function filterTable() {
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            const selectedCategory = categoryFilter.value.toLowerCase().trim();
+    function applyFilters() {
+        const nameVal = searchInput.value.toLowerCase();
+        const categoryVal = categoryFilter.value.toLowerCase();
+        const statusVal = statusFilter.value;
+        const cards = document.querySelectorAll('.equipement-card');
 
-            tableRows.forEach(row => {
-                const name = row.querySelector('.equipment-name').textContent.toLowerCase();
-                const categoryBadge = row.querySelector('.category-badge').textContent.toLowerCase().trim();
-                
-                const matchesSearch = name.includes(searchTerm) || row.innerText.toLowerCase().includes(searchTerm);
-                const matchesCategory = (selectedCategory === "") || (categoryBadge === selectedCategory);
+        cards.forEach(card => {
+            const name = card.getAttribute('data-name');
+            const category = card.getAttribute('data-category');
+            const status = card.getAttribute('data-status');
+            
+            const matchesName = name.includes(nameVal);
+            const matchesCategory = (categoryVal === "" || category === categoryVal);
+            const matchesStatus = (statusVal === "" || status === statusVal);
 
-                if (matchesSearch && matchesCategory) {
-                    row.style.display = "";
-                } else {
-                    row.style.display = "none";
-                }
-            });
-        }
+            card.style.display = (matchesName && matchesCategory && matchesStatus) ? '' : 'none';
+        });
+    }
 
-        searchInput.addEventListener('keyup', filterTable);
-        categoryFilter.addEventListener('change', filterTable);
-    });
+    searchInput.addEventListener('keyup', applyFilters);
+    categoryFilter.addEventListener('change', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
 </script>
+
+      
 {% endblock %}

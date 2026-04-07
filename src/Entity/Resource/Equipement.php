@@ -4,6 +4,7 @@ namespace App\Entity\Resource;
 
 use App\Repository\Resource\EquipementRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: EquipementRepository::class)]
 class Equipement
@@ -14,15 +15,28 @@ class Equipement
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "Le nom de l'équipement est obligatoire")]
+    #[Assert\Length(min: 2, max: 255, minMessage: "Le nom doit contenir au moins {{ limit }} caractères", maxMessage: "Le nom ne peut pas dépasser {{ limit }} caractères")]
+    #[Assert\Type(type: "string", message: "Le nom doit être une chaîne de caractères")]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "Le type d'équipement est obligatoire")]
+    #[Assert\Length(min: 2, max: 255, minMessage: "Le type doit contenir au moins {{ limit }} caractères", maxMessage: "Le type ne peut pas dépasser {{ limit }} caractères")]
+    #[Assert\Type(type: "string", message: "Le type doit être une chaîne de caractères")]
     private ?string $equipement_type = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "Le statut est obligatoire")]
+    #[Assert\Choice(choices: ["DISPONIBLE", "INDISPONIBLE", "MAINTENANCE"], message: "Le statut doit être 'DISPONIBLE', 'INDISPONIBLE' ou 'MAINTENANCE'")]
+    #[Assert\Type(type: "string", message: "Le statut doit être une chaîne de caractères")]
     private ?string $status = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank(message: "La quantité est obligatoire")]
+    #[Assert\Positive(message: "La quantité doit être un nombre positif")]
+    #[Assert\Type(type: "integer", message: "La quantité doit être un nombre entier")]
+    #[Assert\Range(min: 1, max: 1000, notInRangeMessage: "La quantité doit être entre {{ min }} et {{ max }}")]
     private ?int $quantity = null;
 
     #[ORM\Column(length: 255, nullable: true)]
