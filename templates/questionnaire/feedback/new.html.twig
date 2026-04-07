@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau Feedback - EventFlow{% endblock %}
+
+{# ON CHANGE 'body' PAR 'admin_content' #}
+{% block admin_content %} 
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ path('app_questionnaire_feedback_index') }}">Liste</a></li>
+                    <li class="breadcrumb-item active">Nouveau Feedback</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-lg border-0 mt-3">
+                <div class="card-header bg-primary text-white py-3">
+                    <h2 class="h5 mb-0"><i class="fas fa-plus-circle me-2"></i>Ajouter un nouveau Feedback</h2>
+                </div>
+                <div class="card-body p-4">
+                    {{ include('questionnaire/feedback/_form.html.twig') }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

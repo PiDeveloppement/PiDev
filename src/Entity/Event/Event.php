@@ -2,10 +2,11 @@
 
 namespace App\Entity\Event;
 
-use App\Entity\User\UserModel;
-use App\Entity\Questionnaire\Question;
+use App\Entity\Event\Event_Category;
+use App\Entity\Event\Event_Ticket;
 use App\Entity\Questionnaire\Feedback;
-
+use App\Entity\Questionnaire\Question;
+use App\Entity\User\UserModel;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -93,7 +94,7 @@ class Event
     private ?bool $isFree = true;
 
     #[ORM\Column(name: "ticket_price", type: Types::DECIMAL, precision: 10, scale: 2, options: ["default" => 0])]
-    private ?float $ticketPrice = 0.0;
+    private ?string $ticketPrice = "0.00";
 
     #[ORM\Column(name: "created_at", type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $createdAt = null;
@@ -103,9 +104,9 @@ class Event
 
     // ==================== RELATIONS ====================
 
-    #[ORM\ManyToOne(targetEntity: Category::class)]
+    #[ORM\ManyToOne(targetEntity: Event_Category::class)]
     #[ORM\JoinColumn(name: "category_id", referencedColumnName: "id", nullable: true)]
-    private ?Category $category = null;
+    private ?Event_Category $category = null;
 
     #[ORM\ManyToOne(targetEntity: UserModel::class)]
     #[ORM\JoinColumn(name: "created_by", referencedColumnName: "Id_User", nullable: true)]
@@ -114,7 +115,7 @@ class Event
     /**
      * @var Collection<int, Ticket>
      */
-    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Ticket::class)]
+    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Event_Ticket::class)]
     private Collection $tickets;
 
     /**
@@ -135,7 +136,7 @@ class Event
     {
         $this->status = self::STATUS_DRAFT;
         $this->isFree = true;
-        $this->ticketPrice = 0.0;
+        $this->ticketPrice = "0.00";
         $this->capacity = 50;
         $this->createdAt = new \DateTime();
         $this->tickets = new ArrayCollection();
@@ -296,12 +297,12 @@ class Event
         return $this;
     }
 
-    public function getTicketPrice(): ?float
+    public function getTicketPrice(): ?string
     {
         return $this->ticketPrice;
     }
 
-    public function setTicketPrice(float $ticketPrice): self
+    public function setTicketPrice(string $ticketPrice): self
     {
         $this->ticketPrice = $ticketPrice;
         return $this;
@@ -331,12 +332,12 @@ class Event
 
     // ==================== RELATIONS ====================
 
-    public function getCategory(): ?Category
+    public function getCategory(): ?Event_Category
     {
         return $this->category;
     }
 
-    public function setCategory(?Category $category): self
+    public function setCategory(?Event_Category $category): self
     {
         $this->category = $category;
         if ($category) {
@@ -367,7 +368,7 @@ class Event
         return $this->tickets;
     }
 
-    public function addTicket(Ticket $ticket): self
+    public function addTicket(Event_Ticket $ticket): self
     {
         if (!$this->tickets->contains($ticket)) {
             $this->tickets->add($ticket);
@@ -376,7 +377,7 @@ class Event
         return $this;
     }
 
-    public function removeTicket(Ticket $ticket): self
+    public function removeTicket(Event_Ticket $ticket): self
     {
         if ($this->tickets->removeElement($ticket)) {
             if ($ticket->getEvent() === $this) {
@@ -503,7 +504,7 @@ class Event
         if ($this->isFree) {
             return 'Gratuit';
         }
-        return sprintf('%.2f DT', $this->ticketPrice);
+        return sprintf('%.2f DT', (float)$this->ticketPrice);
     }
 
     /**
