@@ -165,18 +165,19 @@
                             <i class="fas fa-chevron-right submenu-arrow" style="font-size: 12px;"></i>
                         </button>
                         <div id="ressources-submenu" class="submenu" style="display: none; margin-left: 20px; margin-top: 2px;">
-                            <a {#href="{{ path('app_reservations_index') }}"#} class="submenu-button">
+                            <a href="{{ path('app_reservation_resource_index') }}" class="submenu-button {{ app.request.get('_route') == 'app_reservation_resource_index' ? 'active' : '' }}">
                                 <i class="fas fa-calendar-check" style="width: 18px;"></i>
                                 Réservations
                             </a>
-                        <a href="{{ path('app_resource_equipement_index') }}" class="submenu-button">
-    <i class="fas fa-laptop" style="width: 18px;"></i>
-    Équipements
-</a>
-                            <a {#href="{{ path('app_resource_salle_index') }}"#} class="submenu-button">
-                                <i class="fas fa-door-open" style="width: 18px;"></i>
-                                Salles
+                            <a href="{{ path('app_resource_equipement_index') }}" class="submenu-button">
+                                <i class="fas fa-laptop" style="width: 18px;"></i>
+                                Équipements
                             </a>
+                            <a href="{{ path('app_resource_salle_index') }}" 
+   class="submenu-button {{ app.request.get('_route') == 'app_resource_salle_index' ? 'active' : '' }}">
+    <i class="fas fa-door-open" style="width: 18px;"></i>
+    Salles
+</a>
                         </div>
                     </div>
                     

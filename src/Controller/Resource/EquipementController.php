@@ -63,6 +63,7 @@ public function index(Request $request, EquipementRepository $repository): Respo
 
         return $this->render('resource/equipement/new.html.twig', [
             'form' => $form->createView(),
+            'equipement' => $equipement,
         ]);
     }
 

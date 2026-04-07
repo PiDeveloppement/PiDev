@@ -1,0 +1,159 @@
+{% extends 'base.html.twig' %}
+
+{# Infos pour la TopBar #}
+{% set pageInfo = {
+    'title': 'Gestion des Ressources',
+    'subtitle': 'Consultez et gérez les réservations de salles et équipements'
+} %}
+
+{% block admin_content %}
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 2px; margin-bottom: 20px;">
+    <div style="background: white; border-radius: 14px; padding: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <div>
+                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px;">
+                    <i class="fas fa-calendar-check" style="color: #667eea; margin-right: 10px;"></i>
+                    Liste des Réservations
+                </h3>
+                <p style="color: #64748b; font-size: 14px;">Gérez vos réservations de salles et équipements</p>
+            </div>
+            <a href="{{ path('app_reservation_resource_new') }}" 
+               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: transform 0.2s;">
+                <i class="fas fa-plus" style="margin-right: 8px;"></i>
+                Nouvelle Réservation
+            </a>
+        </div>
+
+        <!-- Search and Sort Controls -->
+        <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="font-size: 16px; font-weight: 600; color: #1e293b;">
+                    <i class="fas fa-search" style="color: #667eea; margin-right: 8px;"></i>
+                    Filtres et Recherche
+                </h4>
+                <a href="{{ path('app_reservation_resource_index', app.request.query.all|merge({'direction': direction == 'asc' ? 'desc' : 'asc'})) }}" 
+                   style="background: #64748b; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 500; transition: background 0.2s;">
+                    <i class="fas fa-sort-amount-{{ direction == 'asc' ? 'up' : 'down' }}" style="margin-right: 5px;"></i>
+                    Trier par Date
+                </a>
+            </div>
+            <form id="searchForm" method="get" action="{{ path('app_reservation_resource_index') }}">
+                <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 15px; align-items: end;">
+                    <div>
+                        <label for="name" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
+                            <i class="fas fa-tag" style="margin-right: 5px;"></i>Nom de Salle ou Équipement
+                        </label>
+                        <input type="text" name="name" id="name" value="{{ filters.name }}" placeholder="Rechercher..." 
+                               style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;">
+                    </div>
+                    <div>
+                        <label for="resourceType" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
+                            <i class="fas fa-filter" style="margin-right: 5px;"></i>Type de Ressource
+                        </label>
+                        <select name="resourceType" id="resourceType" 
+                                style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white; transition: border-color 0.2s;">
+                            <option value="">Tous les types</option>
+                            <option value="SALLE" {% if filters.resourceType == 'SALLE' %}selected{% endif %}>Salle</option>
+                            <option value="EQUIPEMENT" {% if filters.resourceType == 'EQUIPEMENT' %}selected{% endif %}>Équipement</option>
+                        </select>
+                    </div>
+                    <div>
+                        <a href="{{ path('app_reservation_resource_index') }}" 
+                           style="background: #ef4444; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 500; transition: background 0.2s;">
+                            <i class="fas fa-times" style="margin-right: 5px;"></i>Réinitialiser
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Reservations Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+            {% for reservation in reservations %}
+                <div style="background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;" 
+                     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'" 
+                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 10px rgba(0,0,0,0.08)'">
+                    <div style="padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                            <div>
+                                <span style="background: {{ reservation.resourceType == 'SALLE' ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' : 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)' }}; 
+                                             color: {{ reservation.resourceType == 'SALLE' ? '#1d4ed8' : '#be185d' }}; 
+                                             padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; margin-bottom: 8px;">
+                                    <i class="fas fa-{{ reservation.resourceType == 'SALLE' ? 'building' : 'cogs' }}" style="margin-right: 5px;"></i>
+                                    {{ reservation.resourceType }}
+                                </span>
+                                <h4 style="font-size: 16px; font-weight: 600; color: #1f2937; margin: 0;">
+                                    {% if reservation.resourceType == 'SALLE' and reservation.salle %}
+                                        {{ reservation.salle.name }}
+                                    {% elseif reservation.resourceType == 'EQUIPEMENT' and reservation.equipement %}
+                                        {{ reservation.equipement.name }}
+                                    {% else %}
+                                        Ressource inconnue
+                                    {% endif %}
+                                </h4>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 18px; font-weight: 700; color: #1f2937;">{{ reservation.quantity }}</span>
+                                <p style="font-size: 12px; color: #6b7280; margin: 0;">Quantité</p>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                <i class="fas fa-calendar-alt" style="color: #667eea; margin-right: 8px;"></i>
+                                <span style="font-size: 14px; color: #374151;">
+                                    <strong>Début:</strong> {{ reservation.startTime|date('d/m/Y H:i') }}
+                                </span>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <i class="fas fa-calendar-check" style="color: #10b981; margin-right: 8px;"></i>
+                                <span style="font-size: 14px; color: #374151;">
+                                    <strong>Fin:</strong> {{ reservation.endTime|date('d/m/Y H:i') }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; gap: 10px;">
+                                <a href="{{ path('app_reservation_resource_edit', {'id': reservation.id}) }}" 
+                                   style="color: #667eea; text-decoration: none; padding: 8px; border-radius: 6px; transition: background 0.2s;" 
+                                   onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="post" action="{{ path('app_reservation_resource_delete', {'id': reservation.id}) }}" style="display:inline;" onsubmit="return confirm('Supprimer cette réservation ?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ reservation.id) }}">
+                                    <button style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" 
+                                            onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            <div style="font-size: 12px; color: #6b7280;">
+                                ID: {{ reservation.id }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: white; border-radius: 12px; border: 2px dashed #d1d5db;">
+                    <i class="fas fa-calendar-times" style="font-size: 48px; color: #9ca3af; margin-bottom: 15px;"></i>
+                    <h4 style="font-size: 18px; color: #6b7280; margin-bottom: 5px;">Aucune réservation trouvée</h4>
+                    <p style="color: #9ca3af;">Essayez de modifier vos filtres de recherche.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('name').addEventListener('input', function() {
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => {
+            document.getElementById('searchForm').submit();
+        }, 300);
+    });
+    document.getElementById('resourceType').addEventListener('change', function() {
+        document.getElementById('searchForm').submit();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,299 @@
+{% extends 'base.html.twig' %}
+
+{# Infos pour la TopBar #}
+{% set pageInfo = {
+    'title': 'Gestion des réservations',
+    'subtitle': 'Créez une nouvelle réservation de salle ou d\'équipement'
+} %}
+
+{% block admin_content %}
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 2px; margin-bottom: 20px;">
+    <div style="background: white; border-radius: 14px; padding: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <div>
+                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px;">
+                    <i class="fas fa-calendar-plus" style="color: #667eea; margin-right: 10px;"></i>
+                    Formulaire de Réservation
+                </h3>
+                <p style="color: #64748b; font-size: 14px;">Réservez une salle ou un équipement pour votre événement</p>
+            </div>
+            <a href="{{ path('app_reservation_resource_index') }}" 
+               style="background: #64748b; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; transition: transform 0.2s;">
+                <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>
+                Retour à la liste
+            </a>
+        </div>
+
+        {{ form_start(form, {'attr': {'id': 'reservationForm', 'novalidate': 'novalidate'}}) }}
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+            <!-- Formulaire principal -->
+            <div>
+                <div style="background: #f8fafc; border-radius: 12px; padding: 25px; border: 1px solid #e2e8f0;">
+                    <h4 style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px;">
+                        <i class="fas fa-info-circle" style="color: #667eea; margin-right: 8px;"></i>
+                        Informations de réservation
+                    </h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label for="{{ form.resourceType.vars.id }}" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
+                                <i class="fas fa-tag" style="margin-right: 5px;"></i>Type
+                            </label>
+                            {{ form_widget(form.resourceType, {
+                                'attr': {
+                                    'id': form.resourceType.vars.id,
+                                    'onchange': 'loadResources()'
+                                }
+                            }) }}
+                        </div>
+                        <div>
+                            <label for="{{ form.quantity.vars.id }}" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
+                                <i class="fas fa-sort-numeric-up" style="margin-right: 5px;"></i>Qté
+                            </label>
+                            {{ form_widget(form.quantity, {
+                                'attr': {
+                                    'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;',
+                                    'min': '1'
+                                }
+                            }) }}
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label for="{{ form.startTime.vars.id }}" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
+                                <i class="fas fa-calendar-alt" style="margin-right: 5px;"></i>Début
+                            </label>
+                            {{ form_widget(form.startTime, {
+                                'attr': {
+                                    'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;'
+                                }
+                            }) }}
+                        </div>
+                        <div>
+                            <label for="{{ form.endTime.vars.id }}" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
+                                <i class="fas fa-calendar-check" style="margin-right: 5px;"></i>Fin
+                            </label>
+                            {{ form_widget(form.endTime, {
+                                'attr': {
+                                    'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;'
+                                }
+                            }) }}
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label for="resourceSelect" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
+                            <i class="fas fa-boxes" style="margin-right: 5px;"></i>Ressource
+                        </label>
+                        <select id="resourceSelect" name="resourceSelect" 
+                                style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white; transition: border-color 0.2s;">
+                            <option value="">Sélectionnez d'abord un type</option>
+                        </select>
+                        {{ form_widget(form.salle, {'attr': {'style': 'display: none;'}}) }}
+                        {{ form_widget(form.equipement, {'attr': {'style': 'display: none;'}}) }}
+                    </div>
+
+                    <div style="display: flex; gap: 15px; justify-content: flex-end;">
+                        <a href="{{ path('app_reservation_resource_index') }}" 
+                           style="background: #ef4444; color: white; padding: 12px 30px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; transition: transform 0.2s;">
+                            <i class="fas fa-times" style="margin-right: 8px;"></i>Annuler
+                        </a>
+                        <button type="submit" 
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.2s;">
+                            <i class="fas fa-check" style="margin-right: 8px;"></i>Réserver
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aperçu -->
+            <div>
+                <div style="background: #f8fafc; border-radius: 12px; padding: 25px; border: 1px solid #e2e8f0; position: sticky; top: 20px;">
+                    <h4 style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px;">
+                        <i class="fas fa-eye" style="color: #667eea; margin-right: 8px;"></i>
+                        Aperçu
+                    </h4>
+                    
+                    <div id="previewContent" style="color: #64748b; font-size: 14px; line-height: 1.6;">
+                        <div style="margin-bottom: 15px;">
+                            <strong>Type:</strong> 
+                            <span id="previewType" style="color: #374151;">Non sélectionné</span>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <strong>Ressource:</strong> 
+                            <span id="previewResource" style="color: #374151;">Non sélectionnée</span>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <strong>Quantité:</strong> 
+                            <span id="previewQuantity" style="color: #374151;">1</span>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <strong>Début:</strong> 
+                            <span id="previewStart" style="color: #374151;">Non défini</span>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <strong>Fin:</strong> 
+                            <span id="previewEnd" style="color: #374151;">Non défini</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                        <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 12px;">
+                            <p style="margin: 0; color: #92400e; font-size: 12px;">
+                                <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
+                                Les réservations sont soumises à validation et dépendent de la disponibilité des ressources.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{ form_end(form) }}
+    </div>
+</div>
+
+<script>
+async function loadResources() {
+    const resourceType = document.getElementById('{{ form.resourceType.vars.id }}').value;
+    const resourceSelect = document.getElementById('resourceSelect');
+    const salleField = document.getElementById('{{ form.salle.vars.id }}');
+    const equipementField = document.getElementById('{{ form.equipement.vars.id }}');
+    
+    // Vider le select
+    resourceSelect.innerHTML = '<option value="">Chargement...</option>';
+    
+    // Vider les champs cachés
+    if (salleField) salleField.value = '';
+    if (equipementField) equipementField.value = '';
+    
+    if (!resourceType) {
+        resourceSelect.innerHTML = '<option value="">Sélectionnez d\'abord un type</option>';
+        updatePreview();
+        return;
+    }
+    
+    try {
+        const response = await fetch(`{{ path('app_ajax_resources') }}?type=${resourceType}`);
+        const resources = await response.json();
+        
+        resourceSelect.innerHTML = '<option value="">Sélectionnez une ressource</option>';
+        
+        resources.forEach(resource => {
+            const option = document.createElement('option');
+            option.value = resource.id;
+            
+            let displayText = resource.name;
+            if (resourceType === 'SALLE') {
+                displayText += ` (${resource.available ? 'Disponible: ' + resource.capacity : 'Indisponible'})`;
+            } else {
+                displayText += ` (${resource.available ? 'Disponible: ' + resource.quantity : 'Indisponible'})`;
+            }
+            
+            option.textContent = displayText;
+            option.disabled = !resource.available;
+            
+            if (resource.available) {
+                option.style.color = '#059669';
+            } else {
+                option.style.color = '#dc2626';
+            }
+            
+            resourceSelect.appendChild(option);
+        });
+        
+        // Mettre à jour l'aperçu
+        updatePreview();
+    } catch (error) {
+        console.error('Erreur lors du chargement des ressources:', error);
+        resourceSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+    }
+}
+
+function updatePreview() {
+    const resourceType = document.getElementById('{{ form.resourceType.vars.id }}').value;
+    const resourceSelect = document.getElementById('resourceSelect');
+    const quantityField = document.getElementById('{{ form.quantity.vars.id }}');
+    const startTimeField = document.getElementById('{{ form.startTime.vars.id }}');
+    const endTimeField = document.getElementById('{{ form.endTime.vars.id }}');
+    
+    // Type
+    document.getElementById('previewType').textContent = resourceType || 'Non sélectionné';
+    
+    // Ressource
+    const selectedOption = resourceSelect.options[resourceSelect.selectedIndex];
+    document.getElementById('previewResource').textContent = selectedOption ? selectedOption.text.split(' (')[0] : 'Non sélectionnée';
+    
+    // Quantité
+    document.getElementById('previewQuantity').textContent = (quantityField && quantityField.value) || '1';
+    
+    // Dates
+    if (startTimeField && startTimeField.value) {
+        const date = new Date(startTimeField.value + 'T00:00:00');
+        document.getElementById('previewStart').textContent = date.toLocaleDateString('fr-FR');
+    } else {
+        document.getElementById('previewStart').textContent = 'Non défini';
+    }
+    
+    if (endTimeField && endTimeField.value) {
+        const date = new Date(endTimeField.value + 'T00:00:00');
+        document.getElementById('previewEnd').textContent = date.toLocaleDateString('fr-FR');
+    } else {
+        document.getElementById('previewEnd').textContent = 'Non défini';
+    }
+}
+
+// Gérer la sélection de ressource
+document.getElementById('resourceSelect').addEventListener('change', function() {
+    const resourceType = document.getElementById('{{ form.resourceType.vars.id }}').value;
+    const resourceId = this.value;
+    const salleField = document.getElementById('{{ form.salle.vars.id }}');
+    const equipementField = document.getElementById('{{ form.equipement.vars.id }}');
+    
+    // Vider les deux champs
+    if (salleField) salleField.value = '';
+    if (equipementField) equipementField.value = '';
+    
+    // Mettre à jour le champ approprié
+    if (resourceType === 'SALLE' && resourceId && salleField) {
+        salleField.value = resourceId;
+    } else if (resourceType === 'EQUIPEMENT' && resourceId && equipementField) {
+        equipementField.value = resourceId;
+    }
+    
+    updatePreview();
+});
+
+// Écouter les changements pour l'aperçu
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityField = document.getElementById('{{ form.quantity.vars.id }}');
+    const startTimeField = document.getElementById('{{ form.startTime.vars.id }}');
+    const endTimeField = document.getElementById('{{ form.endTime.vars.id }}');
+    
+    if (quantityField) quantityField.addEventListener('input', updatePreview);
+    if (startTimeField) startTimeField.addEventListener('change', updatePreview);
+    if (endTimeField) endTimeField.addEventListener('change', updatePreview);
+    
+    loadResources();
+    updatePreview();
+});
+
+// Validation du formulaire
+document.getElementById('reservationForm').addEventListener('submit', function(e) {
+    const resourceType = document.getElementById('{{ form.resourceType.vars.id }}').value;
+    const resourceSelect = document.getElementById('resourceSelect');
+    
+    if (!resourceType) {
+        e.preventDefault();
+        alert('Veuillez sélectionner un type de ressource.');
+        return;
+    }
+    
+    if (!resourceSelect.value) {
+        e.preventDefault();
+        alert('Veuillez sélectionner une ressource.');
+        return;
+    }
+});
+</script>
+{% endblock %}

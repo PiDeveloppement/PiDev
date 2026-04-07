@@ -19,15 +19,19 @@ class SalleType extends AbstractType
         $builder
             ->add('name', TextType::class, [
                 'label' => 'Nom de la salle',
+                'required' => false,
             ])
             ->add('capacity', IntegerType::class, [
                 'label' => 'Capacité',
+                'required' => false,
             ])
             ->add('building', TextType::class, [
                 'label' => 'Bâtiment',
+                'required' => false,
             ])
             ->add('floor', IntegerType::class, [
                 'label' => 'Étage',
+                'required' => false,
             ])
             ->add('status', ChoiceType::class, [
                 'choices' => [
@@ -35,6 +39,7 @@ class SalleType extends AbstractType
                     'OCCUPEE' => 'OCCUPEE',
                 ],
                 'label' => 'Statut',
+                'required' => false,
             ])
             // Champ pour l'URL (Unsplash)
             ->add('imagePath', TextType::class, [

@@ -1,58 +1,136 @@
 {% extends 'base.html.twig' %}
 
+{% block title %}Modifier l'Équipement - EventFlow{% endblock %}
+
 {% block admin_content %}
-<div class="dashboard-container">
-    
-    {# --- HEADER --- #}
-    <div class="header-section mb-4">
-        <div>
-            <h1 class="main-title">Modifier l'équipement</h1>
-            <p class="subtitle">Modifiez les informations de {{ equipement.name }}</p>
-        </div>
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 2px; margin-bottom: 20px;">
+    <div style="background: white; border-radius: 14px; padding: 30px;">
         
-        <div class="stats-group">
-            <div class="stat-card">
-                <div class="stat-icon bg-primary-light">
-                    <i class="fas fa-microchip text-primary"></i>
+        {# --- HEADER --- #}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px;">
+                    <i class="fas fa-edit"></i>
                 </div>
                 <div>
-                    <span class="stat-label">ID</span>
-                    <span class="stat-number">#{{ equipement.id|format("%04d") }}</span>
+                    <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px;">
+                        Modifier l'Équipement
+                    </h3>
+                    <p style="color: #64748b; font-size: 14px;">Modifiez les informations de {{ equipement.name }}</p>
                 </div>
             </div>
             
-            <div class="stat-card">
-                <div class="stat-icon bg-success-light">
-                    <i class="fas fa-boxes text-success"></i>
+            {# --- STATS --- #}
+            <div style="display: flex; gap: 12px;">
+                <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 12px; padding: 15px 20px; color: white;">
+                    <p style="font-size: 11px; opacity: 0.9; margin: 0;"><i class="fas fa-hashtag" style="margin-right: 6px;"></i>ID</p>
+                    <p style="font-size: 16px; font-weight: 700; margin: 5px 0 0 0;">#{{ equipement.id|format("%04d") }}</p>
                 </div>
-                <div>
-                    <span class="stat-label">Stock actuel</span>
-                    <span class="stat-number">{{ equipement.quantity }}</span>
+                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; padding: 15px 20px; color: white;">
+                    <p style="font-size: 11px; opacity: 0.9; margin: 0;"><i class="fas fa-boxes" style="margin-right: 6px;"></i>Stock actuel</p>
+                    <p style="font-size: 16px; font-weight: 700; margin: 5px 0 0 0;">{{ equipement.quantity }}</p>
                 </div>
             </div>
         </div>
-    </div>
+
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin-bottom: 30px;">
 
     {# --- FORMULAIRE --- #}
     <div class="form-wrapper">
-        {{ form_start(form, {'attr': {'class': 'modern-form'}}) }}
+        {{ form_start(form, {'attr': {'id': 'equipementEditForm'}}) }}
             
-            <div class="form-grid">
-                {{ form_rest(form) }}
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                
+                {# Désignation #}
+                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                    <label style="display: block; color: #374151; font-weight: 600; font-size: 14px; margin-bottom: 8px;">
+                        <i class="fas fa-tag" style="color: #667eea; margin-right: 8px;"></i>Désignation
+                    </label>
+                    {{ form_widget(form.name, {'attr': {
+                        'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;', 
+                        'placeholder': 'Ex: Projecteur LED 4K'
+                    }}) }}
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.name) }}</div>
+                </div>
+                
+                {# Catégorie #}
+                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                    <label style="display: block; color: #374151; font-weight: 600; font-size: 14px; margin-bottom: 8px;">
+                        <i class="fas fa-layer-group" style="color: #10b981; margin-right: 8px;"></i>Catégorie
+                    </label>
+                    {{ form_widget(form.equipementType, {'attr': {'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;'}}) }}
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.equipementType) }}</div>
+                </div>
+                
+                {# Quantité et État sur la même ligne #}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                        <label style="display: block; color: #374151; font-weight: 600; font-size: 14px; margin-bottom: 8px;">
+                            <i class="fas fa-boxes" style="color: #3b82f6; margin-right: 8px;"></i>Quantité en stock
+                        </label>
+                        {{ form_widget(form.quantity, {'attr': {
+                            'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;', 
+                            'min': '0',
+                            'placeholder': '0'
+                        }}) }}
+                        <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.quantity) }}</div>
+                    </div>
+                    
+                    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                        <label style="display: block; color: #374151; font-weight: 600; font-size: 14px; margin-bottom: 8px;">
+                            <i class="fas fa-chart-line" style="color: #f59e0b; margin-right: 8px;"></i>État actuel
+                        </label>
+                        {{ form_widget(form.status, {'attr': {'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;'}}) }}
+                        <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.status) }}</div>
+                    </div>
+                </div>
+                
+                {# Image (si disponible) #}
+                {% if form.imagePath is defined %}
+                <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 12px; padding: 25px; border: 1px solid #e2e8f0;">
+                    <label style="display: block; color: #374151; font-weight: 600; font-size: 14px; margin-bottom: 10px;">
+                        <i class="fas fa-camera" style="color: #667eea; margin-right: 8px;"></i>URL de l'image
+                    </label>
+                    {{ form_widget(form.imagePath, {'attr': {
+                        'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;', 
+                        'placeholder': 'https://images.unsplash.com/...'
+                    }}) }}
+                    <div style="background: #dbeafe; padding: 12px 15px; border-radius: 8px; margin-top: 15px; font-size: 13px; color: #1e40af; border-left: 4px solid #3b82f6;">
+                        <i class="fas fa-info-circle"></i> <strong>Info :</strong> Laissez vide pour une image par défaut
+                    </div>
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.imagePath) }}</div>
+                </div>
+                {% endif %}
             </div>
             
-            <div class="form-actions">
-                <button class="btn-save">
-                    <i class="fas fa-save me-2"></i>Enregistrer
-                </button>
-                <a href="{{ path('app_resource_equipement_index') }}" class="btn-cancel">
-                    <i class="fas fa-times me-2"></i>Annuler
+            {# --- BOUTONS D'ACTION --- #}
+            <div style="display: flex; justify-content: space-between; gap: 15px; margin-top: 35px; padding-top: 25px; border-top: 1px solid #e5e7eb;">
+                <a href="{{ path('app_resource_equipement_index') }}" 
+                   style="flex: 1; text-align: center; background: #f8fafc; color: #64748b; padding: 14px; border-radius: 10px; text-decoration: none; font-weight: 600; border: 2px solid #e2e8f0; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;"
+                   onmouseover="this.style.background='#e2e8f0'; this.style.transform='translateY(-2px)'" 
+                   onmouseout="this.style.background='#f8fafc'; this.style.transform='translateY(0)'">
+                    <i class="fas fa-times"></i> Annuler
                 </a>
+                <button type="submit" 
+                        style="flex: 1; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(34,197,94,0.3); transition: transform 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;"
+                        onmouseover="this.style.transform='translateY(-2px)'" 
+                        onmouseout="this.style.transform='translateY(0)'">
+                    <i class="fas fa-save"></i> Enregistrer
+                </button>
             </div>
             
         {{ form_end(form) }}
-    </div>
 
+        {# --- NOTE INFORMATIVE --- #}
+        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 20px; margin-top: 25px; border: 1px solid rgba(245, 158, 11, 0.2); display: flex; align-items: center; gap: 15px;">
+            <div style="background: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 18px;">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div style="flex: 1; font-size: 13px; color: #92400e; line-height: 1.5;">
+                <strong>Attention :</strong> Les modifications seront immédiatement appliquées et visibles dans l'inventaire.
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -357,6 +435,31 @@
         color: var(--danger);
         font-size: 12px;
         margin-top: 6px;
+    }
+    
+    button[type="submit"]:hover {
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+        transform: translateY(-2px);
+    }
+    
+    a:hover {
+        background: #e2e8f0 !important;
+        transition: all 0.2s;
+    }
+    
+    input:focus, select:focus {
+        outline: none;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-field:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .form-field {
+        transition: all 0.2s ease;
     }
 </style>
 
