@@ -10,7 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity]
 #[ORM\Table(name: "event_ticket")]
-class Ticket
+class Event_Ticket
 {
     // ==================== ATTRIBUTS ====================
 
