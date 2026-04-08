@@ -20,17 +20,7 @@ class FeedbackType extends AbstractType
        // src/Form/Questionnaire/FeedbackType.php
 
 $builder
-    ->add('user', EntityType::class, [
-        'class' => UserModel::class,
-        'choice_label' => function (UserModel $user) {
-            // Remplace getFirst_Name par getFirstName
-            // Remplace getLast_Name par getLastName
-            return $user->getFirstName() . ' ' . $user->getLastName();
-        },
-        'label' => 'Participant',
-        'attr' => ['class' => 'form-select']
-    ])
-            // On lie la question via l'entité Question
+    // On lie la question via l'entité Question
       ->add('question', EntityType::class, [
     'class' => Question::class,
     // On utilise 'texte' car l'entité possède la méthode getTexte()

@@ -100,6 +100,8 @@ public function loginCheck(Request $request): Response
         // Sauvegarder dans la session
         $session = $request->getSession();
         $session->set('_security_main', serialize($token));
+        $session->set('user_id', $user->getId()); // Ajout de l'ID utilisateur pour les autres contrôleurs
+        $session->set('user_email', $user->getEmail()); // Ajout de l'email pour debug
         $session->save();
 
         // Vérifier que le token est bien stocké
