@@ -25,26 +25,7 @@ final class FeedbackController extends AbstractController
         ]);
     }
 
-    #[Route('/new', name: 'app_questionnaire_feedback_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
-        $feedback = new Feedback();
-        $form = $this->createForm(FeedbackType::class, $feedback);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($feedback);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_questionnaire_feedback_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->render('questionnaire/feedback/new.html.twig', [
-            'feedback' => $feedback,
-            'form' => $form,
-        ]);
-    }
-
+ 
     #[Route('/{id}', name: 'app_questionnaire_feedback_show', methods: ['GET'])]
     public function show(Feedback $feedback): Response
     {

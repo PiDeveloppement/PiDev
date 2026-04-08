@@ -11,6 +11,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\Table(name: "feedbacks")]
+#[ORM\HasLifecycleCallbacks]
 class Feedback
 {
     #[ORM\Id]
@@ -18,8 +19,8 @@ class Feedback
     #[ORM\Column(name: "id_feedback", type: "integer")]
     private ?int $id = null;
 
-    #[ORM\Column(name: "id_user", type: "integer", nullable: true)]
-    private ?int $userId = null;
+    #[ORM\Column(name: "id_user", type: "integer", nullable: true, options: ["default" => 45])]
+    private ?int $userId = 45;
 
     #[ORM\Column(name: "id_question", type: "integer", nullable: true)]
     private ?int $questionId = null;
@@ -27,7 +28,7 @@ class Feedback
     #[ORM\Column(name: "reponse_donnee", length: 255, nullable: true)]
     private ?string $reponseDonnee = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(name: "comments", length: 255, nullable: true)]
     private ?string $comments = null;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true, options: ["default" => 0])]
@@ -37,6 +38,9 @@ class Feedback
         notInRangeMessage: "La note doit être entre {{ min }} et {{ max }} étoiles"
     )]
     private ?int $etoiles = 0;
+
+    #[ORM\Column(type: "datetime", nullable: true)]
+    private ?\DateTimeInterface $createdAt = null;
 
     // Relations avec les autres entités
     #[ORM\ManyToOne(targetEntity: UserModel::class)]
@@ -160,12 +164,31 @@ class Feedback
         if ($this->question && $this->question->getEvent()) {
             return $this->question->getEvent()->getTitle();
         }
-        return 'Événement inconnu';
+        return 'Quiz Général';
     }
 
     public function getStarsDisplay(): string
     {
         return str_repeat('★', $this->etoiles ?? 0) . str_repeat('☆', 5 - ($this->etoiles ?? 0));
+    }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(?\DateTimeInterface $createdAt): self
+    {
+        $this->createdAt = $createdAt;
+        return $this;
+    }
+
+    #[ORM\PrePersist]
+    public function setCreatedAtValue(): void
+    {
+        if ($this->createdAt === null) {
+            $this->createdAt = new \DateTimeImmutable();
+        }
     }
 
     public function __toString(): string
