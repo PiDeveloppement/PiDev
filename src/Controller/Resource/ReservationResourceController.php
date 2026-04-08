@@ -15,6 +15,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Dompdf\Dompdf;
+use Twig\Environment;
 
 #[Route('/resource/reservation')]
 class ReservationResourceController extends AbstractController
@@ -199,5 +201,42 @@ public function getResources(Request $request, SalleRepository $salleRepo, Equip
         }
 
         return $this->redirectToRoute('app_reservation_resource_index');
+    }
+
+    #[Route('/export-pdf', name: 'app_reservation_resource_pdf', methods: ['GET'])]
+    public function exportPdf(Request $request, ReservationResourceRepository $repo, Environment $twig): Response
+    {
+        // Récupérer les filtres et le tri
+        $filters = [
+            'name' => $request->query->get('name'),
+            'resourceType' => $request->query->get('resourceType'),
+        ];
+
+        $sortBy = $request->query->get('sortBy', 'startTime');
+        $direction = $request->query->get('direction', 'desc');
+
+        $reservations = $repo->findByFilters($filters, $sortBy, $direction);
+
+        // Générer le HTML
+        $html = $twig->render('resource/reservation_resource/pdf.html.twig', [
+            'reservations' => $reservations,
+            'filters' => $filters,
+        ]);
+
+        // Créer le PDF
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        // Retourner le PDF
+        return new Response(
+            $dompdf->output(),
+            200,
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="reservations_' . date('Y-m-d_H-i-s') . '.pdf"'
+            ]
+        );
     }
 }
