@@ -25,11 +25,11 @@
                 <p style="font-size: 12px; opacity: 0.9; margin: 0;"><i class="fas fa-boxes" style="margin-right: 8px;"></i>Total d'Équipements</p>
                 <h4 style="font-size: 28px; font-weight: 700; margin: 10px 0 0 0;">{{ equipements|length }}</h4>
             </div>
-            {% set enPanne = equipements|filter(e => e.status|upper == 'EN_PANNE')|length %}
-            {% if enPanne > 0 %}
+            {% set nonDisponible = equipements|filter(e => e.status|upper != 'DISPONIBLE')|length %}
+            {% if nonDisponible > 0 %}
             <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 12px; padding: 20px; color: white;">
                 <p style="font-size: 12px; opacity: 0.9; margin: 0;"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>Alertes</p>
-                <h4 style="font-size: 28px; font-weight: 700; margin: 10px 0 0 0;">{{ enPanne }}</h4>
+                <h4 style="font-size: 28px; font-weight: 700; margin: 10px 0 0 0;">{{ nonDisponible }}</h4>
             </div>
             {% endif %}
         </div>
@@ -61,7 +61,8 @@
                     <select id="statusFilter" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
                         <option value="">Tous les statuts</option>
                         <option value="DISPONIBLE">Disponible</option>
-                        <option value="EN_PANNE">En panne</option>
+                        <option value="INDISPONIBLE">Indisponible</option>
+                        <option value="MAINTENANCE">Maintenance</option>
                     </select>
                 </div>
                 <div style="align-self: flex-end;">
@@ -91,14 +92,13 @@
                         {% else %}
                             <i class="fas fa-microchip" style="font-size: 48px; color: white; opacity: 0.5;"></i>
                         {% endif %}
-                        <div style="position: absolute; top: 10px; right: 10px; background: {{ eq.status|upper == 'EN_PANNE' ? '#ef4444' : '#10b981' }}; color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">
-                            {{ eq.status|upper == 'EN_PANNE' ? 'En panne' : 'Disponible' }}
+                        <div style="position: absolute; top: 10px; right: 10px; background: {{ eq.status|upper == 'DISPONIBLE' ? '#10b981' : '#ef4444' }}; color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">
+                            {{ eq.status|upper == 'DISPONIBLE' ? 'Disponible' : eq.status }}
                         </div>
                     </div>
 
                     <div style="padding: 20px;">
-                        <h4 style="font-size: 16px; font-weight: 600; color: #1f2937; margin: 0 0 8px 0;">{{ eq.name }}</h4>
-                        <p style="font-size: 13px; color: #6b7280; margin: 0 0 15px 0;">#{{ eq.id|format("%04d") }}</p>
+                        <h4 style="font-size: 16px; font-weight: 600; color: #1f2937; margin: 0 0 15px 0;">{{ eq.name }}</h4>
                         
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
                             <div style="background: #f8fafc; padding: 12px; border-radius: 8px; text-align: center;">

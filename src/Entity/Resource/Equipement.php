@@ -30,14 +30,14 @@ class Equipement
     #[Assert\NotBlank(message: "Le statut est obligatoire")]
     #[Assert\Choice(choices: ["DISPONIBLE", "INDISPONIBLE", "MAINTENANCE"], message: "Le statut doit être 'DISPONIBLE', 'INDISPONIBLE' ou 'MAINTENANCE'")]
     #[Assert\Type(type: "string", message: "Le statut doit être une chaîne de caractères")]
-    private ?string $status = null;
+    private string $status = 'DISPONIBLE';
 
     #[ORM\Column]
     #[Assert\NotBlank(message: "La quantité est obligatoire")]
     #[Assert\Positive(message: "La quantité doit être un nombre positif")]
     #[Assert\Type(type: "integer", message: "La quantité doit être un nombre entier")]
     #[Assert\Range(min: 1, max: 1000, notInRangeMessage: "La quantité doit être entre {{ min }} et {{ max }}")]
-    private ?int $quantity = null;
+    private int $quantity = 0;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $image_path = null;

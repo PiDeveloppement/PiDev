@@ -29,15 +29,16 @@ class EquipementType extends AbstractType
             ->add('status', ChoiceType::class, [
                 'choices'  => [
                     'Disponible' => 'DISPONIBLE',
-                    'En Panne'   => 'EN_PANNE',
+                    'Maintenance'   => 'MAINTENANCE',
+                    'Indisponible'   => 'INDISPONIBLE',
                 ],
                 'label' => 'Statut',
                 'required' => false,
             ])
             ->add('quantity', IntegerType::class, [
                 'label' => 'Quantité',
-                'required' => false,
-                'attr' => ['min' => 0]
+                'required' => true,
+                'attr' => ['min' => 1, 'placeholder' => 'Ex: 50']
             ])
             ->add('imagePath', FileType::class, [ // Changé pour matcher le Twig
                 'label' => 'Image (Fichier)',

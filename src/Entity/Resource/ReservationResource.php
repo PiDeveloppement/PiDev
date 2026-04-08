@@ -79,7 +79,7 @@ class ReservationResource
     public function setEndTime(\DateTimeInterface $endTime): self { $this->endTime = $endTime; return $this; }
 
     public function getQuantity(): ?int { return $this->quantity; }
-    public function setQuantity(int $quantity): self { $this->quantity = $quantity; return $this; }
+    public function setQuantity(?int $quantity): self { $this->quantity = $quantity; return $this; }
     // Dans src/Entity/Resource/ReservationResource.php
 
 public function __construct()
