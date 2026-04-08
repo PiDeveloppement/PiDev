@@ -159,25 +159,25 @@
                     
                     <!-- Menu ressources -->
                     <div style="margin-bottom: 4px;">
+                        {% set isResourceRoute = app.request.get('_route') in ['app_reservation_resource_index', 'app_reservation_resource_new', 'app_reservation_resource_edit', 'app_resource_equipement_index', 'app_resource_equipement_new', 'app_resource_equipement_edit', 'app_resource_salle_index', 'app_resource_salle_new', 'app_resource_salle_edit'] %}
                         <button class="menu-button" onclick="toggleSubmenu('ressources-submenu', this)">
                             <i class="fas fa-boxes" style="width: 20px;"></i>
                             <span style="flex: 1; text-align: left;">Ressources</span>
                             <i class="fas fa-chevron-right submenu-arrow" style="font-size: 12px;"></i>
                         </button>
-                        <div id="ressources-submenu" class="submenu" style="display: none; margin-left: 20px; margin-top: 2px;">
-                            <a href="{{ path('app_reservation_resource_index') }}" class="submenu-button {{ app.request.get('_route') == 'app_reservation_resource_index' ? 'active' : '' }}">
+                        <div id="ressources-submenu" class="submenu" style="display: {{ isResourceRoute ? 'block' : 'none' }}; margin-left: 20px; margin-top: 2px;">
+                            <a href="{{ path('app_reservation_resource_index') }}" class="submenu-button {{ (app.request.get('_route') == 'app_reservation_resource_index' or app.request.get('_route') == 'app_reservation_resource_new' or app.request.get('_route') == 'app_reservation_resource_edit') ? 'active' : '' }}">
                                 <i class="fas fa-calendar-check" style="width: 18px;"></i>
                                 Réservations
                             </a>
-                            <a href="{{ path('app_resource_equipement_index') }}" class="submenu-button">
+                            <a href="{{ path('app_resource_equipement_index') }}" class="submenu-button {{ (app.request.get('_route') == 'app_resource_equipement_index' or app.request.get('_route') == 'app_resource_equipement_new' or app.request.get('_route') == 'app_resource_equipement_edit') ? 'active' : '' }}">
                                 <i class="fas fa-laptop" style="width: 18px;"></i>
                                 Équipements
                             </a>
-                            <a href="{{ path('app_resource_salle_index') }}" 
-   class="submenu-button {{ app.request.get('_route') == 'app_resource_salle_index' ? 'active' : '' }}">
-    <i class="fas fa-door-open" style="width: 18px;"></i>
-    Salles
-</a>
+                            <a href="{{ path('app_resource_salle_index') }}" class="submenu-button {{ (app.request.get('_route') == 'app_resource_salle_index' or app.request.get('_route') == 'app_resource_salle_new' or app.request.get('_route') == 'app_resource_salle_edit') ? 'active' : '' }}">
+                                <i class="fas fa-door-open" style="width: 18px;"></i>
+                                Salles
+                            </a>
                         </div>
                     </div>
                     
