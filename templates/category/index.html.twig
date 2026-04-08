@@ -2,6 +2,7 @@
 {% block title %}Gestion des catégories{% endblock %}
 
 {% block kpi %}
+<div id="categoryKpiRoot" style="display:flex; gap:12px; flex-wrap:wrap;">
 <div style="background:#e8f5e9; border-radius:12px; padding:12px 20px; text-align:center; min-width:130px;">
     <i class="fas fa-tags" style="color:#16a34a; font-size:20px;"></i>
     <div style="font-size:1.8rem; font-weight:700; color:#16a34a;">{{ totalCategories }}</div>
@@ -11,6 +12,7 @@
     <i class="fas fa-calendar-alt" style="color:#1565c0; font-size:20px;"></i>
     <div style="font-size:1.8rem; font-weight:700; color:#1565c0;">{{ totalEvents }}</div>
     <div style="color:#64748b; font-size:12px;">Événements</div>
+</div>
 </div>
 {% endblock %}
 
@@ -146,23 +148,26 @@
 </style>
 
 <div class="cat-toolbar">
-    <input class="cat-input" type="text" id="searchInput" placeholder="🔍 Rechercher une catégorie..."/>
+    <input class="cat-input" type="text" id="searchInput" placeholder="🔍 Rechercher une catégorie..." value="{{ filters.search ?? '' }}"/>
     <select class="cat-select" id="statusFilter">
         <option value="">📊 Tous les statuts</option>
-        <option value="actif">Actif</option>
-        <option value="inactif">Inactif</option>
+        <option value="actif" {{ (filters.status ?? '') == 'actif' ? 'selected' : '' }}>Actif</option>
+        <option value="inactif" {{ (filters.status ?? '') == 'inactif' ? 'selected' : '' }}>Inactif</option>
     </select>
     <select class="cat-select" id="colorFilter" title="Filtrer par couleur">
         <option value="">🎨 Toutes les couleurs</option>
+        {% for hex in availableColors %}
+            <option value="{{ hex }}" {{ (filters.color ?? '')|lower == hex|lower ? 'selected' : '' }}>● {{ hex|upper }}</option>
+        {% endfor %}
     </select>
     <select class="cat-select" id="orderFilter" title="Trier les catégories">
-        <option value="az">🔤 A→Z</option>
-        <option value="za">🔤 Z→A</option>
-        <option value="recent">🕒 Plus récents</option>
-        <option value="old">🕒 Plus anciens</option>
+        <option value="az" {{ (filters.order ?? 'recent') == 'az' ? 'selected' : '' }}>🔤 A→Z</option>
+        <option value="za" {{ (filters.order ?? 'recent') == 'za' ? 'selected' : '' }}>🔤 Z→A</option>
+        <option value="recent" {{ (filters.order ?? 'recent') == 'recent' ? 'selected' : '' }}>🕒 Plus récents</option>
+        <option value="old" {{ (filters.order ?? 'recent') == 'old' ? 'selected' : '' }}>🕒 Plus anciens</option>
     </select>
     <div class="cat-spacer"></div>
-    <span class="result-pill" id="resultCount">{{ categories.getTotalItemCount }} résultat(s)</span>
+    <span class="result-pill" id="resultCount">{{ filteredCategories ?? categories.getTotalItemCount }} résultat(s)</span>
     <a href="{{ path('app_category_export_pdf') }}"
        style="background:#1e293b; color:#fff; border:none; border-radius:8px;
               padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
@@ -177,7 +182,7 @@
     </a>
 </div>
 
-<div class="cat-table-wrap">
+<div class="cat-table-wrap" id="categoriesTableWrapper">
     <table class="cat-table" id="categoriesTable">
         <thead>
             <tr>
@@ -188,7 +193,7 @@
                 <th>⚡ Actions</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="categoriesTableBody">
         {% for category in categories %}
             <tr class="cat-row"
                 data-search="{{ category.name|lower }}"
@@ -244,7 +249,7 @@
 {% set startItem = categories.getTotalItemCount > 0 ? ((p.current - 1) * categories.getItemNumberPerPage + 1) : 0 %}
 {% set endItem = categories.getTotalItemCount > 0 ? (startItem + categories|length - 1) : 0 %}
 
-<div class="pagination-shell">
+<div class="pagination-shell" id="paginationShell">
     <div class="pagination-info">
         Affichage {{ startItem }}-{{ endItem }} sur {{ categories.getTotalItemCount }}
     </div>
@@ -290,67 +295,90 @@
     const status = document.getElementById('statusFilter');
     const color = document.getElementById('colorFilter');
     const order = document.getElementById('orderFilter');
-    const tbody = document.querySelector('#categoriesTable tbody');
-    const rows = [...document.querySelectorAll('.cat-row')];
+    const tbody = document.getElementById('categoriesTableBody');
+    const paginationShell = document.getElementById('paginationShell');
     const count = document.getElementById('resultCount');
-    const totalCount = {{ categories.getTotalItemCount }};
+    const kpiRoot = document.getElementById('categoryKpiRoot');
+    let debounceTimer = null;
 
-    function populateColorFilter() {
-        const colors = [...new Set(rows.map(row => (row.dataset.color || '').trim()).filter(Boolean))]
-            .sort((a, b) => a.localeCompare(b));
+    function buildUrl(page = 1) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', page);
+        url.searchParams.set('search', search.value.trim());
+        url.searchParams.set('status', status.value);
+        url.searchParams.set('color', color.value);
+        url.searchParams.set('order', order.value);
+        return url.toString();
+    }
 
-        colors.forEach(hex => {
-            const option = document.createElement('option');
-            option.value = hex;
-            option.textContent = '● ' + hex.toUpperCase();
-            option.style.color = hex;
-            color.appendChild(option);
+    function updatePaginationLinks(container) {
+        container.querySelectorAll('a.page-btn').forEach(link => {
+            const pageMatch = link.getAttribute('href').match(/[?&]page=(\d+)/);
+            if (!pageMatch) {
+                return;
+            }
+
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                loadCategories(parseInt(pageMatch[1], 10));
+            });
         });
     }
 
-    function sortRows(list, mode) {
-        const sorted = [...list];
-        sorted.sort((a, b) => {
-            if (mode === 'za') return (b.dataset.name || '').localeCompare(a.dataset.name || '');
-            if (mode === 'recent') return Number(b.dataset.created || 0) - Number(a.dataset.created || 0);
-            if (mode === 'old') return Number(a.dataset.created || 0) - Number(b.dataset.created || 0);
-            return (a.dataset.name || '').localeCompare(b.dataset.name || '');
-        });
-        sorted.forEach(row => tbody.appendChild(row));
-    }
+    function syncFromResponse(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newBody = doc.getElementById('categoriesTableBody');
+        const newPagination = doc.getElementById('paginationShell');
+        const newCount = doc.getElementById('resultCount');
+        const newKpiRoot = doc.getElementById('categoryKpiRoot');
 
-    function applyFilters() {
-        const q = search.value.toLowerCase().trim();
-        const s = status.value;
-        const c = color.value;
-        const o = order.value;
-
-        sortRows(rows, o);
-
-        let visible = 0;
-        rows.forEach(row => {
-            const okSearch = !q || row.dataset.search.includes(q);
-            const okStatus = !s || row.dataset.status === s;
-            const okColor = !c || row.dataset.color === c;
-            const show = okSearch && okStatus && okColor;
-            row.style.display = show ? '' : 'none';
-            if (show) visible++;
-        });
-
-        if (!q && !s && !c) {
-            count.textContent = totalCount + ' catégorie(s) au total';
-            return;
+        if (newBody && tbody) {
+            tbody.innerHTML = newBody.innerHTML;
         }
 
-        count.textContent = visible + ' résultat(s) sur cette page';
+        if (newPagination && paginationShell) {
+            paginationShell.innerHTML = newPagination.innerHTML;
+            updatePaginationLinks(paginationShell);
+        }
+
+        if (newCount) {
+            count.textContent = newCount.textContent;
+        }
+
+        if (newKpiRoot && kpiRoot) {
+            kpiRoot.innerHTML = newKpiRoot.innerHTML;
+        }
     }
 
-    populateColorFilter();
+    async function loadCategories(page = 1) {
+        const url = buildUrl(page);
+
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const html = await response.text();
+            syncFromResponse(html);
+        } catch (error) {
+            console.error('Erreur lors du chargement des catégories', error);
+        }
+    }
+
+    function scheduleLoad() {
+        window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(() => loadCategories(1), 250);
+    }
+
     [search, status, color, order].forEach(el => {
-        el.addEventListener('input', applyFilters);
-        el.addEventListener('change', applyFilters);
+        el.addEventListener('input', scheduleLoad);
+        el.addEventListener('change', scheduleLoad);
     });
-    applyFilters();
+
+    updatePaginationLinks(paginationShell);
 })();
 </script>
 {% endblock %}

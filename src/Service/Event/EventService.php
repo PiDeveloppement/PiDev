@@ -7,6 +7,7 @@ use App\Entity\Event\Event;
 use App\Repository\Event\CategoryRepository;
 use App\Repository\Event\EventRepository;
 use App\Repository\Event\TicketRepository;
+use App\Service\Event\GoogleCalendarWriteService;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 
@@ -16,41 +17,50 @@ class EventService
         private EventRepository $eventRepository,
         private CategoryRepository $categoryRepository,
         private TicketRepository $ticketRepository,
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        private GoogleCalendarWriteService $googleCalendarWriteService
     ) {
     }
 
-    public function getBackOfficeListData(int $page, PaginatorInterface $paginator): array
+    public function getBackOfficeListData(int $page, PaginatorInterface $paginator, array $filters = []): array
     {
-        $allEvents = $this->eventRepository->findAll();
+        $filteredQueryBuilder = $this->eventRepository->createBackOfficeListQueryBuilder($filters);
 
         $events = $paginator->paginate(
-            $this->eventRepository->createBackOfficeListQueryBuilder(),
+            $filteredQueryBuilder,
             $page,
             6,
             ['wrap-queries' => true]
         );
 
+        /** @var Event[] $filteredEvents */
+        $filteredEvents = (clone $filteredQueryBuilder)->getQuery()->getResult();
+
         $now = new \DateTimeImmutable();
         $totalAvenir = 0;
         $totalTermine = 0;
+        $totalTickets = 0;
 
-        foreach ($allEvents as $event) {
+        foreach ($filteredEvents as $event) {
             if ($event->getStartDate() && $event->getStartDate() > $now) {
                 $totalAvenir++;
             }
             if ($event->getEndDate() && $event->getEndDate() < $now) {
                 $totalTermine++;
             }
+
+            $totalTickets += $event->getTickets()->count();
         }
 
         return [
             'events' => $events,
             'categories' => $this->categoryRepository->findAllOrderedByName(),
-            'totalEvents' => count($allEvents),
-            'totalTickets' => $this->ticketRepository->countAll(),
+            'totalEvents' => count($filteredEvents),
+            'filteredEvents' => $events->getTotalItemCount(),
+            'totalTickets' => $totalTickets,
             'totalAvenir' => $totalAvenir,
             'totalTermine' => $totalTermine,
+            'filters' => $filters,
         ];
     }
 
@@ -89,23 +99,92 @@ class EventService
         return null;
     }
 
-    public function createEvent(Event $event, ?Category $category): void
+    public function createEvent(Event $event, ?Category $category): bool
     {
         $this->prepareEventBeforeSave($event, $category, true);
         $this->entityManager->persist($event);
         $this->entityManager->flush();
+
+        return $this->googleCalendarWriteService->syncCreatedEvent($event);
     }
 
-    public function updateEvent(Event $event, ?Category $category): void
+    public function getGoogleCalendarSyncError(): ?string
+    {
+        return $this->googleCalendarWriteService->getLastError();
+    }
+
+    public function updateEvent(Event $event, ?Category $category): bool
     {
         $this->prepareEventBeforeSave($event, $category, false);
         $this->entityManager->flush();
+
+        return $this->googleCalendarWriteService->syncUpdatedEvent($event);
     }
 
-    public function deleteEvent(Event $event): void
+    public function deleteEvent(Event $event): bool
     {
+        $googleSyncOk = $this->googleCalendarWriteService->syncDeletedEvent($event);
         $this->entityManager->remove($event);
         $this->entityManager->flush();
+
+        return $googleSyncOk;
+    }
+
+    /**
+     * Pull changes from Google Calendar for linked EventFlow events.
+     *
+     * @return array{updated:int,deleted:int,failed:int}
+     */
+    public function syncFromGoogleCalendarToEventFlow(): array
+    {
+        $stats = [
+            'updated' => 0,
+            'deleted' => 0,
+            'failed' => 0,
+        ];
+
+        $hasChanges = false;
+        $events = $this->eventRepository->findAllOrderedByDate();
+
+        foreach ($events as $event) {
+            if (!$event instanceof Event || !$event->getId()) {
+                continue;
+            }
+
+            $remoteResult = $this->googleCalendarWriteService->fetchRemoteEventByLocalId($event->getId());
+
+            if (!(bool) ($remoteResult['ok'] ?? false)) {
+                $stats['failed']++;
+                continue;
+            }
+
+            if (!(bool) ($remoteResult['found'] ?? false)) {
+                // Keep local event if it still has dependent records (tickets/questions)
+                // to avoid FK violations during automatic Google -> EventFlow sync.
+                if ($event->getTickets()->count() > 0 || $event->getQuestions()->count() > 0) {
+                    $stats['failed']++;
+                    continue;
+                }
+
+                $this->entityManager->remove($event);
+                $stats['deleted']++;
+                $hasChanges = true;
+                continue;
+            }
+
+            $remoteEvent = is_array($remoteResult['event'] ?? null) ? $remoteResult['event'] : [];
+
+            if ($this->applyRemoteChangesToEvent($event, $remoteEvent)) {
+                $stats['updated']++;
+                $hasChanges = true;
+            }
+        }
+
+        if ($hasChanges) {
+            $this->entityManager->flush();
+        }
+
+        return $stats;
     }
 
     public function getEventsForExport(): array
@@ -248,5 +327,56 @@ class EventService
         if ($event->isIsFree()) {
             $event->setTicketPrice(0.0);
         }
+    }
+
+    private function applyRemoteChangesToEvent(Event $event, array $remoteEvent): bool
+    {
+        $changed = false;
+
+        $remoteTitle = trim((string) ($remoteEvent['title'] ?? ''));
+        if ($remoteTitle !== '' && $remoteTitle !== (string) $event->getTitle()) {
+            $event->setTitle($remoteTitle);
+            $changed = true;
+        }
+
+        $remoteDescription = (string) ($remoteEvent['description'] ?? '');
+        if ($remoteDescription !== (string) $event->getDescription()) {
+            $event->setDescription($remoteDescription === '' ? '-' : $remoteDescription);
+            $changed = true;
+        }
+
+        $remoteLocation = (string) ($remoteEvent['location'] ?? '');
+        if ($remoteLocation !== '' && $remoteLocation !== (string) $event->getLocation()) {
+            $event->setLocation($remoteLocation);
+            $changed = true;
+        }
+
+        $remoteStartRaw = (string) ($remoteEvent['start'] ?? '');
+        if ($remoteStartRaw !== '') {
+            $remoteStart = new \DateTimeImmutable($remoteStartRaw);
+            $currentStart = $event->getStartDate();
+
+            if (!$currentStart || $currentStart->format(DATE_ATOM) !== $remoteStart->format(DATE_ATOM)) {
+                $event->setStartDate(\DateTime::createFromImmutable($remoteStart));
+                $changed = true;
+            }
+        }
+
+        $remoteEndRaw = (string) ($remoteEvent['end'] ?? '');
+        if ($remoteEndRaw !== '') {
+            $remoteEnd = new \DateTimeImmutable($remoteEndRaw);
+            $currentEnd = $event->getEndDate();
+
+            if (!$currentEnd || $currentEnd->format(DATE_ATOM) !== $remoteEnd->format(DATE_ATOM)) {
+                $event->setEndDate(\DateTime::createFromImmutable($remoteEnd));
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            $event->setUpdatedAt(new \DateTime());
+        }
+
+        return $changed;
     }
 }

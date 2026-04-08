@@ -17,19 +17,29 @@ class CategoryService
     ) {
     }
 
-    public function getBackOfficeListData(int $page, PaginatorInterface $paginator): array
+    public function getBackOfficeListData(int $page, PaginatorInterface $paginator, array $filters = []): array
     {
         $categories = $paginator->paginate(
-            $this->categoryRepository->createBackOfficeListQueryBuilder(),
+            $this->categoryRepository->createBackOfficeListQueryBuilder($filters),
             $page,
             6,
             ['wrap-queries' => true]
         );
 
+        $filters = array_merge([
+            'search' => '',
+            'status' => '',
+            'color' => '',
+            'order' => 'recent',
+        ], $filters);
+
         return [
             'categories' => $categories,
-            'totalCategories' => $this->categoryRepository->count([]),
+            'totalCategories' => $categories->getTotalItemCount(),
+            'filteredCategories' => $categories->getTotalItemCount(),
             'totalEvents' => $this->eventRepository->count([]),
+            'filters' => $filters,
+            'availableColors' => $this->categoryRepository->findDistinctColors(),
         ];
     }
 
