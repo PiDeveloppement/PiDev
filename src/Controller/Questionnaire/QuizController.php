@@ -262,4 +262,34 @@ class QuizController extends AbstractController
 
         return $this->redirectToRoute('app_quiz_final_results');
     }
+
+    #[Route('/questionnaire/feedback', name: 'app_questionnaire_feedback')]
+    public function feedbackList(EntityManagerInterface $em): Response
+    {
+        // Récupérer tous les feedbacks triés par date décroissante
+        $feedbackRepository = $em->getRepository(Feedback::class);
+        $allFeedbacks = $feedbackRepository->findBy([], ['createdAt' => 'DESC']);
+
+        // Regrouper par utilisateur et garder uniquement le dernier vrai commentaire
+        $lastUserFeedbacks = [];
+        $processedUsers = [];
+        
+        foreach ($allFeedbacks as $feedback) {
+            $userId = $feedback->getUserId();
+            
+            // Vérifier si c'est un vrai commentaire (pas réponse automatique)
+            if ($feedback->getComments() && 
+                $feedback->getComments() !== "Réponse automatique (Quiz)" && 
+                trim($feedback->getComments()) !== "" &&
+                !in_array($userId, $processedUsers)) {
+                
+                $lastUserFeedbacks[] = $feedback;
+                $processedUsers[] = $userId;
+            }
+        }
+
+        return $this->render('questionnaire/feedback/index.html.twig', [
+            'userFeedbacks' => $lastUserFeedbacks
+        ]);
+    }
 }
