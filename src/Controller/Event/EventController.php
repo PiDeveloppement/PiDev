@@ -29,23 +29,54 @@ class EventController extends AbstractController
     #[Route('/', name: 'app_event_index', methods: ['GET'])]
     public function index(Request $request, PaginatorInterface $paginator): Response
     {
+        $syncStats = $this->eventService->syncFromGoogleCalendarToEventFlow();
+        if (($syncStats['updated'] ?? 0) > 0 || ($syncStats['deleted'] ?? 0) > 0) {
+            $this->addFlash(
+                'info',
+                sprintf(
+                    'Synchronisation Google -> EventFlow: %d mise(s) a jour, %d suppression(s).',
+                    (int) ($syncStats['updated'] ?? 0),
+                    (int) ($syncStats['deleted'] ?? 0)
+                )
+            );
+        }
+        if (($syncStats['failed'] ?? 0) > 0) {
+            $this->addFlash('warning', 'Certaines synchronisations Google entrantes ont echoue.');
+        }
+
+        $filters = [
+            'search' => trim((string) $request->query->get('search', '')),
+            'status' => (string) $request->query->get('status', ''),
+            'category' => (string) $request->query->get('category', ''),
+            'price' => (string) $request->query->get('price', ''),
+        ];
+
         $listData = $this->eventService->getBackOfficeListData(
             $request->query->getInt('page', 1),
-            $paginator
+            $paginator,
+            $filters
         );
 
-        return $this->render('event/index.html.twig', [
+        $viewData = [
             'events' => $listData['events'],
             'categories' => $listData['categories'],
             'totalEvents' => $listData['totalEvents'],
+            'filteredEvents' => $listData['filteredEvents'],
             'totalTickets' => $listData['totalTickets'],
             'totalAvenir' => $listData['totalAvenir'],
             'totalTermine' => $listData['totalTermine'],
+            'filters' => $listData['filters'],
             'pageInfo' => [
                 'title' => 'Gestion des événements',
                 'subtitle' => 'Consultez et gérez tous vos événements',
             ],
-        ]);
+        ];
+
+        if ($request->isXmlHttpRequest()) {
+            return $this->render('event/index.html.twig', $viewData);
+        }
+
+        return $this->render('event/index.html.twig', $viewData);
     }
 
     #[Route('/new', name: 'app_event_new', methods: ['GET', 'POST'])]
@@ -83,7 +114,19 @@ class EventController extends AbstractController
                     }
                 }
 
-                $this->eventService->createEvent($event, $category);
+                $googleSyncOk = $this->eventService->createEvent($event, $category);
+
+                if ($googleSyncOk) {
+                    $this->addFlash('success', 'Événement créé et synchronisé avec Google Calendar.');
+                } else {
+                    $googleError = $this->eventService->getGoogleCalendarSyncError();
+                    $message = 'Événement créé, mais la synchronisation Google Calendar a échoué.';
+                    if ($googleError) {
+                        $message .= ' Détail: ' . $googleError;
+                    }
+
+                    $this->addFlash('warning', $message);
+                }
 
                 return $this->redirectToRoute('app_event_index');
             }
@@ -102,6 +145,21 @@ class EventController extends AbstractController
     #[Route('/calendar', name: 'app_event_calendar', methods: ['GET'])]
     public function calendar(): Response
     {
+        $syncStats = $this->eventService->syncFromGoogleCalendarToEventFlow();
+        if (($syncStats['updated'] ?? 0) > 0 || ($syncStats['deleted'] ?? 0) > 0) {
+            $this->addFlash(
+                'info',
+                sprintf(
+                    'Synchronisation Google -> EventFlow: %d mise(s) a jour, %d suppression(s).',
+                    (int) ($syncStats['updated'] ?? 0),
+                    (int) ($syncStats['deleted'] ?? 0)
+                )
+            );
+        }
+        if (($syncStats['failed'] ?? 0) > 0) {
+            $this->addFlash('warning', 'Certaines synchronisations Google entrantes ont echoue.');
+        }
+
         return $this->render('event/calendar.html.twig', [
             'calendarEvents' => $this->eventService->getCalendarEvents($this->googleApiKey, $this->googleCalendarId),
             'pageInfo' => [
@@ -142,7 +200,18 @@ class EventController extends AbstractController
             }
 
             if ($form->isValid()) {
-                $this->eventService->updateEvent($event, $category);
+                $googleSyncOk = $this->eventService->updateEvent($event, $category);
+
+                if ($googleSyncOk) {
+                    $this->addFlash('success', 'Événement mis à jour et synchronisé avec Google Calendar.');
+                } else {
+                    $googleError = $this->eventService->getGoogleCalendarSyncError();
+                    $message = 'Événement mis à jour, mais la synchronisation Google Calendar a échoué.';
+                    if ($googleError) {
+                        $message .= ' Détail: ' . $googleError;
+                    }
+                    $this->addFlash('warning', $message);
+                }
 
                 return $this->redirectToRoute('app_event_show', ['id' => $event->getId()]);
             }
@@ -182,7 +251,18 @@ class EventController extends AbstractController
     #[Route('/{id}/delete', name: 'app_event_delete', methods: ['POST'], requirements: ['id' => '\\d+'])]
     public function delete(Event $event): Response
     {
-        $this->eventService->deleteEvent($event);
+        $googleSyncOk = $this->eventService->deleteEvent($event);
+
+        if ($googleSyncOk) {
+            $this->addFlash('success', 'Événement supprimé et suppression synchronisée sur Google Calendar.');
+        } else {
+            $googleError = $this->eventService->getGoogleCalendarSyncError();
+            $message = 'Événement supprimé localement, mais la suppression Google Calendar a échoué.';
+            if ($googleError) {
+                $message .= ' Détail: ' . $googleError;
+            }
+            $this->addFlash('warning', $message);
+        }
 
         return $this->redirectToRoute('app_event_index');
     }

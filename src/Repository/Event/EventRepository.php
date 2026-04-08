@@ -32,12 +32,41 @@ class EventRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function createBackOfficeListQueryBuilder(): QueryBuilder
+    public function createBackOfficeListQueryBuilder(array $filters = []): QueryBuilder
     {
-        return $this->createQueryBuilder('e')
+        $qb = $this->createQueryBuilder('e')
             ->leftJoin('e.category', 'c')
-            ->addSelect('c')
-            ->orderBy('e.startDate', 'DESC');
+            ->addSelect('c');
+
+        $search = trim((string) ($filters['search'] ?? ''));
+        if ($search !== '') {
+            $qb->andWhere('LOWER(e.title) LIKE :search')
+                ->setParameter('search', mb_strtolower($search) . '%');
+        }
+
+        $status = (string) ($filters['status'] ?? '');
+        $now = new \DateTimeImmutable();
+        if ($status === 'avenir') {
+            $qb->andWhere('e.startDate > :now')->setParameter('now', $now);
+        } elseif ($status === 'encours') {
+            $qb->andWhere('e.startDate <= :now AND e.endDate >= :now')->setParameter('now', $now);
+        } elseif ($status === 'termine') {
+            $qb->andWhere('e.endDate < :now')->setParameter('now', $now);
+        }
+
+        $categoryId = (int) ($filters['category'] ?? 0);
+        if ($categoryId > 0) {
+            $qb->andWhere('e.categoryId = :categoryId')->setParameter('categoryId', $categoryId);
+        }
+
+        $price = (string) ($filters['price'] ?? '');
+        if ($price === 'free') {
+            $qb->andWhere('e.isFree = true');
+        } elseif ($price === 'paid') {
+            $qb->andWhere('e.isFree = false');
+        }
+
+        return $qb->orderBy('e.startDate', 'DESC');
     }
 
     public function countByCategoryId(int $categoryId): int

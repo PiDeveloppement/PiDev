@@ -22,20 +22,37 @@ class CategoryController extends AbstractController
     #[Route('/', name: 'app_category_index', methods: ['GET'])]
     public function index(PaginatorInterface $paginator, Request $request): Response
     {
+        $filters = [
+            'search' => trim((string) $request->query->get('search', '')),
+            'status' => (string) $request->query->get('status', ''),
+            'color' => (string) $request->query->get('color', ''),
+            'order' => (string) $request->query->get('order', 'recent'),
+        ];
+
         $listData = $this->categoryService->getBackOfficeListData(
             $request->query->getInt('page', 1),
-            $paginator
+            $paginator,
+            $filters
         );
 
-        return $this->render('category/index.html.twig', [
+        $viewData = [
             'categories' => $listData['categories'],
             'totalCategories' => $listData['totalCategories'],
+            'filteredCategories' => $listData['filteredCategories'],
             'totalEvents' => $listData['totalEvents'],
+            'filters' => $listData['filters'],
+            'availableColors' => $listData['availableColors'],
             'pageInfo' => [
                 'title' => 'Gestion des catégories',
                 'subtitle' => 'Gérez les catégories d\'événements',
             ],
-        ]);
+        ];
+
+        if ($request->isXmlHttpRequest()) {
+            return $this->render('category/index.html.twig', $viewData);
+        }
+
+        return $this->render('category/index.html.twig', $viewData);
     }
 
     #[Route('/new', name: 'app_category_new', methods: ['GET', 'POST'])]

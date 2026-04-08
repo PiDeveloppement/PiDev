@@ -9,7 +9,10 @@
 </div>
 <div style="background:#eef2ff; border-radius:12px; padding:12px 20px; text-align:center; min-width:130px;">
     <i class="fas fa-palette" style="color:#3730a3; font-size:20px;"></i>
-    <div style="font-size:1.2rem; font-weight:700; color:#3730a3;">{{ category.color ?? '#cbd5e1' }}</div>
+    <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:4px;">
+        <span style="width:16px; height:16px; border-radius:50%; border:1px solid #cbd5e1; background:{{ category.color ?? '#cbd5e1' }};"></span>
+        <span style="font-size:1.2rem; font-weight:700; color:{{ category.color ?? '#3730a3' }};">{{ category.color ?? '#cbd5e1' }}</span>
+    </div>
     <div style="color:#64748b; font-size:12px;">Couleur</div>
 </div>
 {% endblock %}
