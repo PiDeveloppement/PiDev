@@ -23,7 +23,7 @@ class ReservationType extends AbstractType
                     'Équipement' => 'EQUIPEMENT'
                 ],
                 'placeholder' => 'Sélectionnez un type',
-                'required' => false,
+                'required' => true,
                 'attr' => [
                     'class' => 'form-select'
                 ]
@@ -31,7 +31,7 @@ class ReservationType extends AbstractType
             ->add('startTime', DateType::class, [
                 'widget' => 'single_text',
                 'label' => 'Début',
-                'required' => false,
+                'required' => true,
                 'attr' => [
                     'class' => 'form-control'
                 ]
@@ -39,14 +39,14 @@ class ReservationType extends AbstractType
             ->add('endTime', DateType::class, [
                 'widget' => 'single_text',
                 'label' => 'Fin',
-                'required' => false,
+                'required' => true,
                 'attr' => [
                     'class' => 'form-control'
                 ]
             ])
             ->add('quantity', null, [
                 'label' => 'Quantité',
-                'required' => false,
+                'required' => true,
                 'attr' => [
                     'class' => 'form-control',
                     'min' => 1,
