@@ -3,7 +3,7 @@
 {# Infos pour la TopBar #}
 {% set pageInfo = {
     'title': 'Gestion des réservations',
-    'subtitle': 'Créez une nouvelle réservation de salle ou d\'équipement'
+    'subtitle': 'Modifiez votre réservation de salle ou d\'équipement'
 } %}
 
 {% block admin_content %}
@@ -15,10 +15,10 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
             <div>
                 <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px;">
-                    <i class="fas fa-calendar-plus" style="color: #667eea; margin-right: 10px;"></i>
-                    Formulaire de Réservation
+                    <i class="fas fa-edit" style="color: #667eea; margin-right: 10px;"></i>
+                    Modifier la Réservation
                 </h3>
-                <p style="color: #64748b; font-size: 14px;">Réservez une salle ou un équipement pour votre événement</p>
+                <p style="color: #64748b; font-size: 14px;">Modifiez les détails de votre réservation</p>
             </div>
             
             <a href="{{ path('app_reservation_resource_index') }}" 
@@ -129,7 +129,7 @@
                         </a>
                         <button type="submit" 
                                 style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 12px 30px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
-                            <i class="fas fa-check" style="margin-right: 8px;"></i>Réserver
+                            <i class="fas fa-save" style="margin-right: 8px;"></i>Enregistrer
                         </button>
                     </div>
                 </div>
@@ -146,23 +146,23 @@
                     <div id="previewContent" style="color: #64748b; font-size: 14px; line-height: 1.6;">
                         <div style="margin-bottom: 15px;">
                             <strong>Type:</strong> 
-                            <span id="previewType" style="color: #374151;">Non sélectionné</span>
+                            <span id="previewType" style="color: #374151;">{{ form.resourceType.vars.value }}</span>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <strong>Ressource:</strong> 
-                            <span id="previewResource" style="color: #374151;">Non sélectionnée</span>
+                            <span id="previewResource" style="color: #374151;">{{ form.salle.vars.data.name ?? form.equipement.vars.data.name ?? 'Non sélectionnée' }}</span>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <strong>Quantité:</strong> 
-                            <span id="previewQuantity" style="color: #374151;">1</span>
+                            <span id="previewQuantity" style="color: #374151;">{{ form.quantity.vars.value }}</span>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <strong>Début:</strong> 
-                            <span id="previewStart" style="color: #374151;">Non défini</span>
+                            <span id="previewStart" style="color: #374151;">{{ form.startTime.vars.value|date('d/m/Y') }}</span>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <strong>Fin:</strong> 
-                            <span id="previewEnd" style="color: #374151;">Non défini</span>
+                            <span id="previewEnd" style="color: #374151;">{{ form.endTime.vars.value|date('d/m/Y') }}</span>
                         </div>
                     </div>
 
@@ -170,7 +170,7 @@
                         <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 12px;">
                             <p style="margin: 0; color: #92400e; font-size: 12px;">
                                 <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
-                                Les réservations sont soumises à validation et dépendent de la disponibilité des ressources.
+                                Les modifications seront soumises à validation.
                             </p>
                         </div>
                     </div>
@@ -252,7 +252,7 @@ async function loadResources() {
 
     if (!resourceType) {
         resourceSelect.innerHTML = '<option value="">Sélectionnez d\'abord un type</option>';
-        return;
+        return Promise.resolve();
     }
 
     resourceSelect.innerHTML = '<option value="">Chargement des disponibilités...</option>';
@@ -289,16 +289,12 @@ async function loadResources() {
             resourceSelect.appendChild(option);
         });
 
-        const stillAvailable = Array.from(resourceSelect.options).some(opt => opt.value === resourceSelect.value && !opt.disabled);
-        if (!stillAvailable) {
-            resourceSelect.value = "";
-            document.getElementById('{{ form.salle.vars.id }}').value = '';
-            document.getElementById('{{ form.equipement.vars.id }}').value = '';
-        }
+        return Promise.resolve();
 
     } catch (error) {
         console.error('Erreur lors du chargement des ressources:', error);
         resourceSelect.innerHTML = '<option value="">Erreur de connexion</option>';
+        return Promise.reject(error);
     }
 }
 
@@ -371,7 +367,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    loadResources();
+    // Initialiser le sélecteur de ressources avec la valeur actuelle
+    function initializeResourceSelect() {
+        const resourceType = document.getElementById('{{ form.resourceType.vars.id }}').value;
+        const salleField = document.getElementById('{{ form.salle.vars.id }}');
+        const equipementField = document.getElementById('{{ form.equipement.vars.id }}');
+        
+        loadResources().then(() => {
+            // Sélectionner la ressource actuelle après chargement
+            if (resourceType === 'SALLE' && salleField && salleField.value) {
+                document.getElementById('resourceSelect').value = salleField.value;
+            } else if (resourceType === 'EQUIPEMENT' && equipementField && equipementField.value) {
+                document.getElementById('resourceSelect').value = equipementField.value;
+            }
+        });
+    }
+
+    initializeResourceSelect();
 });
 
 // Fonction de validation du formulaire
@@ -384,15 +396,16 @@ function validateForm() {
     const quantity = document.getElementById('{{ form.quantity.vars.id }}').value;
     const resourceSelect = document.getElementById('resourceSelect').value;
     
-    if (!resourceType) {
+    // Validation plus stricte pour le mode édition
+    if (!resourceType || resourceType.trim() === '') {
         errors.push('Veuillez sélectionner un type de ressource');
     }
     
-    if (!startTime) {
+    if (!startTime || startTime.trim() === '') {
         errors.push('Veuillez sélectionner une date de début');
     }
     
-    if (!endTime) {
+    if (!endTime || endTime.trim() === '') {
         errors.push('Veuillez sélectionner une date de fin');
     }
     
@@ -400,11 +413,17 @@ function validateForm() {
         errors.push('La date de fin doit être postérieure à la date de début');
     }
     
-    if (!quantity || quantity < 1) {
+    if (!quantity || quantity < 1 || quantity.trim() === '') {
         errors.push('La quantité doit être supérieure à 0');
     }
     
-    if (!resourceSelect) {
+    // Pour la ressource, vérifier si une ressource est sélectionnée OU si les champs cachés ont des valeurs
+    const salleField = document.getElementById('{{ form.salle.vars.id }}');
+    const equipementField = document.getElementById('{{ form.equipement.vars.id }}');
+    const hasSalle = salleField && salleField.value && salleField.value !== '';
+    const hasEquipement = equipementField && equipementField.value && equipementField.value !== '';
+    
+    if (!resourceSelect && !hasSalle && !hasEquipement) {
         errors.push('Veuillez sélectionner une ressource');
     }
     

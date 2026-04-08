@@ -16,7 +16,6 @@ class Salle
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le nom de la salle est obligatoire")]
-    #[Assert\Length(min: 2, max: 255, minMessage: "Le nom doit contenir au moins {{ limit }} caractères", maxMessage: "Le nom ne peut pas dépasser {{ limit }} caractères")]
     #[Assert\Type(type: "string", message: "Le nom doit être une chaîne de caractères")]
     private ?string $name = null;
 
@@ -29,7 +28,6 @@ class Salle
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank(message: "Le bâtiment est obligatoire")]
-    #[Assert\Length(min: 2, max: 50, minMessage: "Le nom du bâtiment doit contenir au moins {{ limit }} caractères", maxMessage: "Le nom du bâtiment ne peut pas dépasser {{ limit }} caractères")]
     #[Assert\Type(type: "string", message: "Le bâtiment doit être une chaîne de caractères")]
     private ?string $building = null;
 

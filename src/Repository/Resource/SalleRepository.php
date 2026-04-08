@@ -31,13 +31,23 @@ class SalleRepository extends ServiceEntityRepository
     //        ;
     //    }
 
-    //    public function findOneBySomeField($value): ?Salle
-    //    {
-    //        return $this->createQueryBuilder('s')
-    //            ->andWhere('s.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    public function findAllUniqueBuildings(): array
+    {
+        return $this->createQueryBuilder('s')
+            ->select('DISTINCT s.building')
+            ->where('s.building IS NOT NULL')
+            ->orderBy('s.building', 'ASC')
+            ->getQuery()
+            ->getSingleColumnResult();
+    }
+
+    public function findOneBySomeField($value): ?Salle
+    {
+        return $this->createQueryBuilder('s')
+            ->andWhere('s.exampleField = :val')
+            ->setParameter('val', $value)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+    }
 }
