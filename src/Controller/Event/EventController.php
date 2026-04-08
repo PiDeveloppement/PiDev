@@ -29,21 +29,6 @@ class EventController extends AbstractController
     #[Route('/', name: 'app_event_index', methods: ['GET'])]
     public function index(Request $request, PaginatorInterface $paginator): Response
     {
-        $syncStats = $this->eventService->syncFromGoogleCalendarToEventFlow();
-        if (($syncStats['updated'] ?? 0) > 0 || ($syncStats['deleted'] ?? 0) > 0) {
-            $this->addFlash(
-                'info',
-                sprintf(
-                    'Synchronisation Google -> EventFlow: %d mise(s) a jour, %d suppression(s).',
-                    (int) ($syncStats['updated'] ?? 0),
-                    (int) ($syncStats['deleted'] ?? 0)
-                )
-            );
-        }
-        if (($syncStats['failed'] ?? 0) > 0) {
-            $this->addFlash('warning', 'Certaines synchronisations Google entrantes ont echoue.');
-        }
-
         $filters = [
             'search' => trim((string) $request->query->get('search', '')),
             'status' => (string) $request->query->get('status', ''),
@@ -145,21 +130,6 @@ class EventController extends AbstractController
     #[Route('/calendar', name: 'app_event_calendar', methods: ['GET'])]
     public function calendar(): Response
     {
-        $syncStats = $this->eventService->syncFromGoogleCalendarToEventFlow();
-        if (($syncStats['updated'] ?? 0) > 0 || ($syncStats['deleted'] ?? 0) > 0) {
-            $this->addFlash(
-                'info',
-                sprintf(
-                    'Synchronisation Google -> EventFlow: %d mise(s) a jour, %d suppression(s).',
-                    (int) ($syncStats['updated'] ?? 0),
-                    (int) ($syncStats['deleted'] ?? 0)
-                )
-            );
-        }
-        if (($syncStats['failed'] ?? 0) > 0) {
-            $this->addFlash('warning', 'Certaines synchronisations Google entrantes ont echoue.');
-        }
-
         return $this->render('event/calendar.html.twig', [
             'calendarEvents' => $this->eventService->getCalendarEvents($this->googleApiKey, $this->googleCalendarId),
             'pageInfo' => [
@@ -167,6 +137,28 @@ class EventController extends AbstractController
                 'subtitle' => 'Vue interactive des événements',
             ],
         ]);
+    }
+
+    #[Route('/sync-google-inbound', name: 'app_event_sync_google_inbound', methods: ['GET'])]
+    public function syncGoogleInbound(): Response
+    {
+        $syncStats = $this->eventService->syncFromGoogleCalendarToEventFlow();
+
+        $this->addFlash(
+            'info',
+            sprintf(
+                'Synchronisation Google -> EventFlow: %d mise(s) a jour, %d suppression(s), %d ignoree(s).',
+                (int) ($syncStats['updated'] ?? 0),
+                (int) ($syncStats['deleted'] ?? 0),
+                (int) ($syncStats['skipped'] ?? 0)
+            )
+        );
+
+        if (($syncStats['failed'] ?? 0) > 0) {
+            $this->addFlash('warning', 'Certaines synchronisations Google entrantes ont echoue.');
+        }
+
+        return $this->redirectToRoute('app_event_index');
     }
 
     #[Route('/{id}', name: 'app_event_show', methods: ['GET'], requirements: ['id' => '\\d+'])]
