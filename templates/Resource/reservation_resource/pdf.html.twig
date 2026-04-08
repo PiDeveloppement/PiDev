@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réservations - EventFlow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .date-info {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            font-size: 10px;
+        }
+
+        .filters {
+            margin-bottom: 20px;
+            font-size: 10px;
+            color: #666;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #ddd;
+            font-size: 11px;
+        }
+
+        table td {
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            font-size: 10px;
+        }
+
+        table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        table tbody tr:hover {
+            background-color: #f0f4ff;
+        }
+
+        .status-disponible {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-salle {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-equipement {
+            background: #fce7f3;
+            color: #831843;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 9px;
+            color: #999;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .resource-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <div class="header">
+            <h1>📋 Rapport de Réservations</h1>
+            <p>EventFlow - Gestion des Ressources</p>
+        </div>
+
+        <!-- Informations de date -->
+        <div class="date-info">
+            <strong>Date de génération :</strong> {{ "now"|date('d/m/Y H:i:s') }}<br>
+            <strong>Total de réservations :</strong> {{ reservations|length }}
+        </div>
+
+        <!-- Filtres appliqués -->
+        {% if filters.name or filters.resourceType %}
+        <div class="filters">
+            <strong>Filtres appliqués :</strong>
+            {% if filters.name %}<br>• Nom : {{ filters.name }}{% endif %}
+            {% if filters.resourceType %}<br>• Type : {{ filters.resourceType }}{% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Tableau des réservations -->
+        {% if reservations %}
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 12%;">Type</th>
+                        <th style="width: 20%;">Ressource</th>
+                        <th style="width: 10%;">Qté</th>
+                        <th style="width: 13%;">Début</th>
+                        <th style="width: 13%;">Fin</th>
+                        <th style="width: 12%;">Durée</th>
+                        <th style="width: 20%;">Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reservation in reservations %}
+                    <tr>
+                        <td>
+                            {% if reservation.resourceType == 'SALLE' %}
+                                <span class="status-salle">Salle</span>
+                            {% else %}
+                                <span class="status-equipement">Équipement</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="resource-name">
+                                {% if reservation.salle %}
+                                    {{ reservation.salle.name }}
+                                {% elseif reservation.equipement %}
+                                    {{ reservation.equipement.name }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>{{ reservation.quantity ?? 1 }}</td>
+                        <td>{{ reservation.startTime|date('d/m/Y') }}</td>
+                        <td>{{ reservation.endTime|date('d/m/Y') }}</td>
+                        <td>
+                            {% set start = reservation.startTime %}
+                            {% set end = reservation.endTime %}
+                            {% set diff = end.diff(start).days %}
+                            {{ diff + 1 }} jour(s)
+                        </td>
+                        <td>
+                            {% if reservation.resourceType == 'SALLE' %}
+                                Salle réservée
+                            {% else %}
+                                Équipement × {{ reservation.quantity ?? 1 }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Résumé -->
+            <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                <h3 style="color: #667eea; font-size: 12px; margin-bottom: 10px;">📊 Résumé</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; font-size: 10px;">
+                    <div>
+                        <strong>Total réservations :</strong><br>
+                        {{ reservations|length }}
+                    </div>
+                    <div>
+                        <strong>Salles réservées :</strong><br>
+                        {{ reservations|filter(r => r.resourceType == 'SALLE')|length }}
+                    </div>
+                    <div>
+                        <strong>Équipements réservés :</strong><br>
+                        {{ reservations|filter(r => r.resourceType == 'EQUIPEMENT')|length }}
+                    </div>
+                </div>
+            </div>
+
+        {% else %}
+            <div class="empty-state">
+                <p style="font-size: 14px;">Aucune réservation trouvée</p>
+                <p style="font-size: 10px; margin-top: 5px;">Aucune réservation ne correspond aux critères sélectionnés.</p>
+            </div>
+        {% endif %}
+
+        <!-- Pied de page -->
+        <div class="footer">
+            <div class="footer-content">
+                <span>EventFlow © 2026</span>
+                <span>Généré automatiquement</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

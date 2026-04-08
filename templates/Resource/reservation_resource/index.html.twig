@@ -17,11 +17,18 @@
                 </h3>
                 <p style="color: #64748b; font-size: 14px;">Gérez vos réservations de salles et équipements</p>
             </div>
-            <a href="{{ path('app_reservation_resource_new') }}" 
-               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: transform 0.2s;">
-                <i class="fas fa-plus" style="margin-right: 8px;"></i>
-                Nouvelle Réservation
-            </a>
+            <div style="display: flex; gap: 10px;">
+                <a href="{{ path('app_reservation_resource_pdf', app.request.query.all) }}" 
+                   style="background: #10b981; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: transform 0.2s;">
+                    <i class="fas fa-file-pdf" style="margin-right: 8px;"></i>
+                    Télécharger PDF
+                </a>
+                <a href="{{ path('app_reservation_resource_new') }}" 
+                   style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: transform 0.2s;">
+                    <i class="fas fa-plus" style="margin-right: 8px;"></i>
+                    Nouvelle Réservation
+                </a>
+            </div>
         </div>
 
         <!-- Search and Sort Controls -->
