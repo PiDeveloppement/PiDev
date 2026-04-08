@@ -4,34 +4,29 @@
 {% block admin_content %}
 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 2px; margin-bottom: 20px;">
     <div style="background: white; border-radius: 14px; padding: 30px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-            <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
+            <div style="flex: 1;">
                 <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px;">
                     <i class="fas fa-microchip" style="color: #667eea; margin-right: 10px;"></i>
                     Inventaire des Équipements
                 </h3>
                 <p style="color: #64748b; font-size: 14px;">Gérez votre inventaire EventFlow</p>
             </div>
-            <a href="{{ path('app_resource_equipement_new') }}" 
-               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: transform 0.2s;">
-                <i class="fas fa-plus" style="margin-right: 8px;"></i>
-                Ajouter un Équipement
-            </a>
-        </div>
-
-        <!-- Stats -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
-            <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 12px; padding: 20px; color: white;">
-                <p style="font-size: 12px; opacity: 0.9; margin: 0;"><i class="fas fa-boxes" style="margin-right: 8px;"></i>Total d'Équipements</p>
-                <h4 style="font-size: 28px; font-weight: 700; margin: 10px 0 0 0;">{{ equipements|length }}</h4>
+            
+            <!-- Stats Boxes on the right -->
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 10px; padding: 15px; color: white; min-width: 140px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
+                    <p style="font-size: 11px; opacity: 0.9; margin: 0;"><i class="fas fa-boxes" style="margin-right: 6px;"></i>Total</p>
+                    <h4 style="font-size: 20px; font-weight: 700; margin: 5px 0 0 0;">{{ equipements|length }}</h4>
+                </div>
+                {% set nonDisponible = equipements|filter(e => e.status|upper != 'DISPONIBLE')|length %}
+                {% if nonDisponible > 0 %}
+                <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 10px; padding: 15px; color: white; min-width: 120px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);">
+                    <p style="font-size: 11px; opacity: 0.9; margin: 0;"><i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>Alertes</p>
+                    <h4 style="font-size: 20px; font-weight: 700; margin: 5px 0 0 0;">{{ nonDisponible }}</h4>
+                </div>
+                {% endif %}
             </div>
-            {% set nonDisponible = equipements|filter(e => e.status|upper != 'DISPONIBLE')|length %}
-            {% if nonDisponible > 0 %}
-            <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 12px; padding: 20px; color: white;">
-                <p style="font-size: 12px; opacity: 0.9; margin: 0;"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>Alertes</p>
-                <h4 style="font-size: 28px; font-weight: 700; margin: 10px 0 0 0;">{{ nonDisponible }}</h4>
-            </div>
-            {% endif %}
         </div>
 
         <!-- Search and Filter -->
@@ -40,7 +35,7 @@
                 <i class="fas fa-search" style="color: #667eea; margin-right: 8px;"></i>
                 Recherche et Filtres
             </h4>
-            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto auto; gap: 15px;">
                 <div>
                     <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">Nom de l'équipement</label>
                     <input type="text" id="searchInput" placeholder="Rechercher..." 
@@ -50,10 +45,9 @@
                     <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">Catégorie</label>
                     <select id="categoryFilter" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
                         <option value="">Toutes catégories</option>
-                        <option value="Informatique">Informatique</option>
-                        <option value="Sonorisation">Sonorisation</option>
-                        <option value="Vidéo">Vidéo</option>
-                        <option value="Lumière">Lumière</option>
+                        {% for category in categoriesList %}
+                            <option value="{{ category }}" {% if selectedCategory == category %}selected{% endif %}>{{ category }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div>
@@ -66,9 +60,15 @@
                     </select>
                 </div>
                 <div style="align-self: flex-end;">
-                    <button onclick="location.reload()" style="background: #ef4444; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+                    <button onclick="location.reload()" style="background: #64748b; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
                         <i class="fas fa-redo" style="margin-right: 5px;"></i>Réinitialiser
                     </button>
+                </div>
+                <div style="align-self: flex-end;">
+                    <a href="{{ path('app_resource_equipement_new') }}" 
+                       style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: transform 0.2s; display: inline-block;">
+                        <i class="fas fa-plus" style="margin-right: 8px;"></i>Ajouter
+                    </a>
                 </div>
             </div>
         </div>

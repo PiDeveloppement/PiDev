@@ -23,6 +23,7 @@ final class SalleController extends AbstractController
             'salles' => $salleRepository->findAll(),
             'total' => $salleRepository->count([]),
             'occupees' => $salleRepository->count(['status' => 'OCCUPEE']),
+            'buildingsList' => $salleRepository->findAllUniqueBuildings(),
         ]);
     }
 

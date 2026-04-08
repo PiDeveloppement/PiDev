@@ -4,6 +4,8 @@
 {% block title %}Ajouter un Équipement - EventFlow{% endblock %}
 
 {% block admin_content %}
+<!-- Alert Container -->
+<div id="alertContainer" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; max-width: 600px; width: 90%;"></div>
 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 2px; margin-bottom: 20px;">
     <div style="background: white; border-radius: 14px; padding: 30px;">
         
@@ -38,7 +40,7 @@
 
     {# --- FORMULAIRE --- #}
     <div class="form-wrapper">
-        {{ form_start(form, {'attr': {'id': 'equipementForm'}}) }}
+        {{ form_start(form, {'attr': {'id': 'equipementForm', 'novalidate': 'novalidate'}}) }}
             
             <div style="display: flex; flex-direction: column; gap: 20px;">
                 
@@ -497,9 +499,18 @@
 </style>
 
 <script>
-    // Ajouter les classes de validation Bootstrap-like
+    // Validation du formulaire équipement
     document.addEventListener('DOMContentLoaded', function() {
-        // Ajouter la classe aux champs en erreur
+        const form = document.getElementById('equipementForm');
+        form.addEventListener('submit', function(event) {
+            const errors = validateEquipementForm();
+            if (errors.length > 0) {
+                event.preventDefault();
+                showEquipementErrors(errors);
+            }
+        });
+        
+        // Ajouter les classes de validation Bootstrap-like
         const errorMessages = document.querySelectorAll('.field-error');
         errorMessages.forEach(error => {
             if (error.innerHTML.trim() !== '') {
@@ -510,5 +521,96 @@
             }
         });
     });
+
+    function validateEquipementForm() {
+        const errors = [];
+        
+        // Utiliser les IDs générés par Symfony
+        const nameField = document.getElementById('{{ form.name.vars.id }}');
+        const equipementTypeField = document.getElementById('{{ form.equipementType.vars.id }}');
+        const quantityField = document.getElementById('{{ form.quantity.vars.id }}');
+        const statusField = document.getElementById('{{ form.status.vars.id }}');
+        
+        const name = nameField ? nameField.value : '';
+        const equipementType = equipementTypeField ? equipementTypeField.value : '';
+        const quantity = quantityField ? quantityField.value : '';
+        const status = statusField ? statusField.value : '';
+        
+        if (!name || name.trim().length < 2) {
+            errors.push('Le nom de l\'équipement doit contenir au moins 2 caractères');
+        }
+        
+        if (!equipementType || equipementType.trim().length < 2) {
+            errors.push('Le type d\'équipement doit contenir au moins 2 caractères');
+        }
+        
+        if (!quantity || quantity < 1 || quantity > 1000) {
+            errors.push('La quantité doit être entre 1 et 1000');
+        }
+        
+        if (!status) {
+            errors.push('Veuillez sélectionner un statut');
+        }
+        
+        return errors;
+    }
+
+    function showEquipementErrors(errors) {
+        const alertContainer = document.getElementById('alertContainer');
+        
+        const alert = document.createElement('div');
+        alert.style.cssText = `
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+            margin-bottom: 10px;
+            transform: translateY(-100px);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        `;
+        
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-exclamation-triangle';
+        icon.style.marginRight = '10px';
+        
+        const title = document.createElement('strong');
+        title.textContent = 'Erreurs de validation : ';
+        
+        const message = document.createElement('div');
+        message.style.marginTop = '8px';
+        message.innerHTML = errors.map(error => `• ${error}`).join('<br>');
+        
+        alert.appendChild(icon);
+        alert.appendChild(title);
+        alert.appendChild(message);
+        
+        alertContainer.appendChild(alert);
+        
+        setTimeout(() => {
+            alert.style.transform = 'translateY(0)';
+        }, 100);
+        
+        setTimeout(() => {
+            alert.style.transform = 'translateY(-100px)';
+            alert.style.opacity = '0';
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 400);
+        }, 5000);
+        
+        alert.addEventListener('click', () => {
+            alert.style.transform = 'translateY(-100px)';
+            alert.style.opacity = '0';
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 400);
+        });
+    }
 </script>
 {% endblock %}
