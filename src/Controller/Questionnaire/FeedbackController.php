@@ -16,12 +16,29 @@ final class FeedbackController extends AbstractController
     #[Route(name: 'app_questionnaire_feedback_index', methods: ['GET'])]
     public function index(EntityManagerInterface $entityManager): Response
     {
-        $feedbacks = $entityManager // On met au pluriel ici
+        // 1. Récupérer tous les feedbacks du plus récent au plus ancien
+        $allFeedbacks = $entityManager
             ->getRepository(Feedback::class)
-            ->findAll();
+            ->findBy([], ['createdAt' => 'DESC']);
+
+        $usersLastFeedback = [];
+
+        foreach ($allFeedbacks as $feedback) {
+            $userId = $feedback->getUserId();
+
+            // Si on n'a pas encore ce user ET que c'est un vrai avis (pas quiz)
+            if (!isset($usersLastFeedback[$userId])) {
+                if ($feedback->getComments() !== "Réponse automatique (Quiz)" && 
+                    $feedback->getEtoiles() > 0) {
+                    
+                    $usersLastFeedback[$userId] = $feedback;
+                }
+            }
+        }
 
         return $this->render('questionnaire/feedback/index.html.twig', [
-            'feedbacks' => $feedbacks, // On envoie 'feedbacks' au pluriel pour correspondre au Twig
+            // On envoie le tableau filtré
+            'feedbacks' => array_values($usersLastFeedback), 
         ]);
     }
 
@@ -33,6 +50,38 @@ final class FeedbackController extends AbstractController
             'feedback' => $feedback,
         ]);
     }
+
+   #[Route('/show-all', name: 'app_questionnaire_feedback_show_all', methods: ['GET'])]
+public function showAllFeedbacks(EntityManagerInterface $entityManager): Response
+{
+    $feedbackRepository = $entityManager->getRepository(Feedback::class);
+    
+    // 1. On récupère tout, trié par date décroissante pour avoir les plus récents en premier
+    $allFeedbacks = $feedbackRepository->findBy([], ['createdAt' => 'DESC']);
+
+    $usersLastFeedback = [];
+    
+    foreach ($allFeedbacks as $feedback) {
+        $userId = $feedback->getUserId();
+        
+        // Si on a déjà traité cet utilisateur, on passe au suivant (évite la répétition)
+        if (isset($usersLastFeedback[$userId])) {
+            continue;
+        }
+
+        // 2. On vérifie si c'est le feedback "final" (celui qui contient le commentaire et la note)
+        // On exclut les réponses automatiques et on vérifie qu'il y a une note (etoiles > 0)
+        if ($feedback->getComments() !== "Réponse automatique (Quiz)" && 
+            $feedback->getEtoiles() > 0) {
+            
+            $usersLastFeedback[$userId] = $feedback;
+        }
+    }
+    
+    return $this->render('questionnaire/feedback/show_all.html.twig', [
+        'userFeedbacks' => array_values($usersLastFeedback)
+    ]);
+}
 
     #[Route('/{id}/edit', name: 'app_questionnaire_feedback_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Feedback $feedback, EntityManagerInterface $entityManager): Response

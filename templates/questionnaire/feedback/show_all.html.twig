@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Tous les Avis - EventFlow{% endblock %}
+{% block title %}Avis des Utilisateurs - EventFlow{% endblock %}
 
 {% block admin_content %}
 <div class="container mt-5">
@@ -9,42 +9,39 @@
             {# En-tête #}
             <div class="text-center mb-5">
                 <h2 class="fw-bold">
-                    <i class="fas fa-comments text-primary me-2"></i>
-                    Tous les Avis
+                    <i class="fas fa-star text-warning me-2"></i>
+                    Avis des Utilisateurs
                 </h2>
-                <p class="text-muted">Découvrez les avis laissés par les utilisateurs</p>
+                <p class="text-muted">Découvrez les derniers commentaires et évaluations</p>
             </div>
 
-            {# Debug - Afficher les variables disponibles #}
-            {# {{ dump(_context) }} #}
-            
-            {# Grid des boîtes d'avis - utiliser directement les feedbacks filtrés #}
-            {% set feedbacksList = userFeedbacks is defined ? userFeedbacks : (feedbacks is defined ? feedbacks : []) %}
-            
-            {% if feedbacksList|length > 0 %}
+            {# Liste des feedbacks - un par utilisateur #}
+            {% if userFeedbacks|length > 0 %}
                 <div class="row">
-                    {% for feedback in feedbacksList %}
+                    {% for feedback in userFeedbacks %}
                         <div class="col-lg-6 col-xl-4 mb-4">
-                            <div class="feedback-box h-100">
+                            <div class="feedback-card h-100">
                                 <div class="feedback-header">
                                     <div class="user-info">
                                         <i class="fas fa-user-circle"></i>
                                         <span>Utilisateur {{ feedback.getUserId() }}</span>
                                     </div>
                                     <div class="feedback-date">
-                                        {{ feedback.getCreatedAt() ? feedback.getCreatedAt()|date('d/m/Y') : '' }}
+                                        <small>{{ feedback.getCreatedAt() ? feedback.getCreatedAt()|date('d/m/Y') : '' }}</small>
                                     </div>
                                 </div>
                                 
-                                <div class="feedback-stars">
-                                    {% for i in 1..5 %}
-                                        {% if i <= feedback.getEtoiles() %}
-                                            <i class="fas fa-star"></i>
-                                        {% else %}
-                                            <i class="far fa-star"></i>
-                                        {% endif %}
-                                    {% endfor %}
-                                    <span class="rating-number">{{ feedback.getEtoiles() }}/5</span>
+                                <div class="feedback-rating">
+                                    <div class="stars">
+                                        {% for i in 1..5 %}
+                                            {% if i <= feedback.getEtoiles() %}
+                                                <i class="fas fa-star"></i>
+                                            {% else %}
+                                                <i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <span class="rating-text">{{ feedback.getEtoiles() }}/5</span>
                                 </div>
                                 
                                 <div class="feedback-comment">
@@ -65,10 +62,13 @@
                 </div>
             {% endif %}
 
-            {# Bouton de retour #}
+            {# Boutons de navigation #}
             <div class="text-center mt-5">
-                <a href="{{ path('app_dashboard') }}" class="btn btn-outline-primary">
+                <a href="{{ path('app_dashboard') }}" class="btn btn-outline-primary me-2">
                     <i class="fas fa-arrow-left me-2"></i>Retour au tableau
+                </a>
+                <a href="{{ path('app_questionnaire_feedback_index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-list me-2"></i>Tous les feedbacks
                 </a>
             </div>
         </div>
@@ -76,42 +76,42 @@
 </div>
 
 <style>
-.feedback-box {
+.feedback-card {
     background: white;
     border-radius: 15px;
     padding: 25px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 3px 15px rgba(0,0,0,0.1);
     border: 1px solid #e9ecef;
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
 }
 
-.feedback-box:hover {
+.feedback-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    border-color: #007bff;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    border-color: #ffc107;
 }
 
 .feedback-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     padding-bottom: 15px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 2px solid #f8f9fa;
 }
 
 .user-info {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     font-weight: 600;
     color: #333;
 }
 
 .user-info i {
-    font-size: 20px;
+    font-size: 24px;
     color: #6c757d;
 }
 
@@ -120,27 +120,31 @@
     color: #6c757d;
 }
 
-.feedback-stars {
+.feedback-rating {
     display: flex;
     align-items: center;
-    gap: 5px;
-    margin-bottom: 15px;
+    gap: 15px;
+    margin-bottom: 20px;
 }
 
-.feedback-stars i {
-    font-size: 16px;
+.stars {
+    display: flex;
+    gap: 3px;
+}
+
+.stars i {
+    font-size: 18px;
     color: #ffc107;
 }
 
-.feedback-stars .far.fa-star {
+.stars .far.fa-star {
     color: #dee2e6;
 }
 
-.rating-number {
-    font-size: 14px;
+.rating-text {
     font-weight: 600;
     color: #6c757d;
-    margin-left: 8px;
+    font-size: 14px;
 }
 
 .feedback-comment {
@@ -151,19 +155,19 @@
     margin: 0;
     line-height: 1.6;
     color: #495057;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .feedback-box {
+    .feedback-card {
         padding: 20px;
     }
     
     .feedback-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 8px;
+        gap: 10px;
     }
     
     .feedback-date {
@@ -175,7 +179,7 @@
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(30px);
     }
     to {
         opacity: 1;
@@ -183,15 +187,15 @@
     }
 }
 
-.feedback-box {
-    animation: fadeInUp 0.5s ease-out;
+.feedback-card {
+    animation: fadeInUp 0.6s ease-out;
 }
 
-.feedback-box:nth-child(1) { animation-delay: 0.1s; }
-.feedback-box:nth-child(2) { animation-delay: 0.2s; }
-.feedback-box:nth-child(3) { animation-delay: 0.3s; }
-.feedback-box:nth-child(4) { animation-delay: 0.4s; }
-.feedback-box:nth-child(5) { animation-delay: 0.5s; }
-.feedback-box:nth-child(6) { animation-delay: 0.6s; }
+.feedback-card:nth-child(1) { animation-delay: 0.1s; }
+.feedback-card:nth-child(2) { animation-delay: 0.2s; }
+.feedback-card:nth-child(3) { animation-delay: 0.3s; }
+.feedback-card:nth-child(4) { animation-delay: 0.4s; }
+.feedback-card:nth-child(5) { animation-delay: 0.5s; }
+.feedback-card:nth-child(6) { animation-delay: 0.6s; }
 </style>
 {% endblock %}
