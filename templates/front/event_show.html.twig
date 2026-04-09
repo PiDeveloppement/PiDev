@@ -352,6 +352,7 @@
                     <div class="show-actions">
                         <a class="show-btn secondary" href="{{ path('app_public_events') }}">Voir les autres événements</a>
                         <a class="show-btn primary" href="{{ path('app_login', {'pending_event': event.id}) }}">Participer</a>
+                        <a class="show-btn primary" href="{{ path('app_quiz_start', {'event_id': event.id}) }}" style="background: #9c27b0;">🎯 Quiz</a>
                     </div>
                 </div>
             </article>

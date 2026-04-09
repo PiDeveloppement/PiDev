@@ -1,0 +1,430 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow-x: hidden;
+            background-color: #f8fafc;
+        }
+        
+        .navbar {
+            background: #ffffff;
+            border-bottom: 1px solid #dbe5f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            height: 80px;
+        }
+        
+        .logo-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            position: absolute;
+            left: 24px;
+        }
+        
+        .logo-container img {
+            width: 92px;
+            height: auto;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 26px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav-link {
+            color: #1f2937;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .nav-link:hover,
+        .nav-link.active {
+            color: #0d47a1;
+        }
+        
+        .results-content {
+            margin-top: 80px;
+            padding: 80px 100px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .score-display {
+            animation: fadeInScale 0.8s ease-out;
+        }
+        
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .feedback-display {
+            transition: all 0.3s ease-in-out;
+        }
+        
+        .feedback-display:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .stars {
+            color: #ffc107;
+        }
+        
+        .actions .btn {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .actions .btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .btn {
+            padding: 15px 35px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-outline-primary {
+            background: white;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .btn-outline-primary:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+        
+        .btn-outline-secondary {
+            background: white;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .btn-outline-secondary:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+        
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+            }
+            
+            .nav-links {
+                gap: 20px;
+            }
+            
+            .nav-link {
+                font-size: 14px;
+                padding: 6px 12px;
+            }
+            
+            .logo-container img {
+                width: 120px;
+            }
+            
+            .results-content {
+                padding: 40px 20px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block public_content %}
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="logo-container">
+            <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+        </div>
+
+        <div class="nav-links">
+            <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}'">Accueil</button>
+            <button class="nav-link" onclick="window.location.href='{{ path('app_public_events') }}'">Événements</button>
+            <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
+        </div>
+    </nav>
+
+    <div class="results-content container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                {# Carte principale avec le score #}
+                <div class="card border-0 shadow-lg text-center p-5 mb-4 bg-gradient-primary text-white" style="border-radius: 20px;">
+                    <div class="card-body">
+                        {% if app.user %}
+                            <div class="mb-3">
+                                <span class="badge bg-white text-primary fs-6">
+                                    <i class="fas fa-user-check me-2"></i>
+                                    {{ app.user.fullName }}
+                                </span>
+                            </div>
+                        {% endif %}
+                        <div class="mb-4">
+                            <i class="fas fa-trophy fa-3x mb-3 text-warning"></i>
+                            <h2 class="fw-bold mb-3">Quiz Terminé !</h2>
+                            <p class="lead mb-4">Félicitations pour avoir complété le quiz</p>
+                        </div>
+                        
+                        <div class="score-display mb-4">
+                            <p class="text-uppercase small mb-2 opacity-75">Votre score final</p>
+                            <h1 class="display-1 fw-bold mb-0">{{ (score / total * 100)|round }}%</h1>
+                            <p class="fs-4 mb-0">{{ score }} bonne{{ score > 1 ? 's' : '' }} réponse{{ score > 1 ? 's' : '' }} sur {{ total }}</p>
+                        </div>
+                        
+                        <div class="mt-4">
+                            {% set percentage = (score / total * 100) %}
+                            {% if percentage >= 80 %}
+                                <span class="badge bg-success fs-6 px-3 py-2">Excellent ! 🌟</span>
+                            {% elseif percentage >= 60 %}
+                                <span class="badge bg-info fs-6 px-3 py-2">Bien fait ! 👍</span>
+                            {% elseif percentage >= 40 %}
+                                <span class="badge bg-warning fs-6 px-3 py-2">Pas mal ! 💪</span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6 px-3 py-2">Continuez ! 📚</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {# Section Votre avis #}
+                <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <h3 class="fw-bold mb-3">Votre avis</h3>
+                            <p class="text-muted">Voici votre évaluation du quiz</p>
+                        </div>
+                        
+                        {% if userFeedback %}
+                            <div class="feedback-display p-4 bg-light rounded-3">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="stars-section flex-grow-1">
+                                        <div id="viewMode">
+                                            <h5 class="mb-2">Votre note</h5>
+                                            <div class="stars mb-3">
+                                                {% for i in 1..5 %}
+                                                    {% if i <= userFeedback.getEtoiles() %}
+                                                        <i class="fas fa-star fa-2x text-warning"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star fa-2x text-muted"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <h5 class="mb-2">Votre commentaire</h5>
+                                            <p class="mb-2">{{ userFeedback.getComments() }}</p>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {{ userFeedback.getCreatedAt() ? userFeedback.getCreatedAt()|date('d/m/Y à H:i') : 'Maintenant' }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div id="editMode" style="display: none;">
+                                            <form id="editFormInline" method="POST" action="{{ path('app_quiz_feedback_edit', {'id': userFeedback.id}) }}">
+                                                <h5 class="mb-2">Modifier votre note</h5>
+                                                <div class="d-flex justify-content-center gap-2 mb-3">
+                                                    {% for i in 1..5 %}
+                                                        <button type="button" class="star-edit-btn btn {% if i <= userFeedback.getEtoiles() %}btn-warning{% else %}btn-outline-warning{% endif %} btn-lg" data-star="{{ i }}">
+                                                            <i class="fas fa-star"></i>
+                                                        </button>
+                                                    {% endfor %}
+                                                </div>
+                                                <input type="hidden" name="etoiles" id="editEtoilesInline" value="{{ userFeedback.getEtoiles() }}">
+                                                
+                                                <h5 class="mb-2">Modifier votre commentaire</h5>
+                                                <textarea name="comments" class="form-control mb-3" rows="3">{{ userFeedback.getComments() }}</textarea>
+                                                
+                                                <div class="d-flex gap-2">
+                                                    <button type="submit" class="btn btn-success">
+                                                        <i class="fas fa-save me-1"></i>Enregistrer
+                                                    </button>
+                                                    <button type="button" class="btn btn-secondary" onclick="cancelEdit()">
+                                                        <i class="fas fa-times me-1"></i>Annuler
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="actions" id="viewActions">
+                                        <button class="btn btn-sm btn-outline-primary me-2" onclick="showEditMode()">
+                                            <i class="fas fa-edit me-1"></i>Modifier
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteFeedback()">
+                                            <i class="fas fa-trash me-1"></i>Supprimer
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center p-4">
+                                <p class="text-muted">Aucun avis enregistré</p>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="text-center mt-4">
+                            {% if score >= 5 and score <= 10 %}
+                                <a href="{{ path('app_quiz_certificate') }}" class="btn btn-primary me-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;" download>
+                                    <i class="fas fa-download me-2"></i>Télécharger le certificat
+                                </a>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Le certificat est disponible uniquement pour un score entre 5 et 10. Votre score: {{ score }}/{{ total }}
+                                </div>
+                            {% endif %}
+                            <a href="{{ path('app_landing') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-home me-2"></i>Retour à l'accueil
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{# Formulaire de suppression caché #}
+{% if userFeedback %}
+<form id="deleteForm" method="POST" action="{{ path('app_quiz_feedback_delete', {'id': userFeedback.id}) }}" style="display: none;">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ userFeedback.id) }}">
+</form>
+{% endif %}
+
+<script>
+function showEditMode() {
+    document.getElementById('viewMode').style.display = 'none';
+    document.getElementById('editMode').style.display = 'block';
+    document.getElementById('viewActions').style.display = 'none';
+}
+
+function cancelEdit() {
+    document.getElementById('viewMode').style.display = 'block';
+    document.getElementById('editMode').style.display = 'none';
+    document.getElementById('viewActions').style.display = 'block';
+}
+
+function deleteFeedback() {
+    {% if userFeedback %}
+    if (confirm('Êtes-vous sûr de vouloir supprimer votre avis ?')) {
+        const deleteForm = document.getElementById('deleteForm');
+        if (deleteForm) {
+            deleteForm.submit();
+        }
+    }
+    {% endif %}
+}
+
+// Gestion des étoiles dans le mode édition
+document.addEventListener('DOMContentLoaded', function() {
+    const starButtons = document.querySelectorAll('.star-edit-btn');
+    const etoilesInput = document.getElementById('editEtoilesInline');
+    
+    if (starButtons.length > 0 && etoilesInput) {
+        starButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const rating = parseInt(this.dataset.star);
+                etoilesInput.value = rating;
+                
+                // Mettre à jour l'apparence des étoiles
+                starButtons.forEach((btn, index) => {
+                    if (index < rating) {
+                        btn.classList.remove('btn-outline-warning');
+                        btn.classList.add('btn-warning');
+                    } else {
+                        btn.classList.remove('btn-warning');
+                        btn.classList.add('btn-outline-warning');
+                    }
+                });
+            });
+        });
+    }
+});
+</script>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.score-display {
+    animation: fadeInScale 0.8s ease-out;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.feedback-display {
+    transition: all 0.3s ease-in-out;
+}
+
+.feedback-display:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.stars {
+    color: #ffc107;
+}
+
+.actions .btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.actions .btn:hover {
+    transform: translateY(-1px);
+}
+</style>
+{% endblock %}
