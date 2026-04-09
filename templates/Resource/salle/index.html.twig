@@ -105,6 +105,11 @@
                         </div>
 
                         <div style="display: flex; gap: 10px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+                            <a href="{{ path('app_resource_salle_show', {'id': salle.id}) }}"
+                               style="flex: 1; color: #10b981; text-decoration: none; padding: 10px; text-align: center; border-radius: 6px; transition: background 0.2s; font-weight: 500;"
+                               onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='transparent'">
+                                <i class="fas fa-eye" style="margin-right: 5px;"></i>Voir détails
+                            </a>
                             <a href="{{ path('app_resource_salle_edit', {'id': salle.id}) }}" 
                                style="flex: 1; color: #667eea; text-decoration: none; padding: 10px; text-align: center; border-radius: 6px; transition: background 0.2s; font-weight: 500;"
                                onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">

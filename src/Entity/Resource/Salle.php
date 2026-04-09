@@ -26,9 +26,6 @@ class Salle
     #[Assert\Range(min: 1, max: 1000, notInRangeMessage: "La capacité doit être entre {{ min }} et {{ max }} places")]
     private ?int $capacity = null;
 
-    #[ORM\Column]
-    private int $original_capacity = 0;
-
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank(message: "Le bâtiment est obligatoire")]
     #[Assert\Type(type: "string", message: "Le bâtiment doit être une chaîne de caractères")]
@@ -43,7 +40,7 @@ class Salle
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank(message: "Le statut est obligatoire")]
-    #[Assert\Choice(choices: ["DISPONIBLE", "INDISPONIBLE", "MAINTENANCE"], message: "Le statut doit être 'DISPONIBLE', 'INDISPONIBLE' ou 'MAINTENANCE'")]
+    #[Assert\Choice(choices: ["OCCUPEE", "DISPONIBLE"], message: "Le statut doit être 'DISPONIBLE', 'INDISPONIBLE' ou 'MAINTENANCE'")]
     #[Assert\Type(type: "string", message: "Le statut doit être une chaîne de caractères")]
     private ?string $status = null;
 
@@ -81,18 +78,6 @@ class Salle
     public function setCapacity(int $capacity): static
     {
         $this->capacity = $capacity;
-
-        return $this;
-    }
-
-    public function getOriginalCapacity(): int
-    {
-        return $this->original_capacity;
-    }
-
-    public function setOriginalCapacity(int $original_capacity): static
-    {
-        $this->original_capacity = $original_capacity;
 
         return $this;
     }

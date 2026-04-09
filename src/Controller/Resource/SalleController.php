@@ -88,7 +88,15 @@ final class SalleController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_resource_salle_delete', methods: ['POST'])]
+    #[Route('/{id}', name: 'app_resource_salle_show', methods: ['GET'])]
+    public function show(Salle $salle): Response
+    {
+        return $this->render('resource/salle/show.html.twig', [
+            'salle' => $salle,
+        ]);
+    }
+
+    #[Route('/{id}/delete', name: 'app_resource_salle_delete', methods: ['POST'])]
     public function delete(Request $request, Salle $salle, EntityManagerInterface $entityManager): Response
     {
         if ($this->isCsrfTokenValid('delete'.$salle->getId(), $request->getPayload()->getString('_token'))) {
