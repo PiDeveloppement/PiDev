@@ -839,6 +839,13 @@
     color: white;
 }
 
+.submenu-button.active {
+    background-color: rgba(255,255,255,0.3);
+    color: white;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.4);
+}
+
 .logout-button {
     background-color: rgba(255,255,255,0.15);
     color: #ffcdd2;

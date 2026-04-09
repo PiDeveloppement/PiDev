@@ -1,0 +1,235 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Statistiques - EventFlow{% endblock %}
+
+{% block admin_content %}
+<div class="container mt-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); min-height: 100vh; padding: 20px 15px; border-radius: 15px;">
+    <div class="row">
+        <div class="col-12">
+            <!-- Section d'en-tête élégante -->
+            <div class="card border-0 shadow mb-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-center py-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="mb-2">
+                                <i class="fas fa-star text-warning" style="font-size: 14px;"></i>
+                                <i class="fas fa-star text-warning" style="font-size: 14px;"></i>
+                                <i class="fas fa-star text-warning" style="font-size: 14px;"></i>
+                                <i class="fas fa-star text-warning" style="font-size: 14px;"></i>
+                                <i class="fas fa-star text-warning" style="font-size: 14px;"></i>
+                            </div>
+                            <h4 class="fw-bold text-white mb-2">
+                                <i class="fas fa-chart-bar me-2"></i>Tableau de bord des statistiques
+                            </h4>
+                            <p class="text-white-50 mb-0" style="font-size: 13px;">Analyse complète des retours utilisateurs et performances</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="bg-white bg-opacity-25 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-analytics text-white"></i>
+                                </div>
+                                <div class="mb-1">
+                                    <i class="fas fa-star text-warning" style="font-size: 10px;"></i>
+                                    <i class="fas fa-star text-warning" style="font-size: 10px;"></i>
+                                    <i class="fas fa-star text-warning" style="font-size: 10px;"></i>
+                                    <i class="fas fa-star text-warning" style="font-size: 10px;"></i>
+                                    <i class="fas fa-star text-warning" style="font-size: 10px;"></i>
+                                </div>
+                                <p class="text-white mt-1 mb-0" style="font-size: 12px;">En temps réel</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mb-4">
+                <h5 class="fw-bold text-primary mb-2">
+                    <i class="fas fa-star me-1"></i>Statistiques des avis
+                </h5>
+                <p class="text-muted" style="font-size: 13px;">Vue d'ensemble des évaluations</p>
+            </div>
+            
+            <!-- Cartes principales -->
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="card border-0 shadow h-100" style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); transition: transform 0.2s ease;">
+                        <div class="card-body text-center py-3">
+                            <div class="mb-2">
+                                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                    <i class="fas fa-comments text-primary" style="font-size: 16px;"></i>
+                                </div>
+                            </div>
+                            <h4 class="fw-bold text-primary mb-1">{{ totalAvis }}</h4>
+                            <p class="text-muted mb-0" style="font-size: 12px;">Avis au total</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card border-0 shadow h-100" style="background: linear-gradient(135deg, #ffffff 0%, #fff9e6 100%); transition: transform 0.2s ease;">
+                        <div class="card-body text-center py-3">
+                            <div class="mb-2">
+                                <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                    <i class="fas fa-star text-warning" style="font-size: 16px;"></i>
+                                </div>
+                            </div>
+                            <h4 class="fw-bold text-warning mb-1">{{ moyenneEtoiles }}/5</h4>
+                            <p class="text-muted mb-0" style="font-size: 12px;">Note moyenne</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card border-0 shadow h-100" style="background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%); transition: transform 0.2s ease;">
+                        <div class="card-body text-center py-3">
+                            <div class="mb-2">
+                                <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                    <i class="fas fa-smile text-success" style="font-size: 16px;"></i>
+                                </div>
+                            </div>
+                            <h4 class="fw-bold text-success mb-1">{{ tauxSatisfaction }}%</h4>
+                            <p class="text-muted mb-0" style="font-size: 12px;">Satisfaction</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Données Temporelles -->
+            <div class="card border-0 shadow mb-3" style="background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-title fw-bold mb-0">
+                            <i class="fas fa-clock me-1 text-primary"></i>Évolution mensuelle
+                        </h6>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary active" style="font-size: 11px; border-radius: 6px;">6 mois</button>
+                            <button type="button" class="btn btn-outline-primary" style="font-size: 11px; border-radius: 6px;">3 mois</button>
+                            <button type="button" class="btn btn-outline-primary" style="font-size: 11px; border-radius: 6px;">1 mois</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Tendance -->
+                    <div class="text-center mb-3">
+                        <span class="badge bg-light text-dark p-1" style="font-size: 11px; border-radius: 12px;">
+                            <i class="{{ trendIcon }} {{ trendColor }} me-1"></i>
+                            Tendance : {{ trend }}
+                        </span>
+                    </div>
+                    
+                    <!-- Graphique simple -->
+                    {% set maxCount = 0 %}
+                    {% for month in monthlyData %}
+                        {% if month.count > maxCount %}
+                            {% set maxCount = month.count %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <div class="row align-items-end" style="height: 120px;">
+                        {% for month in monthlyData %}
+                            <div class="col text-center">
+                                <div class="d-flex flex-column align-items-center h-100 justify-content-end">
+                                    <small class="mb-1 fw-bold" style="font-size: 11px;">{{ month.count }}</small>
+                                    <div class="bg-primary" style="width: 20px; height: {{ maxCount > 0 ? (month.count / maxCount * 100) : 0 }}px; border-radius: 2px 2px 0 0; box-shadow: 0 2px 4px rgba(0,123,255,0.2); transition: all 0.3s ease;"></div>
+                                </div>
+                                <small class="mt-1 text-muted" style="font-size: 10px;">{{ month.month }}</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Distribution des notes -->
+            <div class="card border-0 shadow mb-3" style="background: linear-gradient(135deg, #ffffff 0%, #fffbf0 100%);">
+                <div class="card-body">
+                    <h6 class="card-title fw-bold mb-3">
+                        <i class="fas fa-chart-bar me-1 text-primary"></i>Distribution des notes
+                    </h6>
+                    {% for note in [5, 4, 3, 2, 1] %}
+                        {% set count = distribution[note] ?? 0 %}
+                        {% set pct = totalAvis > 0 ? (count / totalAvis * 100)|round : 0 %}
+                        <div class="mb-2" style="padding: 8px; border-radius: 8px; background: {% if loop.index % 2 == 0 %}#fafafa{% else %}#ffffff{% endif %};">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="fw-semibold" style="font-size: 11px;">
+                                    {% for i in 1..5 %}
+                                        <i class="{% if i <= note %}fas{% else %}far{% endif %} fa-star text-warning" style="font-size: 10px;"></i>
+                                    {% endfor %}
+                                    {{ note }} étoile{{ note > 1 ? 's' : '' }}
+                                </small>
+                                <small class="text-muted" style="font-size: 10px;">{{ count }} avis ({{ pct }}%)</small>
+                            </div>
+                            <div class="progress" style="height: 6px; border-radius: 3px;">
+                                <div class="progress-bar bg-warning" style="width: {{ pct }}%; border-radius: 3px; box-shadow: 0 1px 3px rgba(255,193,7,0.3);"></div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Boutons -->
+            <div class="text-center">
+                <a href="{{ path('app_questionnaire_feedback_show_all') }}" class="btn btn-outline-primary me-2" style="font-size: 12px; padding: 8px 16px; border-radius: 8px; transition: all 0.2s ease;">
+                    <i class="fas fa-arrow-left me-1"></i>Retour aux avis
+                </a>
+                <a href="{{ path('app_questionnaire_feedback_pdf') }}" class="btn btn-primary" style="font-size: 12px; padding: 8px 16px; border-radius: 8px; transition: all 0.2s ease;">
+                    <i class="fas fa-file-pdf me-1"></i>Exporter PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Effets de survol pour les cartes */
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+/* Effets de survol pour les barres du graphique */
+.bg-primary:hover {
+    transform: scaleY(1.05);
+    box-shadow: 0 4px 8px rgba(0,123,255,0.3) !important;
+}
+
+/* Effets de survol pour les boutons */
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Animation douce pour les transitions */
+* {
+    transition: all 0.2s ease;
+}
+</style>
+
+<script>
+// Animation simple pour les barres au chargement
+document.addEventListener('DOMContentLoaded', function() {
+    const bars = document.querySelectorAll('.bg-primary');
+    bars.forEach((bar, index) => {
+        const height = bar.style.height;
+        bar.style.height = '0px';
+        setTimeout(() => {
+            bar.style.transition = 'height 0.8s ease';
+            bar.style.height = height;
+        }, 100 * index);
+    });
+    
+    // Gestion simple des boutons de période
+    const periodButtons = document.querySelectorAll('.btn-group .btn');
+    periodButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            periodButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Animation simple de rechargement
+            const chart = document.querySelector('.row.align-items-end');
+            chart.style.opacity = '0.5';
+            setTimeout(() => {
+                chart.style.opacity = '1';
+            }, 300);
+        });
+    });
+});
+</script>
+
+{% endblock %}

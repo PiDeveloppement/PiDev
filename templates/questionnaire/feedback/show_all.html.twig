@@ -5,45 +5,99 @@
 {% block admin_content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-lg-10">
-            {# En-tête #}
-            <div class="text-center mb-5">
-                <h2 class="fw-bold">
+        <div class="col-lg-11">
+
+            <div class="text-center mb-4">
+                {% if app.user %}
+                    <div class="mb-3">
+                        <span class="user-connected-badge">
+                            <i class="fas fa-user-check me-2"></i>
+                            Connecté en tant que : <strong>{{ app.user.fullName }}</strong>
+                        </span>
+                    </div>
+                {% endif %}
+                <h2 class="fw-bold title-animation">
                     <i class="fas fa-star text-warning me-2"></i>
                     Avis des Utilisateurs
                 </h2>
-                <p class="text-muted">Découvrez les derniers commentaires et évaluations</p>
+                <p class="text-muted subtitle-animation">Commentaires et évaluations des participants</p>
             </div>
 
-            {# Liste des feedbacks - un par utilisateur #}
+            {# Boutons actions #}
+            <div class="text-center mb-4 d-flex justify-content-center gap-2 flex-wrap">
+                <a href="{{ path('app_questionnaire_feedback_stats') }}" class="btn btn-primary">
+                    <i class="fas fa-chart-bar me-2"></i>Voir les statistiques
+                </a>
+                <a href="{{ path('app_questionnaire_feedback_pdf') }}" class="btn btn-danger">
+                    <i class="fas fa-file-pdf me-2"></i>Exporter en PDF
+                </a>
+            </div>
+
+            {# Recherche + Tri + Filtre #}
             {% if userFeedbacks|length > 0 %}
-                <div class="row">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                            <input type="text" id="searchInput" class="form-control border-start-0 ps-0"
+                                   placeholder="Rechercher par nom ou commentaire...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="sortSelect" class="form-select">
+                            <option value="date_desc">Plus récent d'abord</option>
+                            <option value="date_asc">Plus ancien d'abord</option>
+                            <option value="note_desc">Note : haute → basse</option>
+                            <option value="note_asc">Note : basse → haute</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="filterNote" class="form-select">
+                            <option value="">Toutes les notes</option>
+                            <option value="5">5 étoiles</option>
+                            <option value="4">4 étoiles</option>
+                            <option value="3">3 étoiles</option>
+                            <option value="2">2 étoiles</option>
+                            <option value="1">1 étoile</option>
+                        </select>
+                    </div>
+                </div>
+
+                <p class="text-muted small mb-3">
+                    <span id="visibleCount">{{ userFeedbacks|length }}</span> avis affiché(s)
+                </p>
+
+                <div class="row" id="feedbackGrid">
                     {% for feedback in userFeedbacks %}
-                        <div class="col-lg-6 col-xl-4 mb-4">
+                        <div class="col-lg-6 col-xl-4 mb-4 feedback-item"
+                             data-name="{{ usersInfo[feedback.getUserId()]|default('Utilisateur ' ~ feedback.getUserId())|lower }}"
+                             data-comment="{{ feedback.getComments()|lower }}"
+                             data-note="{{ feedback.getEtoiles() }}"
+                             data-date="{{ feedback.getCreatedAt() ? feedback.getCreatedAt()|date('U') : 0 }}">
                             <div class="feedback-card h-100">
                                 <div class="feedback-header">
                                     <div class="user-info">
-                                        <i class="fas fa-user-circle"></i>
-                                        <span>Utilisateur {{ feedback.getUserId() }}</span>
-                                    </div>
-                                    <div class="feedback-date">
-                                        <small>{{ feedback.getCreatedAt() ? feedback.getCreatedAt()|date('d/m/Y') : '' }}</small>
+                                        <div class="avatar-circle">
+                                            {{ usersInfo[feedback.getUserId()]|default('?')|slice(0,1)|upper }}
+                                        </div>
+                                        <div>
+                                            <span class="user-name">{{ usersInfo[feedback.getUserId()]|default('Utilisateur ' ~ feedback.getUserId()) }}</span>
+                                            <div class="feedback-date">
+                                                {{ feedback.getCreatedAt() ? feedback.getCreatedAt()|date('d/m/Y') : '' }}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="feedback-rating">
-                                    <div class="stars">
-                                        {% for i in 1..5 %}
-                                            {% if i <= feedback.getEtoiles() %}
-                                                <i class="fas fa-star"></i>
-                                            {% else %}
-                                                <i class="far fa-star"></i>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                    <span class="rating-text">{{ feedback.getEtoiles() }}/5</span>
+                                    {% for i in 1..5 %}
+                                        <i class="{% if i <= feedback.getEtoiles() %}fas{% else %}far{% endif %} fa-star"></i>
+                                    {% endfor %}
+                                    <span class="rating-badge">{{ feedback.getEtoiles() }}/5</span>
                                 </div>
-                                
+
                                 <div class="feedback-comment">
                                     <p>{{ feedback.getComments() }}</p>
                                 </div>
@@ -51,151 +105,231 @@
                         </div>
                     {% endfor %}
                 </div>
+
+                <div id="noResults" class="text-center py-5 d-none">
+                    <i class="fas fa-search fa-2x text-muted mb-3"></i>
+                    <h5 class="text-muted">Aucun avis ne correspond à votre recherche</h5>
+                </div>
+
             {% else %}
-                {# Message si aucun avis #}
                 <div class="text-center py-5">
                     <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
                     <h4 class="text-muted">Aucun avis trouvé</h4>
-                    <p class="text-muted">
-                        Aucun utilisateur n'a encore laissé d'avis.
-                    </p>
+                    <p class="text-muted">Aucun utilisateur n'a encore laissé d'avis.</p>
                 </div>
             {% endif %}
 
-            {# Boutons de navigation #}
             <div class="text-center mt-5">
-                <a href="{{ path('app_dashboard') }}" class="btn btn-outline-primary me-2">
+                <a href="{{ path('app_dashboard') }}" class="btn btn-outline-primary">
                     <i class="fas fa-arrow-left me-2"></i>Retour au tableau
                 </a>
-                <a href="{{ path('app_questionnaire_feedback_index') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-list me-2"></i>Tous les feedbacks
-                </a>
             </div>
+
         </div>
     </div>
 </div>
 
 <style>
-.feedback-card {
-    background: white;
-    border-radius: 15px;
-    padding: 25px;
-    box-shadow: 0 3px 15px rgba(0,0,0,0.1);
-    border: 1px solid #e9ecef;
+.user-connected-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+    animation: slideInDown 0.6s ease-out;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
     transition: all 0.3s ease;
+}
+.user-connected-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+.title-animation { animation: fadeInScale 0.8s ease-out; }
+.subtitle-animation { animation: fadeInUp 0.8s ease-out 0.2s both; }
+.btn {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+.btn:hover::before { width: 300px; height: 300px; }
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+.feedback-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    border: 1px solid rgba(255,255,255,0.8);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
 }
-
+.feedback-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
+}
 .feedback-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-    border-color: #ffc107;
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15);
+    border-color: #667eea;
 }
-
 .feedback-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
+    padding-bottom: 16px;
     border-bottom: 2px solid #f8f9fa;
 }
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 600;
-    color: #333;
+.user-info { display: flex; align-items: center; gap: 12px; }
+.avatar-circle {
+    width: 45px; height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
 }
-
-.user-info i {
-    font-size: 24px;
-    color: #6c757d;
+.feedback-card:hover .avatar-circle {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
-
-.feedback-date {
-    font-size: 12px;
-    color: #6c757d;
-}
-
+.user-name { font-weight: 700; font-size: 15px; color: #2d3748; transition: color 0.3s ease; }
+.feedback-card:hover .user-name { color: #667eea; }
+.feedback-date { font-size: 11px; color: #a0aec0; margin-top: 4px; font-weight: 500; }
 .feedback-rating {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 4px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #fff9e6, #fffef9);
+    border-radius: 12px;
+    border: 1px solid #fef3c7;
 }
-
-.stars {
-    display: flex;
-    gap: 3px;
+.feedback-rating .fas.fa-star { color: #ffc107; font-size: 16px; transition: all 0.3s ease; }
+.feedback-rating .far.fa-star { color: #e2e8f0; font-size: 16px; }
+.feedback-card:hover .feedback-rating .fas.fa-star { transform: scale(1.2); }
+.rating-badge {
+    font-size: 12px; font-weight: 700; color: #718096;
+    margin-left: 8px; background: white; padding: 2px 8px; border-radius: 8px;
 }
-
-.stars i {
-    font-size: 18px;
-    color: #ffc107;
+.feedback-comment { flex-grow: 1; }
+.feedback-comment p { margin: 0; line-height: 1.7; color: #4a5568; font-size: 14px; }
+.feedback-item { animation: slideInUp 0.6s ease-out both; opacity: 0; }
+.feedback-item:nth-child(1)  { animation-delay: 0.1s; }
+.feedback-item:nth-child(2)  { animation-delay: 0.2s; }
+.feedback-item:nth-child(3)  { animation-delay: 0.3s; }
+.feedback-item:nth-child(4)  { animation-delay: 0.4s; }
+.feedback-item:nth-child(5)  { animation-delay: 0.5s; }
+.feedback-item:nth-child(6)  { animation-delay: 0.6s; }
+.feedback-item:nth-child(7)  { animation-delay: 0.7s; }
+.feedback-item:nth-child(8)  { animation-delay: 0.8s; }
+.feedback-item:nth-child(9)  { animation-delay: 0.9s; }
+.feedback-item:nth-child(10) { animation-delay: 1.0s; }
+.feedback-item:nth-child(11) { animation-delay: 1.1s; }
+.feedback-item:nth-child(12) { animation-delay: 1.2s; }
+@keyframes slideInDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
-
-.stars .far.fa-star {
-    color: #dee2e6;
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
-
-.rating-text {
-    font-weight: 600;
-    color: #6c757d;
-    font-size: 14px;
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.9); }
+    to   { opacity: 1; transform: scale(1); }
 }
-
-.feedback-comment {
-    flex-grow: 1;
-}
-
-.feedback-comment p {
-    margin: 0;
-    line-height: 1.6;
-    color: #495057;
-    font-size: 15px;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .feedback-card {
-        padding: 20px;
-    }
-    
-    .feedback-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-    
-    .feedback-date {
-        align-self: flex-end;
-    }
-}
-
-/* Animation */
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
-
-.feedback-card {
-    animation: fadeInUp 0.6s ease-out;
+@keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
 }
-
-.feedback-card:nth-child(1) { animation-delay: 0.1s; }
-.feedback-card:nth-child(2) { animation-delay: 0.2s; }
-.feedback-card:nth-child(3) { animation-delay: 0.3s; }
-.feedback-card:nth-child(4) { animation-delay: 0.4s; }
-.feedback-card:nth-child(5) { animation-delay: 0.5s; }
-.feedback-card:nth-child(6) { animation-delay: 0.6s; }
+@media (max-width: 768px) {
+    .feedback-card { padding: 18px; margin-bottom: 15px; }
+    .user-connected-badge { font-size: 12px; padding: 6px 16px; }
+    .title-animation { font-size: 1.5rem; }
+    .avatar-circle { width: 38px; height: 38px; font-size: 14px; }
+    .feedback-card:hover { transform: translateY(-4px) scale(1.01); }
+}
+@media (max-width: 576px) {
+    .container { padding: 0 15px; }
+    .feedback-card { padding: 15px; }
+    .user-info { gap: 8px; }
+    .feedback-rating { padding: 6px 10px; }
+    .btn { font-size: 14px; padding: 8px 16px; }
+}
 </style>
+
+<script>
+(function () {
+    const searchInput  = document.getElementById('searchInput');
+    const sortSelect   = document.getElementById('sortSelect');
+    const filterNote   = document.getElementById('filterNote');
+    const grid         = document.getElementById('feedbackGrid');
+    const noResults    = document.getElementById('noResults');
+    const visibleCount = document.getElementById('visibleCount');
+
+    if (!grid) return;
+
+    function applyFiltersAndSort() {
+        const query      = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const noteFilter = filterNote  ? filterNote.value  : '';
+        const sortVal    = sortSelect  ? sortSelect.value  : 'date_desc';
+
+        const items = Array.from(grid.querySelectorAll('.feedback-item'));
+        let visible = 0;
+
+        items.forEach(item => {
+            const matchSearch = !query      || (item.dataset.name    || '').includes(query)
+                                            || (item.dataset.comment || '').includes(query);
+            const matchNote   = !noteFilter || item.dataset.note === noteFilter;
+            item.style.display = (matchSearch && matchNote) ? '' : 'none';
+            if (matchSearch && matchNote) visible++;
+        });
+
+        if (visibleCount) visibleCount.textContent = visible;
+        if (noResults)    noResults.classList.toggle('d-none', visible > 0);
+
+        const visibleItems = items.filter(i => i.style.display !== 'none');
+        visibleItems.sort((a, b) => {
+            const nA = parseInt(a.dataset.note) || 0;
+            const nB = parseInt(b.dataset.note) || 0;
+            const dA = parseInt(a.dataset.date) || 0;
+            const dB = parseInt(b.dataset.date) || 0;
+            if (sortVal === 'date_desc') return dB - dA;
+            if (sortVal === 'date_asc')  return dA - dB;
+            if (sortVal === 'note_desc') return nB - nA;
+            if (sortVal === 'note_asc')  return nA - nB;
+            return 0;
+        });
+        visibleItems.forEach(item => grid.appendChild(item));
+    }
+
+    if (searchInput) searchInput.addEventListener('input',  applyFiltersAndSort);
+    if (sortSelect)  sortSelect.addEventListener('change',  applyFiltersAndSort);
+    if (filterNote)  filterNote.addEventListener('change',  applyFiltersAndSort);
+})();
+</script>
 {% endblock %}
