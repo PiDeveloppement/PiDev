@@ -25,7 +25,8 @@ class TicketRepository extends ServiceEntityRepository
     public function countUniqueEvents(): int
     {
         return (int) $this->createQueryBuilder('t')
-            ->select('COUNT(DISTINCT t.eventId)')
+            ->leftJoin('t.event', 'e')
+            ->select('COUNT(DISTINCT e.id)')
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -44,7 +45,7 @@ class TicketRepository extends ServiceEntityRepository
         }
 
         if ($eventFilter !== null && $eventFilter !== '') {
-            $qb->andWhere('t.eventId = :eventId')
+            $qb->andWhere('e.id = :eventId')
                 ->setParameter('eventId', (int) $eventFilter);
         }
 

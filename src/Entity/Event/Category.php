@@ -8,7 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-#[ORM\Entity(repositoryClass: \App\Repository\Event\CategoryRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: "event_category")]
 class Category
 {
@@ -28,18 +28,12 @@ class Category
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Assert\Length(max: 200, maxMessage: "La description ne peut pas dépasser {{ limit }} caractères")]
     private ?string $description = null;
 
     #[ORM\Column(length: 50, nullable: true)]
-    #[Assert\Length(max: 50, maxMessage: "L'icône ne peut pas dépasser {{ limit }} caractères")]
     private ?string $icon = null;
 
     #[ORM\Column(length: 20, nullable: true)]
-    #[Assert\Regex(
-        pattern: '/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/',
-        message: "La couleur doit être au format hex (ex: #2563eb)."
-    )]
     private ?string $color = null;
 
     #[ORM\Column(name: "is_active", type: Types::BOOLEAN, options: ["default" => true])]

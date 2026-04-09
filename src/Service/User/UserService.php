@@ -243,9 +243,11 @@ public function searchUsers(
     ?string $faculte = null,
     ?string $role = null,
     int $page = 1,
-    int $limit = 5
+    int $limit = 5,
+    ?string $sortBy = null,
+    ?string $sortOrder = null
 ): array {
-    return $this->userRepository->searchUsers($keyword, $faculte, $role, $page, $limit);
+    return $this->userRepository->searchUsers($keyword, $faculte, $role, $page, $limit, $sortBy, $sortOrder);
 }
 
     /**

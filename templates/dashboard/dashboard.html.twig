@@ -2,10 +2,20 @@
 
 {% block title %}Tableau de bord - EventFlow{% endblock %}
 
-{% block page_title %}Tableau de bord{% endblock %}
+{% block page_title %}
+    {% if is_admin %}Tableau de bord - Administrateur{% else %}Tableau de bord{% endif %}
+{% endblock %}
 
 
 {% block admin_content %}
+<div class="role-banner mb-4">
+    {% if is_admin %}
+        <div class="banner-content admin-banner">
+            <span class="banner-icon">👑</span>
+            <span class="banner-text">Mode Administrateur - Vue globale du système</span>
+        </div>
+    {% endif %}
+</div>
 <div class="dashboard-container">
     <div class="dashboard-scroll">
         <div class="dashboard-content-wrapper">
@@ -212,10 +222,8 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Événements à venir -->
-                <div class="charts-grid">
+                    <!-- Événements à venir -->
                     <div class="chart-card full-width">
                         <div class="chart-header">
                             <span class="chart-icon">📅</span>
@@ -226,18 +234,43 @@
                         <div id="upcomingEventsContainer" class="upcoming-events-container">
                             {% if upcoming_events is defined and upcoming_events|length > 0 %}
                                 {% for event in upcoming_events %}
+                                    {% set now = "now"|date('U') %}
+                                    {% set start = event.startDate ? event.startDate|date('U') : 0 %}
+                                    {% set end = event.endDate ? event.endDate|date('U') : 0 %}
+
+                                    {% if end < now %}
+                                        {% set temporalStatus = 'termine' %}
+                                        {% set statusLabel = 'Terminé' %}
+                                        {% set statusColor = '#64748b' %}
+                                        {% set statusBg = '#e2e8f0' %}
+                                    {% elseif start > now %}
+                                        {% set temporalStatus = 'avenir' %}
+                                        {% set statusLabel = 'À venir' %}
+                                        {% set statusColor = '#22c55e' %}
+                                        {% set statusBg = '#dcfce7' %}
+                                    {% else %}
+                                        {% set temporalStatus = 'encours' %}
+                                        {% set statusLabel = 'En cours' %}
+                                        {% set statusColor = '#3b82f6' %}
+                                        {% set statusBg = '#dbeafe' %}
+                                    {% endif %}
+
                                     <div class="event-item" onclick="window.location.href='{{ path('app_event_show', {'id': event.id}) }}'">
-                                        <div class="event-status-dot" style="background-color: {{ event.statusColor|default('#22c55e') }};"></div>
+                                        <div class="event-status-dot" style="background-color: {{ statusColor }};"></div>
                                         <div class="event-info">
                                             <div class="event-title">{{ event.title }}</div>
                                             <div class="event-meta">
-                                                {{ event.startDate|date('d M Y H:i') }} • 
-                                                {{ event.location|default('Lieu non défini') }} • 
-                                                {{ event.participants|default(0) }}/{{ event.capacity }} participants
+                                                {{ event.startDate ? event.startDate|date('d/m/Y H:i') : '-' }} • 
+                                                {{ event.location ?: 'Lieu non défini' }} • 
+                                                {% if event.isFree %}
+                                                    Gratuit
+                                                {% else %}
+                                                    {{ event.ticketPrice }} DT
+                                                {% endif %}
                                             </div>
                                         </div>
-                                        <span class="event-badge" style="background-color: {{ event.statusBg|default('#dcfce7') }}; color: {{ event.statusColor|default('#22c55e') }};">
-                                            {{ event.statusDisplay|default('Publié') }}
+                                        <span class="event-badge" style="background-color: {{ statusBg }}; color: {{ statusColor }};">
+                                            {{ statusLabel }}
                                         </span>
                                     </div>
                                 {% endfor %}
@@ -255,9 +288,11 @@
                         <button class="btn-outline" onclick="generateReport()">
                             📊 Générer rapport
                         </button>
+                        {% if is_admin %}
                         <button class="btn-outline" onclick="window.location.href='{{ path('app_user_index') }}'">
                             👥 Gérer utilisateurs
                         </button>
+                        {% endif %}
                         <div style="flex: 1;"></div>
                         <button class="btn-primary" onclick="refreshDashboard()">
                             🔄 Actualiser
@@ -798,6 +833,44 @@
     .upcoming-events-container::-webkit-scrollbar-thumb:hover {
         background: #94a3b8;
     }
+
+    /* Bannière de rôle */
+    .role-banner {
+        margin-bottom: 24px;
+    }
+
+    .banner-content {
+        padding: 16px 20px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .admin-banner {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 2px solid #fcd34d;
+    }
+
+    .organizer-banner {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        border: 2px solid #93c5fd;
+    }
+
+    .banner-icon {
+        font-size: 24px;
+    }
+
+    .banner-text {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .mb-4 {
+        margin-bottom: 16px;
+    }
 </style>
 
 <script>
@@ -851,6 +924,60 @@ function refreshDashboard() {
                 document.getElementById('sponsorsCountLabel').textContent = data.sponsorsCount + ' utilisateurs';
                 document.getElementById('sponsorsProgress').style.width = data.sponsorsPercent + '%';
             }
+
+            // Mise à jour des événements à venir
+            if (data.upcomingEvents !== undefined) {
+                const container = document.getElementById('upcomingEventsContainer');
+                if (container && Array.isArray(data.upcomingEvents)) {
+                    if (data.upcomingEvents.length > 0) {
+                        const now = Math.floor(Date.now() / 1000);
+                        container.innerHTML = data.upcomingEvents.map(event => {
+                            const start = event.startDate ? new Date(event.startDate).getTime() / 1000 : 0;
+                            const end = event.endDate ? new Date(event.endDate).getTime() / 1000 : 0;
+
+                            let temporalStatus, statusLabel, statusColor, statusBg;
+                            if (end < now) {
+                                temporalStatus = 'termine';
+                                statusLabel = 'Terminé';
+                                statusColor = '#64748b';
+                                statusBg = '#e2e8f0';
+                            } else if (start > now) {
+                                temporalStatus = 'avenir';
+                                statusLabel = 'À venir';
+                                statusColor = '#22c55e';
+                                statusBg = '#dcfce7';
+                            } else {
+                                temporalStatus = 'encours';
+                                statusLabel = 'En cours';
+                                statusColor = '#3b82f6';
+                                statusBg = '#dbeafe';
+                            }
+
+                            const startDate = event.startDate ? new Date(event.startDate).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+                            const location = event.location || 'Lieu non défini';
+                            const price = event.isFree ? 'Gratuit' : `${event.ticketPrice} DT`;
+
+                            return `
+                                <div class="event-item" onclick="window.location.href='/event/${event.id}'">
+                                    <div class="event-status-dot" style="background-color: ${statusColor};"></div>
+                                    <div class="event-info">
+                                        <div class="event-title">${event.title}</div>
+                                        <div class="event-meta">
+                                            ${startDate} • ${location} • ${price}
+                                        </div>
+                                    </div>
+                                    <span class="event-badge" style="background-color: ${statusBg}; color: ${statusColor};">
+                                        ${statusLabel}
+                                    </span>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        container.innerHTML = '<div class="empty-state">Aucun événement à venir</div>';
+                    }
+                }
+            }
+
         })
         .catch(error => console.error('❌ Erreur:', error));
 }

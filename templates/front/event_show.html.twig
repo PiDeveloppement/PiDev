@@ -351,10 +351,7 @@
 
                     <div class="show-actions">
                         <a class="show-btn secondary" href="{{ path('app_public_events') }}">Voir les autres événements</a>
-                        <form method="post" action="{{ path('app_public_event_participate', {'id': event.id}) }}">
-                            <input type="hidden" name="_token" value="{{ csrf_token('participate_event_' ~ event.id) }}">
-                            <button type="submit" class="show-btn primary">Participer</button>
-                        </form>
+                        <a class="show-btn primary" href="{{ path('app_login', {'pending_event': event.id}) }}">Participer</a>
                     </div>
                 </div>
             </article>
