@@ -68,6 +68,7 @@
                id="searchField"
                placeholder="🔍 Rechercher un utilisateur..."
                autocomplete="off"
+               value="{{ searchKeyword|default('') }}"
                style="
                    background-color: white;
                    border-radius: 8px;
@@ -95,7 +96,7 @@
             {% endfor %}
         </select>
 
-        <select id="roleFilter" 
+        <select id="roleFilter"
                 onchange="applyFilters()"
                 style="
                     background-color: white;
@@ -166,7 +167,7 @@
                         <td style="padding: 14px 0;">••••••••</td>
                         <td style="padding: 14px 0;">
                             <span style="padding: 4px 10px; font-size: 11px; border-radius: 20px; background-color: #dbeafe; color: #1e40af;">
-                                {{ user.role.roleName }}
+                                {{ user.role ? user.role.roleName : 'Default' }}
                             </span>
                         </td>
                         <td style="padding: 12px 15px 12px 0; text-align: center;">
@@ -296,104 +297,26 @@ let totalPages = {{ totalPages }};
 let searchTimeout = null;
 
 function applyFilters() {
-    const search = document.getElementById('searchField').value;
-    const faculte = document.getElementById('faculteFilter').value;
-    const role = document.getElementById('roleFilter').value;
-    
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-        performSearch(search, faculte, role);
-    }, 300);
-}
+        const search = document.getElementById('searchField').value;
+        const faculte = document.getElementById('faculteFilter').value;
+        const role = document.getElementById('roleFilter').value;
 
-function performSearch(search, faculte, role) {
-    const tbody = document.getElementById('userTableBody');
-    tbody.innerHTML = '<tr><td colspan="7" style="padding: 50px; text-align: center; color: #94a3b8;">🔍 Recherche en cours...</td></tr>';
-    
-    const params = new URLSearchParams({
-        q: search,
-        faculte: faculte,
-        role: role
-    });
+        const params = new URLSearchParams();
+        if (search) params.set('search', search);
+        if (faculte) params.set('faculte', faculte);
+        if (role) params.set('role', role);
+        params.set('page', 1);
 
-    fetch('{{ path('app_user_search') }}?' + params.toString())
-        .then(response => response.json())
-        .then(data => {
-            updateTable(data.users);
-            document.getElementById('statsLabel').textContent = data.total + ' utilisateurs';
-            updateKPIs(data.stats);
-        })
-        .catch(error => {
-            console.error('Erreur:', error);
-            tbody.innerHTML = '<tr><td colspan="7" style="padding: 50px; text-align: center; color: #ef4444;">❌ Erreur lors de la recherche</td></tr>';
-        });
-}
-
-function updateKPIs(stats) {
-    if (stats) {
-        document.getElementById('totalUsersCount').textContent = stats.total || 0;
-        document.getElementById('newUsersCount').textContent = stats.new_this_month || 0;
-        document.getElementById('adminsCount').textContent = stats.by_role?.Admin || 0;
-        document.getElementById('organizersCount').textContent = stats.by_role?.Organisateur || 0;
-    }
-}
-
-function updateTable(users) {
-    const tbody = document.getElementById('userTableBody');
-    tbody.innerHTML = '';
-    
-    if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="padding: 50px; text-align: center; color: #94a3b8;">Aucun utilisateur trouvé</td></tr>';
-        return;
-    }
-    
-    users.forEach(user => {
-        const row = document.createElement('tr');
-        row.style.borderBottom = '1px solid #f1f5f9';
-        row.onmouseover = () => row.style.backgroundColor = '#f8fafc';
-        row.onmouseout = () => row.style.backgroundColor = 'transparent';
-        row.innerHTML = `
-            <td style="padding: 14px 0 14px 15px;">${escapeHtml(user.firstName)}</td>
-            <td style="padding: 14px 0;">${escapeHtml(user.lastName)}</td>
-            <td style="padding: 14px 0;">${escapeHtml(user.email)}</td>
-            <td style="padding: 14px 0;">${escapeHtml(user.faculte)}</td>
-            <td style="padding: 14px 0;">••••••••</td>
-            <td style="padding: 14px 0;">
-                <span style="padding: 4px 10px; font-size: 11px; border-radius: 20px; background-color: #dbeafe; color: #1e40af;">
-                    ${escapeHtml(user.role)}
-                </span>
-            </td>
-            <td style="padding: 12px 15px 12px 0; text-align: center;">
-                <div style="display: flex; justify-content: center; gap: 10px;">
-                    <a href="/admin/users/${user.id}/edit" 
-                       style="background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; display: inline-block;"
-                       onmouseover="this.style.backgroundColor='#2563eb'"
-                       onmouseout="this.style.backgroundColor='#3b82f6'">
-                        📝
-                    </a>
-                    <form method="post" action="/admin/users/${user.id}" 
-                          onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?');"
-                          style="display: inline;">
-                        <input type="hidden" name="_token" value="${user.csrfToken}">
-                        <button type="submit" 
-                                style="background-color: #ef4444; color: white; padding: 6px 12px; border-radius: 6px; font-size: 13px; border: none; cursor: pointer;"
-                                onmouseover="this.style.backgroundColor='#dc2626'"
-                                onmouseout="this.style.backgroundColor='#ef4444'">
-                            ✂
-                        </button>
-                    </form>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
+        window.location.href = '{{ path('app_user_index') }}?' + params.toString();
+    }, 500);
 }
 
 function resetFilters() {
-    document.getElementById('searchField').value = '';
-    document.getElementById('faculteFilter').value = '';
-    document.getElementById('roleFilter').value = '';
-    applyFilters();
+    const params = new URLSearchParams();
+    params.set('page', 1);
+    window.location.href = '{{ path('app_user_index') }}?' + params.toString();
 }
 
 function goToPage(page) {
@@ -401,25 +324,25 @@ function goToPage(page) {
     const search = document.getElementById('searchField').value;
     const faculte = document.getElementById('faculteFilter').value;
     const role = document.getElementById('roleFilter').value;
-    window.location.href = '{{ path('app_user_index') }}?page=' + page + 
-        '&search=' + encodeURIComponent(search) + 
-        '&faculte=' + encodeURIComponent(faculte) + 
-        '&role=' + encodeURIComponent(role);
-}
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
+    const params = new URLSearchParams();
+    params.set('page', page);
+    if (search) params.set('search', search);
+    if (faculte) params.set('faculte', faculte);
+    if (role) params.set('role', role);
+
+    window.location.href = '{{ path('app_user_index') }}?' + params.toString();
 }
 
 // Écouteurs d'événements
-document.getElementById('searchField').addEventListener('input', applyFilters);
-document.getElementById('faculteFilter').addEventListener('change', applyFilters);
-document.getElementById('roleFilter').addEventListener('change', applyFilters);
+document.addEventListener('DOMContentLoaded', function() {
+    const searchField = document.getElementById('searchField');
+    const faculteFilter = document.getElementById('faculteFilter');
+    const roleFilter = document.getElementById('roleFilter');
+
+    if (searchField) searchField.addEventListener('input', applyFilters);
+    if (faculteFilter) faculteFilter.addEventListener('change', applyFilters);
+    if (roleFilter) roleFilter.addEventListener('change', applyFilters);
+});
 </script>
 {% endblock %}

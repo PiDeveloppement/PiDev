@@ -369,10 +369,15 @@
         }
         
         .login-message {
-            color: #ef4444;
+            color: #dc2626;
             font-size: 12px;
             text-align: center;
-            margin-bottom: 5px;
+            margin-bottom: 15px;
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-weight: 500;
         }
         
         /* Liens de navigation */
@@ -508,13 +513,14 @@
                     {% endfor %}
 
                     <!-- Formulaire de connexion -->
-                    <form method="post" action="{{ path('app_login_check') }}" style="width: 100%;">
+                    <form method="post" action="{{ path('app_login_check') }}" style="width: 100%;" id="loginForm" onsubmit="return validateLoginForm()">
                         <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
                         <div class="form-container">
                             <!-- Email -->
                             <div class="form-group">
                                 <input type="email" 
+                                       id="emailField"
                                        name="email" 
                                        value="{{ last_username }}" 
                                        placeholder="Email universitaire"
@@ -628,5 +634,70 @@ document.getElementById('passwordField').addEventListener('input', function(e) {
         document.getElementById('visiblePasswordField').value = e.target.value;
     }
 });
+
+// Validation du formulaire avant soumission
+function validateLoginForm() {
+    const emailField = document.getElementById('emailField');
+    const passwordField = document.getElementById('passwordField');
+    const visiblePasswordField = document.getElementById('visiblePasswordField');
+    
+    // Récupérer la valeur du mot de passe (du champ visible ou caché)
+    const passwordValue = passwordField.style.display !== 'none' ? passwordField.value : visiblePasswordField.value;
+    
+    // Validation de l'email
+    if (!emailField.value || emailField.value.trim() === '') {
+        showInlineError('Veuillez saisir votre email');
+        emailField.focus();
+        return false;
+    }
+    
+    // Validation du format de l'email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailField.value)) {
+        showInlineError('Veuillez saisir un email valide');
+        emailField.focus();
+        return false;
+    }
+    
+    // Validation du mot de passe
+    if (!passwordValue || passwordValue.trim() === '') {
+        showInlineError('Veuillez saisir votre mot de passe');
+        if (passwordField.style.display !== 'none') {
+            passwordField.focus();
+        } else {
+            visiblePasswordField.focus();
+        }
+        return false;
+    }
+    
+    return true;
+}
+
+// Afficher une erreur inline dans le formulaire
+function showInlineError(message) {
+    // Supprimer les anciennes alertes d'erreur inline
+    const existingAlert = document.getElementById('inlineErrorAlert');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+    
+    // Créer une nouvelle alerte
+    const formContainer = document.querySelector('.form-container');
+    const alertDiv = document.createElement('div');
+    alertDiv.id = 'inlineErrorAlert';
+    alertDiv.className = 'login-message';
+    alertDiv.textContent = message;
+    
+    // Insérer l'alerte avant le formulaire
+    formContainer.parentNode.insertBefore(alertDiv, formContainer);
+    
+    // Supprimer l'alerte après 5 secondes
+    setTimeout(() => {
+        const alert = document.getElementById('inlineErrorAlert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
 </script>
 {% endblock %}

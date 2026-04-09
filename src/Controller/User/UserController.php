@@ -39,23 +39,22 @@ class UserController extends AbstractController
         $faculte = $request->query->get('faculte');
         $role = $request->query->get('role');
 
-        $users = $this->userService->searchUsers($keyword, $faculte, $role, $page, 5);
+        $users = $this->userService->searchUsers($keyword, $faculte, $role, $page, 5, 'id', 'DESC');
         $total = $this->userService->countUsers($keyword, $faculte, $role);
-        
-        $facultes = $this->userService->getAllFacultes();
+
+        $facultes = $this->userRepository->findAllFacultes();
         $roles = $this->roleRepository->findAllNames();
 
         // Récupération correcte des statistiques par rôle
         $allRoles = $this->roleRepository->findAll();
         $statsByRole = [];
-        
+
         foreach ($allRoles as $roleEntity) {
             $roleName = $roleEntity->getRoleName();
             $count = $this->userRepository->count(['role' => $roleEntity]);
             $statsByRole[$roleName] = $count;
         }
-        
-        // Ajouter les utilisateurs sans rôle
+
         $defaultCount = $this->userRepository->count(['role' => null]);
         $statsByRole['Default'] = $defaultCount;
 
@@ -269,13 +268,15 @@ class UserController extends AbstractController
     #[Route('/search', name: 'app_user_search', methods: ['GET'])]
     public function search(Request $request): JsonResponse
     {
-        $query = trim($request->query->get('q', ''));
+        $query = trim($request->query->get('search', ''));
         $faculte = trim($request->query->get('faculte', ''));
         $role = trim($request->query->get('role', ''));
+        $sortBy = $request->query->get('sort', 'id');
+        $sortOrder = $request->query->get('order', 'DESC');
         $page = max(1, $request->query->getInt('page', 1));
         $limit = 5;
         
-        $users = $this->userService->searchUsers($query, $faculte, $role, $page, $limit);
+        $users = $this->userService->searchUsers($query, $faculte, $role, $page, $limit, $sortBy, $sortOrder);
         $totalResults = $this->userService->countUsers($query, $faculte, $role);
         $totalPages = ceil($totalResults / $limit);
         

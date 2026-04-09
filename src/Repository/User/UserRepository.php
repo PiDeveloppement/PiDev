@@ -76,7 +76,9 @@ public function searchUsers(
     ?string $faculte = null,
     ?string $role = null,
     int $page = 1,
-    int $limit = 5
+    int $limit = 5,
+    ?string $sortBy = null,
+    ?string $sortOrder = null
 ): array {
     $qb = $this->createQueryBuilder('u')
         ->leftJoin('u.role', 'r')
@@ -100,10 +102,22 @@ public function searchUsers(
            ->setParameter('role', $role);
     }
 
+    // Tri dynamique
+    $sortBy = $sortBy ?: 'id';
+    $sortOrder = $sortOrder ?: 'DESC';
+    
+    // Validation du champ de tri pour éviter les injections SQL
+    $allowedSortFields = ['id', 'firstName', 'lastName', 'email', 'faculte', 'registrationDate'];
+    if (!in_array($sortBy, $allowedSortFields)) {
+        $sortBy = 'id';
+    }
+    
+    $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
+
     // Pagination
     $qb->setFirstResult(($page - 1) * $limit)
        ->setMaxResults($limit)
-       ->orderBy('u.id', 'DESC');
+       ->orderBy('u.' . $sortBy, $sortOrder);
 
     return $qb->getQuery()->getResult();
 }

@@ -33,11 +33,6 @@ class LoginController extends AbstractController
     #[Route('/login', name: 'app_login')]
     public function login(AuthenticationUtils $authenticationUtils, Request $request): Response
     {
-        // ✅ Si déjà connecté, rediriger directement selon le rôle
-        if ($this->getUser()) {
-            return $this->redirectToRoute($this->resolveHomeRouteForUser($this->getUser()));
-        }
-
         $error = $authenticationUtils->getLastAuthenticationError();
         $lastUsername = $authenticationUtils->getLastUsername();
 
@@ -46,6 +41,12 @@ class LoginController extends AbstractController
         $rememberMe = !empty($savedEmail) && !empty($savedPassword);
         $lastLogin = $request->cookies->get('last_login');
         $lastEmail = $request->cookies->get('last_email');
+
+        // Récupérer l'ID de l'événement en attente depuis l'URL
+        $pendingEventId = $request->query->get('pending_event');
+        if ($pendingEventId) {
+            $request->getSession()->set('pending_event', (int) $pendingEventId);
+        }
 
         return $this->render('auth/login.html.twig', [
             'last_username' => $lastUsername ?: $savedEmail,
@@ -67,7 +68,7 @@ class LoginController extends AbstractController
 
         if (empty($email) || empty($password)) {
             $this->addFlash('error', 'Email et mot de passe requis');
-            return $this->redirectToRoute('app_facial_login');
+            return $this->redirectToRoute('app_login');
         }
 
         try {
@@ -75,7 +76,7 @@ class LoginController extends AbstractController
 
             if (!$user) {
                 $this->addFlash('error', 'Email ou mot de passe incorrect');
-                return $this->redirectToRoute('app_facial_login');
+                return $this->redirectToRoute('app_login');
             }
 
             // Mettre à jour la date de dernière connexion
@@ -120,7 +121,7 @@ class LoginController extends AbstractController
 
         } catch (\Exception $e) {
             $this->addFlash('error', 'Erreur de connexion: ' . $e->getMessage());
-            return $this->redirectToRoute('app_facial_login');
+            return $this->redirectToRoute('app_login');
         }
     }
 
@@ -208,7 +209,7 @@ class LoginController extends AbstractController
     }
 
     /**
-     * Détermine la route de redirection selon le rôle de l'utilisateur
+     * Détermine la route de redirection selon le roleId de l'utilisateur
      */
     private function resolveHomeRouteForUser(?UserModel $user): string
     {
@@ -216,25 +217,25 @@ class LoginController extends AbstractController
             return 'app_landing';
         }
 
-        $roles = $user->getRoles();
-        
-        // ✅ Participant → mes billets
-        if (in_array('ROLE_PARTICIPANT', $roles, true)) {
-            return 'app_my_tickets';
-        }
-        
-        // ✅ Sponsor → portal sponsor
-        if (in_array('ROLE_SPONSOR', $roles, true)) {
+        $roleId = $user->getRoleId();
+
+        // Role id 4 (Sponsor) → portale_home
+        if ($roleId == 4) {
             return 'app_sponsor_portal';
         }
-        
-        // ✅ Admin et Organisateur → dashboard
-        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_ORGANISATEUR', $roles, true)) {
+
+        // Role id 3 (Organisateur) ou Role id 2 (Admin) → dashboard
+        if ($roleId == 3 || $roleId == 2) {
             return 'app_dashboard';
         }
-        
+
+        // Role id 1 (Default) ou Role id 5 (Participant) → page mes billets
+        if ($roleId == 1 || $roleId == 5) {
+            return 'app_my_tickets';
+        }
+
         // Redirection par défaut
-        return 'app_public_events';
+        return 'app_my_tickets';
     }
 
     #[Route('/check-auth', name: 'app_check_auth')]

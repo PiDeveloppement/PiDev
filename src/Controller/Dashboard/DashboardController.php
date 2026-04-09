@@ -38,9 +38,28 @@ class DashboardController extends AbstractController
     {
         $this->logger->info('Initialisation DashboardController...');
 
+        // Récupérer l'utilisateur connecté et son rôle
+        $user = $this->getUser();
+        $userRole = 'user';
+        $isOrganizer = false;
+        $isAdmin = false;
+
+        if ($user) {
+            $roleId = $user->getRoleId();
+            if ($roleId == 2) {
+                $userRole = 'admin';
+                $isAdmin = true;
+            } elseif ($roleId == 3) {
+                $userRole = 'organisateur';
+                $isOrganizer = true;
+            }
+        }
+
+        $this->logger->info('👤 Utilisateur connecté avec rôle: ' . $userRole . ' (roleId: ' . ($user ? $user->getRoleId() : 'N/A') . ')');
+
         try {
-            $stats = $this->loadDashboardData();
-            
+            $stats = $this->loadDashboardData($isOrganizer, $isAdmin);
+
             // Afficher les statistiques dans les logs pour déboguer
             $this->logger->info('📊 Statistiques calculées:', [
                 'total_events' => $stats['total_events'],
@@ -51,7 +70,7 @@ class DashboardController extends AbstractController
                 'ongoing_percent' => $stats['ongoing_percent'],
                 'completed_percent' => $stats['completed_percent'],
             ]);
-            
+
         } catch (\Exception $e) {
             $this->logger->error('❌ Erreur chargement données: ' . $e->getMessage());
             $stats = $this->getErrorStats();
@@ -59,7 +78,10 @@ class DashboardController extends AbstractController
 
         return $this->render('dashboard/dashboard.html.twig', [
             'stats' => $stats,
-            'upcoming_events' => $stats['upcoming_events'] ?? []
+            'upcoming_events' => $stats['upcoming_events'] ?? [],
+            'user_role' => $userRole,
+            'is_organizer' => $isOrganizer,
+            'is_admin' => $isAdmin
         ]);
     }
 
@@ -67,8 +89,21 @@ class DashboardController extends AbstractController
     public function refresh(): JsonResponse
     {
         try {
-            $stats = $this->loadDashboardData();
-            
+            $user = $this->getUser();
+            $isOrganizer = false;
+            $isAdmin = false;
+
+            if ($user) {
+                $roleId = $user->getRoleId();
+                if ($roleId == 2) {
+                    $isAdmin = true;
+                } elseif ($roleId == 3) {
+                    $isOrganizer = true;
+                }
+            }
+
+            $stats = $this->loadDashboardData($isOrganizer, $isAdmin);
+
             return $this->json([
                 'totalEvents' => $stats['total_events'],
                 'totalParticipants' => $stats['total_users'],
@@ -96,6 +131,8 @@ class DashboardController extends AbstractController
                 'defaultCount' => $stats['default_count'] ?? 0,
                 'sponsorsPercent' => $stats['sponsors_percent'] ?? 0,
                 'sponsorsCount' => $stats['sponsors_count'] ?? 0,
+                // Événements à venir
+                'upcomingEvents' => $this->serializeEvents($stats['upcoming_events'] ?? []),
                 'lastUpdate' => $this->lastUpdate->format('H:i:s')
             ]);
         } catch (\Exception $e) {
@@ -104,7 +141,7 @@ class DashboardController extends AbstractController
         }
     }
 
-    private function loadDashboardData(): array
+    private function loadDashboardData(bool $isOrganizer = false, bool $isAdmin = false): array
     {
         // Récupérer les repositories
         $eventRepository = $this->entityManager->getRepository(Event::class);
@@ -113,14 +150,16 @@ class DashboardController extends AbstractController
         
         $this->logger->info('🔍 Repositories chargés');
         
+        // Récupérer l'utilisateur connecté
+        $user = $this->getUser();
+
         // ==================== STATS ÉVÉNEMENTS ====================
-        // Compter les événements
-        $totalEvents = $eventRepository->count([]);
-        $this->logger->info('📊 Total événements: ' . $totalEvents);
-        
-        // Récupérer TOUS les événements pour les statistiques
+        // Tous les utilisateurs (y compris organisateurs) voient tous les événements
         $allEvents = $eventRepository->findAll();
-        $this->logger->info('📊 Nombre événements trouvés: ' . count($allEvents));
+        $this->logger->info('📊 Tous les événements: ' . count($allEvents));
+
+        $totalEvents = count($allEvents);
+        $this->logger->info('📊 Total événements: ' . $totalEvents);
         
         // Compter les billets
         $totalTickets = $ticketRepository->count([]);
@@ -128,12 +167,15 @@ class DashboardController extends AbstractController
         
         // Récupérer les événements à venir
         $upcomingEvents = $eventRepository->createQueryBuilder('e')
-            ->where('e.startDate > :now')
-            ->setParameter('now', new \DateTime())
             ->orderBy('e.startDate', 'ASC')
             ->setMaxResults(5)
             ->getQuery()
             ->getResult();
+        
+        $this->logger->info('📊 Événements à venir trouvés: ' . count($upcomingEvents));
+        foreach ($upcomingEvents as $event) {
+            $this->logger->info('📅 Événement: ' . $event->getTitle() . ' - Start: ' . ($event->getStartDate() ? $event->getStartDate()->format('Y-m-d H:i') : 'null'));
+        }
         
         // Calculer les statistiques des événements
         $eventStats = $this->calculateEventStats($allEvents);
@@ -163,9 +205,9 @@ class DashboardController extends AbstractController
         $this->logger->info('📊 Nouveaux utilisateurs ce mois: ' . $newUsersCount);
         
         // Utilisateurs par rôle - utiliser RoleId directement
-        $adminCount = $userRepository->count(['roleId' => 4]);
-        $organizerCount = $userRepository->count(['roleId' => 2]);
-        $sponsorCount = $userRepository->count(['roleId' => 3]);
+        $adminCount = $userRepository->count(['roleId' => 2]);
+        $organizerCount = $userRepository->count(['roleId' => 3]);
+        $sponsorCount = $userRepository->count(['roleId' => 4]);
         $defaultCount = $totalUsers - $adminCount - $organizerCount - $sponsorCount;
         
         $this->logger->info('📊 Admins: ' . $adminCount . ', Org: ' . $organizerCount . ', Sponsor: ' . $sponsorCount);
@@ -209,7 +251,7 @@ class DashboardController extends AbstractController
             'planned_percent' => $eventStats['total'] > 0 ? round(($eventStats['planned'] / $eventStats['total']) * 100) : 0,
             'ongoing_percent' => $eventStats['total'] > 0 ? round(($eventStats['ongoing'] / $eventStats['total']) * 100) : 0,
             'completed_percent' => $eventStats['total'] > 0 ? round(($eventStats['completed'] / $eventStats['total']) * 100) : 0,
-            'upcoming_events' => array_map([$this, 'formatEventForDisplay'], $upcomingEvents),
+            'upcoming_events' => $upcomingEvents,
             'total' => $eventStats['total']
         ], $userStats);
     }
@@ -470,6 +512,22 @@ class DashboardController extends AbstractController
             return '#22c55e';
         }
         return '#f59e0b';
+    }
+
+    private function serializeEvents(array $events): array
+    {
+        return array_map(function($event) {
+            return [
+                'id' => $event->getId(),
+                'title' => $event->getTitle(),
+                'startDate' => $event->getStartDate() ? $event->getStartDate()->format('Y-m-d\TH:i:s') : null,
+                'endDate' => $event->getEndDate() ? $event->getEndDate()->format('Y-m-d\TH:i:s') : null,
+                'location' => $event->getLocation(),
+                'capacity' => $event->getCapacity(),
+                'isFree' => $event->getIsFree(),
+                'ticketPrice' => $event->getTicketPrice()
+            ];
+        }, $events);
     }
 
     private function getErrorStats(): array
