@@ -302,7 +302,8 @@
     let debounceTimer = null;
 
     function buildUrl(page = 1) {
-        const url = new URL(window.location.href);
+        const baseUrl = window.location.pathname;
+        const url = new URL(baseUrl, window.location.origin);
         url.searchParams.set('page', page);
         url.searchParams.set('search', search.value.trim());
         url.searchParams.set('status', status.value);
