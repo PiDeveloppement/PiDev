@@ -300,33 +300,34 @@ private ?Role $role = null;
 
     // ==================== MÉTHODES DE SÉCURITÉ ====================
 
-/**
- * @see UserInterface
- */
-// src/Entity/User/UserModel.php
+    /**
+     * @see UserInterface
+     */
+    // src/Entity/User/UserModel.php
 
-public function getRoles(): array
-{
-    // ⚠️ IMPORTANT: Ne JAMAIS retourner un tableau vide
-    // Chaque utilisateur DOIT avoir au moins ROLE_USER
-    
-    $roles = ['ROLE_USER']; // ← TOUJOURS inclure ROLE_USER
-    
-    $roleName = $this->getRole()?->getRoleName() ?? '';
-    $roleName = strtolower($roleName);
-    
-    if ($roleName === 'admin' || $this->roleId == 4) {
-        $roles[] = 'ROLE_ADMIN';
+    public function getRoles(): array
+    {
+        // ⚠️ IMPORTANT: Ne JAMAIS retourner un tableau vide
+        // Chaque utilisateur DOIT avoir au moins ROLE_USER
+
+        $roles = ['ROLE_USER']; // ← TOUJOURS inclure ROLE_USER
+
+        $roleName = $this->getRole()?->getRoleName() ?? '';
+        $roleName = strtolower($roleName);
+
+        // IDs corrects selon la base de données: Admin=2, Organisateur=3, Sponsor=4
+        if ($roleName === 'admin' || $this->roleId == 2) {
+            $roles[] = 'ROLE_ADMIN';
+        }
+        if ($roleName === 'organisateur' || $this->roleId == 3) {
+            $roles[] = 'ROLE_ORGANISATEUR';
+        }
+        if ($roleName === 'sponsor' || $this->roleId == 4) {
+            $roles[] = 'ROLE_SPONSOR';
+        }
+
+        return $roles;
     }
-    if ($roleName === 'organisateur' || $this->roleId == 2) {
-        $roles[] = 'ROLE_ORGANISATEUR';
-    }
-    if ($roleName === 'sponsor' || $this->roleId == 3) {
-        $roles[] = 'ROLE_SPONSOR';
-    }
-    
-    return $roles;
-}
 
     public function eraseCredentials(): void
     {

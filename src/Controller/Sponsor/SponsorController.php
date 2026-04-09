@@ -1146,16 +1146,21 @@ class SponsorController extends AbstractController
     {
         $user = $this->getUser();
         if (!$user instanceof UserModel) {
-            throw $this->createAccessDeniedException('Acces reserve a l administration.');
+            throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
         }
 
-        $roleName = mb_strtolower((string) ($user->getRole()?->getRoleName() ?? ''));
-        $roleId = (int) ($user->getRoleId() ?? 0);
-
-        if (in_array($roleName, ['admin', 'organisateur'], true) || in_array($roleId, [4, 2], true)) {
+        // Vérifier via les rôles Symfony (plus fiable)
+        $roles = $user->getRoles();
+        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_ORGANISATEUR', $roles, true)) {
             return;
         }
 
-        throw $this->createAccessDeniedException('Acces reserve a l administration.');
+        // Vérification de secours via roleId (Admin=2, Organisateur=3)
+        $roleId = (int) ($user->getRoleId() ?? 0);
+        if ($roleId === 2 || $roleId === 3) {
+            return;
+        }
+
+        throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
     }
 }
