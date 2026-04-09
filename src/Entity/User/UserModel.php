@@ -66,10 +66,10 @@ private ?Role $role = null;
     #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
     private ?PasswordResetToken $resetToken = null;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Feedback::class)]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Feedback::class, cascade: ['remove'])]
     private Collection $feedbacks;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Question::class)]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Question::class, cascade: ['remove'])]
     private Collection $questions;
 
     // Champ temporaire pour le formulaire (non persistant)

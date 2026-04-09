@@ -50,4 +50,26 @@ class RoleRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    public function searchByName(string $search, int $limit = 5, int $offset = 0): array
+    {
+        return $this->createQueryBuilder('r')
+            ->where('LOWER(r.roleName) LIKE :search')
+            ->setParameter('search', mb_strtolower($search) . '%')
+            ->orderBy('r.roleName', 'ASC')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countSearchResults(string $search): int
+    {
+        return (int) $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->where('LOWER(r.roleName) LIKE :search')
+            ->setParameter('search', mb_strtolower($search) . '%')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

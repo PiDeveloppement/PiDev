@@ -103,6 +103,8 @@
                             Ce mois
                         </span>
                     </div>
+
+                  
                 </div>
 
                 <!-- Graphiques et visualisations -->
@@ -344,10 +346,10 @@
         gap: 24px;
     }
 
-    /* Grille des statistiques - 4 cartes qui s'étendent */
+    /* Grille des statistiques - 5 cartes qui s'étendent */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         gap: 24px;
         width: 100%;
     }
@@ -984,7 +986,7 @@ function refreshDashboard() {
 
 function generateReport() {
     console.log('📊 Génération du rapport...');
-    alert('Fonctionnalité de génération de rapport à venir');
+    window.location.href = '{{ path('app_dashboard_report') }}';
 }
 </script>
 {% endblock %}
