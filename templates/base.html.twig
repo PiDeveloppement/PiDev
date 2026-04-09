@@ -123,7 +123,9 @@
                         </div>
                     </div>
                     
-                    <!-- Menu participants -->
+                    <!-- Menu participants (caché pour organisateurs) -->
+                    {% set is_organisateur = app.user and (app.user.role and app.user.role.roleName == 'Organisateur') or (app.user and app.user.roleId == 2) %}
+                    {% if not is_organisateur %}
                     <div style="margin-bottom: 4px;">
                         <button class="menu-button" onclick="toggleSubmenu('users-submenu', this)">
                             <i class="fas fa-users" style="width: 20px;"></i>
@@ -141,6 +143,7 @@
                             </a>
                         </div>
                     </div>
+                    {% endif %}
                     
                     <!-- Menu sponsors -->
                     <div style="margin-bottom: 4px;">
