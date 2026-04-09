@@ -62,20 +62,14 @@ class QuizController extends AbstractController
                 $fb->setReponseDonnee($userAnswer);
 
                 // Associer l'utilisateur connecté au feedback
-                $session = $request->getSession();
-                $userId = $session->get('user_id');
-                
-                // SOLUTION RADICALE: Forcer un ID utilisateur pour que ça marche !
-                $fb->setUserId(45); // ID 45 forcé
-                
-                // Récupérer l'objet utilisateur
-                $userRepository = $em->getRepository(\App\Entity\User\UserModel::class);
-                $user = $userRepository->find(45);
+                $user = $this->getUser();
                 if ($user) {
+                    $fb->setUserId($user->getId());
                     $fb->setUser($user);
+                } else {
+                    // Si aucun utilisateur connecté, utiliser une valeur par défaut ou gérer l'erreur
+                    $fb->setUserId(null);
                 }
-                
-                error_log('QuizController: FORCED ID 45 - THIS MUST WORK!');
 
                 // Pour les réponses du quiz, on met un commentaire par défaut
                 $fb->setComments("Réponse automatique (Quiz)");
@@ -97,15 +91,16 @@ class QuizController extends AbstractController
         $userFeedback = null;
         if (isset($evaluation['comments']) && isset($evaluation['etoiles'])) {
             $userFeedback = new Feedback();
-            $userFeedback->setUserId(45);
             $userFeedback->setComments($evaluation['comments']);
             $userFeedback->setEtoiles((int)$evaluation['etoiles']);
             
-            // Récupérer l'objet utilisateur
-            $userRepository = $em->getRepository(\App\Entity\User\UserModel::class);
-            $user = $userRepository->find(45);
+            // Associer l'utilisateur connecté
+            $user = $this->getUser();
             if ($user) {
+                $userFeedback->setUserId($user->getId());
                 $userFeedback->setUser($user);
+            } else {
+                $userFeedback->setUserId(null);
             }
             
             $em->persist($userFeedback);
@@ -132,7 +127,11 @@ class QuizController extends AbstractController
 
         // Récupérer les feedbacks existants pour les afficher
         $feedbackRepository = $em->getRepository(Feedback::class);
-        $existingFeedbacks = $feedbackRepository->findBy(['userId' => 45], ['createdAt' => 'DESC']);
+        $user = $this->getUser();
+        $existingFeedbacks = [];
+        if ($user) {
+            $existingFeedbacks = $feedbackRepository->findBy(['userId' => $user->getId()], ['createdAt' => 'DESC']);
+        }
 
         return $this->render('questionnaire/quiz/results.html.twig', [
             'results' => $quizResults['results'],
@@ -189,7 +188,14 @@ class QuizController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $feedback->setUserId(45); 
+            // Associer l'utilisateur connecté
+            $user = $this->getUser();
+            if ($user) {
+                $feedback->setUserId($user->getId());
+                $feedback->setUser($user);
+            } else {
+                $feedback->setUserId(null);
+            }
 
             $em->persist($feedback);
             $em->flush();
@@ -204,8 +210,9 @@ class QuizController extends AbstractController
     #[Route('/quiz/feedback/{id}/edit', name: 'app_quiz_feedback_edit', methods: ['GET', 'POST'])]
     public function editFeedback(Request $request, Feedback $feedback, EntityManagerInterface $em): Response
     {
-        // Vérifier que le feedback appartient à l'utilisateur (ID 45)
-        if ($feedback->getUserId() !== 45) {
+        // Vérifier que le feedback appartient à l'utilisateur connecté
+        $user = $this->getUser();
+        if (!$user || $feedback->getUserId() !== $user->getId()) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas modifier ce feedback.');
         }
 
@@ -240,8 +247,9 @@ class QuizController extends AbstractController
     #[Route('/quiz/feedback/{id}', name: 'app_quiz_feedback_delete', methods: ['POST'])]
     public function deleteFeedback(Request $request, Feedback $feedback, EntityManagerInterface $em): Response
     {
-        // Vérifier que le feedback appartient à l'utilisateur (ID 45)
-        if ($feedback->getUserId() !== 45) {
+        // Vérifier que le feedback appartient à l'utilisateur connecté
+        $user = $this->getUser();
+        if (!$user || $feedback->getUserId() !== $user->getId()) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas supprimer ce feedback.');
         }
 

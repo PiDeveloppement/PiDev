@@ -191,7 +191,11 @@
                             <i class="fas fa-chevron-right submenu-arrow" style="font-size: 12px;"></i>
                         </button>
                         <div id="questionnaires-submenu" class="submenu" style="display: none; margin-left: 20px; margin-top: 2px;">
-                            <a {#href="{{ path('app_questions_index') }}"#} class="submenu-button">
+                            <a href="{{ path('app_questionnaire_feedback_index') }}" class="submenu-button {{ app.request.get('_route') == 'app_questionnaire_feedback_index' ? 'active' : '' }}">
+                                <i class="fas fa-comments" style="width: 18px;"></i>
+                                Avis
+                            </a>
+                            <a href="{{ path('app_question_index') }}" class="submenu-button {{ app.request.get('_route') == 'app_question_index' ? 'active' : '' }}">
                                 <i class="fas fa-question" style="width: 18px;"></i>
                                 Questions
                             </a>
@@ -374,6 +378,29 @@
                 arrow.style.transform = 'rotate(0deg)';
             }
         }
+        
+        // Auto-open questionnaire submenu if on questionnaire page
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentRoute = '{{ app.request.get('_route') }}';
+            const questionnaireSubmenu = document.getElementById('questionnaires-submenu');
+            const questionnaireButton = questionnaireSubmenu ? questionnaireSubmenu.previousElementSibling : null;
+            
+            // Open questionnaire submenu if we're on a questionnaire-related page
+            if (currentRoute === 'app_questionnaire_feedback_index' || 
+                currentRoute === 'app_question_index' ||
+                currentRoute === 'app_question_new' ||
+                currentRoute === 'app_question_edit' ||
+                currentRoute === 'app_question_stats') {
+                
+                if (questionnaireSubmenu && questionnaireButton) {
+                    questionnaireSubmenu.style.display = 'block';
+                    const arrow = questionnaireButton.querySelector('.submenu-arrow');
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(90deg)';
+                    }
+                }
+            }
+        });
         
         // Gestion du chat
         function toggleChat() {
