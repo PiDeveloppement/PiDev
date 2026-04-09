@@ -4,7 +4,9 @@ namespace App\Controller\Questionnaire;
 
 use App\Entity\Questionnaire\Question;
 use App\Entity\Questionnaire\Feedback;
+use App\Entity\Questionnaire\QuizAnswer;
 use App\Form\Questionnaire\FeedbackType;
+use App\Form\Questionnaire\QuizAnswerType;
 use App\Repository\Questionnaire\QuestionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,6 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class QuizController extends AbstractController
 {
@@ -23,8 +26,51 @@ class QuizController extends AbstractController
         shuffle($questions);
         $questions = array_slice($questions, 0, 10);
 
+        // Stocker les questions en session
+        $session = $this->container->get('request_stack')->getSession();
+        $session->set('quiz_questions', $questions);
+        $session->set('quiz_answers', []);
+
         return $this->render('questionnaire/quiz/index.html.twig', [
             'questions' => $questions
+        ]);
+    }
+
+    #[Route('/quiz/validate-answer', name: 'app_quiz_validate_answer', methods: ['POST'])]
+    public function validateAnswer(Request $request, ValidatorInterface $validator): Response
+    {
+        $session = $request->getSession();
+        $questionId = $request->request->get('questionId');
+        $answer = $request->request->get('answer');
+
+        // Créer une réponse de quiz pour la validation
+        $quizAnswer = new QuizAnswer();
+        $quizAnswer->setQuestionId($questionId);
+        $quizAnswer->setAnswer($answer);
+
+        // Valider la réponse
+        $errors = $validator->validate($quizAnswer);
+
+        if (count($errors) > 0) {
+            // Retourner les erreurs en format JSON
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getMessage();
+            }
+            
+            return $this->json([
+                'success' => false,
+                'errors' => $errorMessages
+            ]);
+        }
+
+        // Si la validation passe, stocker la réponse en session
+        $answers = $session->get('quiz_answers', []);
+        $answers[$questionId] = $answer;
+        $session->set('quiz_answers', $answers);
+
+        return $this->json([
+            'success' => true
         ]);
     }
 
@@ -45,7 +91,8 @@ class QuizController extends AbstractController
         error_log('Session data: ' . print_r($session->all(), true));
         error_log('=============================');
         
-        $data = $request->request->all('answers'); 
+        // Récupérer les réponses validées depuis la session
+        $data = $session->get('quiz_answers', []); 
         $evaluation = $request->request->all('evaluation'); 
         
         $results = [];
