@@ -13,6 +13,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('css/atlantafx-custom.css') }}">
     
@@ -56,7 +59,10 @@
         'app_forgot_password', 
         'app_reset_password', 
         'app_feedback_view',
-        'app_demo_video'
+        'app_demo_video',
+        'app_quiz_start',
+        'app_quiz_results',
+        'app_quiz_final_results'
     ] %}
     
     {# Debug - À SUPPRIMER APRÈS RÉSOLUTION #}
@@ -123,9 +129,9 @@
                         </div>
                     </div>
                     
-                    <!-- Menu participants (caché pour organisateurs) -->
-                    {% set is_organisateur = app.user and (app.user.role and app.user.role.roleName == 'Organisateur') or (app.user and app.user.roleId == 2) %}
-                    {% if not is_organisateur %}
+                    <!-- Menu participants (uniquement pour admin) -->
+                    {% set is_admin = app.user and (app.user.role and app.user.role.roleName == 'Admin') or (app.user and app.user.roleId == 2) %}
+                    {% if is_admin %}
                     <div style="margin-bottom: 4px;">
                         <button class="menu-button" onclick="toggleSubmenu('users-submenu', this)">
                             <i class="fas fa-users" style="width: 20px;"></i>
@@ -200,7 +206,11 @@
                             <i class="fas fa-chevron-right submenu-arrow" style="font-size: 12px;"></i>
                         </button>
                         <div id="questionnaires-submenu" class="submenu" style="display: none; margin-left: 20px; margin-top: 2px;">
-                            <a {#href="{{ path('app_questions_index') }}"#} class="submenu-button">
+                            <a href="{{ path('app_questionnaire_feedback_index') }}" class="submenu-button {{ app.request.get('_route') == 'app_questionnaire_feedback_index' ? 'active' : '' }}">
+                                <i class="fas fa-comments" style="width: 18px;"></i>
+                                Avis
+                            </a>
+                            <a href="{{ path('app_question_index') }}" class="submenu-button {{ app.request.get('_route') == 'app_question_index' ? 'active' : '' }}">
                                 <i class="fas fa-question" style="width: 18px;"></i>
                                 Questions
                             </a>
@@ -400,6 +410,29 @@
             }
         }
         
+        // Auto-open questionnaire submenu if on questionnaire page
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentRoute = '{{ app.request.get('_route') }}';
+            const questionnaireSubmenu = document.getElementById('questionnaires-submenu');
+            const questionnaireButton = questionnaireSubmenu ? questionnaireSubmenu.previousElementSibling : null;
+            
+            // Open questionnaire submenu if we're on a questionnaire-related page
+            if (currentRoute === 'app_questionnaire_feedback_index' || 
+                currentRoute === 'app_question_index' ||
+                currentRoute === 'app_question_new' ||
+                currentRoute === 'app_question_edit' ||
+                currentRoute === 'app_question_stats') {
+                
+                if (questionnaireSubmenu && questionnaireButton) {
+                    questionnaireSubmenu.style.display = 'block';
+                    const arrow = questionnaireButton.querySelector('.submenu-arrow');
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(90deg)';
+                    }
+                }
+            }
+        });
+        
         // Gestion du chat
         function toggleChat() {
             const chatPanel = document.getElementById('chatPanel');
@@ -542,6 +575,9 @@
             }, 4500 + (index * 120));
         });
     </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     {% block javascripts %}{% endblock %}
 </body>

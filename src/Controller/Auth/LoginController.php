@@ -95,14 +95,25 @@ class LoginController extends AbstractController
 
             $this->handlePendingEventParticipation($session, $user);
 
-            // ✅ FORCER la redirection selon le rôle (ignorer toute redirection précédente)
-            $redirectRoute = $this->resolveHomeRouteForUser($user);
-            
-            // ⚠️ Supprimer toute redirection stockée en session
-            $session->remove('after_login_redirect');
-            $session->remove('_security.main.target_path');
+            // 🎯 Vérifier s'il y a une redirection vers le quiz en attente
+            $afterLoginRedirect = $session->get('after_login_redirect');
+            $pendingQuizEvent = $session->get('pending_quiz_event');
 
-            $response = $this->redirectToRoute($redirectRoute);
+            if ($afterLoginRedirect === 'app_quiz_start' && $pendingQuizEvent) {
+                $session->remove('after_login_redirect');
+                $session->remove('pending_quiz_event');
+                $response = $this->redirectToRoute('app_quiz_start', ['event_id' => $pendingQuizEvent]);
+            } else {
+                // ✅ FORCER la redirection selon le rôle (ignorer toute redirection précédente)
+                $redirectRoute = $this->resolveHomeRouteForUser($user);
+
+                // ⚠️ Supprimer toute redirection stockée en session
+                $session->remove('after_login_redirect');
+                $session->remove('_security.main.target_path');
+                $session->remove('pending_quiz_event');
+
+                $response = $this->redirectToRoute($redirectRoute);
+            }
 
             // Gérer "Se souvenir de moi"
             if ($rememberMe) {

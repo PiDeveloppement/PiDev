@@ -1,0 +1,813 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Quiz - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow-x: hidden;
+            background-color: #f8fafc;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: #ffffff;
+            border-bottom: 1px solid #dbe5f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            height: 80px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .logo-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            position: absolute;
+            left: 24px;
+        }
+        
+        .logo-container img {
+            width: 92px;
+            height: auto;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 26px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav-link {
+            color: #1f2937;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-link:hover,
+        .nav-link.active {
+            color: #667eea;
+        }
+        
+        .quiz-content {
+            margin-top: 80px;
+            padding: 60px 100px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e8f4f8 100%);
+            min-height: calc(100vh - 80px);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 24px;
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 35px 45px;
+            border-bottom: none;
+            color: white;
+        }
+        
+        .card-header h2 {
+            color: white;
+            font-weight: bold;
+            font-size: 36px;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .progress {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);
+        }
+        
+        .card-body {
+            padding: 50px;
+        }
+        
+        .quiz-step {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .quiz-step h3 {
+            color: #1e293b;
+            font-weight: bold;
+            font-size: 26px;
+            margin-bottom: 35px;
+            line-height: 1.5;
+        }
+        
+        .form-check {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px 25px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .form-check::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+        
+        .form-check:hover {
+            background: linear-gradient(135deg, #e0e7ff 0%, #e8f4f8 100%);
+            border-color: #667eea;
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+        }
+        
+        .form-check-input:checked + .form-check-label {
+            font-weight: 700;
+            color: #667eea;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+            transform: scale(1.2);
+        }
+        
+        .form-check-label {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .btn {
+            padding: 16px 40px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn-light {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            color: #1e293b;
+            border: 2px solid #cbd5e1;
+        }
+        
+        .btn-light:hover {
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            border-color: #94a3b8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-success:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.5);
+        }
+        
+        .evaluation-section {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 24px;
+            padding: 40px;
+            border: 2px solid #fbbf24;
+            box-shadow: 0 8px 20px rgba(251, 191, 36, 0.2);
+        }
+        
+        .star-btn {
+            border: 2px solid #fbbf24;
+            color: #fbbf24;
+            background: transparent;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+        
+        .star-btn:hover {
+            background: #fbbf24;
+            color: white;
+            transform: scale(1.2) rotate(10deg);
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+        }
+        
+        .star-btn.btn-warning {
+            background: #fbbf24;
+            color: white;
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+        }
+        
+        .validation-error {
+            animation: shake 0.5s ease;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+            }
+            
+            .nav-links {
+                gap: 20px;
+            }
+            
+            .nav-link {
+                font-size: 14px;
+                padding: 6px 12px;
+            }
+            
+            .logo-container img {
+                width: 120px;
+            }
+            
+            .quiz-content {
+                padding: 40px 20px;
+            }
+            
+            .card-body {
+                padding: 30px 20px;
+            }
+            
+            .quiz-step h3 {
+                font-size: 20px;
+            }
+            
+            .card-header h2 {
+                font-size: 28px;
+            }
+            
+            .btn {
+                padding: 14px 30px;
+                font-size: 14px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block public_content %}
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="logo-container">
+            <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+        </div>
+
+        <div class="nav-links">
+            <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}'">Accueil</button>
+            <button class="nav-link" onclick="window.location.href='{{ path('app_public_events') }}'">Événements</button>
+            <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
+        </div>
+    </nav>
+
+    <div class="quiz-content container">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">Session de Quiz</h2>
+                    <span class="badge" id="stepCounter">
+                        Question 1/{{ questions|length }}
+                    </span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-animated" role="progressbar"
+                         style="width: {{ (1 / questions|length) * 100 }}%" id="quizProgress"></div>
+                </div>
+            </div>
+
+            <div class="card-body p-4 p-md-5">
+                {# Formulaire vers la route app_quiz_submit en POST #}
+                <form id="quizForm" action="{{ path('app_quiz_submit') }}" method="POST" novalidate>
+                    {% for question in questions %}
+                    <div class="quiz-step" id="step-{{ loop.index }}" style="{{ loop.first ? '' : 'display:none;' }}">
+                        <h3 class="h5 mb-4 text-dark lh-base">{{ question.texte }}</h3>
+                        
+                        <div class="answer-container">
+                            {# Créer un tableau avec toutes les options et les mélanger #}
+                            {% set options = [question.reponse, question.option1, question.option2, question.option3]|shuffle %}
+                            
+                            {# Afficher les 4 options sous forme de radio buttons #}
+                            {% for option in options %}
+                                {% if option %}
+                                <div class="form-check mb-3 p-3 border rounded-3 hover-bg-light">
+                                    <input class="form-check-input" type="radio" name="answers[{{ question.id }}]" 
+                                           id="answer_{{ question.id }}_{{ loop.index }}" 
+                                           value="{{ option }}" required>
+                                    <label class="form-check-label w-100 cursor-pointer" for="answer_{{ question.id }}_{{ loop.index }}">
+                                        <span class="ms-2">{{ option }}</span>
+                                    </label>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <div class="mt-5 d-flex justify-content-between">
+                            {% if not loop.first %}
+                                <button type="button" class="btn btn-light px-4 py-2" onclick="changeStep({{ loop.index - 1 }})">
+                                    <i class="fas fa-arrow-left me-2"></i>Précédent
+                                </button>
+                            {% else %}
+                                <div></div>{# Espace vide pour garder le bouton Suivant à droite #}
+                            {% endif %}
+                            
+                            {% if not loop.last %}
+                                <button type="button" class="btn btn-primary px-4 py-2 shadow-sm" onclick="validateAndChangeStep({{ loop.index }}, {{ loop.index + 1 }})">
+                                    Suivant <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            {% else %}
+                                <button type="button" class="btn btn-primary px-4 py-2 shadow-sm" onclick="validateAndChangeStep({{ loop.index }}, {{ loop.index + 1 }})">
+                                    Suivant <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    {# Étape d'évaluation séparée #}
+                    <div class="quiz-step" id="step-{{ questions|length + 1 }}" style="display:none;">
+                        <div class="text-center mb-5">
+                            <h3 class="h4 mb-3 text-primary">
+                                <i class="fas fa-trophy text-warning me-2"></i>
+                                Quiz terminé !
+                            </h3>
+                            <p class="text-muted">Merci d'avoir répondu à toutes les questions. Veuillez maintenant évaluer votre expérience.</p>
+                        </div>
+                        
+                        <div class="evaluation-section p-4 bg-light rounded-3">
+                            <h5 class="mb-4 text-center">
+                                <i class="fas fa-star text-warning me-2"></i>
+                                Évaluez votre expérience
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mx-auto">
+                                    <div class="mb-4">
+                                        <label class="form-label text-center d-block">Note (0-5 étoiles)</label>
+                                        <div class="d-flex justify-content-center gap-2 mb-3">
+                                            {% for i in 1..5 %}
+                                                <button type="button" class="star-btn btn btn-outline-warning btn-lg" data-star="{{ i }}">
+                                                    <i class="fas fa-star"></i>
+                                                </button>
+                                            {% endfor %}
+                                        </div>
+                                        <input type="hidden" name="evaluation[etoiles]" id="etoiles_value" value="0" required>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label">Votre commentaire</label>
+                                        <textarea name="evaluation[comments]" class="form-control" rows="4" 
+                                                  placeholder="Partagez votre avis sur ce quiz..." required></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 d-flex justify-content-between">
+                            <button type="button" class="btn btn-light px-4 py-2" onclick="changeStep({{ questions|length }})">
+                                <i class="fas fa-arrow-left me-2"></i>Précédent
+                            </button>
+                            <button type="button" class="btn btn-success px-5 py-2 shadow border-0" onclick="validateLastQuestionAndSubmit()">
+                                <i class="fas fa-check-circle me-2"></i>Terminer le Quiz
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    /**
+     * Valide la réponse actuelle avant de passer à la question suivante
+     * @param {number} currentStep - L'index de la question actuelle
+     * @param {number} nextStep - L'index de la question suivante
+     */
+    function validateAndChangeStep(currentStep, nextStep) {
+        // Récupérer la question actuelle
+        const currentStepDiv = document.getElementById('step-' + currentStep);
+        const selectedAnswer = currentStepDiv.querySelector('input[type="radio"]:checked');
+        
+        // Afficher les erreurs précédemment cachées
+        const errorDiv = currentStepDiv.querySelector('.validation-error');
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+        
+        // Si aucune réponse n'est sélectionnée, afficher un message d'erreur
+        if (!selectedAnswer) {
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'alert alert-danger validation-error mt-3';
+            errorMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Vous devez répondre à cette question avant de continuer.';
+            
+            currentStepDiv.querySelector('.answer-container').appendChild(errorMessage);
+            return;
+        }
+        
+        // Valider via AJAX
+        const formData = new FormData();
+        formData.append('questionId', currentStepDiv.querySelector('input[type="radio"]').name.replace('answers[', '').replace(']', ''));
+        formData.append('answer', selectedAnswer.value);
+        
+        fetch('{{ path("app_quiz_validate_answer") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                changeStep(nextStep);
+            } else {
+                // Afficher les erreurs de validation
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'alert alert-danger validation-error mt-3';
+                errorMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>' + data.errors.join('<br>');
+                
+                currentStepDiv.querySelector('.answer-container').appendChild(errorMessage);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            // En cas d'erreur AJAX, permettre quand même le passage à la question suivante
+            changeStep(nextStep);
+        });
+    }
+
+    /**
+     * Valide l'évaluation avant de soumettre le formulaire
+     */
+    function validateLastQuestionAndSubmit() {
+        const totalQuestions = {{ questions|length }};
+        const evaluationStep = totalQuestions + 1;
+        const evaluationStepDiv = document.getElementById('step-' + evaluationStep);
+        
+        // Vérifier si on est sur l'étape d'évaluation
+        if (evaluationStepDiv && evaluationStepDiv.style.display !== 'none') {
+            // Valider l'évaluation
+            const etoilesValue = document.getElementById('etoiles_value').value;
+            const commentsValue = document.querySelector('textarea[name="evaluation[comments]"]').value;
+            
+            // Afficher les erreurs précédemment cachées
+            const errorDiv = evaluationStepDiv.querySelector('.validation-error');
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+            
+            // Validation des étoiles et commentaire
+            if (etoilesValue === '0') {
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'alert alert-danger validation-error mt-3';
+                errorMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Veuillez sélectionner une note avant de terminer.';
+                
+                evaluationStepDiv.querySelector('.evaluation-section').appendChild(errorMessage);
+                return;
+            }
+            
+            if (!commentsValue.trim()) {
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'alert alert-danger validation-error mt-3';
+                errorMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Veuillez laisser un commentaire avant de terminer.';
+                
+                evaluationStepDiv.querySelector('.evaluation-section').appendChild(errorMessage);
+                return;
+            }
+            
+            // Si tout est valide, soumettre le formulaire
+            document.getElementById('quizForm').submit();
+        } else {
+            // Si on est encore sur la dernière question, la valider normalement
+            const lastStepDiv = document.getElementById('step-' + totalQuestions);
+            const selectedAnswer = lastStepDiv.querySelector('input[type="radio"]:checked');
+            
+            // Afficher les erreurs précédemment cachées
+            const errorDiv = lastStepDiv.querySelector('.validation-error');
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+            
+            // Si aucune réponse n'est sélectionnée, afficher un message d'erreur
+            if (!selectedAnswer) {
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'alert alert-danger validation-error mt-3';
+                errorMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Vous devez répondre à cette question avant de continuer.';
+                
+                lastStepDiv.querySelector('.answer-container').appendChild(errorMessage);
+                return;
+            }
+            
+            // Valider via AJAX avant de passer à l'évaluation
+            const formData = new FormData();
+            formData.append('questionId', lastStepDiv.querySelector('input[type="radio"]').name.replace('answers[', '').replace(']', ''));
+            formData.append('answer', selectedAnswer.value);
+            
+            fetch('{{ path("app_quiz_validate_answer") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    changeStep(evaluationStep);
+                } else {
+                    // Afficher les erreurs de validation
+                    const errorMessage = document.createElement('div');
+                    errorMessage.className = 'alert alert-danger validation-error mt-3';
+                    errorMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>' + data.errors.join('<br>');
+                    
+                    lastStepDiv.querySelector('.answer-container').appendChild(errorMessage);
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                // En cas d'erreur AJAX, permettre quand même le passage à l'évaluation
+                changeStep(evaluationStep);
+            });
+        }
+    }
+
+    /**
+     * Gère le passage entre les questions du quiz
+     * @param {number} step - L'index de la question à afficher
+     */
+    function changeStep(step) {
+        // 1. Masquer toutes les étapes
+        document.querySelectorAll('.quiz-step').forEach(div => div.style.display = 'none');
+        
+        // 2. Afficher l'étape actuelle
+        const currentStepDiv = document.getElementById('step-' + step);
+        if (currentStepDiv) {
+            currentStepDiv.style.display = 'block';
+        }
+
+        // 3. Calculer le total des questions dynamiquement
+        const totalQuestions = {{ questions|length }};
+        
+        // 4. Mise à jour de la barre de progression
+        let progress = (step / totalQuestions) * 100;
+        document.getElementById('quizProgress').style.width = progress + '%';
+        
+        // 5. Mise à jour du texte du compteur
+        if (step > totalQuestions) {
+            document.getElementById('stepCounter').innerText = "Évaluation";
+        } else {
+            document.getElementById('stepCounter').innerText = "Question " + step + "/" + totalQuestions;
+        }
+    }
+
+    // Gestion de la touche Entrée pour la soumission
+    document.addEventListener('DOMContentLoaded', function() {
+        // Écouter l'événement keydown sur tout le document
+        document.addEventListener('keydown', function(event) {
+            // Si la touche Entrée est pressée
+            if (event.key === 'Enter') {
+                // Empêcher le comportement par défaut
+                event.preventDefault();
+                
+                const totalQuestions = {{ questions|length }};
+                const evaluationStep = totalQuestions + 1;
+                const evaluationStepDiv = document.getElementById('step-' + evaluationStep);
+                
+                // Vérifier sur quelle étape on se trouve
+                let currentStep = null;
+                for (let i = 1; i <= evaluationStep; i++) {
+                    const stepDiv = document.getElementById('step-' + i);
+                    if (stepDiv && stepDiv.style.display !== 'none') {
+                        currentStep = i;
+                        break;
+                    }
+                }
+                
+                // Si on est sur l'étape d'évaluation, soumettre
+                if (currentStep === evaluationStep) {
+                    validateLastQuestionAndSubmit();
+                } 
+                // Si on est sur une question, passer à la suivante ou valider la dernière
+                else if (currentStep && currentStep <= totalQuestions) {
+                    if (currentStep === totalQuestions) {
+                        // Dernière question : valider et passer à l'évaluation
+                        validateLastQuestionAndSubmit();
+                    } else {
+                        // Question normale : valider et passer à la suivante
+                        validateAndChangeStep(currentStep, currentStep + 1);
+                    }
+                }
+            }
+        });
+
+        // Gestion des étoiles d'évaluation
+        const starButtons = document.querySelectorAll('.star-btn');
+        const etoilesValue = document.getElementById('etoiles_value');
+        
+        starButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const rating = parseInt(this.dataset.star);
+                etoilesValue.value = rating;
+                
+                // Mettre à jour l'apparence des étoiles
+                starButtons.forEach((btn, index) => {
+                    if (index < rating) {
+                        btn.classList.remove('btn-outline-warning');
+                        btn.classList.add('btn-warning');
+                    } else {
+                        btn.classList.remove('btn-warning');
+                        btn.classList.add('btn-outline-warning');
+                    }
+                });
+            });
+            
+            // Effet hover
+            button.addEventListener('mouseenter', function() {
+                const rating = parseInt(this.dataset.star);
+                starButtons.forEach((btn, index) => {
+                    if (index < rating) {
+                        btn.classList.add('btn-warning');
+                    }
+                });
+            });
+        });
+        
+        // Remettre l'état normal quand on quitte la zone des étoiles
+        document.querySelector('.d-flex.justify-content-center.gap-2').addEventListener('mouseleave', function() {
+            const currentRating = parseInt(etoilesValue.value);
+            starButtons.forEach((btn, index) => {
+                if (index < currentRating) {
+                    btn.classList.add('btn-warning');
+                    btn.classList.remove('btn-outline-warning');
+                } else {
+                    btn.classList.remove('btn-warning');
+                    btn.classList.add('btn-outline-warning');
+                }
+            });
+        });
+    });
+    </script>
+
+    <style>
+        /* Style pour le badge soft-primary pour correspondre à ton interface */
+        .bg-soft-primary {
+            background-color: #e0eaff;
+            color: #3f6ad8;
+        }
+        .text-primary { color: #3f6ad8 !important; }
+        .btn-primary { background-color: #3f6ad8; border-color: #3f6ad8; }
+        
+        /* Styles pour les options de réponse */
+        .form-check {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        
+        .form-check:hover {
+            background-color: #f8f9fa !important;
+            border-color: #3f6ad8 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .form-check-input:checked + .form-check-label {
+            font-weight: 600;
+            color: #3f6ad8;
+        }
+        
+        .form-check-input:checked {
+            background-color: #3f6ad8;
+            border-color: #3f6ad8;
+        }
+        
+        .cursor-pointer {
+            cursor: pointer;
+        }
+        
+        .hover-bg-light:hover {
+            background-color: #f8f9fa !important;
+        }
+    </style>
+{% endblock %}

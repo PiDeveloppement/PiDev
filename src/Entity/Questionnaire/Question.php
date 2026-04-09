@@ -1,69 +1,50 @@
 <?php
-// src/Entity/Questionnaire/Question.php
 
 namespace App\Entity\Questionnaire;
-
 use App\Entity\Event\Event;
-use App\Entity\User\UserModel;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
+use App\Repository\Questionnaire\QuestionRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity] 
-#[ORM\Table(name: "questions")]
+#[ORM\Entity(repositoryClass: QuestionRepository::class)]
+#[ORM\Table(name: "questions")] // Nom de ta table SQL
 class Question
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: "IDENTITY")]
-    #[ORM\Column(name: "id_question", type: "integer")]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(name: "id_question")] // Correspond à ta PK dans le SQL
     private ?int $id = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Assert\NotBlank(message: "Le texte de la question est requis")]
+    #[ORM\Column(name: "texte", type: "string", length: 255, nullable: true)]
+    #[Assert\NotBlank(message: "L'énoncé de la question est obligatoire.")]
+    #[Assert\Length(min: 5, max: 255, minMessage: "L'énoncé doit contenir au moins {{ limit }} caractères.", maxMessage: "L'énoncé ne peut pas dépasser {{ limit }} caractères.")]
     private ?string $texte = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(name: "reponse", type: "string", length: 255, nullable: true)]
+    #[Assert\NotBlank(message: "La réponse correcte est obligatoire.")]
+    #[Assert\Length(min: 2, max: 255, minMessage: "La réponse doit contenir au moins {{ limit }} caractères.", maxMessage: "La réponse ne peut pas dépasser {{ limit }} caractères.")]
     private ?string $reponse = null;
 
-    #[ORM\Column(type: Types::INTEGER, nullable: true, options: ["default" => 0])]
-    #[Assert\PositiveOrZero(message: "Les points doivent être positifs")]
+    #[ORM\Column(name: "points", type: "integer", options: ["default" => 0])]
+    #[Assert\Positive(message: "Le nombre de points doit être un nombre positif.")]
+    #[Assert\Type(type: "integer", message: "Le nombre de points doit être un entier.")]
     private ?int $points = 0;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(name: "option1", type: "string", length: 255, nullable: true)]
     private ?string $option1 = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(name: "option2", type: "string", length: 255, nullable: true)]
     private ?string $option2 = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(name: "option3", type: "string", length: 255, nullable: true)]
     private ?string $option3 = null;
 
-    // ==================== RELATIONS CORRIGÉES ====================
-
-    // Ajout de inversedBy pour correspondre à l'entité Event
+    // Relation avec Event (id_event dans ton SQL)
     #[ORM\ManyToOne(targetEntity: Event::class, inversedBy: "questions")]
-    #[ORM\JoinColumn(name: "id_event", referencedColumnName: "id", nullable: true)]
+    #[ORM\JoinColumn(name: "id_event", referencedColumnName: "id", onDelete: "CASCADE")]
     private ?Event $event = null;
 
-    // Suppression du $userId manuel, on utilise uniquement l'objet
-    #[ORM\ManyToOne(targetEntity: UserModel::class, inversedBy: "questions")]
-    #[ORM\JoinColumn(name: "id_user", referencedColumnName: "Id_User", nullable: true)]
-    private ?UserModel $user = null;
-
-    /**
-     * @var Collection<int, Feedback>
-     */
-    #[ORM\OneToMany(mappedBy: 'question', targetEntity: Feedback::class)]
-    private Collection $feedbacks;
-
-    public function __construct()
-    {
-        $this->feedbacks = new ArrayCollection();
-    }
-
-    // ==================== GETTERS & SETTERS ====================
+    // --- GETTERS ET SETTERS ---
 
     public function getId(): ?int { return $this->id; }
 
@@ -74,7 +55,7 @@ class Question
     public function setReponse(?string $reponse): self { $this->reponse = $reponse; return $this; }
 
     public function getPoints(): ?int { return $this->points; }
-    public function setPoints(?int $points): self { $this->points = $points; return $this; }
+    public function setPoints(int $points): self { $this->points = $points; return $this; }
 
     public function getOption1(): ?string { return $this->option1; }
     public function setOption1(?string $option1): self { $this->option1 = $option1; return $this; }
@@ -87,26 +68,4 @@ class Question
 
     public function getEvent(): ?Event { return $this->event; }
     public function setEvent(?Event $event): self { $this->event = $event; return $this; }
-
-    public function getUser(): ?UserModel { return $this->user; }
-    public function setUser(?UserModel $user): self { $this->user = $user; return $this; }
-
-    public function getFeedbacks(): Collection { return $this->feedbacks; }
-
-    // ==================== MÉTHODES DE COMPATIBILITÉ (JAVA) ====================
-
-    public function getEventId(): ?int { return $this->event?->getId(); }
-    public function getUserId(): ?int { return $this->user?->getId(); }
-
-    // ==================== MÉTHODES UTILITAIRES ====================
-
-    public function getOptions(): array
-    {
-        return array_filter([$this->reponse, $this->option1, $this->option2, $this->option3]);
-    }
-
-    public function __toString(): string
-    {
-        return $this->texte ?? 'Question #' . $this->id;
-    }
 }

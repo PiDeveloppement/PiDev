@@ -82,6 +82,6 @@
         }
     },
     "require-dev": {
-        "symfony/maker-bundle": "^1.50"
+        "symfony/maker-bundle": "*"
     }
 }

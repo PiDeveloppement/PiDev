@@ -1,0 +1,336 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow-x: hidden;
+            background-color: #f8fafc;
+        }
+        
+        .navbar {
+            background: #ffffff;
+            border-bottom: 1px solid #dbe5f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            height: 80px;
+        }
+        
+        .logo-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            position: absolute;
+            left: 24px;
+        }
+        
+        .logo-container img {
+            width: 92px;
+            height: auto;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 26px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav-link {
+            color: #1f2937;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .nav-link:hover,
+        .nav-link.active {
+            color: #0d47a1;
+        }
+        
+        .results-content {
+            margin-top: 80px;
+            padding: 80px 100px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .score-display {
+            animation: fadeInScale 0.8s ease-out;
+        }
+        
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .feedback-form-section, .feedback-list-section {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .stars {
+            color: #ffc107;
+        }
+        
+        .card {
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn {
+            padding: 15px 35px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-outline-primary {
+            background: white;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .btn-outline-primary:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+        
+        .btn-outline-secondary {
+            background: white;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .btn-outline-secondary:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+        
+        .btn-primary {
+            background: #0D47A1;
+            color: white;
+            box-shadow: 0 4px 12px rgba(13, 71, 161, 0.4);
+        }
+        
+        .btn-primary:hover {
+            background: #0A3A80;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(13, 71, 161, 0.5);
+        }
+        
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+            }
+            
+            .nav-links {
+                gap: 20px;
+            }
+            
+            .nav-link {
+                font-size: 14px;
+                padding: 6px 12px;
+            }
+            
+            .logo-container img {
+                width: 120px;
+            }
+            
+            .results-content {
+                padding: 40px 20px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block public_content %}
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="logo-container">
+            <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+        </div>
+
+        <div class="nav-links">
+            <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}'">Accueil</button>
+            <button class="nav-link" onclick="window.location.href='{{ path('app_public_events') }}'">Événements</button>
+            <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
+        </div>
+    </nav>
+
+    <div class="results-content container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                {# Carte principale avec le score #}
+                <div class="card border-0 shadow-lg text-center p-5 mb-4 bg-gradient-primary text-white" style="border-radius: 20px;">
+                    <div class="card-body">
+                        {% if app.user %}
+                            <div class="mb-3">
+                                <span class="badge bg-white text-primary fs-6">
+                                    <i class="fas fa-user-check me-2"></i>
+                                    {{ app.user.fullName }}
+                                </span>
+                            </div>
+                        {% endif %}
+                        <div class="mb-4">
+                            <i class="fas fa-trophy fa-3x mb-3 text-warning"></i>
+                            <h2 class="fw-bold mb-3">Quiz Terminé !</h2>
+                            <p class="lead mb-4">Félicitations pour avoir complété le quiz</p>
+                        </div>
+                        
+                        <div class="score-display mb-4">
+                            <p class="text-uppercase small mb-2 opacity-75">Votre score final</p>
+                            <h1 class="display-1 fw-bold mb-0">{{ (score / total * 100)|round }}%</h1>
+                            <p class="fs-4 mb-0">{{ score }} bonne{{ score > 1 ? 's' : '' }} réponse{{ score > 1 ? 's' : '' }} sur {{ total }}</p>
+                        </div>
+                        
+                        <div class="mt-4">
+                            {% set percentage = (score / total * 100) %}
+                            {% if percentage >= 80 %}
+                                <span class="badge bg-success fs-6 px-3 py-2">Excellent ! 🌟</span>
+                            {% elseif percentage >= 60 %}
+                                <span class="badge bg-info fs-6 px-3 py-2">Bien fait ! 👍</span>
+                            {% elseif percentage >= 40 %}
+                                <span class="badge bg-warning fs-6 px-3 py-2">Pas mal ! 💪</span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6 px-3 py-2">Continuez ! 📚</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {# Section Feedback #}
+                <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <h3 class="fw-bold mb-3">Votre avis compte</h3>
+                            <p class="text-muted">Partagez votre expérience et aidez-nous à nous améliorer</p>
+                        </div>
+                        
+                        {# Formulaire de feedback #}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="feedback-form-section p-3">
+                                    <h5 class="mb-3">Ajouter votre avis</h5>
+                                    <form action="{{ path('app_quiz_feedback_save') }}" method="POST">
+                                        <div class="mb-3">
+                                            <label class="form-label">Note (0-5 étoiles)</label>
+                                            <input type="number" name="etoiles" min="0" max="5" class="form-control text-center" placeholder="0 à 5" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Commentaire</label>
+                                            <textarea name="comments" class="form-control" rows="3" placeholder="Votre avis..." required></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-paper-plane me-2"></i>Envoyer mon avis
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="feedback-list-section p-3">
+                                    <h5 class="mb-3">Vos avis précédents</h5>
+                                    <div class="feedback-list" style="max-height: 300px; overflow-y: auto;">
+                                        {% for feedback in existingFeedbacks|default([]) %}
+                                            <div class="card mb-2 border-light">
+                                                <div class="card-body p-3">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <div class="stars">
+                                                            {% for i in 1..5 %}
+                                                                {% if i <= feedback.getEtoiles() %}
+                                                                    <i class="fas fa-star text-warning"></i>
+                                                                {% else %}
+                                                                    <i class="far fa-star text-muted"></i>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </div>
+                                                        <div class="dropdown">
+                                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                                <i class="fas fa-ellipsis-v"></i>
+                                                            </button>
+                                                            <ul class="dropdown-menu">
+                                                                <li>
+                                                                    <a class="dropdown-item" href="{{ path('app_quiz_feedback_edit', {'id': feedback.id}) }}">
+                                                                        <i class="fas fa-edit me-2"></i>Modifier
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <form action="{{ path('app_quiz_feedback_delete', {'id': feedback.id}) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet avis ?');">
+                                                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ feedback.id) }}">
+                                                                        <button type="submit" class="dropdown-item text-danger">
+                                                                            <i class="fas fa-trash me-2"></i>Supprimer
+                                                                        </button>
+                                                                    </form>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                    <p class="mb-1 small text-muted">{{ feedback.getComments() }}</p>
+                                                    <small class="text-muted">{{ feedback.getCreatedAt() ? feedback.getCreatedAt()|date('d/m/Y H:i') : '' }}</small>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <p class="text-muted text-center">Aucun avis pour le moment</p>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <a href="{{ path('app_quiz_start') }}" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-redo me-2"></i>Refaire le quiz
+                            </a>
+                            <a href="{{ path('app_landing') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-home me-2"></i>Retour à l'accueil
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -27,5 +27,8 @@ security:
         - { path: ^/register$, roles: PUBLIC_ACCESS }
         - { path: ^/forgot-password, roles: PUBLIC_ACCESS }
         - { path: ^/reset-password, roles: PUBLIC_ACCESS }
+        - { path: ^/quiz/start, roles: PUBLIC_ACCESS }
+        - { path: ^/quiz, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/questionnaire, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/dashboard, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/admin, roles: [ROLE_ADMIN, ROLE_ORGANISATEUR] }

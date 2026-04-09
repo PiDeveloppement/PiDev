@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            margin: 20px;
+            size: A4 landscape;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+        }
+        .certificate {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px;
+            border: 8px solid #667eea;
+            background-color: #ffffff;
+            box-sizing: border-box;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 36px;
+            color: #667eea;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+        }
+        .header p {
+            font-size: 16px;
+            color: #666;
+            margin: 0;
+        }
+        .content {
+            text-align: center;
+            margin: 40px 0;
+        }
+        .content .name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin: 20px 0;
+        }
+        .content .description {
+            font-size: 16px;
+            color: #555;
+            line-height: 1.6;
+            margin: 10px 0;
+        }
+        .event-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+        .score {
+            font-size: 20px;
+            color: #333;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .badge {
+            display: inline-block;
+            background-color: #667eea;
+            color: white;
+            padding: 10px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .date {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
+        }
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 60px;
+            padding: 0 50px;
+        }
+        .footer .signature {
+            text-align: center;
+        }
+        .footer .signature .line {
+            border-top: 2px solid #333;
+            width: 200px;
+            margin: 10px auto;
+        }
+        .footer .signature p {
+            color: #666;
+            font-size: 14px;
+            margin: 5px 0 0 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate">
+        <div class="header">
+            <h1>Certificat de Réussite</h1>
+            <p>Ce document certifie que</p>
+        </div>
+        
+        <div class="content">
+            <div class="name">{{ user.fullName }}</div>
+            <p class="description">
+                a réussi le quiz de l'événement
+            </p>
+            <div class="event-name">{{ event.title }}</div>
+            <div class="score">
+                Score : {{ score }} / {{ total }}
+            </div>
+            <div class="badge">
+                {% set percentage = (score / total * 100) %}
+                {{ percentage|round }}% de réussite
+            </div>
+        </div>
+        
+        <div class="date">
+            Délivré le {{ date|date('d/m/Y') }}
+        </div>
+        
+        <div class="footer">
+            <div class="signature">
+                <p>Organisateur</p>
+                <div class="line"></div>
+            </div>
+            <div class="signature">
+                <p>Participant</p>
+                <div class="line"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
