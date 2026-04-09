@@ -444,21 +444,88 @@
         function sendMessage() {
             const input = document.getElementById('chatInput');
             if (input && input.value.trim()) {
+                const userMessage = input.value;
                 const chatMessages = document.getElementById('chatMessages');
+                
                 if (chatMessages) {
+                    // Afficher le message de l'utilisateur
                     const messageDiv = document.createElement('div');
                     messageDiv.style.display = 'flex';
                     messageDiv.style.justifyContent = 'flex-end';
                     messageDiv.style.marginBottom = '15px';
                     messageDiv.innerHTML = `
                         <div style="background: #1565C0; color: white; border-radius: 16px 5px 16px 16px; padding: 10px; max-width: 70%;">
-                            <p style="margin: 0; font-size: 13px;">${input.value}</p>
+                            <p style="margin: 0; font-size: 13px;">${userMessage}</p>
                         </div>
                     `;
                     chatMessages.appendChild(messageDiv);
                     chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    input.value = '';
+                    
+                    // Afficher un indicateur de chargement
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.style.display = 'flex';
+                    loadingDiv.style.justifyContent = 'flex-start';
+                    loadingDiv.style.marginBottom = '15px';
+                    loadingDiv.id = 'loadingMessage';
+                    loadingDiv.innerHTML = `
+                        <div style="background: #E3F2FD; border-radius: 16px 16px 16px 5px; padding: 10px; max-width: 70%;">
+                            <p style="margin: 0; font-size: 13px; color: #666;">🤖 En train de réfléchir...</p>
+                        </div>
+                    `;
+                    chatMessages.appendChild(loadingDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Envoyer le message à l'API
+                    fetch('/api/ai-chat/send', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ message: userMessage })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Supprimer le message de chargement
+                        const loadingMsg = document.getElementById('loadingMessage');
+                        if (loadingMsg) {
+                            loadingMsg.remove();
+                        }
+                        
+                        // Afficher la réponse de l'AI
+                        const responseDiv = document.createElement('div');
+                        responseDiv.style.display = 'flex';
+                        responseDiv.style.justifyContent = 'flex-start';
+                        responseDiv.style.marginBottom = '15px';
+                        responseDiv.innerHTML = `
+                            <div style="background: #E3F2FD; border-radius: 16px 16px 16px 5px; padding: 10px; max-width: 80%;">
+                                <p style="margin: 0; font-size: 13px; color: #333;">${data.response}</p>
+                                ${data.isSimulated ? '<p style="margin: 5px 0 0 0; font-size: 10px; color: #999;">Mode simulation</p>' : ''}
+                            </div>
+                        `;
+                        chatMessages.appendChild(responseDiv);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    })
+                    .catch(error => {
+                        const loadingMsg = document.getElementById('loadingMessage');
+                        if (loadingMsg) {
+                            loadingMsg.remove();
+                        }
+                        
+                        const errorDiv = document.createElement('div');
+                        errorDiv.style.display = 'flex';
+                        errorDiv.style.justifyContent = 'flex-start';
+                        errorDiv.style.marginBottom = '15px';
+                        errorDiv.innerHTML = `
+                            <div style="background: #FFEBEE; border-radius: 16px 16px 16px 5px; padding: 10px; max-width: 70%;">
+                                <p style="margin: 0; font-size: 13px; color: #c62828;">❌ Erreur: Impossible de contacter l'assistant</p>
+                            </div>
+                        `;
+                        chatMessages.appendChild(errorDiv);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    });
                 }
-                input.value = '';
             }
         }
         

@@ -40,7 +40,7 @@ class Ticket
 
     // Relation vers l'événement (Propriétaire de la relation)
     #[ORM\ManyToOne(targetEntity: Event::class, inversedBy: "tickets")]
-    #[ORM\JoinColumn(name: "event_id", referencedColumnName: "id", nullable: false)]
+    #[ORM\JoinColumn(name: "event_id", referencedColumnName: "id", nullable: false, onDelete: "CASCADE")]
     private ?Event $event = null;
 
     // Relation vers l'utilisateur
