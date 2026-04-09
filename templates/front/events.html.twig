@@ -1,0 +1,592 @@
+{% extends 'auth/landing.html.twig' %}
+
+{% block title %}EventFlow - Tous les evenements{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .events-vitrine {
+            margin-top: 80px;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(13, 71, 161, 0.08), transparent 40%),
+                radial-gradient(circle at 100% 10%, rgba(25, 118, 210, 0.12), transparent 42%),
+                #eef2f6;
+            padding-bottom: 54px;
+        }
+
+        .events-header {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 52px 16px 34px;
+            text-align: center;
+        }
+
+        .events-title {
+            color: #0f2037;
+            font-size: clamp(34px, 4.8vw, 56px);
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .events-subtitle {
+            color: #5b6b7f;
+            font-size: 19px;
+            line-height: 1.55;
+            margin-bottom: 12px;
+        }
+
+        .events-kpi {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 8px 14px;
+            color: #0d47a1;
+            background: rgba(13, 71, 161, 0.12);
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .events-toolbar-wrap {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        .events-toolbar {
+            background: #ffffff;
+            border: 1px solid #dbe5f0;
+            border-radius: 20px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1.8fr 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .toolbar-control {
+            height: 46px;
+            border: 1px solid #ccd9ea;
+            border-radius: 12px;
+            background: #f8fbff;
+            color: #1f2f45;
+            padding: 0 14px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .toolbar-control:focus {
+            border-color: #1565c0;
+            box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.15);
+        }
+
+        .events-content {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        .results-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            color: #43536a;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .clear-btn {
+            border: 1px solid #c7d5e8;
+            border-radius: 10px;
+            background: #f6f9fd;
+            color: #23406f;
+            font-weight: 600;
+            font-size: 13px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 18px;
+        }
+
+        .event-card {
+            background: #ffffff;
+            border: 1px solid #d7e2f0;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+        }
+
+        .event-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.1);
+        }
+
+        .event-cover {
+            height: 188px;
+            background: linear-gradient(120deg, #d7e5f9, #c4daf7 55%, #b6d1f2);
+            position: relative;
+        }
+
+        .event-status {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .event-status.live {
+            color: #0f8d49;
+            background: #e7f8ef;
+        }
+
+        .event-status.upcoming {
+            color: #245ea8;
+            background: #e9f1ff;
+        }
+
+        .event-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #4caf50;
+            color: #ffffff;
+            max-width: calc(100% - 24px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .event-body {
+            padding: 16px;
+        }
+
+        .event-title {
+            margin: 0 0 10px;
+            font-size: 27px;
+            line-height: 1.25;
+            color: #0e1f35;
+            min-height: 44px;
+        }
+
+        .event-meta {
+            display: grid;
+            gap: 7px;
+            color: #5d6f84;
+            font-size: 14px;
+            margin-bottom: 14px;
+        }
+
+        .event-meta-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .event-meta-emoji {
+            width: 18px;
+            display: inline-flex;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .event-price {
+            color: #0e9b60;
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+
+        .event-actions {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .details-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 42px;
+            text-decoration: none;
+            border-radius: 10px;
+            border: 1px solid #c3d6ee;
+            background: #e7f1ff;
+            color: #174a92;
+            font-weight: 700;
+        }
+
+        .empty-state {
+            text-align: center;
+            border: 1px dashed #bfd0e4;
+            border-radius: 16px;
+            padding: 34px 18px;
+            background: #ffffff;
+            color: #5f7185;
+            font-size: 16px;
+        }
+
+        .empty-state strong {
+            display: block;
+            color: #1f324e;
+            margin-bottom: 8px;
+            font-size: 20px;
+        }
+
+        .pagination-wrap {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            min-width: 40px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid #c7d5e8;
+            background: #ffffff;
+            color: #1f3f70;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            padding: 0 12px;
+        }
+
+        .page-btn.active {
+            background: #155ec0;
+            color: #ffffff;
+            border-color: #155ec0;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .footer-lite {
+            margin: 34px auto 0;
+            max-width: 1180px;
+            padding: 22px 16px 10px;
+            border-top: 1px solid #dce6f3;
+            color: #8fa0b7;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        @media (max-width: 980px) {
+            .events-toolbar {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .events-header {
+                padding-top: 34px;
+            }
+
+            .events-title {
+                font-size: 38px;
+            }
+
+            .results-row {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .clear-btn {
+                width: 100%;
+                height: 40px;
+            }
+
+            .events-toolbar {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block public_content %}
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo-container">
+                <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+            </div>
+
+            <div class="nav-links">
+                <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}'">Accueil</button>
+                <button class="nav-link" style="color:#0D47A1; font-weight:700; text-decoration:underline;" onclick="window.location.href='{{ path('app_public_events') }}'">Événements</button>
+                <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}#features'">Fonctionnalités</button>
+                <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
+                <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}#contact'">Contact</button>
+            </div>
+
+            <div class="nav-buttons">
+                {% if app.user and hasTickets %}
+                    <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
+                {% endif %}
+                <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
+                <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="events-vitrine">
+        <header class="events-header">
+            <h1 class="events-title">Tous les événements</h1>
+            <p class="events-subtitle">Découvrez et participez aux événements qui vous intéressent</p>
+            <span class="events-kpi" id="eventsCountPill">{{ events|length }} événement(s)</span>
+        </header>
+
+        <section class="events-toolbar-wrap">
+            <div class="events-toolbar">
+                <input id="searchInput" class="toolbar-control" type="text" placeholder="Rechercher un événement par titre ou lieu...">
+                <select id="categoryFilter" class="toolbar-control">
+                    <option value="">Toutes les catégories</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">{{ (category.icon ?? '📁') ~ ' ' ~ category.name }}</option>
+                    {% endfor %}
+                </select>
+                <select id="priceFilter" class="toolbar-control">
+                    <option value="">Tous les prix</option>
+                    <option value="free">Gratuit</option>
+                    <option value="paid">Payant</option>
+                </select>
+                <select id="dateFilter" class="toolbar-control">
+                    <option value="">Toutes les dates</option>
+                    <option value="today">Aujourd'hui</option>
+                    <option value="week">Cette semaine</option>
+                    <option value="month">Ce mois</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="events-content">
+            <div class="results-row">
+                <span id="resultLabel">{{ events|length }} événement(s) trouvé(s)</span>
+                <button id="clearFiltersBtn" type="button" class="clear-btn">Réinitialiser les filtres</button>
+            </div>
+
+            <div id="eventsGrid" class="events-grid">
+                {% set nowTs = 'now'|date('U') %}
+                {% for event in events %}
+                    {% set startTs = event.startDate ? event.startDate|date('U') : 0 %}
+                    {% set statusType = startTs > nowTs ? 'upcoming' : 'live' %}
+                    <article class="event-card"
+                             data-title="{{ event.title|lower }}"
+                             data-location="{{ (event.location ?? '')|lower }}"
+                             data-category="{{ event.category ? event.category.id : '' }}"
+                             data-price="{{ event.isFree ? 'free' : 'paid' }}"
+                             data-start="{{ event.startDate ? event.startDate|date('U') : 0 }}">
+                        <div class="event-cover">
+                            <span class="event-status {{ statusType }}">{{ statusType == 'upcoming' ? 'À venir' : 'En cours' }}</span>
+                            <span class="event-badge">{{ event.category ? ((event.category.icon ?? '📁') ~ ' ' ~ event.category.name) : 'Sans catégorie' }}</span>
+                        </div>
+                        <div class="event-body">
+                            <h2 class="event-title">{{ event.title }}</h2>
+                            <div class="event-meta">
+                                <span class="event-meta-line"><span class="event-meta-emoji">📆</span> Date: {{ event.startDate ? event.startDate|date('d/m/Y') : '-' }}</span>
+                                <span class="event-meta-line"><span class="event-meta-emoji">⏰</span> Heure: {{ event.startDate ? event.startDate|date('H:i') : '-' }}</span>
+                                <span class="event-meta-line"><span class="event-meta-emoji">📍</span> Lieu: {{ event.location ?: 'Lieu non précisé' }}</span>
+                                <span class="event-meta-line"><span class="event-meta-emoji">👥</span> Capacité: {{ event.capacity ?: 0 }} participants</span>
+                            </div>
+                            <div class="event-price">{{ event.isFree ? 'Gratuit' : (event.ticketPrice|number_format(2, '.', ' ') ~ ' TND') }}</div>
+                            <div class="event-actions">
+                                <a class="details-btn" href="{{ path('app_public_event_show', {'id': event.id}) }}">Voir détails</a>
+                            </div>
+                        </div>
+                    </article>
+                {% else %}
+                    <div class="empty-state" id="emptyStateStatic">
+                        <strong>Aucun événement disponible</strong>
+                        Revenez bientôt pour découvrir les prochaines inscriptions.
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="empty-state" id="emptyStateFiltered" style="display:none; margin-top: 12px;">
+                <strong>Aucun résultat avec ces filtres</strong>
+                Essaie une autre catégorie, un autre prix, ou une recherche plus large.
+            </div>
+
+            <div class="pagination-wrap" id="paginationWrap" style="display:none;"></div>
+        </section>
+
+        <div class="footer-lite">© 2026 EventFlow - Tous droits réservés</div>
+    </main>
+
+    <script>
+        (() => {
+            const searchInput = document.getElementById('searchInput');
+            const categoryFilter = document.getElementById('categoryFilter');
+            const priceFilter = document.getElementById('priceFilter');
+            const dateFilter = document.getElementById('dateFilter');
+            const clearBtn = document.getElementById('clearFiltersBtn');
+            const resultLabel = document.getElementById('resultLabel');
+            const countPill = document.getElementById('eventsCountPill');
+            const emptyFiltered = document.getElementById('emptyStateFiltered');
+            const paginationWrap = document.getElementById('paginationWrap');
+            const cards = Array.from(document.querySelectorAll('.event-card'));
+            const total = cards.length;
+            const perPage = 6;
+            let currentPage = 1;
+
+            const getDateBucket = (timestamp) => {
+                const now = new Date();
+                const eventDate = new Date(timestamp * 1000);
+
+                const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const endToday = new Date(startToday);
+                endToday.setDate(endToday.getDate() + 1);
+
+                const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+                const startWeek = new Date(startToday);
+                startWeek.setDate(startWeek.getDate() - (dayOfWeek - 1));
+                const endWeek = new Date(startWeek);
+                endWeek.setDate(endWeek.getDate() + 7);
+
+                const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                const endMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+                if (eventDate >= startToday && eventDate < endToday) {
+                    return 'today';
+                }
+
+                if (eventDate >= startWeek && eventDate < endWeek) {
+                    return 'week';
+                }
+
+                if (eventDate >= startMonth && eventDate < endMonth) {
+                    return 'month';
+                }
+
+                return 'other';
+            };
+
+            const renderPagination = (pages, activePage) => {
+                paginationWrap.innerHTML = '';
+
+                if (pages <= 1) {
+                    paginationWrap.style.display = 'none';
+                    return;
+                }
+
+                paginationWrap.style.display = 'flex';
+
+                const prevBtn = document.createElement('button');
+                prevBtn.type = 'button';
+                prevBtn.className = 'page-btn';
+                prevBtn.textContent = 'Précédent';
+                prevBtn.disabled = activePage <= 1;
+                prevBtn.addEventListener('click', () => {
+                    currentPage = Math.max(1, currentPage - 1);
+                    applyFilters();
+                });
+                paginationWrap.appendChild(prevBtn);
+
+                for (let page = 1; page <= pages; page += 1) {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.type = 'button';
+                    pageBtn.className = `page-btn ${page === activePage ? 'active' : ''}`;
+                    pageBtn.textContent = String(page);
+                    pageBtn.addEventListener('click', () => {
+                        currentPage = page;
+                        applyFilters();
+                    });
+                    paginationWrap.appendChild(pageBtn);
+                }
+
+                const nextBtn = document.createElement('button');
+                nextBtn.type = 'button';
+                nextBtn.className = 'page-btn';
+                nextBtn.textContent = 'Suivant';
+                nextBtn.disabled = activePage >= pages;
+                nextBtn.addEventListener('click', () => {
+                    currentPage = Math.min(pages, currentPage + 1);
+                    applyFilters();
+                });
+                paginationWrap.appendChild(nextBtn);
+            };
+
+            const applyFilters = () => {
+                const q = (searchInput.value || '').toLowerCase().trim();
+                const category = categoryFilter.value;
+                const price = priceFilter.value;
+                const date = dateFilter.value;
+
+                const filtered = cards.filter((card) => {
+                    const title = card.dataset.title || '';
+                    const location = card.dataset.location || '';
+                    const cardCategory = card.dataset.category || '';
+                    const cardPrice = card.dataset.price || '';
+                    const startTimestamp = Number(card.dataset.start || 0);
+                    const cardDateBucket = getDateBucket(startTimestamp);
+
+                    const matchSearch = !q || title.includes(q) || location.includes(q);
+                    const matchCategory = !category || category === cardCategory;
+                    const matchPrice = !price || price === cardPrice;
+                    const matchDate = !date || cardDateBucket === date;
+
+                    return matchSearch && matchCategory && matchPrice && matchDate;
+                });
+
+                const totalFiltered = filtered.length;
+                const totalPages = Math.max(1, Math.ceil(totalFiltered / perPage));
+
+                if (currentPage > totalPages) {
+                    currentPage = totalPages;
+                }
+
+                const start = (currentPage - 1) * perPage;
+                const end = start + perPage;
+                const visibleOnPage = filtered.slice(start, end);
+
+                cards.forEach((card) => {
+                    card.style.display = 'none';
+                });
+
+                visibleOnPage.forEach((card) => {
+                    card.style.display = '';
+                });
+
+                resultLabel.textContent = `${totalFiltered} événement(s) trouvé(s)`;
+                countPill.textContent = `${totalFiltered}/${total} événement(s)`;
+                emptyFiltered.style.display = totalFiltered === 0 && total > 0 ? '' : 'none';
+                renderPagination(totalPages, currentPage);
+            };
+
+            searchInput.addEventListener('input', applyFilters);
+            categoryFilter.addEventListener('change', applyFilters);
+            priceFilter.addEventListener('change', applyFilters);
+            dateFilter.addEventListener('change', applyFilters);
+
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                categoryFilter.value = '';
+                priceFilter.value = '';
+                dateFilter.value = '';
+                currentPage = 1;
+                applyFilters();
+            });
+
+            applyFilters();
+        })();
+    </script>
+{% endblock %}

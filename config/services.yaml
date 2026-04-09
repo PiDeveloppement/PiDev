@@ -1,7 +1,9 @@
 # config/services.yaml
 parameters:
     database_url: '%env(DATABASE_URL)%'
+
     profile_images_directory: '%kernel.project_dir%/public/uploads/profile_images'
+
 
 services:
     # configuration par défaut

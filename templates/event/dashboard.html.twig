@@ -1,0 +1,653 @@
+{% extends 'base.html.twig' %}
+{% block title %}Dashboard Statistiques{% endblock %}
+
+{% block admin_content %}
+<style>
+    .dash-shell {
+        background: linear-gradient(160deg, #f6fbff 0%, #f8fafc 45%, #f1f5f9 100%);
+        border: 1px solid #dbeafe;
+        border-radius: 20px;
+        padding: 18px;
+    }
+
+    .dash-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid #dbe7f3;
+        background: #ffffff;
+    }
+
+    .dash-filter-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .dash-select {
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 13px;
+        color: #1e293b;
+        background: #f8fafc;
+        min-width: 170px;
+    }
+
+    .dash-btn {
+        border: none;
+        border-radius: 10px;
+        padding: 9px 12px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .dash-btn.primary {
+        background: linear-gradient(180deg, #1d7bbf 0%, #1565c0 100%);
+        color: #fff;
+    }
+
+    .dash-btn.soft {
+        background: #ffffff;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+    }
+
+    .dash-meta {
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .kpi-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 14px;
+        border: 1px solid #dbe7f3;
+        box-shadow: 0 8px 20px rgba(15,23,42,.04);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+
+    .kpi-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+    }
+
+    .kpi-label {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 4px;
+    }
+
+    .kpi-sub {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-top: 3px;
+    }
+
+    .status-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .status-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 13px;
+        border: 1px solid #dbe7f3;
+        text-align: center;
+    }
+
+    .status-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .status-label {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 6px;
+    }
+
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .chart-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 14px;
+        border: 1px solid #dbe7f3;
+        box-shadow: 0 8px 20px rgba(15,23,42,.04);
+    }
+
+    .chart-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .chart-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .chart-actions {
+        display: inline-flex;
+        gap: 6px;
+    }
+
+    .toggle-btn {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 5px 8px;
+        font-size: 11px;
+        color: #475569;
+        background: #fff;
+        cursor: pointer;
+    }
+
+    .toggle-btn.active {
+        background: #1565c0;
+        border-color: #1565c0;
+        color: #fff;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 250px;
+    }
+
+    .chart-loading {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,.72);
+        color: #64748b;
+        font-size: 13px;
+        z-index: 2;
+        border-radius: 10px;
+    }
+
+    .chart-container.loading .chart-loading {
+        display: flex;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 12px;
+    }
+
+    .upcoming-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 9px;
+    }
+
+    .upcoming-item {
+        background: #fff;
+        border: 1px solid #dbe7f3;
+        border-radius: 12px;
+        padding: 11px;
+    }
+
+    .upcoming-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 4px;
+    }
+
+    .upcoming-meta {
+        color: #64748b;
+        font-size: 12px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 999px;
+        border: 1px solid #e2e8f0;
+        padding: 3px 8px;
+        background: #fff;
+        font-size: 11px;
+        color: #475569;
+    }
+
+    .empty-state {
+        text-align: center;
+        color: #94a3b8;
+        font-size: 13px;
+        padding: 24px 10px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    @media (max-width: 1100px) {
+        .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .charts-grid { grid-template-columns: 1fr; }
+        .summary-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+        .kpi-grid { grid-template-columns: 1fr; }
+        .status-grid { grid-template-columns: 1fr; }
+        .dash-filter-row { width: 100%; }
+        .dash-select { width: 100%; min-width: 0; }
+    }
+</style>
+
+<div class="dash-shell">
+    <div class="dash-toolbar">
+        <div class="dash-filter-row">
+            <select id="periodFilter" class="dash-select">
+                <option value="3">Période: 3 derniers mois</option>
+                <option value="6" selected>Période: 6 derniers mois</option>
+                <option value="12">Période: 12 derniers mois</option>
+            </select>
+            <select id="categoryFilter" class="dash-select">
+                <option value="0">Catégorie: Toutes</option>
+                {% for category in dashboardCategories %}
+                    <option value="{{ category.id }}">{{ category.icon ?? '📁' }} {{ category.name }}</option>
+                {% endfor %}
+            </select>
+            <button id="refreshBtn" class="dash-btn primary">
+                <i class="fas fa-rotate-right"></i>
+                Rafraîchir
+            </button>
+        </div>
+        <div class="dash-meta" id="lastUpdated">Mise à jour: --</div>
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:#e3f2fd;">📅</div>
+            <div>
+                <div class="kpi-value" id="kpiTotalEvents">0</div>
+                <div class="kpi-label">Événements sur période</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:#fff8e1;">🎫</div>
+            <div>
+                <div class="kpi-value" id="kpiTotalTickets">0</div>
+                <div class="kpi-label">Billets sur période</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:#e8f5e9;">🏷️</div>
+            <div>
+                <div class="kpi-value" id="kpiTotalCategories">0</div>
+                <div class="kpi-label">Catégories actives</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:#fce4ec;">💰</div>
+            <div>
+                <div class="kpi-value" id="kpiRevenus">0</div>
+                <div class="kpi-label">Revenus potentiels</div>
+                <div class="kpi-sub">TND</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-grid">
+        <div class="status-card">
+            <div class="status-value" id="statusAvenir" style="color:#1565c0;">0</div>
+            <div class="status-label">🔵 À venir</div>
+        </div>
+        <div class="status-card">
+            <div class="status-value" id="statusEnCours" style="color:#16a34a;">0</div>
+            <div class="status-label">🟢 En cours</div>
+        </div>
+        <div class="status-card">
+            <div class="status-value" id="statusTermines" style="color:#64748b;">0</div>
+            <div class="status-label">⚫ Terminés</div>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title">📊 Événements par catégorie</div>
+            </div>
+            <div class="chart-container" id="catChartWrap">
+                <div class="chart-loading">Chargement...</div>
+                <canvas id="chartByCategory"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title">💰 Gratuits vs Payants</div>
+            </div>
+            <div class="chart-container" id="priceChartWrap">
+                <div class="chart-loading">Chargement...</div>
+                <canvas id="chartPrix"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title">📈 Événements par mois</div>
+                <div class="chart-actions">
+                    <button class="toggle-btn active" data-chart-type="bar">Barres</button>
+                    <button class="toggle-btn" data-chart-type="line">Ligne</button>
+                </div>
+            </div>
+            <div class="chart-container" id="eventChartWrap">
+                <div class="chart-loading">Chargement...</div>
+                <canvas id="chartByMonth"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title">🎫 Billets par mois</div>
+            </div>
+            <div class="chart-container" id="ticketChartWrap">
+                <div class="chart-loading">Chargement...</div>
+                <canvas id="chartTicketsByMonth"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <div class="chart-card">
+            <div class="chart-title">🚀 Prochains événements</div>
+            <ul class="upcoming-list" id="upcomingList"></ul>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">🧭 Résumé période</div>
+            <div style="display:grid; gap:8px;">
+                <div class="tag"><i class="fas fa-calendar-days"></i> Période sélectionnée: <span id="metaPeriod">--</span></div>
+                <div class="tag"><i class="fas fa-layer-group"></i> Catégorie: <span id="metaCategory">Toutes</span></div>
+                <div class="tag"><i class="fas fa-clock"></i> Généré: <span id="metaGenerated">--</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+const chartState = {
+    byCategory: null,
+    byPrice: null,
+    byMonth: null,
+    ticketsByMonth: null,
+    monthType: 'bar',
+};
+
+function setLoading(isLoading) {
+    ['catChartWrap', 'priceChartWrap', 'eventChartWrap', 'ticketChartWrap'].forEach(id => {
+        const wrap = document.getElementById(id);
+        if (wrap) {
+            wrap.classList.toggle('loading', isLoading);
+        }
+    });
+}
+
+function destroyCharts() {
+    Object.keys(chartState).forEach(key => {
+        if (chartState[key] && key !== 'monthType') {
+            chartState[key].destroy();
+            chartState[key] = null;
+        }
+    });
+}
+
+function renderUpcoming(events) {
+    const list = document.getElementById('upcomingList');
+    list.innerHTML = '';
+
+    if (!events.length) {
+        list.innerHTML = '<div class="empty-state">Aucun événement à venir pour ce filtre.</div>';
+        return;
+    }
+
+    events.forEach(event => {
+        const li = document.createElement('li');
+        li.className = 'upcoming-item';
+        li.innerHTML = `
+            <h4 class="upcoming-title">${event.title}</h4>
+            <div class="upcoming-meta">
+                <span class="tag">${event.category}</span>
+                <span class="tag">${event.startsAt}</span>
+                <span class="tag">${event.isFree ? 'Gratuit' : 'Payant'}</span>
+            </div>
+        `;
+        list.appendChild(li);
+    });
+}
+
+function renderCharts(data) {
+    destroyCharts();
+
+    chartState.byCategory = new Chart(document.getElementById('chartByCategory'), {
+        type: 'doughnut',
+        data: {
+            labels: data.eventsByCategory.map(d => d.label),
+            datasets: [{
+                data: data.eventsByCategory.map(d => d.value),
+                backgroundColor: data.eventsByCategory.map(d => d.color),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { font: { size: 11 } } }
+            }
+        }
+    });
+
+    chartState.byPrice = new Chart(document.getElementById('chartPrix'), {
+        type: 'pie',
+        data: {
+            labels: data.prixDistribution.map(d => d.label),
+            datasets: [{
+                data: data.prixDistribution.map(d => d.value),
+                backgroundColor: data.prixDistribution.map(d => d.color),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { font: { size: 11 } } }
+            }
+        }
+    });
+
+    chartState.byMonth = new Chart(document.getElementById('chartByMonth'), {
+        type: chartState.monthType,
+        data: {
+            labels: data.eventsByMonth.map(d => d.label),
+            datasets: [{
+                label: 'Événements',
+                data: data.eventsByMonth.map(d => d.value),
+                backgroundColor: chartState.monthType === 'bar' ? 'rgba(21, 101, 192, 0.75)' : 'rgba(21, 101, 192, 0.12)',
+                borderColor: '#1565c0',
+                borderWidth: 2,
+                borderRadius: chartState.monthType === 'bar' ? 8 : 0,
+                fill: chartState.monthType === 'line',
+                tension: chartState.monthType === 'line' ? 0.36 : 0,
+                pointRadius: chartState.monthType === 'line' ? 4 : 0,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    chartState.ticketsByMonth = new Chart(document.getElementById('chartTicketsByMonth'), {
+        type: 'line',
+        data: {
+            labels: data.ticketsByMonth.map(d => d.label),
+            datasets: [{
+                label: 'Billets',
+                data: data.ticketsByMonth.map(d => d.value),
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.38,
+                pointBackgroundColor: '#f59e0b',
+                pointRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+}
+
+async function loadDashboard() {
+    const months = document.getElementById('periodFilter').value;
+    const categoryId = document.getElementById('categoryFilter').value;
+    const selectedCategory = document.getElementById('categoryFilter').selectedOptions[0]?.textContent?.trim() || 'Toutes';
+
+    setLoading(true);
+
+    try {
+        const url = `{{ path('app_event_dashboard_stats') }}?months=${encodeURIComponent(months)}&categoryId=${encodeURIComponent(categoryId)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        animateCounter('kpiTotalEvents', data.kpis.totalEvents);
+        animateCounter('kpiTotalTickets', data.kpis.totalTickets);
+        animateCounter('kpiTotalCategories', data.kpis.totalCategories);
+        animateCounter('kpiRevenus', data.kpis.revenus, true);
+        animateCounter('statusAvenir', data.kpis.aVenir);
+        animateCounter('statusEnCours', data.kpis.enCours);
+        animateCounter('statusTermines', data.kpis.termines);
+
+        document.getElementById('metaPeriod').textContent = `${data.meta.months} mois`;
+        document.getElementById('metaCategory').textContent = selectedCategory.replace('Catégorie: ', '');
+        document.getElementById('metaGenerated').textContent = data.meta.generatedAt;
+        document.getElementById('lastUpdated').textContent = `Mise à jour: ${data.meta.generatedAt}`;
+
+        renderUpcoming(data.upcomingEvents || []);
+        renderCharts(data);
+    } catch (error) {
+        document.getElementById('upcomingList').innerHTML = '<div class="empty-state">Erreur de chargement du dashboard.</div>';
+    } finally {
+        setLoading(false);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    loadDashboard();
+
+    document.getElementById('periodFilter').addEventListener('change', loadDashboard);
+    document.getElementById('categoryFilter').addEventListener('change', loadDashboard);
+    document.getElementById('refreshBtn').addEventListener('click', loadDashboard);
+
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            chartState.monthType = this.dataset.chartType;
+            loadDashboard();
+        });
+    });
+});
+
+// ==================== ANIMATION COMPTEURS ====================
+function animateCounter(id, target, isDecimal = false) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const duration = 1000;
+    const start = performance.now();
+    const update = (time) => {
+        const elapsed = time - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = target * eased;
+        if (isDecimal) {
+            el.textContent = Number(current).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        } else {
+            el.textContent = Math.round(current).toLocaleString('fr-FR');
+        }
+        if (progress < 1) requestAnimationFrame(update);
+    };
+    requestAnimationFrame(update);
+}
+</script>
+{% endblock %}

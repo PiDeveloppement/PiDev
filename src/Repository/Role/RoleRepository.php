@@ -1,4 +1,5 @@
 <?php
+// src/Repository/RoleRepository.php
 
 namespace App\Repository\Role;
 
@@ -48,72 +49,5 @@ class RoleRepository extends ServiceEntityRepository
             ->select('COUNT(r.id)')
             ->getQuery()
             ->getSingleScalarResult();
-    }
-
-    public function findPage(int $page, int $limit): array
-    {
-        return $this->createQueryBuilder('r')
-            ->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit)
-            ->orderBy('r.roleName', 'ASC')
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * Recherche les rôles par nom avec pagination
-     */
-    public function searchByName(string $keyword, int $limit, int $offset): array
-    {
-        $qb = $this->createQueryBuilder('r');
-        
-        if (!empty($keyword)) {
-            $qb->where('r.roleName LIKE :keyword')
-               ->setParameter('keyword', '%' . $keyword . '%');
-        }
-        
-        return $qb->setFirstResult($offset)
-                  ->setMaxResults($limit)
-                  ->orderBy('r.roleName', 'ASC')
-                  ->getQuery()
-                  ->getResult();
-    }
-
-    /**
-     * Compte le nombre de résultats de recherche
-     */
-    public function countSearchResults(string $keyword): int
-    {
-        $qb = $this->createQueryBuilder('r')
-                   ->select('COUNT(r.id)');
-        
-        if (!empty($keyword)) {
-            $qb->where('r.roleName LIKE :keyword')
-               ->setParameter('keyword', '%' . $keyword . '%');
-        }
-        
-        return (int) $qb->getQuery()->getSingleScalarResult();
-    }
-
-    public function getUsageStatistics(): array
-    {
-        return $this->createQueryBuilder('r')
-            ->select('r.roleName, COUNT(u.id) as userCount')
-            ->leftJoin('r.users', 'u')
-            ->groupBy('r.id')
-            ->getQuery()
-            ->getResult();
-    }
-
-    public function findIdByName(string $roleName): ?int
-    {
-        $result = $this->createQueryBuilder('r')
-            ->select('r.id')
-            ->where('r.roleName = :name')
-            ->setParameter('name', $roleName)
-            ->getQuery()
-            ->getOneOrNullResult();
-
-        return $result ? $result['id'] : null;
     }
 }

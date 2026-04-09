@@ -29,21 +29,32 @@ class DatabaseService
      */
     private function parseDatabaseUrl(string $url): array
     {
-        $params = [
-            'driver' => 'pdo_mysql',
-            'charset' => 'utf8mb4',
-        ];
+        $parts = parse_url($url);
 
-        // Format: mysql://user:password@host:port/dbname
-        if (preg_match('/mysql:\/\/([^:]+):([^@]+)@([^:]+):?(\d*)\/([^?]+)/', $url, $matches)) {
-            $params['user'] = $matches[1];
-            $params['password'] = $matches[2];
-            $params['host'] = $matches[3];
-            $params['port'] = $matches[4] ?: 3306;
-            $params['dbname'] = $matches[5];
+        if ($parts === false) {
+            throw new \InvalidArgumentException('DATABASE_URL invalide: format non reconnu.');
         }
 
-        return $params;
+        if (($parts['scheme'] ?? null) !== 'mysql') {
+            throw new \InvalidArgumentException('DATABASE_URL invalide: seul le schéma mysql est supporté.');
+        }
+
+        $path = $parts['path'] ?? '';
+        $dbName = ltrim($path, '/');
+
+        if ($dbName === '') {
+            throw new \InvalidArgumentException('DATABASE_URL invalide: nom de base manquant.');
+        }
+
+        return [
+            'driver' => 'pdo_mysql',
+            'charset' => 'utf8mb4',
+            'host' => $parts['host'] ?? '127.0.0.1',
+            'port' => (int) ($parts['port'] ?? 3306),
+            'user' => $parts['user'] ?? '',
+            'password' => $parts['pass'] ?? '',
+            'dbname' => $dbName,
+        ];
     }
 
     /**

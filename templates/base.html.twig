@@ -47,7 +47,10 @@
 <body>
     {# ✅ Liste des routes publiques (sans sidebar) #}
     {% set public_routes = [
-        'app_landing',      # Route pour la page d'accueil
+        'app_landing',
+        'app_public_events',
+        'app_public_event_show',
+        'app_my_tickets',
         'app_login', 
         'app_register', 
         'app_forgot_password', 
@@ -100,17 +103,22 @@
                             <i class="fas fa-chevron-right submenu-arrow" style="font-size: 12px; transition: transform 0.3s;"></i>
                         </button>
                         <div id="events-submenu" class="submenu" style="display: none; margin-left: 20px; margin-top: 2px;">
-                            <a {#href="{{ path('app_events_index') }}"#} class="submenu-button">
+                            <a href="{{ path('app_event_index') }}" class="submenu-button">
                                 <i class="fas fa-list" style="width: 18px;"></i>
                                 Liste événements
                             </a>
-                            <a {#href="{{ path('app_categories_index') }}"#} class="submenu-button">
+                            <a href="{{ path('app_category_index') }}" class="submenu-button">
                                 <i class="fas fa-tags" style="width: 18px;"></i>
                                 Catégories
                             </a>
-                            <a {#href="{{ path('app_tickets_index') }}"#} class="submenu-button">
+                            <a href="{{ path('app_ticket_index') }}" class="submenu-button">
                                 <i class="fas fa-ticket-alt" style="width: 18px;"></i>
                                 Billets
+                            </a>
+
+                            <a href="{{ path('app_event_dashboard') }}"  class="submenu-button">
+                                <i class="fas fa-chart-bar"  style="width: 18px;"></i>
+                                Statistiques
                             </a>
                         </div>
                     </div>
@@ -288,9 +296,8 @@
                 <!-- Page Header -->
                 <div style="background: white; padding: 15px 30px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
                     <div>
-                        {# APRÈS #}
-<h1 style="font-size: 24px; font-weight: bold; color: #1e293b; margin: 0;">{% block page_title %}{% endblock %}</h1>
-<p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0;">{% block page_subtitle %}{% endblock %}</p>
+                        <h1 style="font-size: 24px; font-weight: bold; color: #1e293b; margin: 0;">{{ pageInfo.title|default('EventFlow') }}</h1>
+                        <p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0;">{{ pageInfo.subtitle|default('') }}</p>
                     </div>
                     
                     <!-- KPI Container -->
@@ -301,6 +308,22 @@
                 
                 <!-- Page Content -->
                 <div style="flex: 1; background: #f8fafc; padding: 20px; overflow-y: auto;">
+                    {% for label, messages in app.flashes %}
+                        {% for message in messages %}
+                            <div class="auto-dismiss-flash" style="margin-bottom:12px; padding:12px 14px; border-radius:10px; font-size:13px; border:1px solid; max-height:120px; overflow:hidden;
+                                {% if label == 'success' %}
+                                    background:#ecfdf5; color:#166534; border-color:#86efac;
+                                {% elseif label == 'error' %}
+                                    background:#fef2f2; color:#991b1b; border-color:#fca5a5;
+                                {% else %}
+                                    background:#eff6ff; color:#1e3a8a; border-color:#93c5fd;
+                                {% endif %}
+                            ">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+
                     {% block admin_content %}{% endblock %}
                 </div>
             </main>
@@ -497,6 +520,23 @@
                 }
             });
         }
+
+        // Flash messages: show briefly then fade out.
+        document.querySelectorAll('.auto-dismiss-flash').forEach(function(flash, index) {
+            setTimeout(function() {
+                flash.style.transition = 'opacity 0.35s ease, transform 0.35s ease, max-height 0.35s ease, margin 0.35s ease, padding 0.35s ease';
+                flash.style.opacity = '0';
+                flash.style.transform = 'translateY(-6px)';
+                flash.style.maxHeight = '0';
+                flash.style.marginBottom = '0';
+                flash.style.paddingTop = '0';
+                flash.style.paddingBottom = '0';
+
+                setTimeout(function() {
+                    flash.remove();
+                }, 380);
+            }, 4500 + (index * 120));
+        });
     </script>
     
     {% block javascripts %}{% endblock %}

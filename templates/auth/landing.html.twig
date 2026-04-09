@@ -547,7 +547,9 @@
             <div class="nav-links">
                 <button class="nav-link" onclick="scrollToSection('home')">Accueil</button>
                 <button class="nav-link" onclick="window.location.href='{{ path('app_public_events') }}'">Événements</button>
+
                 <button class="nav-link" onclick="window.location.href='{{ path('app_sponsor_portal') }}'">Recommandations sponsor</button>
+
                 <button class="nav-link" onclick="scrollToSection('features')">Fonctionnalités</button>
                 <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
                 <button class="nav-link" onclick="scrollToSection('contact')">Contact</button>
@@ -783,4 +785,8 @@
             });
         });
     </script>
+
 {% endblock %}
+
+
+
