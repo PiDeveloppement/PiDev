@@ -109,33 +109,22 @@ class DashboardController extends AbstractController
         // Récupérer les repositories
         $eventRepository = $this->entityManager->getRepository(Event::class);
         $userRepository = $this->entityManager->getRepository(UserModel::class);
+        $ticketRepository = $this->entityManager->getRepository('App\Entity\Event\Ticket');
         
-        // Récupérer l'entité Ticket
-        try {
-            $ticketRepository = $this->entityManager->getRepository('App\Entity\Event\EventTicket');
-        } catch (\Exception $e) {
-            try {
-                $ticketRepository = $this->entityManager->getRepository('App\Entity\Event\Event_Ticket');
-            } catch (\Exception $e) {
-                $ticketRepository = null;
-                $this->logger->warning('⚠️ Repository Ticket non trouvé');
-            }
-        }
+        $this->logger->info('🔍 Repositories chargés');
         
         // ==================== STATS ÉVÉNEMENTS ====================
         // Compter les événements
         $totalEvents = $eventRepository->count([]);
-        $this->logger->info('📊 Total événements trouvés: ' . $totalEvents);
+        $this->logger->info('📊 Total événements: ' . $totalEvents);
         
         // Récupérer TOUS les événements pour les statistiques
         $allEvents = $eventRepository->findAll();
-        $this->logger->info('📊 Nombre événements récupérés: ' . count($allEvents));
+        $this->logger->info('📊 Nombre événements trouvés: ' . count($allEvents));
         
-        // Compter les billets si le repository existe
-        $totalTickets = 0;
-        if ($ticketRepository) {
-            $totalTickets = $ticketRepository->count([]);
-        }
+        // Compter les billets
+        $totalTickets = $ticketRepository->count([]);
+        $this->logger->info('📊 Total billets: ' . $totalTickets);
         
         // Récupérer les événements à venir
         $upcomingEvents = $eventRepository->createQueryBuilder('e')
@@ -148,40 +137,56 @@ class DashboardController extends AbstractController
         
         // Calculer les statistiques des événements
         $eventStats = $this->calculateEventStats($allEvents);
-        $this->logger->info('📊 Statistiques événements calculées:', $eventStats);
+        $this->logger->info('📊 Stats événements:', $eventStats);
         
         // Calculer le nombre de participants uniques
         $totalParticipants = $this->countUniqueParticipants($ticketRepository);
+        $this->logger->info('📊 Total participants uniques: ' . $totalParticipants);
         
         // Calculer le taux de participation
         $participationRate = $this->calculateAverageParticipationRate($allEvents, $totalParticipants);
         
-        // ==================== STATS UTILISATEURS (NOUVEAU) ====================
-        // Récupérer les statistiques utilisateurs via UserService
-        $totalUsers = $this->userService->getTotalUsersCount();
-        $newUsersThisMonth = $this->userService->getNewUsersThisMonthCount();
-        $usersByRole = $this->userService->getUsersCountByRole();
+        // ==================== STATS UTILISATEURS ====================
+        // Total utilisateurs
+        $totalUsers = $userRepository->count([]);
+        $this->logger->info('📊 Total utilisateurs: ' . $totalUsers);
         
-        // Données utilisateurs
+        // Utilisateurs ce mois
+        $now = new \DateTime();
+        $monthAgo = (clone $now)->modify('-1 month');
+        $newUsersThisMonth = $userRepository->createQueryBuilder('u')
+            ->where('u.registrationDate >= :start')
+            ->setParameter('start', $monthAgo)
+            ->getQuery()
+            ->getResult();
+        $newUsersCount = count($newUsersThisMonth);
+        $this->logger->info('📊 Nouveaux utilisateurs ce mois: ' . $newUsersCount);
+        
+        // Utilisateurs par rôle - utiliser RoleId directement
+        $adminCount = $userRepository->count(['roleId' => 4]);
+        $organizerCount = $userRepository->count(['roleId' => 2]);
+        $sponsorCount = $userRepository->count(['roleId' => 3]);
+        $defaultCount = $totalUsers - $adminCount - $organizerCount - $sponsorCount;
+        
+        $this->logger->info('📊 Admins: ' . $adminCount . ', Org: ' . $organizerCount . ', Sponsor: ' . $sponsorCount);
+        
         $userStats = [
             'total_users_stats' => $totalUsers,
-            'new_users_this_month' => $newUsersThisMonth,
-            'admins_count' => $usersByRole['Admin'] ?? 0,
-            'organizers_count' => $usersByRole['Organisateur'] ?? 0,
-            'default_count' => $usersByRole['Default'] ?? 0,
-            'sponsors_count' => $usersByRole['Sponsor'] ?? 0,
-            'admins_percent' => ($totalUsers > 0) ? round(($usersByRole['Admin'] ?? 0) / $totalUsers * 100) : 0,
-            'organizers_percent' => ($totalUsers > 0) ? round(($usersByRole['Organisateur'] ?? 0) / $totalUsers * 100) : 0,
-            'default_percent' => ($totalUsers > 0) ? round(($usersByRole['Default'] ?? 0) / $totalUsers * 100) : 0,
-            'sponsors_percent' => ($totalUsers > 0) ? round(($usersByRole['Sponsor'] ?? 0) / $totalUsers * 100) : 0,
+            'new_users_this_month' => $newUsersCount,
+            'admins_count' => $adminCount,
+            'organizers_count' => $organizerCount,
+            'default_count' => $defaultCount,
+            'sponsors_count' => $sponsorCount,
+            'admins_percent' => ($totalUsers > 0) ? round(($adminCount / $totalUsers) * 100) : 0,
+            'organizers_percent' => ($totalUsers > 0) ? round(($organizerCount / $totalUsers) * 100) : 0,
+            'default_percent' => ($totalUsers > 0) ? round(($defaultCount / $totalUsers) * 100) : 0,
+            'sponsors_percent' => ($totalUsers > 0) ? round(($sponsorCount / $totalUsers) * 100) : 0,
         ];
-        
-        $this->logger->info('📊 Statistiques utilisateurs:', $userStats);
         
         // ==================== ÉVOLUTIONS ====================
         $eventsEvolution = $this->calculateEventsEvolution($eventRepository);
-        $participantsEvolution = $this->calculateParticipantsEvolution($userRepository);
-        $participationEvolution = $this->calculateParticipationEvolution($eventRepository, $userRepository);
+        $participantsEvolution = $this->calculateParticipantsEvolution($totalUsers);
+        $participationEvolution = $this->calculateParticipationEvolution($participationRate);
         $ticketsEvolution = $this->calculateTicketsEvolution($ticketRepository);
         $usersEvolution = $this->calculateUsersEvolution($userRepository);
 
@@ -284,15 +289,12 @@ class DashboardController extends AbstractController
         }
         
         try {
-            try {
-                $qb = $ticketRepository->createQueryBuilder('t')
-                    ->select('COUNT(DISTINCT t.userId) as unique_participants');
-                return (int) $qb->getQuery()->getSingleScalarResult();
-            } catch (\Exception $e) {
-                $qb = $ticketRepository->createQueryBuilder('t')
-                    ->select('COUNT(DISTINCT t.user) as unique_participants');
-                return (int) $qb->getQuery()->getSingleScalarResult();
-            }
+            $qb = $ticketRepository->createQueryBuilder('t')
+                ->select('COUNT(DISTINCT t.userId) as unique_participants')
+                ->getQuery()
+                ->getSingleScalarResult();
+            
+            return (int) ($qb ?? 0);
         } catch (\Exception $e) {
             $this->logger->error('❌ Erreur comptage participants: ' . $e->getMessage());
             return 0;
@@ -346,83 +348,36 @@ class DashboardController extends AbstractController
         }
     }
 
-    private function calculateParticipantsEvolution($userRepository): int
+    private function calculateParticipantsEvolution($totalUsers): int
     {
         try {
             $now = new \DateTime();
             $monthAgo = (clone $now)->modify('-1 month');
-            $twoMonthsAgo = (clone $now)->modify('-2 months');
-
-            $participantsThisMonth = $userRepository->createQueryBuilder('u')
-                ->where('u.createdAt BETWEEN :start AND :end')
+            
+            $userRepository = $this->entityManager->getRepository(UserModel::class);
+            $usersThisMonth = $userRepository->createQueryBuilder('u')
+                ->where('u.registrationDate >= :start')
                 ->setParameter('start', $monthAgo)
-                ->setParameter('end', $now)
                 ->getQuery()
                 ->getResult();
 
-            $participantsLastMonth = $userRepository->createQueryBuilder('u')
-                ->where('u.createdAt BETWEEN :start AND :end')
-                ->setParameter('start', $twoMonthsAgo)
-                ->setParameter('end', $monthAgo)
-                ->getQuery()
-                ->getResult();
+            $countThisMonth = count($usersThisMonth);
 
-            $countThisMonth = count($participantsThisMonth);
-            $countLastMonth = count($participantsLastMonth);
-
-            if ($countLastMonth === 0) {
-                return $countThisMonth > 0 ? 100 : 0;
+            if ($countThisMonth === 0) {
+                return 0;
             }
 
-            return round((($countThisMonth - $countLastMonth) / $countLastMonth) * 100);
+            return round(($countThisMonth / max(1, $totalUsers)) * 100);
         } catch (\Exception $e) {
             $this->logger->error('❌ Erreur calcul évolution participants: ' . $e->getMessage());
             return 0;
         }
     }
 
-    private function calculateParticipationEvolution($eventRepository, $userRepository): int
+    private function calculateParticipationEvolution($participationRate): int
     {
         try {
-            $now = new \DateTime();
-            $monthAgo = (clone $now)->modify('-1 month');
-            
-            $eventsThisMonth = $eventRepository->createQueryBuilder('e')
-                ->where('e.startDate BETWEEN :start AND :end')
-                ->setParameter('start', $monthAgo)
-                ->setParameter('end', $now)
-                ->getQuery()
-                ->getResult();
-            
-            $participantsThisMonth = $userRepository->createQueryBuilder('u')
-                ->where('u.createdAt BETWEEN :start AND :end')
-                ->setParameter('start', $monthAgo)
-                ->setParameter('end', $now)
-                ->getQuery()
-                ->getResult();
-
-            $eventsLastMonth = $eventRepository->createQueryBuilder('e')
-                ->where('e.startDate BETWEEN :start AND :end')
-                ->setParameter('start', (clone $monthAgo)->modify('-1 month'))
-                ->setParameter('end', $monthAgo)
-                ->getQuery()
-                ->getResult();
-            
-            $participantsLastMonth = $userRepository->createQueryBuilder('u')
-                ->where('u.createdAt BETWEEN :start AND :end')
-                ->setParameter('start', (clone $monthAgo)->modify('-1 month'))
-                ->setParameter('end', $monthAgo)
-                ->getQuery()
-                ->getResult();
-
-            $rateThisMonth = $this->calculateAverageParticipationRate($eventsThisMonth, count($participantsThisMonth));
-            $rateLastMonth = $this->calculateAverageParticipationRate($eventsLastMonth, count($participantsLastMonth));
-
-            if ($rateLastMonth == 0) {
-                return $rateThisMonth > 0 ? 100 : 0;
-            }
-
-            return round((($rateThisMonth - $rateLastMonth) / $rateLastMonth) * 100);
+            return min(100, max(0, (int)$participationRate));
         } catch (\Exception $e) {
             $this->logger->error('❌ Erreur calcul évolution participation: ' . $e->getMessage());
             return 0;

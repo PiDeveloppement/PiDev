@@ -32,11 +32,13 @@ class LandingPageController extends AbstractController
         return $this->redirectToRoute('app_register');
     }
 
+
     #[Route('/events/public', name: 'app_public_events')]
     public function publicEvents(): Response
     {
         return $this->redirectToRoute('app_events_public');
     }
+
 
     #[Route('/feedback', name: 'app_feedback_view')]
     public function feedbackView(): Response

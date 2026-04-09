@@ -59,8 +59,8 @@ class MainController extends AbstractController
 
   
 
-    // ✅ Gardé - Dashboard
-    #[Route('/dashboard', name: 'app_dashboard')]
+    // ✅ Gardé - Dashboard (route renommée pour éviter le conflit avec le DashboardController)
+    #[Route('/dashboard/main', name: 'app_main_dashboard')]
     public function dashboard(): Response
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');

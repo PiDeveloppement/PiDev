@@ -226,7 +226,7 @@
                         <div id="upcomingEventsContainer" class="upcoming-events-container">
                             {% if upcoming_events is defined and upcoming_events|length > 0 %}
                                 {% for event in upcoming_events %}
-                                    <div class="event-item" onclick="window.location.href='{{ path('app_event_view', {'id': event.id}) }}'">
+                                    <div class="event-item" onclick="window.location.href='{{ path('app_event_show', {'id': event.id}) }}'">
                                         <div class="event-status-dot" style="background-color: {{ event.statusColor|default('#22c55e') }};"></div>
                                         <div class="event-info">
                                             <div class="event-title">{{ event.title }}</div>
@@ -803,16 +803,54 @@
 <script>
 function refreshDashboard() {
     console.log('🔄 Rafraîchissement du dashboard...');
-    // Implémentation de l'appel API
     fetch('{{ path('app_dashboard_refresh') }}')
         .then(response => response.json())
         .then(data => {
             console.log('✅ Dashboard mis à jour', data);
-            // Mettre à jour les valeurs
-            if (data.totalEvents) document.getElementById('totalEventsLabel').textContent = data.totalEvents;
-            if (data.participationRate) document.getElementById('participationRateLabel').textContent = data.participationRate + '%';
-            if (data.totalUsers) document.getElementById('totalUsersLabel').textContent = data.totalUsers;
-            if (data.newUsersThisMonth) document.getElementById('newUsersLabel').textContent = data.newUsersThisMonth;
+            if (data.totalEvents !== undefined) document.getElementById('totalEventsLabel').textContent = data.totalEvents;
+            if (data.participationRate !== undefined) document.getElementById('participationRateLabel').textContent = data.participationRate + '%';
+            if (data.totalUsers !== undefined) document.getElementById('totalUsersLabel').textContent = data.totalUsers;
+            if (data.newUsersThisMonth !== undefined) document.getElementById('newUsersLabel').textContent = data.newUsersThisMonth;
+            if (data.eventsEvolution !== undefined) document.getElementById('eventsEvolutionLabel').textContent = (data.eventsEvolution >= 0 ? '+' : '') + data.eventsEvolution + '% vs mois dernier';
+            if (data.participationEvolution !== undefined) document.getElementById('participationEvolutionLabel').textContent = (data.participationEvolution >= 0 ? '+' : '') + data.participationEvolution + '% vs mois dernier';
+            if (data.usersEvolution !== undefined) document.getElementById('usersEvolutionLabel').textContent = (data.usersEvolution >= 0 ? '+' : '') + data.usersEvolution + '% vs mois dernier';
+
+            if (data.planifiePercent !== undefined) {
+                document.getElementById('planifiePercentLabel').textContent = data.planifiePercent + '%';
+                document.getElementById('planifieCountLabel').textContent = data.planifieCount + ' événements';
+                document.getElementById('planifieProgress').style.width = data.planifiePercent + '%';
+            }
+            if (data.enCoursPercent !== undefined) {
+                document.getElementById('enCoursPercentLabel').textContent = data.enCoursPercent + '%';
+                document.getElementById('enCoursCountLabel').textContent = data.enCoursCount + ' événements';
+                document.getElementById('enCoursProgress').style.width = data.enCoursPercent + '%';
+            }
+            if (data.terminePercent !== undefined) {
+                document.getElementById('terminePercentLabel').textContent = data.terminePercent + '%';
+                document.getElementById('termineCountLabel').textContent = data.termineCount + ' événements';
+                document.getElementById('termineProgress').style.width = data.terminePercent + '%';
+            }
+
+            if (data.adminsPercent !== undefined) {
+                document.getElementById('adminsPercentLabel').textContent = data.adminsPercent + '%';
+                document.getElementById('adminsCountLabel').textContent = data.adminsCount + ' utilisateurs';
+                document.getElementById('adminsProgress').style.width = data.adminsPercent + '%';
+            }
+            if (data.organizersPercent !== undefined) {
+                document.getElementById('organizersPercentLabel').textContent = data.organizersPercent + '%';
+                document.getElementById('organizersCountLabel').textContent = data.organizersCount + ' utilisateurs';
+                document.getElementById('organizersProgress').style.width = data.organizersPercent + '%';
+            }
+            if (data.defaultPercent !== undefined) {
+                document.getElementById('defaultPercentLabel').textContent = data.defaultPercent + '%';
+                document.getElementById('defaultCountLabel').textContent = data.defaultCount + ' utilisateurs';
+                document.getElementById('defaultProgress').style.width = data.defaultPercent + '%';
+            }
+            if (data.sponsorsPercent !== undefined) {
+                document.getElementById('sponsorsPercentLabel').textContent = data.sponsorsPercent + '%';
+                document.getElementById('sponsorsCountLabel').textContent = data.sponsorsCount + ' utilisateurs';
+                document.getElementById('sponsorsProgress').style.width = data.sponsorsPercent + '%';
+            }
         })
         .catch(error => console.error('❌ Erreur:', error));
 }
