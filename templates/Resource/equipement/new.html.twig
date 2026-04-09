@@ -1,0 +1,616 @@
+{# templates/resource/equipement/new.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Ajouter un Équipement - EventFlow{% endblock %}
+
+{% block admin_content %}
+<!-- Alert Container -->
+<div id="alertContainer" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; max-width: 600px; width: 90%;"></div>
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 2px; margin-bottom: 20px;">
+    <div style="background: white; border-radius: 14px; padding: 30px;">
+        
+        {# --- HEADER --- #}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px;">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div>
+                    <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px;">
+                        {{ equipement.id ? 'Modifier l\'Équipement' : 'Ajouter un Équipement' }}
+                    </h3>
+                    <p style="color: #64748b; font-size: 14px;">Gestion de l'inventaire EventFlow</p>
+                </div>
+            </div>
+            
+            {# --- STATS --- #}
+            <div style="display: flex; gap: 12px;">
+                <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 12px; padding: 15px 20px; color: white;">
+                    <p style="font-size: 11px; opacity: 0.9; margin: 0;"><i class="fas fa-plus-circle" style="margin-right: 6px;"></i>Nouveau</p>
+                    <p style="font-size: 16px; font-weight: 700; margin: 5px 0 0 0;">Équipement</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; padding: 15px 20px; color: white;">
+                    <p style="font-size: 11px; opacity: 0.9; margin: 0;"><i class="fas fa-check-circle" style="margin-right: 6px;"></i>Disponible</p>
+                    <p style="font-size: 16px; font-weight: 700; margin: 5px 0 0 0;">Immédiat</p>
+                </div>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin-bottom: 30px;">
+
+    {# --- FORMULAIRE --- #}
+    <div class="form-wrapper">
+        {{ form_start(form, {'attr': {'id': 'equipementForm', 'novalidate': 'novalidate'}}) }}
+            
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                
+                {# Désignation #}
+                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                    <label style="display: block; color: #374151; font-weight: 600; font-size: 14px; margin-bottom: 8px;">
+                        <i class="fas fa-tag" style="color: #667eea; margin-right: 8px;"></i>Désignation
+                    </label>
+                    {{ form_widget(form.name, {'attr': {
+                        'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;', 
+                        'placeholder': 'Ex: Projecteur LED 4K'
+                    }}) }}
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.name) }}</div>
+                </div>
+                
+                {# Catégorie #}
+                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                    <label style="display: block; color: #374151; font-weight: 600; font-size: 14px; margin-bottom: 8px;">
+                        <i class="fas fa-layer-group" style="color: #10b981; margin-right: 8px;"></i>Catégorie
+                    </label>
+                    {{ form_widget(form.equipementType, {'attr': {'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;'}}) }}
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.equipementType) }}</div>
+                </div>
+                
+                {# Quantité et État sur la même ligne #}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                        <label style="display: block; color: #374151; font-weight: 600; font-size: 14px; margin-bottom: 8px;">
+                            <i class="fas fa-boxes" style="color: #3b82f6; margin-right: 8px;"></i>Quantité en stock
+                        </label>
+                        {{ form_widget(form.quantity, {'attr': {
+                            'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;', 
+                            'min': '0',
+                            'placeholder': '0'
+                        }}) }}
+                        <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.quantity) }}</div>
+                    </div>
+                    
+                    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                        <label style="display: block; color: #374151; font-weight: 600; font-size: 14px; margin-bottom: 8px;">
+                            <i class="fas fa-chart-line" style="color: #f59e0b; margin-right: 8px;"></i>État initial
+                        </label>
+                        {{ form_widget(form.status, {'attr': {'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;'}}) }}
+                        <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.status) }}</div>
+                    </div>
+                </div>
+                
+                {# Image (si disponible) #}
+                {% if form.imagePath is defined %}
+                <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 12px; padding: 25px; border: 1px solid #e2e8f0;">
+                    <label style="display: block; color: #374151; font-weight: 600; font-size: 14px; margin-bottom: 10px;">
+                        <i class="fas fa-camera" style="color: #667eea; margin-right: 8px;"></i>URL de l'image
+                    </label>
+                    {{ form_widget(form.imagePath, {'attr': {
+                        'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;', 
+                        'placeholder': 'https://images.unsplash.com/...'
+                    }}) }}
+                    <div style="background: #dbeafe; padding: 12px 15px; border-radius: 8px; margin-top: 15px; font-size: 13px; color: #1e40af; border-left: 4px solid #3b82f6;">
+                        <i class="fas fa-info-circle"></i> <strong>Info :</strong> Laissez vide pour une image par défaut
+                    </div>
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.imagePath) }}</div>
+                </div>
+                {% endif %}
+            </div>
+            
+            {# --- BOUTONS D'ACTION --- #}
+            <div style="display: flex; justify-content: space-between; gap: 15px; margin-top: 35px; padding-top: 25px; border-top: 1px solid #e5e7eb;">
+                <a href="{{ path('app_resource_equipement_index') }}" 
+                   style="flex: 1; text-align: center; background: #f8fafc; color: #64748b; padding: 14px; border-radius: 10px; text-decoration: none; font-weight: 600; border: 2px solid #e2e8f0; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;"
+                   onmouseover="this.style.background='#e2e8f0'; this.style.transform='translateY(-2px)'" 
+                   onmouseout="this.style.background='#f8fafc'; this.style.transform='translateY(0)'">
+                    <i class="fas fa-times"></i> Annuler
+                </a>
+                <button type="submit" 
+                        style="flex: 1; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(34,197,94,0.3); transition: transform 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;"
+                        onmouseover="this.style.transform='translateY(-2px)'" 
+                        onmouseout="this.style.transform='translateY(0)'">
+                    <i class="fas fa-save"></i> Enregistrer
+                </button>
+            </div>
+            
+        {{ form_end(form) }}
+
+        {# --- NOTE INFORMATIVE --- #}
+        <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 12px; padding: 20px; margin-top: 25px; border: 1px solid rgba(14, 165, 233, 0.2); display: flex; align-items: center; gap: 15px;">
+            <div style="background: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #0ea5e9; font-size: 18px;">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <div style="flex: 1; font-size: 13px; color: #0c4a6e; line-height: 1.5;">
+                <strong>Note importante :</strong> L'équipement sera immédiatement disponible pour les réservations d'événements une fois enregistré.
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-dark: #4338ca;
+        --primary-light: #eef2ff;
+        --info: #0ea5e9;
+        --info-light: #e0f2fe;
+        --success: #10b981;
+        --success-light: #ecfdf5;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-900: #111827;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .dashboard-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 32px 24px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: var(--gray-50);
+        min-height: 100vh;
+    }
+
+    /* Header */
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+
+    .main-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0 0 4px 0;
+        letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+        color: var(--gray-600);
+        font-size: 14px;
+        margin: 0;
+    }
+
+    /* Stats Cards */
+    .stats-group {
+        display: flex;
+        gap: 12px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border: 1px solid var(--gray-200);
+        transition: all 0.2s;
+    }
+
+    .stat-card:hover {
+        box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+        transform: translateY(-1px);
+    }
+
+    .stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bg-primary-light { background: var(--primary-light); }
+    .bg-info-light { background: var(--info-light); }
+
+    .stat-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray-600);
+        display: block;
+    }
+
+    .stat-number {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--gray-900);
+        line-height: 1;
+    }
+
+    /* Formulaire */
+    .form-wrapper {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 24px;
+    }
+
+    .modern-form {
+        padding: 32px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+
+    .form-field {
+        margin-bottom: 0;
+    }
+
+    .full-width {
+        grid-column: span 2;
+    }
+
+    .field-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 8px;
+    }
+
+    .field-input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--gray-200);
+        border-radius: 10px;
+        font-size: 14px;
+        transition: all 0.2s;
+        background: white;
+        font-family: inherit;
+    }
+
+    .field-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .field-input:hover:not(:focus) {
+        border-color: var(--gray-300);
+    }
+
+    select.field-input {
+        cursor: pointer;
+        appearance: none;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%236b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 36px;
+    }
+
+    textarea.field-input {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .field-error {
+        color: var(--danger);
+        font-size: 12px;
+        margin-top: 6px;
+    }
+
+    .field-error ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .field-help {
+        font-size: 12px;
+        color: var(--gray-400);
+        margin-top: 6px;
+    }
+
+    /* Actions */
+    .form-actions {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .btn-save {
+        background: var(--primary);
+        color: white;
+        padding: 10px 28px;
+        border-radius: 10px;
+        border: none;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-save:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-700);
+        padding: 10px 28px;
+        border-radius: 10px;
+        border: 1px solid var(--gray-200);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-cancel:hover {
+        background: var(--gray-50);
+        border-color: var(--gray-300);
+        transform: translateY(-1px);
+    }
+
+    /* Note informative */
+    .info-note {
+        background: var(--info-light);
+        border-radius: 12px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border: 1px solid rgba(14, 165, 233, 0.2);
+    }
+
+    .info-icon {
+        width: 40px;
+        height: 40px;
+        background: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--info);
+        font-size: 20px;
+    }
+
+    .info-content {
+        flex: 1;
+        font-size: 13px;
+        color: #0c4a6e;
+        line-height: 1.5;
+    }
+
+    .info-content strong {
+        font-weight: 700;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 20px 16px;
+        }
+
+        .header-section {
+            flex-direction: column;
+        }
+
+        .stats-group {
+            width: 100%;
+        }
+
+        .stat-card {
+            flex: 1;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .full-width {
+            grid-column: span 1;
+        }
+
+        .modern-form {
+            padding: 24px;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-save,
+        .btn-cancel {
+            justify-content: center;
+        }
+
+        .info-note {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+
+    /* Validation styles */
+    .field-input.is-invalid {
+        border-color: #ef4444;
+    }
+
+    .field-input.is-invalid:focus {
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+    
+    button[type="submit"]:hover {
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+        transform: translateY(-2px);
+    }
+    
+    a:hover {
+        background: #e2e8f0 !important;
+        transition: all 0.2s;
+    }
+    
+    input:focus, select:focus {
+        outline: none;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-field:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .form-field {
+        transition: all 0.2s ease;
+    }
+</style>
+
+<script>
+    // Validation du formulaire équipement
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('equipementForm');
+        form.addEventListener('submit', function(event) {
+            const errors = validateEquipementForm();
+            if (errors.length > 0) {
+                event.preventDefault();
+                showEquipementErrors(errors);
+            }
+        });
+        
+        // Ajouter les classes de validation Bootstrap-like
+        const errorMessages = document.querySelectorAll('.field-error');
+        errorMessages.forEach(error => {
+            if (error.innerHTML.trim() !== '') {
+                const input = error.previousElementSibling;
+                if (input && input.classList) {
+                    input.classList.add('is-invalid');
+                }
+            }
+        });
+    });
+
+    function validateEquipementForm() {
+        const errors = [];
+        
+        // Utiliser les IDs générés par Symfony
+        const nameField = document.getElementById('{{ form.name.vars.id }}');
+        const equipementTypeField = document.getElementById('{{ form.equipementType.vars.id }}');
+        const quantityField = document.getElementById('{{ form.quantity.vars.id }}');
+        const statusField = document.getElementById('{{ form.status.vars.id }}');
+        
+        const name = nameField ? nameField.value : '';
+        const equipementType = equipementTypeField ? equipementTypeField.value : '';
+        const quantity = quantityField ? quantityField.value : '';
+        const status = statusField ? statusField.value : '';
+        
+        if (!name || name.trim().length < 2) {
+            errors.push('Le nom de l\'équipement doit contenir au moins 2 caractères');
+        }
+        
+        if (!equipementType || equipementType.trim().length < 2) {
+            errors.push('Le type d\'équipement doit contenir au moins 2 caractères');
+        }
+        
+        if (!quantity || quantity < 1 || quantity > 1000) {
+            errors.push('La quantité doit être entre 1 et 1000');
+        }
+        
+        if (!status) {
+            errors.push('Veuillez sélectionner un statut');
+        }
+        
+        return errors;
+    }
+
+    function showEquipementErrors(errors) {
+        const alertContainer = document.getElementById('alertContainer');
+        
+        const alert = document.createElement('div');
+        alert.style.cssText = `
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+            margin-bottom: 10px;
+            transform: translateY(-100px);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        `;
+        
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-exclamation-triangle';
+        icon.style.marginRight = '10px';
+        
+        const title = document.createElement('strong');
+        title.textContent = 'Erreurs de validation : ';
+        
+        const message = document.createElement('div');
+        message.style.marginTop = '8px';
+        message.innerHTML = errors.map(error => `• ${error}`).join('<br>');
+        
+        alert.appendChild(icon);
+        alert.appendChild(title);
+        alert.appendChild(message);
+        
+        alertContainer.appendChild(alert);
+        
+        setTimeout(() => {
+            alert.style.transform = 'translateY(0)';
+        }, 100);
+        
+        setTimeout(() => {
+            alert.style.transform = 'translateY(-100px)';
+            alert.style.opacity = '0';
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 400);
+        }, 5000);
+        
+        alert.addEventListener('click', () => {
+            alert.style.transform = 'translateY(-100px)';
+            alert.style.opacity = '0';
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 400);
+        });
+    }
+</script>
+{% endblock %}
