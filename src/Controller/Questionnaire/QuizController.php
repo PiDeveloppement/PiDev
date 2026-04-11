@@ -10,6 +10,7 @@ use App\Form\Questionnaire\FeedbackType;
 use App\Form\Questionnaire\QuizAnswerType;
 use App\Repository\Questionnaire\QuestionRepository;
 use App\Repository\Event\EventRepository;
+use App\Repository\User\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,18 +21,20 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Google\Service\AlertCenter\User;
 
 class QuizController extends AbstractController
 {
+    private UserRepository $userRepository;
     private EventRepository $eventRepository;
 
-    public function __construct(EventRepository $eventRepository)
+    public function __construct(EventRepository $eventRepository, UserRepository $userRepository)
     {
         $this->eventRepository = $eventRepository;
     }
 
     #[Route('/quiz/start', name: 'app_quiz_start')]
-    public function start(Request $request, QuestionRepository $repo): Response
+    public function start(Request $request, QuestionRepository $repo, UserRepository $user): Response
     {
         $user = $this->getUser();
         $eventId = $request->query->get('event_id');
