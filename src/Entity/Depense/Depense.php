@@ -91,9 +91,9 @@ class Depense
         return $this->amount;
     }
 
-    public function setAmount(float|string $amount): self
+    public function setAmount(float|string|null $amount): self
     {
-        if ($amount === '') {
+        if ($amount === null || $amount === '') {
             $this->amount = '';
 
             return $this;

@@ -35,6 +35,9 @@ class SponsorType extends AbstractType
         if ($fixedEmail !== null && trim((string) $fixedEmail) !== '') {
             $emailFieldOptions['data'] = $fixedEmail;
             $emailFieldOptions['disabled'] = true;
+        } else {
+            $emailFieldOptions['required'] = false;
+            $emailFieldOptions['empty_data'] = '';
         }
 
         $eventFieldOptions = [
@@ -61,6 +64,8 @@ class SponsorType extends AbstractType
             ->add('eventId', ChoiceType::class, $eventFieldOptions)
             ->add('companyName', TextType::class, [
                 'label' => 'Entreprise',
+                'required' => false,
+                'empty_data' => '',
                 'invalid_message' => 'Veuillez saisir un nom d entreprise valide.',
                 'attr' => [
                     'placeholder' => 'Nom entreprise',
@@ -72,6 +77,8 @@ class SponsorType extends AbstractType
                 'label' => 'Contribution (TND)',
                 'scale' => 2,
                 'html5' => false,
+                'required' => false,
+                'empty_data' => '',
                 'invalid_message' => 'Veuillez saisir un montant valide.',
                 'attr' => [
                     'step' => '0.01',

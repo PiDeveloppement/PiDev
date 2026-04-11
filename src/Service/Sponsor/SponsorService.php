@@ -55,6 +55,19 @@ class SponsorService
         $choices = [];
 
         foreach ($source as $event) {
+            // Exclude specific events from sponsorization list
+            $excludeKeywords = ['validation', 'test', 'demo', 'conférence ia'];
+            $shouldExclude = false;
+            foreach ($excludeKeywords as $keyword) {
+                if (stripos($event['title'], $keyword) !== false) {
+                    $shouldExclude = true;
+                    break;
+                }
+            }
+            if ($shouldExclude) {
+                continue;
+            }
+            
             $label = sprintf(
                 '%s (%s)',
                 $event['title'],

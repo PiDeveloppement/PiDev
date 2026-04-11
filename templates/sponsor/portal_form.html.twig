@@ -39,11 +39,20 @@
             <section class="portal-form-section blue">
                 <h4 class="portal-form-section-title">📋 Informations générales</h4>
                 <div class="portal-form-grid">
+                    {% if event %}
+                    <div>
+                        <label>Événement</label>
+                        <div class="form-control" style="background: #f5f8fc; padding: 10px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                            <strong>{{ event.title }}</strong>
+                        </div>
+                    </div>
+                    {% else %}
                     <div>
                         {{ form_label(form.eventId) }}
                         {{ form_widget(form.eventId) }}
                         <div class="form-errors">{{ form_errors(form.eventId) }}</div>
                     </div>
+                    {% endif %}
                     <div>
                         {{ form_label(form.companyName) }}
                         {{ form_widget(form.companyName, {'attr': {'placeholder': 'Nom entreprise'}}) }}
@@ -86,7 +95,11 @@
 
                 <div class="logo-layout">
                     <div class="logo-preview" id="logo-preview-box">
-                        <img id="logo-preview-img" alt="Logo preview">
+                        {% if form.logoUrl.vars.value %}
+                            <img id="logo-preview-img" src="{{ form.logoUrl.vars.value }}" alt="Logo preview">
+                        {% else %}
+                            <img id="logo-preview-img" alt="Logo preview">
+                        {% endif %}
                         <span class="placeholder" id="logo-preview-placeholder">Aperçu logo</span>
                     </div>
 

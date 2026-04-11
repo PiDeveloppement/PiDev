@@ -80,6 +80,14 @@ class SponsorController extends AbstractController
         ]);
         $form->handleRequest($request);
 
+        if ($form->isSubmitted()) {
+            // Server-side validation: check contribution field and display red error
+            $contributionValue = trim((string) ($sponsor->getContributionName() ?? ''));
+            if ($contributionValue === '' || $contributionValue === '0' || $contributionValue === '0.00') {
+                $form->get('contributionName')->addError(new \Symfony\Component\Form\FormError('La contribution est obligatoire.'));
+            }
+        }
+
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 if ($this->sponsorService->hasDuplicateSponsor($sponsor)) {
@@ -115,6 +123,14 @@ class SponsorController extends AbstractController
             'event_choices' => $this->sponsorService->buildEventChoices(),
         ]);
         $form->handleRequest($request);
+
+        if ($form->isSubmitted()) {
+            // Server-side validation: check contribution field and display red error
+            $contributionValue = trim((string) ($sponsor->getContributionName() ?? ''));
+            if ($contributionValue === '' || $contributionValue === '0' || $contributionValue === '0.00') {
+                $form->get('contributionName')->addError(new \Symfony\Component\Form\FormError('La contribution est obligatoire.'));
+            }
+        }
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
@@ -386,22 +402,60 @@ class SponsorController extends AbstractController
             throw $this->createNotFoundException('Evenement introuvable.');
         }
 
-        $activeEvents = $this->sponsorService->fetchActiveEvents();
         $sponsor = new Sponsor();
         $sponsor->setEventId($id);
+        
+        // Pre-fill company name from user name
+        if ($user instanceof UserModel) {
+            $fullName = trim(($user->getFirstName() ?? '') . ' ' . ($user->getLastName() ?? ''));
+            if ($fullName !== '') {
+                $sponsor->setCompanyName($fullName);
+            }
+            
+            // Pre-fill logo from profile picture
+            $profilePic = trim((string) ($user->getProfilePictureUrl() ?? ''));
+            if ($profilePic !== '') {
+                $sponsor->setLogoUrl($profilePic);
+            }
+            
+            $sponsor->setContactEmail((string) $user->getEmail());
+            $sponsor->setUser($user);
+        }
+        
         if ($fixedEmail !== null && $fixedEmail !== '') {
             $sponsor->setContactEmail($fixedEmail);
-        }
-        if ($user instanceof UserModel) {
-            $sponsor->setUser($user);
         }
 
         $form = $this->createForm(SponsorType::class, $sponsor, [
             'fixed_email' => $fixedEmail,
-            'fixed_event_id' => null,
-            'event_choices' => $this->sponsorService->buildEventChoices($activeEvents),
+            'fixed_event_id' => $id,
+            'event_choices' => [$event['title'] => $id],
         ]);
         $form->handleRequest($request);
+
+        if ($form->isSubmitted()) {
+            // Server-side validation: check required fields and display red errors
+            $hasErrors = false;
+            
+            // Validate contribution
+            $contributionValue = trim((string) ($sponsor->getContributionName() ?? ''));
+            if ($contributionValue === '' || $contributionValue === '0' || $contributionValue === '0.00') {
+                $form->get('contributionName')->addError(new \Symfony\Component\Form\FormError('La contribution est obligatoire.'));
+                $hasErrors = true;
+            }
+            
+            // Validate company name
+            if ($sponsor->getCompanyName() === null || trim((string) $sponsor->getCompanyName()) === '') {
+                $form->get('companyName')->addError(new \Symfony\Component\Form\FormError('Le nom de l\'entreprise est obligatoire.'));
+                $hasErrors = true;
+            }
+            
+            // Validate email
+            if ($sponsor->getContactEmail() === null || trim((string) $sponsor->getContactEmail()) === '') {
+                $form->get('contactEmail')->addError(new \Symfony\Component\Form\FormError('L\'email de contact est obligatoire.'));
+                $hasErrors = true;
+            }
+        }
 
         if ($form->isSubmitted() && $form->isValid()) {
             $selectedEventId = (int) $sponsor->getEventId();
@@ -436,6 +490,7 @@ class SponsorController extends AbstractController
 
         return $this->render('sponsor/portal_form.html.twig', [
             'pageInfo' => ['title' => 'Sponsoriser un evenement', 'subtitle' => (string) ($event['title'] ?? '')],
+            'event' => $event,
             'form' => $form->createView(),
             'isEdit' => false,
             'backRoute' => 'app_sponsor_portal',
@@ -460,6 +515,25 @@ class SponsorController extends AbstractController
         ]);
         $form->handleRequest($request);
 
+        if ($form->isSubmitted()) {
+            // Server-side validation: check required fields and display red errors
+            // Validate contribution
+            $contributionValue = trim((string) ($sponsor->getContributionName() ?? ''));
+            if ($contributionValue === '' || $contributionValue === '0' || $contributionValue === '0.00') {
+                $form->get('contributionName')->addError(new \Symfony\Component\Form\FormError('La contribution est obligatoire.'));
+            }
+            
+            // Validate company name
+            if ($sponsor->getCompanyName() === null || trim((string) $sponsor->getCompanyName()) === '') {
+                $form->get('companyName')->addError(new \Symfony\Component\Form\FormError('Le nom de l\'entreprise est obligatoire.'));
+            }
+            
+            // Validate email
+            if ($sponsor->getContactEmail() === null || trim((string) $sponsor->getContactEmail()) === '') {
+                $form->get('contactEmail')->addError(new \Symfony\Component\Form\FormError('L\'email de contact est obligatoire.'));
+            }
+        }
+
         if ($form->isSubmitted() && $form->isValid()) {
             $sponsor->setContactEmail((string) $user->getEmail());
             $sponsor->setUser($user);
@@ -476,6 +550,7 @@ class SponsorController extends AbstractController
 
         return $this->render('sponsor/portal_form.html.twig', [
             'pageInfo' => ['title' => 'Modifier sponsoring', 'subtitle' => 'Mise a jour'],
+            'event' => $event,
             'form' => $form->createView(),
             'isEdit' => true,
             'sponsor' => $sponsor,

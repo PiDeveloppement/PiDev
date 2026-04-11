@@ -1,10 +1,277 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Depenses - EventFlow{% endblock %}
+{% block title %}Dépenses - EventFlow{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --bg-light: #f8fafc;
+            --border-color: #e2e8f0;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-light);
+            line-height: 1.6;
+        }
+        
+        .depense-page {
+            padding: 20px;
+        }
+
+        .page-info { display: none; }
+        
+        .depense-header {
+            margin-bottom: 2rem;
+        }
+        .depense-header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        .depense-header p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+        
+        .depense-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .metric-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 0.75rem;
+            border-top: 4px solid transparent;
+            border-left: none;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-shadow-hover);
+        }
+        .metric-card .icon {
+            font-size: 1.5rem;
+            padding: 1rem;
+            border-radius: 50%;
+            color: white;
+            line-height: 1;
+        }
+        .metric-card.total { border-top-color: var(--primary-color); }
+        .metric-card.total .icon { background-color: var(--primary-color); }
+        .metric-card.count { border-top-color: var(--warning-color); }
+        .metric-card.count .icon { background-color: var(--warning-color); }
+        .metric-card.average { border-top-color: var(--success-color); }
+        .metric-card.average .icon { background-color: var(--success-color); }
+        
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+        .metric-value {
+            font-size: 1.75rem;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+        
+        .depense-charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .chart-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--card-shadow);
+        }
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+        
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 1.5rem;
+            height: 150px;
+        }
+        .bar-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .bar {
+            width: 100%;
+            background-color: var(--primary-color);
+            border-radius: 6px 6px 0 0;
+            transition: all 0.3s ease;
+        }
+        .bar-item:nth-child(2) .bar { background-color: var(--warning-color); }
+        .bar-item:nth-child(3) .bar { background-color: var(--danger-color); }
+        .bar-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.75rem;
+            font-weight: 600;
+        }
+        .bar-label strong {
+            display: block;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        
+        .filters-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            align-items: flex-end;
+        }
+        .filter-field label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        .filter-field input, .filter-field select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .filter-field input:focus, .filter-field select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        
+        .table-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--card-shadow);
+            overflow-x: auto;
+        }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .table-header h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .btn-new-depense {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            background-color: var(--primary-color);
+            color: white;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-new-depense:hover {
+            background-color: #2563eb;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+        }
+        
+        .expenses-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .expenses-table thead {
+            background-color: var(--bg-light);
+        }
+        .expenses-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .expenses-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .expenses-table tbody tr:hover {
+            background-color: #f1f5f9;
+        }
+        .amount-cell {
+            text-align: right;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .actions-cell {
+            text-align: center;
+        }
+        .actions-cell .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        
+        .btn-small {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            border: 1px solid transparent;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-view { background-color: #e0f2fe; color: #0c4a6e; }
+        .btn-view:hover { background-color: #bae6fd; }
+        .btn-edit { background-color: #fef3c7; color: #92400e; }
+        .btn-edit:hover { background-color: #fde68a; }
+        .btn-delete { background-color: #fee2e2; color: #991b1b; }
+        .btn-delete:hover { background-color: #fecaca; }
+        
+    </style>
 {% endblock %}
 
 {% block javascripts %}
@@ -17,18 +284,14 @@
     {% set lowCount = 0 %}
     {% set mediumCount = 0 %}
     {% set highCount = 0 %}
-    {% set latestDate = null %}
     {% for depense in depenses %}
-        {% set amountLoop = depense.amount + 0 %}
-        {% if amountLoop < 100 %}
+        {% set amount = depense.amount + 0 %}
+        {% if amount < 100 %}
             {% set lowCount = lowCount + 1 %}
-        {% elseif amountLoop <= 1000 %}
+        {% elseif amount <= 1000 %}
             {% set mediumCount = mediumCount + 1 %}
         {% else %}
             {% set highCount = highCount + 1 %}
-        {% endif %}
-        {% if depense.expenseDate %}
-            {% set latestDate = latestDate is null or depense.expenseDate > latestDate ? depense.expenseDate : latestDate %}
         {% endif %}
     {% endfor %}
 
@@ -41,251 +304,184 @@
         {% endfor %}
     </div>
 
-    <section class="depense-overview">
-        <article class="depense-overview-main">
-            <span class="depense-overview-kicker">Pilotage des depenses</span>
-            <h2>Lecture rapide des sorties financieres</h2>
-            <p>Suivez les montants, reperez les categories les plus actives et gardez une vue nette sur chaque depense sans passer par un tableau lourd.</p>
-            <div class="depense-overview-meta">
-                <span>{{ depenses|length }} depense(s) affichee(s)</span>
-                <span>{{ latestDate ? 'Derniere mise a jour: ' ~ latestDate|date('d/m/Y') : 'Aucune date disponible' }}</span>
-            </div>
-        </article>
+    <div class="depense-header" style="display: none;">
+        <h1>Gestion des Dépenses</h1>
+        <p>Suivez et gérez toutes les dépenses de vos événements.</p>
+    </div>
 
-        <div class="depense-stat-stack">
-            <article class="depense-stat-card coral">
-                <span class="depense-stat-label">Volume total</span>
-                <strong>{{ stats.total|number_format(2, ',', ' ') }} DT</strong>
-                <small>Somme de toutes les depenses visibles</small>
-            </article>
-            <article class="depense-stat-card navy">
-                <span class="depense-stat-label">Ticket moyen</span>
-                <strong>{{ stats.average|number_format(2, ',', ' ') }} DT</strong>
-                <small>{{ stats.count }} operation(s) sur {{ stats.categories }} categorie(s)</small>
-            </article>
-            <article class="depense-stat-card mint">
-                <span class="depense-stat-label">Rythme</span>
-                <strong>{{ highCount }}</strong>
-                <small>depense(s) elevee(s) actuellement</small>
-            </article>
+    <div class="depense-metrics">
+        <div class="metric-card total">
+            <div class="icon"><i class="fa-solid fa-wallet"></i></div>
+            <div>
+                <div class="metric-label">Total des Dépenses</div>
+                <div class="metric-value">{{ stats.total|number_format(2, ',', ' ') }} DT</div>
+            </div>
         </div>
-    </section>
-
-    <section class="depense-filter-shell">
-        <form method="get" action="{{ path('app_depenses_index') }}" class="depense-filter-form">
-            <div class="depense-field wide">
-                <label for="depense-search">Recherche</label>
-                <input id="depense-search" type="text" name="q" value="{{ search }}" placeholder="Nom de l evenement..." autocomplete="off" data-live-search-input>
+        <div class="metric-card count">
+            <div class="icon"><i class="fa-solid fa-hashtag"></i></div>
+            <div>
+                <div class="metric-label">Nombre de Dépenses</div>
+                <div class="metric-value">{{ depenses|length }}</div>
             </div>
-
-            <div class="depense-field">
-                <label for="depense-budget-filter">Budget</label>
-                <select id="depense-budget-filter" name="budget_id">
-                    <option value="">Tous les budgets</option>
-                    {% for budget in budgets %}
-                        <option value="{{ budget.id }}" {{ selectedBudgetId == budget.id ? 'selected' : '' }}>
-                            {{ budgetDisplayMap[budget.id]|default('Event ' ~ budget.eventId) }}
-                        </option>
-                    {% endfor %}
-                </select>
+        </div>
+        <div class="metric-card average">
+            <div class="icon"><i class="fa-solid fa-chart-pie"></i></div>
+            <div>
+                <div class="metric-label">Moyenne par Dépense</div>
+                <div class="metric-value">{{ stats.average|number_format(2, ',', ' ') }} DT</div>
             </div>
+        </div>
+    </div>
 
-            <div class="depense-field">
-                <label for="depense-category-filter">Categorie</label>
-                <select id="depense-category-filter" name="category">
-                    <option value="">Toutes les categories</option>
-                    {% for cat in categories %}
-                        <option value="{{ cat }}" {{ selectedCategory == cat ? 'selected' : '' }}>{{ cat }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="depense-field">
-                <label for="depense-period-filter">Periode</label>
-                <select id="depense-period-filter" name="period">
-                    <option value="all" {{ selectedPeriod == 'all' ? 'selected' : '' }}>Toutes</option>
-                    <option value="month" {{ selectedPeriod == 'month' ? 'selected' : '' }}>Ce mois</option>
-                    <option value="quarter" {{ selectedPeriod == 'quarter' ? 'selected' : '' }}>Ce trimestre</option>
-                    <option value="year" {{ selectedPeriod == 'year' ? 'selected' : '' }}>Cette annee</option>
-                </select>
-            </div>
-
-            <div class="depense-field">
-                <label for="depense-state-filter">Niveau</label>
-                <select id="depense-state-filter" name="state">
-                    <option value="all" {{ selectedState == 'all' ? 'selected' : '' }}>Tous</option>
-                    <option value="low" {{ selectedState == 'low' ? 'selected' : '' }}>Faible</option>
-                    <option value="medium" {{ selectedState == 'medium' ? 'selected' : '' }}>Moyen</option>
-                    <option value="high" {{ selectedState == 'high' ? 'selected' : '' }}>Eleve</option>
-                </select>
-            </div>
-
-            <div class="depense-filter-actions">
-                <button class="btn-sponsor outline" type="submit">Filtrer</button>
-                <a class="btn-sponsor success" href="{{ path('app_depenses_new') }}">Nouvelle depense</a>
-            </div>
-        </form>
-    </section>
-
-    <section class="depense-visual-grid">
-        <article class="depense-visual-card">
-            <div class="depense-section-head">
-                <div>
-                    <h3>Categories les plus actives</h3>
-                    <p>Les categories qui consomment le plus de budget.</p>
+    <div class="depense-charts">
+        <div class="chart-card">
+            <div class="chart-title">Distribution des Montants</div>
+            <div class="bar-chart">
+                <div class="bar-item">
+                    <div class="bar" style="height: {{ lowCount > 0 ? ((lowCount * 100 / (lowCount + mediumCount + highCount))|round(1)) : 5 }}%;"></div>
+                    <div class="bar-label"><strong>{{ lowCount }}</strong><small>&lt; 100 DT</small></div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar" style="height: {{ mediumCount > 0 ? ((mediumCount * 100 / (lowCount + mediumCount + highCount))|round(1)) : 5 }}%;"></div>
+                    <div class="bar-label"><strong>{{ mediumCount }}</strong><small>100-1k DT</small></div>
+                </div>
+                <div class="bar-item">
+                    <div class="bar" style="height: {{ highCount > 0 ? ((highCount * 100 / (lowCount + mediumCount + highCount))|round(1)) : 5 }}%;"></div>
+                    <div class="bar-label"><strong>{{ highCount }}</strong><small>&gt; 1k DT</small></div>
                 </div>
             </div>
+        </div>
 
+        <div class="chart-card">
+            <div class="chart-title">Top 3 Catégories</div>
             {% if stats.byCategory is empty %}
-                <p class="sponsor-muted">Aucune depense pour le moment.</p>
+                <p style="text-align: center; color: var(--text-secondary); padding: 2rem 0;">Aucune donnée de catégorie disponible.</p>
             {% else %}
-                {% set maxValue = 0 %}
-                {% for amount in stats.byCategory %}
-                    {% if amount > maxValue %}{% set maxValue = amount %}{% endif %}
+                {% set topCategories = stats.byCategory|slice(0, 3) %}
+                {% set maxCatAmount = 0 %}
+                {% for cat, amount in topCategories %}
+                    {% if amount > maxCatAmount %}{% set maxCatAmount = amount %}{% endif %}
                 {% endfor %}
-                <div class="depense-lane-list">
-                    {% for cat, amount in stats.byCategory|slice(0, 5) %}
-                        <div class="depense-lane-item">
-                            <div class="depense-lane-top">
-                                <span>{{ cat }}</span>
-                                <strong>{{ amount|number_format(2, ',', ' ') }} DT</strong>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% for cat, amount in topCategories %}
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                                <span style="font-weight: 600; color: var(--text-primary);">{{ cat }}</span>
+                                <strong style="color: var(--primary-color);">{{ amount|number_format(2, ',', ' ') }} DT</strong>
                             </div>
-                            <div class="depense-lane-track">
-                                <i style="width: {{ maxValue > 0 ? (amount * 100 / maxValue) : 0 }}%"></i>
+                            <div style="height: 10px; background-color: var(--border-color); border-radius: 5px; overflow: hidden;">
+                                <div style="height: 100%; background-color: var(--primary-color); width: {{ maxCatAmount > 0 ? (amount * 100 / maxCatAmount) : 0 }}%; transition: width 0.4s ease-out;"></div>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
             {% endif %}
-        </article>
-
-        <article class="depense-visual-card tone-soft">
-            <div class="depense-section-head">
-                <div>
-                    <h3>Repartition des montants</h3>
-                    <p>Comprenez vite si les depenses sont faibles, moyennes ou elevees.</p>
-                </div>
-            </div>
-
-            {% set totalRange = lowCount + mediumCount + highCount %}
-            {% set lowPct = totalRange > 0 ? (lowCount * 100 / totalRange) : 0 %}
-            {% set mediumPct = totalRange > 0 ? (mediumCount * 100 / totalRange) : 0 %}
-            {% set highPct = totalRange > 0 ? (highCount * 100 / totalRange) : 0 %}
-            {% set circ = 282.74 %}
-            {% set lowDash = circ * lowPct / 100 %}
-            {% set mediumDash = circ * mediumPct / 100 %}
-            {% set highDash = circ * highPct / 100 %}
-            {% set mediumOffset = -(lowDash) %}
-            {% set highOffset = -(lowDash + mediumDash) %}
-
-            <div class="depense-donut-card">
-                <div class="depense-donut-chart">
-                    <svg viewBox="0 0 120 120" class="depense-donut-svg">
-                        <circle cx="60" cy="60" r="45" class="depense-donut-bg"></circle>
-                        <circle cx="60" cy="60" r="45" class="depense-donut-segment low" style="stroke-dasharray: {{ lowDash }} {{ circ - lowDash }}; stroke-dashoffset: 0;"></circle>
-                        <circle cx="60" cy="60" r="45" class="depense-donut-segment medium" style="stroke-dasharray: {{ mediumDash }} {{ circ - mediumDash }}; stroke-dashoffset: {{ mediumOffset }};"></circle>
-                        <circle cx="60" cy="60" r="45" class="depense-donut-segment high" style="stroke-dasharray: {{ highDash }} {{ circ - highDash }}; stroke-dashoffset: {{ highOffset }};"></circle>
-                        <circle cx="60" cy="60" r="31" class="depense-donut-inner"></circle>
-                        <text x="60" y="56" class="depense-donut-total">{{ totalRange }}</text>
-                        <text x="60" y="71" class="depense-donut-caption">depenses</text>
-                    </svg>
-                </div>
-                <div class="depense-donut-legend">
-                    <div class="depense-donut-item">
-                        <span class="swatch low"></span>
-                        <div>
-                            <strong>Faible</strong>
-                            <small>{{ lowCount }} depense(s) · {{ lowPct|round }}%</small>
-                        </div>
-                    </div>
-                    <div class="depense-donut-item">
-                        <span class="swatch medium"></span>
-                        <div>
-                            <strong>Moyen</strong>
-                            <small>{{ mediumCount }} depense(s) · {{ mediumPct|round }}%</small>
-                        </div>
-                    </div>
-                    <div class="depense-donut-item">
-                        <span class="swatch high"></span>
-                        <div>
-                            <strong>Eleve</strong>
-                            <small>{{ highCount }} depense(s) · {{ highPct|round }}%</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </article>
-    </section>
-
-    <section class="depense-list-shell">
-        <div class="depense-section-head">
-            <div>
-                <h3>Depenses recentes</h3>
-                <p>{{ depenses|length }} element(s) avec une lecture carte plus fluide.</p>
-            </div>
         </div>
+    </div>
 
-        {% if depenses is empty %}
-            <p class="sponsor-muted">Aucune depense trouvee.</p>
-        {% else %}
-            <div class="depense-card-grid">
-                {% for depense in depenses %}
-                    {% set amount = depense.amount + 0 %}
-                    {% set level = 'low' %}
-                    {% set levelText = 'Faible' %}
-                    {% if amount > 1000 %}
-                        {% set level = 'high' %}
-                        {% set levelText = 'Eleve' %}
-                    {% elseif amount >= 100 %}
-                        {% set level = 'medium' %}
-                        {% set levelText = 'Moyen' %}
-                    {% endif %}
-                    {% set budgetLabel = depense.budget ? budgetDisplayMap[depense.budget.id]|default('Budget') : '-' %}
-                    {% set eventLabel = budgetLabel|split(' (')|first %}
+    <div class="filters-section">
+        <form method="get" action="{{ path('app_depenses_index') }}">
+            <div class="filters-grid">
+                <div class="filter-field">
+                    <label for="search">Recherche</label>
+                    <input id="search" type="text" name="q" value="{{ search }}" placeholder="Par description..." data-live-search-input>
+                </div>
 
-                    <article class="depense-card-modern {{ level }}" data-live-search-item data-search="{{ eventLabel }}" data-live-suggest="{{ eventLabel }}">
-                        <div class="depense-card-head">
-                            <div>
-                                <span class="depense-card-category">{{ depense.category ?: 'Sans categorie' }}</span>
-                                <h4>{{ depense.description ?: 'Depense sans description' }}</h4>
-                            </div>
-                            <span class="depense-level-badge {{ level }}">{{ levelText }}</span>
-                        </div>
+                <div class="filter-field">
+                    <label for="budget">Budget</label>
+                    <select id="budget" name="budget_id">
+                        <option value="">Tous</option>
+                        {% for budget in budgets %}
+                            <option value="{{ budget.id }}" {{ selectedBudgetId == budget.id ? 'selected' : '' }}>
+                                {{ budgetDisplayMap[budget.id]|default('Event ' ~ budget.eventId) }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                        <div class="depense-card-amount">
-                            <strong>{{ depense.amount|number_format(2, ',', ' ') }} DT</strong>
-                            <span>{{ depense.expenseDate ? depense.expenseDate|date('d/m/Y') : 'Date non definie' }}</span>
-                        </div>
+                <div class="filter-field">
+                    <label for="category">Catégorie</label>
+                    <select id="category" name="category">
+                        <option value="">Toutes</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat }}" {{ selectedCategory == cat ? 'selected' : '' }}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                        <div class="depense-card-meta">
-                            <div>
-                                <span>Budget</span>
-                                <strong>{{ budgetLabel }}</strong>
-                            </div>
-                            <div>
-                                <span>Devise source</span>
-                                <strong>
-                                    {{ depense.originalCurrency ?: 'TND' }}
-                                    {% if depense.originalAmount is not null %}
-                                        ({{ depense.originalAmount|number_format(2, ',', ' ') }})
-                                    {% endif %}
-                                </strong>
-                            </div>
-                        </div>
+                <div class="filter-field">
+                    <label for="period">Période</label>
+                    <select id="period" name="period">
+                        <option value="all">Toutes</option>
+                        <option value="month" {{ selectedPeriod == 'month' ? 'selected' : '' }}>Ce mois</option>
+                        <option value="quarter" {{ selectedPeriod == 'quarter' ? 'selected' : '' }}>Ce trim.</option>
+                        <option value="year" {{ selectedPeriod == 'year' ? 'selected' : '' }}>Cette année</option>
+                    </select>
+                </div>
 
-                        <div class="depense-card-actions">
-                            <a class="btn-sponsor light" href="{{ path('app_depenses_details', {id: depense.id}) }}">Details</a>
-                            <a class="btn-sponsor warning" href="{{ path('app_depenses_edit', {id: depense.id}) }}">Modifier</a>
-                            <form method="post" action="{{ path('app_depenses_delete', {id: depense.id}) }}" onsubmit="return confirm('Supprimer cette depense ?');">
-                                <input type="hidden" name="_token" value="{{ csrf_token('delete_depense_' ~ depense.id) }}">
-                                <button class="btn-sponsor danger" type="submit">Supprimer</button>
-                            </form>
-                        </div>
-                    </article>
-                {% endfor %}
+                <div class="filter-field">
+                    <label for="level">Niveau</label>
+                    <select id="level" name="state">
+                        <option value="all">Tous</option>
+                        <option value="low" {{ selectedState == 'low' ? 'selected' : '' }}>Faible</option>
+                        <option value="medium" {{ selectedState == 'medium' ? 'selected' : '' }}>Moyen</option>
+                        <option value="high" {{ selectedState == 'high' ? 'selected' : '' }}>Élevé</option>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <label>&nbsp;</label>
+                    <button class="btn-sponsor outline" type="submit">Filtrer</button>
+                </div>
             </div>
-            <p class="sponsor-muted" data-live-search-empty hidden>Aucune depense ne correspond a votre recherche.</p>
+        </form>
+    </div>
+
+    <div class="table-section">
+        <div class="table-header">
+            <h3>Liste des Dépenses</h3>
+            <a class="btn-new-depense" href="{{ path('app_depenses_new') }}"><i class="fa-solid fa-plus"></i> Nouvelle Dépense</a>
+        </div>
+        
+        {% if depenses is empty %}
+            <p style="padding: 2rem; text-align: center; color: var(--text-secondary);">Aucune dépense ne correspond à vos critères.</p>
+        {% else %}
+            <table class="expenses-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Catégorie</th>
+                        <th>Budget Associé</th>
+                        <th>Date</th>
+                        <th class="amount-cell">Montant</th>
+                        <th class="actions-cell">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for depense in depenses %}
+                        {% set budgetLabel = depense.budget ? budgetDisplayMap[depense.budget.id]|default('N/A') : 'Aucun' %}
+                        <tr data-live-search-item data-search="{{ depense.description }}" data-live-suggest="{{ depense.description }}">
+                            <td><strong>{{ depense.description ?: '-' }}</strong></td>
+                            <td>{{ depense.category ?: '-' }}</td>
+                            <td>{{ budgetLabel }}</td>
+                            <td>{{ depense.expenseDate ? depense.expenseDate|date('d M Y') : '-' }}</td>
+                            <td class="amount-cell">{{ depense.amount|number_format(2, ',', ' ') }} DT</td>
+                            <td class="actions-cell">
+                                <div class="btn-group">
+                                    <a href="{{ path('app_depenses_details', {id: depense.id}) }}" class="btn-small btn-view" title="Détails"><i class="fa-solid fa-eye"></i></a>
+                                    <a href="{{ path('app_depenses_edit', {id: depense.id}) }}" class="btn-small btn-edit" title="Modifier"><i class="fa-solid fa-pencil"></i></a>
+                                    <form method="post" action="{{ path('app_depenses_delete', {id: depense.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette dépense ?');" style="display: inline;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_depense_' ~ depense.id) }}">
+                                        <button type="submit" class="btn-small btn-delete" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p class="sponsor-muted" data-live-search-empty hidden style="padding: 1rem; text-align: center; color: var(--text-secondary);">Aucune correspondance.</p>
         {% endif %}
-    </section>
+    </div>
 </div>
 {% endblock %}
