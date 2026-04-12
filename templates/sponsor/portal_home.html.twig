@@ -293,13 +293,14 @@
                             </div>
                             <h3 class="portal-event-title">{{ event.title }}</h3>
                             <p class="portal-event-description">{{ event.description ?: 'Une occasion soigneusement cadree pour soutenir la vie universitaire, valoriser les talents et renforcer votre presence.' }}</p>
+
                             <div class="portal-event-meta-row">
-                                <div class="portal-event-meta"><span class="portal-event-label">Date:</span> {{ event.startDate ? event.startDate|date('Y-m-d H:i') : '-' }}</div>
-                                <div class="portal-event-meta"><span class="portal-event-label">Lieu:</span> {{ event.location ?: '-' }}</div>
+                                <div class="portal-event-meta"><span class="portal-event-label">📅 Date:</span> {{ event.startDate ? event.startDate|date('d-m-Y') : '-' }}</div>
+                                <div class="portal-event-meta"><span class="portal-event-label">📍 Lieu:</span> {{ event.location ?: '-' }}</div>
                             </div>
                             <div class="portal-card-actions">
                                 <a class="portal-btn-secondary" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir details</a>
-                                <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
+                                <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">💼 Sponsoriser cet événement</a>
                             </div>
                         </div>
                     </article>
