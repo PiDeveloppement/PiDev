@@ -8,117 +8,148 @@
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
     <style>
         :root {
-            --primary-color: #3b82f6;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-dark: #1e293b;
+            --text-grey: #64748b;
+            --bg-white: #ffffff;
             --bg-light: #f8fafc;
-            --border-color: #e2e8f0;
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-            --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            --border: #e2e8f0;
         }
 
         body {
-            background-color: var(--bg-light);
-            line-height: 1.6;
+            background: linear-gradient(135deg, var(--bg-light) 0%, #f0f4f8 100%);
+            font-size: 14px;
+            line-height: 1.5;
         }
         
         .depense-page {
+            max-width: 1400px;
+            margin: 0 auto;
             padding: 20px;
         }
 
         .page-info { display: none; }
-        
-        .depense-header {
-            margin-bottom: 2rem;
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
-        .depense-header h1 {
-            font-size: 2.25rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
-        }
-        .depense-header p {
-            font-size: 1rem;
-            color: var(--text-secondary);
-        }
-        
+
+        /* Métriques améliorées avec dégradés */
         .depense-metrics {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
         }
         .metric-card {
-            background-color: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: var(--card-shadow);
-            transition: all 0.3s ease;
+            background: white;
+            padding: 16px;
+            border-radius: 10px;
+            border: none;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            gap: 0.75rem;
-            border-top: 4px solid transparent;
-            border-left: none;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, currentColor, currentColor);
+        }
+        .metric-card.total::before { background: linear-gradient(90deg, var(--primary), #60a5fa); }
+        .metric-card.count::before { background: linear-gradient(90deg, var(--warning), #fbbf24); }
+        .metric-card.average::before { background: linear-gradient(90deg, var(--success), #6ee7b7); }
         .metric-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--card-shadow-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
         }
         .metric-card .icon {
-            font-size: 1.5rem;
-            padding: 1rem;
+            font-size: 32px;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 50%;
             color: white;
-            line-height: 1;
         }
-        .metric-card.total { border-top-color: var(--primary-color); }
-        .metric-card.total .icon { background-color: var(--primary-color); }
-        .metric-card.count { border-top-color: var(--warning-color); }
-        .metric-card.count .icon { background-color: var(--warning-color); }
-        .metric-card.average { border-top-color: var(--success-color); }
-        .metric-card.average .icon { background-color: var(--success-color); }
+        .metric-card.total .icon { background: linear-gradient(135deg, var(--primary), #60a5fa); }
+        .metric-card.count .icon { background: linear-gradient(135deg, var(--warning), #fbbf24); }
+        .metric-card.average .icon { background: linear-gradient(135deg, var(--success), #6ee7b7); }
         
         .metric-label {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
+            font-size: 12px;
+            color: var(--text-grey);
             font-weight: 600;
-            margin-bottom: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .metric-value {
-            font-size: 1.75rem;
-            color: var(--text-primary);
+            font-size: 18px;
+            color: var(--text-dark);
             font-weight: 700;
         }
-        
+
+        /* Graphiques améliorés */
         .depense-charts {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            gap: 16px;
+            margin-bottom: 24px;
         }
         .chart-card {
             background: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: var(--card-shadow);
+            padding: 18px;
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        .chart-card:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
         }
         .chart-title {
-            font-size: 1.125rem;
+            font-size: 14px;
             font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chart-title::before {
+            content: '📊';
+            font-size: 18px;
         }
         
         .bar-chart {
             display: flex;
             align-items: flex-end;
-            gap: 1.5rem;
-            height: 150px;
+            gap: 14px;
+            height: 110px;
         }
         .bar-item {
             flex: 1;
@@ -129,147 +160,221 @@
         }
         .bar {
             width: 100%;
-            background-color: var(--primary-color);
-            border-radius: 6px 6px 0 0;
+            background: var(--primary);
+            border-radius: 4px 4px 0 0;
             transition: all 0.3s ease;
+            min-height: 5px;
+            cursor: pointer;
         }
-        .bar-item:nth-child(2) .bar { background-color: var(--warning-color); }
-        .bar-item:nth-child(3) .bar { background-color: var(--danger-color); }
+        .bar:hover { 
+            opacity: 0.85;
+            filter: brightness(1.1);
+        }
+        .bar-item:nth-child(2) .bar { background: var(--warning); }
+        .bar-item:nth-child(3) .bar { background: var(--danger); }
         .bar-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-top: 0.75rem;
+            font-size: 11px;
+            color: var(--text-grey);
+            margin-top: 8px;
             font-weight: 600;
         }
         .bar-label strong {
             display: block;
-            color: var(--text-primary);
-            font-size: 1.25rem;
+            color: var(--text-dark);
+            font-size: 15px;
             font-weight: 700;
+            margin-top: 2px;
         }
-        
+
+        /* Filtres améliorés et espacés */
         .filters-section {
             background: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            margin-bottom: 2rem;
-            box-shadow: var(--card-shadow);
+            padding: 16px;
+            border-radius: 10px;
+            border: none;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .filters-section .btn-sponsor.outline {
+            display: none;
         }
         .filters-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
             align-items: flex-end;
         }
+        .filter-field {
+            display: flex;
+            flex-direction: column;
+        }
         .filter-field label {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .filter-field input, .filter-field select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            font-size: 0.9rem;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
             transition: all 0.3s ease;
+            font-weight: 500;
         }
         .filter-field input:focus, .filter-field select:focus {
             outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), white);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         }
-        
+        .filter-field input::placeholder {
+            color: var(--text-grey);
+        }
+
+        /* Tableau amélioré et plus joli */
         .table-section {
             background: white;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: var(--card-shadow);
+            padding: 16px;
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             overflow-x: auto;
         }
         .table-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 16px;
+            gap: 12px;
         }
         .table-header h3 {
-            font-size: 1.25rem;
+            font-size: 16px;
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .table-header h3::before {
+            content: '📋';
+            font-size: 20px;
         }
         .btn-new-depense {
-            padding: 0.75rem 1.5rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border-radius: 0.5rem;
+            width: auto;
+            height: auto;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 6px;
             text-decoration: none;
-            background-color: var(--primary-color);
+            background: linear-gradient(135deg, var(--success), #6ee7b7);
             color: white;
             transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            justify-content: center;
+            gap: 6px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
         }
         .btn-new-depense:hover {
-            background-color: #2563eb;
-            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+            background: linear-gradient(135deg, #059669, #5ee8b9);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
         }
         
         .expenses-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9rem;
+            font-size: 13px;
         }
         .expenses-table thead {
-            background-color: var(--bg-light);
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 2px solid var(--primary);
         }
         .expenses-table th {
-            padding: 1rem;
+            padding: 12px 10px;
             text-align: left;
-            font-weight: 600;
-            color: var(--text-secondary);
+            font-weight: 700;
+            color: var(--text-dark);
+            font-size: 12px;
             text-transform: uppercase;
-            font-size: 0.75rem;
-            border-bottom: 2px solid var(--border-color);
+            letter-spacing: 0.4px;
         }
         .expenses-table td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border-color);
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+        .expenses-table tbody tr {
+            transition: all 0.2s ease;
         }
         .expenses-table tbody tr:hover {
-            background-color: #f1f5f9;
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.05), transparent);
         }
         .amount-cell {
             text-align: right;
             font-weight: 700;
-            color: var(--primary-color);
+            color: var(--primary);
+            font-size: 14px;
         }
         .actions-cell {
             text-align: center;
         }
         .actions-cell .btn-group {
             display: flex;
-            gap: 0.5rem;
+            gap: 6px;
             justify-content: center;
+            flex-wrap: wrap;
         }
         
         .btn-small {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.8rem;
-            border-radius: 0.375rem;
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 5px;
             text-decoration: none;
             border: 1px solid transparent;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
-        .btn-view { background-color: #e0f2fe; color: #0c4a6e; }
-        .btn-view:hover { background-color: #bae6fd; }
-        .btn-edit { background-color: #fef3c7; color: #92400e; }
-        .btn-edit:hover { background-color: #fde68a; }
-        .btn-delete { background-color: #fee2e2; color: #991b1b; }
-        .btn-delete:hover { background-color: #fecaca; }
+        .btn-view { background: #ecf0ff; color: #2563eb; }
+        .btn-view:hover { background: #dce4ff; transform: translateY(-1px); }
+        .btn-edit { background: #fffbeb; color: #d97706; }
+        .btn-edit:hover { background: #fef3c7; transform: translateY(-1px); }
+        .btn-delete { background: #fee2e2; color: #dc2626; }
+        .btn-delete:hover { background: #fecaca; transform: translateY(-1px); }
+        
+        /* Badges pour catégories */
+        .category-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(96, 165, 250, 0.15));
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .depense-metrics { grid-template-columns: 1fr; }
+            .depense-charts { grid-template-columns: 1fr; }
+            .filters-grid { grid-template-columns: 1fr; }
+            .table-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+        }
         
     </style>
 {% endblock %}
@@ -277,6 +382,17 @@
 {% block javascripts %}
     {{ parent() }}
     <script src="{{ asset('js/admin-live-search.js') }}" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-submit filters on change
+            const selects = document.querySelectorAll('.filters-grid select');
+            selects.forEach(select => {
+                select.addEventListener('change', function() {
+                    this.closest('form').submit();
+                });
+            });
+        });
+    </script>
 {% endblock %}
 
 {% block admin_content %}
@@ -304,73 +420,62 @@
         {% endfor %}
     </div>
 
-    <div class="depense-header" style="display: none;">
-        <h1>Gestion des Dépenses</h1>
-        <p>Suivez et gérez toutes les dépenses de vos événements.</p>
-    </div>
-
     <div class="depense-metrics">
         <div class="metric-card total">
             <div class="icon"><i class="fa-solid fa-wallet"></i></div>
-            <div>
-                <div class="metric-label">Total des Dépenses</div>
-                <div class="metric-value">{{ stats.total|number_format(2, ',', ' ') }} DT</div>
-            </div>
+            <div class="metric-label">Total</div>
+            <div class="metric-value">{{ stats.total|number_format(2, ',', ' ') }} DT</div>
         </div>
         <div class="metric-card count">
             <div class="icon"><i class="fa-solid fa-hashtag"></i></div>
-            <div>
-                <div class="metric-label">Nombre de Dépenses</div>
-                <div class="metric-value">{{ depenses|length }}</div>
-            </div>
+            <div class="metric-label">Nombre</div>
+            <div class="metric-value">{{ depenses|length }}</div>
         </div>
         <div class="metric-card average">
             <div class="icon"><i class="fa-solid fa-chart-pie"></i></div>
-            <div>
-                <div class="metric-label">Moyenne par Dépense</div>
-                <div class="metric-value">{{ stats.average|number_format(2, ',', ' ') }} DT</div>
-            </div>
+            <div class="metric-label">Moyenne</div>
+            <div class="metric-value">{{ stats.average|number_format(2, ',', ' ') }} DT</div>
         </div>
     </div>
 
     <div class="depense-charts">
         <div class="chart-card">
-            <div class="chart-title">Distribution des Montants</div>
+            <div class="chart-title">Distribution</div>
             <div class="bar-chart">
                 <div class="bar-item">
                     <div class="bar" style="height: {{ lowCount > 0 ? ((lowCount * 100 / (lowCount + mediumCount + highCount))|round(1)) : 5 }}%;"></div>
-                    <div class="bar-label"><strong>{{ lowCount }}</strong><small>&lt; 100 DT</small></div>
+                    <div class="bar-label"><strong>{{ lowCount }}</strong><small>&lt;100</small></div>
                 </div>
                 <div class="bar-item">
                     <div class="bar" style="height: {{ mediumCount > 0 ? ((mediumCount * 100 / (lowCount + mediumCount + highCount))|round(1)) : 5 }}%;"></div>
-                    <div class="bar-label"><strong>{{ mediumCount }}</strong><small>100-1k DT</small></div>
+                    <div class="bar-label"><strong>{{ mediumCount }}</strong><small>100-1k</small></div>
                 </div>
                 <div class="bar-item">
                     <div class="bar" style="height: {{ highCount > 0 ? ((highCount * 100 / (lowCount + mediumCount + highCount))|round(1)) : 5 }}%;"></div>
-                    <div class="bar-label"><strong>{{ highCount }}</strong><small>&gt; 1k DT</small></div>
+                    <div class="bar-label"><strong>{{ highCount }}</strong><small>&gt;1k</small></div>
                 </div>
             </div>
         </div>
 
         <div class="chart-card">
-            <div class="chart-title">Top 3 Catégories</div>
+            <div class="chart-title">Top Catégories</div>
             {% if stats.byCategory is empty %}
-                <p style="text-align: center; color: var(--text-secondary); padding: 2rem 0;">Aucune donnée de catégorie disponible.</p>
+                <p style="text-align: center; color: var(--text-grey); padding: 10px 0; font-size: 11px;">Aucune donnée</p>
             {% else %}
                 {% set topCategories = stats.byCategory|slice(0, 3) %}
                 {% set maxCatAmount = 0 %}
                 {% for cat, amount in topCategories %}
                     {% if amount > maxCatAmount %}{% set maxCatAmount = amount %}{% endif %}
                 {% endfor %}
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; flex-direction: column; gap: 8px;">
                     {% for cat, amount in topCategories %}
                         <div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
-                                <span style="font-weight: 600; color: var(--text-primary);">{{ cat }}</span>
-                                <strong style="color: var(--primary-color);">{{ amount|number_format(2, ',', ' ') }} DT</strong>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11px;">
+                                <span style="font-weight: 600; color: var(--text-dark);">{{ cat }}</span>
+                                <strong style="color: var(--primary); font-size: 12px;">{{ amount|number_format(2, ',', ' ') }}</strong>
                             </div>
-                            <div style="height: 10px; background-color: var(--border-color); border-radius: 5px; overflow: hidden;">
-                                <div style="height: 100%; background-color: var(--primary-color); width: {{ maxCatAmount > 0 ? (amount * 100 / maxCatAmount) : 0 }}%; transition: width 0.4s ease-out;"></div>
+                            <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
+                                <div style="height: 100%; background: var(--primary); width: {{ maxCatAmount > 0 ? (amount * 100 / maxCatAmount) : 0 }}%; transition: width 0.3s ease;"></div>
                             </div>
                         </div>
                     {% endfor %}
@@ -383,12 +488,12 @@
         <form method="get" action="{{ path('app_depenses_index') }}">
             <div class="filters-grid">
                 <div class="filter-field">
-                    <label for="search">Recherche</label>
+                    <label for="search">🔍 Recherche</label>
                     <input id="search" type="text" name="q" value="{{ search }}" placeholder="Par description..." data-live-search-input>
                 </div>
 
                 <div class="filter-field">
-                    <label for="budget">Budget</label>
+                    <label for="budget">💰 Budget</label>
                     <select id="budget" name="budget_id">
                         <option value="">Tous</option>
                         {% for budget in budgets %}
@@ -400,7 +505,7 @@
                 </div>
 
                 <div class="filter-field">
-                    <label for="category">Catégorie</label>
+                    <label for="category">📂 Catégorie</label>
                     <select id="category" name="category">
                         <option value="">Toutes</option>
                         {% for cat in categories %}
@@ -410,7 +515,7 @@
                 </div>
 
                 <div class="filter-field">
-                    <label for="period">Période</label>
+                    <label for="period">📅 Période</label>
                     <select id="period" name="period">
                         <option value="all">Toutes</option>
                         <option value="month" {{ selectedPeriod == 'month' ? 'selected' : '' }}>Ce mois</option>
@@ -420,7 +525,7 @@
                 </div>
 
                 <div class="filter-field">
-                    <label for="level">Niveau</label>
+                    <label for="level">📊 Niveau</label>
                     <select id="level" name="state">
                         <option value="all">Tous</option>
                         <option value="low" {{ selectedState == 'low' ? 'selected' : '' }}>Faible</option>
@@ -431,7 +536,10 @@
 
                 <div class="filter-field">
                     <label>&nbsp;</label>
-                    <button class="btn-sponsor outline" type="submit">Filtrer</button>
+                    <button class="btn-sponsor outline" type="submit" title="Filtrer" style="display:none;">
+                        <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                        <span class="sr-only">Filtrer</span>
+                    </button>
                 </div>
             </div>
         </form>
@@ -440,18 +548,20 @@
     <div class="table-section">
         <div class="table-header">
             <h3>Liste des Dépenses</h3>
-            <a class="btn-new-depense" href="{{ path('app_depenses_new') }}"><i class="fa-solid fa-plus"></i> Nouvelle Dépense</a>
+            <a class="btn-new-depense" href="{{ path('app_depenses_new') }}" title="Nouvelle dépense">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter
+            </a>
         </div>
         
         {% if depenses is empty %}
-            <p style="padding: 2rem; text-align: center; color: var(--text-secondary);">Aucune dépense ne correspond à vos critères.</p>
+            <p style="padding: 16px; text-align: center; color: var(--text-grey); font-size: 14px;">📭 Aucune dépense ne correspond à vos critères.</p>
         {% else %}
             <table class="expenses-table">
                 <thead>
                     <tr>
-                        <th>Description</th>
+                        <th>Info</th>
                         <th>Catégorie</th>
-                        <th>Budget Associé</th>
+                        <th>Budget</th>
                         <th>Date</th>
                         <th class="amount-cell">Montant</th>
                         <th class="actions-cell">Actions</th>
@@ -460,19 +570,20 @@
                 <tbody>
                     {% for depense in depenses %}
                         {% set budgetLabel = depense.budget ? budgetDisplayMap[depense.budget.id]|default('N/A') : 'Aucun' %}
+                        {% set amountLevel = depense.amount < 100 ? '🟢' : (depense.amount <= 1000 ? '🟡' : '🔴') %}
                         <tr data-live-search-item data-search="{{ depense.description }}" data-live-suggest="{{ depense.description }}">
-                            <td><strong>{{ depense.description ?: '-' }}</strong></td>
-                            <td>{{ depense.category ?: '-' }}</td>
+                            <td><strong>💡 {{ depense.description ?: '-' }}</strong></td>
+                            <td><span class="category-badge">{{ depense.category ?: 'Sans cat.' }}</span></td>
                             <td>{{ budgetLabel }}</td>
                             <td>{{ depense.expenseDate ? depense.expenseDate|date('d M Y') : '-' }}</td>
-                            <td class="amount-cell">{{ depense.amount|number_format(2, ',', ' ') }} DT</td>
+                            <td class="amount-cell">{{ amountLevel }} {{ depense.amount|number_format(2, ',', ' ') }} DT</td>
                             <td class="actions-cell">
                                 <div class="btn-group">
                                     <a href="{{ path('app_depenses_details', {id: depense.id}) }}" class="btn-small btn-view" title="Détails"><i class="fa-solid fa-eye"></i></a>
                                     <a href="{{ path('app_depenses_edit', {id: depense.id}) }}" class="btn-small btn-edit" title="Modifier"><i class="fa-solid fa-pencil"></i></a>
-                                    <form method="post" action="{{ path('app_depenses_delete', {id: depense.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette dépense ?');" style="display: inline;">
+                                    <form method="post" action="{{ path('app_depenses_delete', {id: depense.id}) }}" onsubmit="return confirm('Êtes-vous sûr ? Cette action est définitive.');" style="display: inline;">
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete_depense_' ~ depense.id) }}">
-                                        <button type="submit" class="btn-small btn-delete" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button>
+                                        <button type="submit" class="btn-small btn-delete" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
                                     </form>
                                 </div>
                             </td>
@@ -480,7 +591,7 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <p class="sponsor-muted" data-live-search-empty hidden style="padding: 1rem; text-align: center; color: var(--text-secondary);">Aucune correspondance.</p>
+            <p class="sponsor-muted" data-live-search-empty hidden style="padding: 16px; text-align: center; color: var(--text-grey); font-size: 14px;">🔍 Aucune correspondance.</p>
         {% endif %}
     </div>
 </div>
