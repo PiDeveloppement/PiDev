@@ -35,28 +35,28 @@
         </section>
     {% else %}
     <section class="portal-history-page-head">
-        <a class="btn-sponsor outline" href="{{ path('app_sponsor_portal') }}">&lt; Retour</a>
+        <a class="btn-sponsor outline" href="{{ path('app_sponsor_portal') }}">⬅ Retour</a>
         <div>
-            <h1>Mes evenements sponsorises</h1>
-            <p>Retrouvez ici tous les evenements deja sponsorises, en cours ou termines, avec acces rapide aux details.</p>
+            <h1>🎟️ Mes evenements sponsorises</h1>
+            <p>Retrouvez ici tous les evenements deja sponsorises, a venir ou termines, avec acces rapide aux details.</p>
         </div>
     </section>
 
     <section class="portal-history-stats">
         <div class="portal-history-stat-card">
-            <span>Total partenariats</span>
+            <span>📊 Total partenariats</span>
             <strong>{{ stats.count }}</strong>
         </div>
         <div class="portal-history-stat-card">
-            <span>Contribution totale</span>
+            <span>💰 Contribution totale</span>
             <strong>{{ stats.total|number_format(2, ',', ' ') }} DT</strong>
         </div>
         <div class="portal-history-stat-card">
-            <span>Evenements en cours</span>
+            <span>🟢 Evenements a venir</span>
             <strong>{{ stats.ongoing }}</strong>
         </div>
         <div class="portal-history-stat-card">
-            <span>Evenements termines</span>
+            <span>✅ Evenements passes</span>
             <strong>{{ stats.ended }}</strong>
         </div>
     </section>
@@ -74,42 +74,102 @@
         </form>
     </section>
 
+    {% set nowTs = "now"|date('U') %}
+    {% set hasUpcoming = false %}
+    {% set hasPast = false %}
+    {% for item in historyItems %}
+        {% set itemTs = (item.endDate ?: item.startDate)|date('U') %}
+        {% if itemTs >= nowTs %}
+            {% set hasUpcoming = true %}
+        {% else %}
+            {% set hasPast = true %}
+        {% endif %}
+    {% endfor %}
+
     <section class="portal-history-list">
-        {% if historyItems is empty %}
-            <div class="portal-box-empty">Aucun evenement sponsorise trouve.</div>
+        <h2 class="portal-section-title">🗓️ Evenements a venir</h2>
+        {% if historyItems is empty or not hasUpcoming %}
+            <div class="portal-box-empty">Aucun evenement a venir.</div>
         {% else %}
             <div class="history-grid">
                 {% for item in historyItems %}
-                    <article class="history-card wide">
-                        <div class="history-top">
-                            <div class="history-card-brand">
-                                <div class="history-card-logo">
-                                    {% if item.logoUrl %}
-                                        <img src="{{ item.logoUrl }}" alt="{{ item.company }}">
-                                    {% else %}
-                                        <span>{{ item.company|slice(0, 2)|upper }}</span>
-                                    {% endif %}
+                    {% set itemTs = (item.endDate ?: item.startDate)|date('U') %}
+                    {% if itemTs >= nowTs %}
+                        <article class="history-card wide">
+                            <div class="history-top">
+                                <div class="history-card-brand">
+                                    <div class="history-card-logo">
+                                        {% if item.logoUrl %}
+                                            <img src="{{ item.logoUrl }}" alt="{{ item.company }}">
+                                        {% else %}
+                                            <span>{{ item.company|slice(0, 2)|upper }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <span class="history-status {{ item.statusClass }}">{{ item.statusLabel }}</span>
                                 </div>
-                                <span class="history-status {{ item.statusClass }}">{{ item.statusLabel }}</span>
+                                <strong>{{ item.contribution|number_format(2, ',', ' ') }} DT</strong>
                             </div>
-                            <strong>{{ item.contribution|number_format(2, ',', ' ') }} DT</strong>
-                        </div>
 
-                        <h3>{{ item.eventTitle }}</h3>
-                        <p>{{ item.company }}</p>
-                        <div class="history-meta">Lieu: {{ item.location }}</div>
-                        <div class="history-meta">
-                            {{ item.startDate ? item.startDate|date('d/m/Y H:i') : '-' }}
-                            {% if item.endDate %} -> {{ item.endDate|date('d/m/Y H:i') }}{% endif %}
-                        </div>
+                            <h3>{{ item.eventTitle }}</h3>
+                            <p>{{ item.company }}</p>
+                            <div class="history-meta">Lieu: {{ item.location }}</div>
+                            <div class="history-meta">
+                                {{ item.startDate ? item.startDate|date('d/m/Y H:i') : '-' }}
+                                {% if item.endDate %} -> {{ item.endDate|date('d/m/Y H:i') }}{% endif %}
+                            </div>
 
-                        <div class="history-actions">
-                            <a class="btn-sponsor light" href="{{ path('app_sponsor_portal_event', {id: item.eventId}) }}">Voir evenement</a>
-                            <a class="btn-sponsor primary" href="{{ path('app_sponsor_portal_contract', {id: item.id}) }}">Contrat</a>
-                            <a class="btn-sponsor primary" href="{{ path('app_sponsor_portal_details', {id: item.id}) }}">Details du partenariat</a>
-                            <a class="btn-sponsor warning" href="{{ path('app_sponsor_portal_edit', {id: item.id}) }}">Modifier</a>
-                        </div>
-                    </article>
+                            <div class="history-actions">
+                                <a class="btn-sponsor light" href="{{ path('app_sponsor_portal_event', {id: item.eventId}) }}">Voir evenement</a>
+                                <a class="btn-sponsor primary" href="{{ path('app_sponsor_portal_contract', {id: item.id}) }}">Contrat</a>
+                                <a class="btn-sponsor primary" href="{{ path('app_sponsor_portal_details', {id: item.id}) }}">Details du partenariat</a>
+                                <a class="btn-sponsor warning" href="{{ path('app_sponsor_portal_edit', {id: item.id}) }}">Modifier</a>
+                            </div>
+                        </article>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="portal-history-list">
+        <h2 class="portal-section-title">⏳ Evenements passes</h2>
+        {% if historyItems is empty or not hasPast %}
+            <div class="portal-box-empty">Aucun evenement passe.</div>
+        {% else %}
+            <div class="history-grid">
+                {% for item in historyItems %}
+                    {% set itemTs = (item.endDate ?: item.startDate)|date('U') %}
+                    {% if itemTs < nowTs %}
+                        <article class="history-card wide">
+                            <div class="history-top">
+                                <div class="history-card-brand">
+                                    <div class="history-card-logo">
+                                        {% if item.logoUrl %}
+                                            <img src="{{ item.logoUrl }}" alt="{{ item.company }}">
+                                        {% else %}
+                                            <span>{{ item.company|slice(0, 2)|upper }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <span class="history-status {{ item.statusClass }}">{{ item.statusLabel }}</span>
+                                </div>
+                                <strong>{{ item.contribution|number_format(2, ',', ' ') }} DT</strong>
+                            </div>
+
+                            <h3>{{ item.eventTitle }}</h3>
+                            <p>{{ item.company }}</p>
+                            <div class="history-meta">Lieu: {{ item.location }}</div>
+                            <div class="history-meta">
+                                {{ item.startDate ? item.startDate|date('d/m/Y H:i') : '-' }}
+                                {% if item.endDate %} -> {{ item.endDate|date('d/m/Y H:i') }}{% endif %}
+                            </div>
+
+                            <div class="history-actions">
+                                <a class="btn-sponsor light" href="{{ path('app_sponsor_portal_event', {id: item.eventId}) }}">Voir evenement</a>
+                                <a class="btn-sponsor primary" href="{{ path('app_sponsor_portal_contract', {id: item.id}) }}">Contrat</a>
+                                <a class="btn-sponsor primary" href="{{ path('app_sponsor_portal_details', {id: item.id}) }}">Details du partenariat</a>
+                            </div>
+                        </article>
+                    {% endif %}
                 {% endfor %}
             </div>
         {% endif %}

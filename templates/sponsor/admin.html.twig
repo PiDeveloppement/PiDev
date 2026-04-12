@@ -4,266 +4,475 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+    <style>
+        :root {
+            --ink:      #0d1117;
+            --ink-2:    #21262d;
+            --ink-3:    #57606a;
+            --ink-4:    #8c959f;
+            --ink-5:    #d0d7de;
+            --surf:     #ffffff;
+            --surf-2:   #f6f8fa;
+            --surf-3:   #eef1f4;
+            --border:   rgba(13,17,23,.08);
+            --border-2: rgba(13,17,23,.14);
+            --violet:   #7c3aed; --violet-bg: #f5f3ff;
+            --blue:     #2563eb; --blue-bg:   #eff6ff;
+            --emerald:  #059669; --emerald-bg:#ecfdf5;
+            --amber:    #d97706; --amber-bg:  #fffbeb;
+            --rose:     #e11d48; --rose-bg:   #fff1f2;
+            --cyan:     #0891b2; --cyan-bg:   #ecfeff;
+            --r-sm:8px; --r:14px; --r-lg:20px;
+            --sh-xs:0 1px 2px rgba(0,0,0,.05);
+            --sh-sm:0 2px 8px rgba(0,0,0,.07);
+            --sh-md:0 6px 24px rgba(0,0,0,.09);
+        }
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Sora',system-ui,sans-serif;background:#f0f2f5;color:var(--ink);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+
+        .sp-page{max-width:1480px;margin:0 auto;padding:0 32px 36px;}
+
+        /* topbar */
+        .sp-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;gap:16px;flex-wrap:wrap;}
+        .sp-page-title{font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-0.6px;}
+        .sp-topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+        .sp-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:40px;font-size:13px;font-weight:700;font-family:inherit;text-decoration:none;cursor:pointer;border:none;transition:all .2s;white-space:nowrap;}
+        .sp-btn-ghost{background:var(--surf);color:var(--ink-2);border:1.5px solid var(--border-2);}
+        .sp-btn-ghost:hover{background:var(--surf-2);}
+        .sp-btn-primary{background:var(--ink);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.18);}
+        .sp-btn-primary:hover{opacity:.88;transform:translateY(-1px);}
+
+        /* flash */
+        .sp-flash{margin-bottom:24px;}
+        .sp-flash-item{padding:11px 16px;border-radius:var(--r-sm);font-size:13px;font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:9px;}
+        .sp-flash-ok{background:var(--emerald-bg);color:#065f46;}
+        .sp-flash-err{background:var(--rose-bg);color:#9f1239;}
+
+        /* kpi */
+        .sp-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+        .sp-kpi-card{background:var(--surf);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px 22px;box-shadow:var(--sh-xs);transition:transform .25s,box-shadow .25s;position:relative;overflow:hidden;}
+        .sp-kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0;}
+        .sp-kpi-card:nth-child(1)::before{background:linear-gradient(90deg,#7c3aed,#a78bfa);}
+        .sp-kpi-card:nth-child(2)::before{background:linear-gradient(90deg,#059669,#34d399);}
+        .sp-kpi-card:nth-child(3)::before{background:linear-gradient(90deg,#d97706,#fbbf24);}
+        .sp-kpi-card:nth-child(4)::before{background:linear-gradient(90deg,#2563eb,#60a5fa);}
+        .sp-kpi-card:hover{transform:translateY(-3px);box-shadow:var(--sh-md);}
+        .sp-kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+        .sp-kpi-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-3);}
+        .sp-kpi-dot{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+        .dot-v{background:var(--violet-bg);color:var(--violet);}
+        .dot-e{background:var(--emerald-bg);color:var(--emerald);}
+        .dot-a{background:var(--amber-bg);color:var(--amber);}
+        .dot-b{background:var(--blue-bg);color:var(--blue);}
+        .sp-kpi-value{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-1px;line-height:1;margin-bottom:4px;font-feature-settings:'tnum';}
+        .sp-kpi-sub{font-size:12px;color:var(--ink-3);}
+
+        /* analytics 3-col */
+        .sp-analytics{display:grid;grid-template-columns:240px 1fr 240px;gap:14px;margin-bottom:24px;align-items:start;}
+
+        /* left: donut + event list */
+        .sp-ana-left{background:var(--surf);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px 18px;box-shadow:var(--sh-xs);display:flex;flex-direction:column;gap:16px;}
+        .sp-ana-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-3);display:flex;align-items:center;gap:7px;}
+        .sp-ana-label i{color:var(--violet);}
+        .sp-donut-wrap{position:relative;width:120px;height:120px;margin:0 auto;}
+        .sp-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
+        .sp-donut-center-val{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-0.8px;}
+        .sp-donut-center-lbl{font-size:9px;font-weight:600;color:var(--ink-4);text-transform:uppercase;letter-spacing:.5px;}
+        .sp-event-list{display:flex;flex-direction:column;gap:8px;}
+        .sp-event-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+        .sp-event-name-wrap{display:flex;align-items:center;gap:6px;min-width:0;flex:1;}
+        .sp-event-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+        .sp-event-name{font-size:11.5px;font-weight:600;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .sp-event-val{font-size:11.5px;font-weight:700;color:var(--ink);font-family:'DM Mono',monospace;white-space:nowrap;}
+
+        /* center: rank bars */
+        .sp-ana-center{background:var(--surf);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px 22px;box-shadow:var(--sh-xs);}
+        .sp-ana-center-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+        .sp-ana-center-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-3);display:flex;align-items:center;gap:7px;}
+        .sp-ana-center-title i{color:var(--amber);}
+        .sp-top-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:30px;background:var(--amber-bg);color:var(--amber);}
+        .sp-rank-list{display:flex;flex-direction:column;gap:12px;}
+        .sp-rank-row{display:flex;align-items:center;gap:11px;}
+        .sp-rank-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;}
+        .rk1{background:#fef3c7;color:#92400e;} .rk2{background:#f1f5f9;color:#475569;} .rk3{background:#fce7f3;color:#9d174d;} .rk4{background:var(--violet-bg);color:var(--violet);} .rk5{background:var(--emerald-bg);color:var(--emerald);}
+        .sp-rank-name{font-size:12.5px;font-weight:600;color:var(--ink-2);min-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .sp-rank-bar-wrap{flex:1;}
+        .sp-rank-track{height:7px;background:var(--surf-3);border-radius:7px;overflow:hidden;}
+        .sp-rank-fill{height:100%;border-radius:7px;transition:width .6s ease;}
+        .sp-rank-amount{font-size:12px;font-weight:700;color:var(--ink);font-family:'DM Mono',monospace;white-space:nowrap;min-width:80px;text-align:right;}
+
+        /* right: mini stat stack */
+        .sp-ana-right{display:flex;flex-direction:column;gap:10px;}
+        .sp-stat-mini{background:var(--surf);border-radius:var(--r-lg);border:1px solid var(--border);padding:15px 16px;box-shadow:var(--sh-xs);display:flex;align-items:center;gap:13px;}
+        .sp-stat-mini-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+        .sp-stat-mini-label{font-size:10px;font-weight:600;color:var(--ink-4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+        .sp-stat-mini-val{font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-0.4px;font-feature-settings:'tnum';}
+        .sp-stat-mini-sub{font-size:11px;color:var(--ink-3);margin-top:1px;}
+
+        /* search */
+        .sp-search-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+        .sp-search-wrap{flex:1;min-width:200px;position:relative;}
+        .sp-search-wrap i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink-4);font-size:13px;pointer-events:none;}
+        .sp-search-wrap input{width:100%;padding:10px 13px 10px 36px;border:1.5px solid var(--border-2);border-radius:40px;font-size:13px;font-family:inherit;background:var(--surf);color:var(--ink);transition:border-color .2s,box-shadow .2s;}
+        .sp-search-wrap input:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px rgba(124,58,237,.1);}
+        .sp-filter-sel{padding:10px 32px 10px 13px;border:1.5px solid var(--border-2);border-radius:40px;font-size:13px;font-family:inherit;background:var(--surf);color:var(--ink);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%238c959f' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer;transition:border-color .2s;}
+        .sp-filter-sel:focus{outline:none;border-color:var(--violet);}
+
+        /* section head */
+        .sp-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;}
+        .sp-section-title{font-size:14px;font-weight:700;color:var(--ink);}
+        .sp-section-count{font-size:12px;font-weight:600;color:var(--ink-3);background:var(--surf-3);padding:3px 11px;border-radius:30px;}
+
+        /* cards */
+        .sp-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+        .sp-card{position:relative;isolation:isolate;background:linear-gradient(145deg,#ffffff 0%,#f8f5ff 42%,#eef5ff 100%);border-radius:var(--r-lg);border:1px solid rgba(124,58,237,.22);overflow:hidden;box-shadow:0 10px 24px rgba(13,17,23,.10),0 2px 6px rgba(13,17,23,.06);transition:transform .25s,box-shadow .25s,border-color .25s;display:flex;flex-direction:column;}
+        .sp-card::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg,rgba(124,58,237,.10) 0 12px,rgba(37,99,235,.08) 12px 24px);opacity:.28;pointer-events:none;z-index:0;}
+        .sp-card::after{content:'';position:absolute;right:-40px;top:-46px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.32) 0%,rgba(124,58,237,0) 72%);pointer-events:none;z-index:0;}
+        .sp-card > *{position:relative;z-index:1;}
+        .sp-card:hover{transform:translateY(-6px);box-shadow:0 18px 38px rgba(13,17,23,.16),0 4px 12px rgba(13,17,23,.09);border-color:rgba(124,58,237,.35);}
+        .sp-card-strip{height:4px;}
+        .sp-card:nth-child(8n+1) .sp-card-strip{background:linear-gradient(90deg,#7c3aed,#a78bfa);}
+        .sp-card:nth-child(8n+2) .sp-card-strip{background:linear-gradient(90deg,#2563eb,#60a5fa);}
+        .sp-card:nth-child(8n+3) .sp-card-strip{background:linear-gradient(90deg,#059669,#34d399);}
+        .sp-card:nth-child(8n+4) .sp-card-strip{background:linear-gradient(90deg,#d97706,#fbbf24);}
+        .sp-card:nth-child(8n+5) .sp-card-strip{background:linear-gradient(90deg,#e11d48,#fb7185);}
+        .sp-card:nth-child(8n+6) .sp-card-strip{background:linear-gradient(90deg,#0891b2,#22d3ee);}
+        .sp-card:nth-child(8n+7) .sp-card-strip{background:linear-gradient(90deg,#6366f1,#818cf8);}
+        .sp-card:nth-child(8n+8) .sp-card-strip{background:linear-gradient(90deg,#ec4899,#f472b6);}
+        .sp-card-body{padding:20px 22px;flex:1;}
+        .sp-card-identity{display:flex;align-items:center;gap:14px;margin-bottom:15px;}
+        .sp-logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--violet-bg),var(--blue-bg));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:var(--violet);overflow:hidden;flex-shrink:0;border:1.5px solid var(--border-2);box-shadow:var(--sh-xs);}
+        .sp-logo img{width:100%;height:100%;object-fit:contain;padding:6px;background:var(--surf);border-radius:11px;}
+        .sp-company-name{font-size:16px;font-weight:900;color:var(--violet);margin-bottom:3px;line-height:1.25;}
+        .sp-company-email{font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:5px;}
+        .sp-company-email i{font-size:10px;}
+        .sp-event-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;background:var(--surf-2);border:1px solid var(--border);border-radius:30px;font-size:11.5px;font-weight:600;color:var(--ink-2);margin-bottom:15px;}
+        .sp-event-chip i{color:var(--violet);font-size:10px;}
+        .sp-contribution{background:linear-gradient(135deg,var(--violet-bg),#ede9fe);border-radius:var(--r-sm);padding:13px 16px;display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(124,58,237,.1);}
+        .sp-contribution-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--violet);}
+        .sp-contribution-value{font-size:19px;font-weight:800;color:var(--violet);font-feature-settings:'tnum';letter-spacing:-0.4px;}
+        .sp-card-footer{padding:13px 22px;border-top:1px solid var(--border);background:var(--surf-2);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+        .sp-action{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:600;font-family:inherit;text-decoration:none;cursor:pointer;border:1px solid transparent;transition:all .18s;white-space:nowrap;}
+        button.sp-action{border:1px solid transparent;cursor:pointer;text-decoration:none;background-color:transparent;color:inherit;}
+        .act-detail{background:var(--surf);color:var(--ink-2);border-color:var(--border-2);}
+        .act-detail:hover{background:var(--surf-3);border-color:var(--ink-4);}
+        .act-contract{background:var(--violet-bg);color:var(--violet);border-color:rgba(124,58,237,.2);}
+        .act-contract:hover{background:#ede9fe;border-color:rgba(124,58,237,.4);}
+        .act-edit{background:var(--amber-bg);color:var(--amber);border-color:rgba(217,119,6,.2);}
+        .act-edit:hover{background:#fef3c7;border-color:rgba(217,119,6,.4);}
+        .act-del{background:var(--rose-bg)!important;color:var(--rose)!important;border-color:rgba(225,29,72,.2)!important;transition:all .2s;}
+        .act-del:hover{color:white !important;background:var(--rose)!important;}
+        .sp-card-footer form{display:inline-flex;margin:0;margin-left:auto;}
+        .sp-empty{text-align:center;padding:64px 24px;background:var(--surf);border-radius:var(--r-lg);border:1px dashed var(--ink-5);}
+        .sp-empty-icon{width:72px;height:72px;border-radius:24px;background:var(--violet-bg);display:inline-flex;align-items:center;justify-content:center;font-size:30px;color:var(--violet);margin-bottom:18px;}
+        .sp-empty-title{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+        .sp-empty-sub{font-size:13px;color:var(--ink-3);}
+        .sp-no-result{text-align:center;padding:16px;font-size:13px;color:var(--ink-3);}
+
+        @media(max-width:1100px){
+            .sp-kpi{grid-template-columns:repeat(2,1fr);}
+            .sp-analytics{grid-template-columns:1fr 1fr;}
+            .sp-ana-left{grid-column:span 2;flex-direction:row;flex-wrap:wrap;gap:20px;}
+            .sp-ana-right{grid-column:span 2;flex-direction:row;flex-wrap:wrap;}
+            .sp-stat-mini{flex:1;min-width:160px;}
+        }
+        @media(max-width:700px){
+            .sp-page{padding:18px 16px;}
+            .sp-kpi{grid-template-columns:1fr 1fr;}
+            .sp-analytics{grid-template-columns:1fr;}
+            .sp-ana-left,.sp-ana-right{grid-column:auto;flex-direction:column;}
+            .sp-cards{grid-template-columns:1fr;}
+            .sp-search-row{flex-direction:column;align-items:stretch;}
+            .sp-filter-sel{width:100%;}
+        }
+    </style>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-    <script src="{{ asset('js/admin-live-search.js') }}" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" defer></script>
     <script defer>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Chart: Repartition par evenement
-            const eventCtx = document.getElementById('chartsEventDistribution');
-            if (eventCtx) {
-                const eventData = {{ stats.byEvent|json_encode|raw }};
-                new Chart(eventCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: Object.keys(eventData),
-                        datasets: [{
-                            data: Object.values(eventData),
-                            backgroundColor: [
-                                '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', 
-                                '#ef4444', '#8b5cf6', '#ec4899', '#6366f1'
-                            ],
-                            borderColor: '#fff',
-                            borderWidth: 3,
-                            borderSkipped: false,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    font: { size: 13, weight: '600' },
-                                    padding: 20,
-                                    usePointStyle: true,
-                                    pointStyle: 'circle'
-                                }
-                            }
-                        }
-                    }
+    document.addEventListener('DOMContentLoaded', function () {
+        Chart.defaults.font.family = "'Sora', system-ui, sans-serif";
+        const PALETTE = ['#7c3aed','#2563eb','#059669','#d97706','#e11d48','#0891b2','#ec4899','#6366f1'];
+
+        /* mini donut */
+        const donutEl = document.getElementById('spDonut');
+        if (donutEl) {
+            const data   = {{ stats.byEvent|json_encode|raw }};
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+            const total  = values.reduce((a,b)=>a+b,0);
+            new Chart(donutEl, {
+                type:'doughnut',
+                data:{labels,datasets:[{data:values,backgroundColor:PALETTE,borderColor:'#ffffff',borderWidth:3,hoverOffset:6}]},
+                options:{cutout:'68%',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw} DT`}}}}
+            });
+            const cv = document.getElementById('spDonutTotal');
+            if(cv) cv.textContent = total.toLocaleString();
+            const list = document.getElementById('spEventList');
+            if(list){
+                labels.forEach((lbl,i)=>{
+                    const pct = total>0?((values[i]/total)*100).toFixed(0):0;
+                    const row = document.createElement('div');
+                    row.className='sp-event-row';
+                    row.innerHTML=`<div class="sp-event-name-wrap"><span class="sp-event-dot" style="background:${PALETTE[i%PALETTE.length]}"></span><span class="sp-event-name" title="${lbl}">${lbl}</span></div><span class="sp-event-val">${pct}%</span>`;
+                    list.appendChild(row);
                 });
             }
+        }
 
-            // Chart: Top entreprises
-            const topCtx = document.getElementById('chartsTopCompanies');
-            if (topCtx) {
-                const topCompanies = {{ stats.topCompanies|default({})|json_encode|raw }};
-                const labels = Object.keys(topCompanies);
-                const values = Object.values(topCompanies);
-                if (labels.length > 0) {
-                    new Chart(topCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Contribution (DT)',
-                                data: values,
-                                backgroundColor: ['#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'],
-                                borderColor: '#1d4ed8',
-                                borderWidth: 1,
-                                borderRadius: 8,
-                                borderSkipped: false,
-                            }]
-                        },
-                        options: {
-                            indexAxis: 'y',
-                            responsive: true,
-                            maintainAspectRatio: true,
-                            plugins: {
-                                legend: { display: false }
-                            },
-                            scales: {
-                                x: {
-                                    beginAtZero: true,
-                                    ticks: { font: { size: 12 } }
-                                },
-                                y: {
-                                    ticks: { font: { size: 12 } }
-                                }
-                            }
-                        }
-                    });
-                }
-            }
+        /* rank bars */
+        const rankEl = document.getElementById('spRankList');
+        if(rankEl){
+            const top    = {{ stats.topCompanies|default({})|json_encode|raw }};
+            const labels = Object.keys(top);
+            const values = Object.values(top);
+            const maxVal = Math.max(...values,1);
+            const rkCls  = ['rk1','rk2','rk3','rk4','rk5'];
+            labels.forEach((lbl,i)=>{
+                const pct = ((values[i]/maxVal)*100).toFixed(1);
+                const row = document.createElement('div');
+                row.className='sp-rank-row';
+                row.innerHTML=`<div class="sp-rank-num ${rkCls[i]||'rk5'}">${i+1}</div><div class="sp-rank-name" title="${lbl}">${lbl}</div><div class="sp-rank-bar-wrap"><div class="sp-rank-track"><div class="sp-rank-fill" style="width:${pct}%;background:${PALETTE[i%PALETTE.length]};"></div></div></div><div class="sp-rank-amount">${Number(values[i]).toLocaleString()} DT</div>`;
+                rankEl.appendChild(row);
+            });
+        }
+
+        /* auto-submit selects */
+        document.querySelectorAll('.sp-filter-sel').forEach(s=>{
+            s.addEventListener('change',()=>s.closest('form').submit());
         });
+
+        /* Server-side search suggestions */
+        window.showSponsorSuggestions = async function() {
+            const searchInput = document.getElementById('sponsorSearchInput');
+            const suggestionsList = document.getElementById('sponsorSuggestionsList');
+            const q = searchInput.value.trim();
+
+            if (q.length < 1) {
+                suggestionsList.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch('{{ path('app_sponsors_suggestions') }}?q=' + encodeURIComponent(q));
+                const suggestions = await response.json();
+
+                if (suggestions.length === 0) {
+                    suggestionsList.style.display = 'none';
+                    return;
+                }
+
+                suggestionsList.innerHTML = suggestions.map(item => 
+                    `<div style="padding: 10px 13px; font-size: 13px; color: var(--ink); cursor: pointer; transition: background .12s; border-bottom: 0.5px solid var(--border);" onclick="window.selectSponsorSuggestion('${item}')" onmouseover="this.style.background='var(--surf-2)'" onmouseout="this.style.background='white'">
+                        ${escapeSponsorsHtml(item)}
+                    </div>`
+                ).join('');
+                suggestionsList.style.display = 'block';
+            } catch (error) {
+                console.error('Erreur lors de la récupération des suggestions:', error);
+                suggestionsList.style.display = 'none';
+            }
+        };
+
+        window.hideSponsorSuggestions = function() {
+            document.getElementById('sponsorSuggestionsList').style.display = 'none';
+        };
+
+        window.selectSponsorSuggestion = function(value) {
+            document.getElementById('sponsorSearchInput').value = value;
+            window.hideSponsorSuggestions();
+        };
+
+        function escapeSponsorsHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    });
     </script>
 {% endblock %}
 
 {% block admin_content %}
-<div class="sponsor-page" data-live-search-root>
-    <div class="flash-wrap">
-        {% for message in app.flashes('success') %}
-            <div class="flash-success">{{ message }}</div>
+<div class="sp-page">
+
+    <div class="sp-flash">
+        {% for msg in app.flashes('success') %}
+            <div class="sp-flash-item sp-flash-ok"><i class="fa-solid fa-circle-check"></i> {{ msg }}</div>
         {% endfor %}
-        {% for message in app.flashes('error') %}
-            <div class="flash-error">{{ message }}</div>
+        {% for msg in app.flashes('error') %}
+            <div class="sp-flash-item sp-flash-err"><i class="fa-solid fa-circle-exclamation"></i> {{ msg }}</div>
         {% endfor %}
     </div>
 
-    <!-- Toolbar -->
-    <div class="sponsor-toolbar">
-        <form method="get" action="{{ path('app_sponsors_index') }}" class="sponsor-toolbar-form">
-            <div class="sponsor-search-group">
-                <input type="hidden" name="q" value="{{ search }}" data-live-search-hidden>
-                <input type="text" id="sponsor-search" value="{{ search }}" placeholder="Rechercher une entreprise..." autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-live-search-input>
-            </div>
-            <select name="company" class="sponsor-toolbar-select">
-                <option value="">Toutes les entreprises</option>
-                {% for item in companies %}
-                    <option value="{{ item }}" {{ selectedCompany == item ? 'selected' : '' }}>{{ item }}</option>
-                {% endfor %}
-            </select>
-            <select name="event_id" class="sponsor-toolbar-select">
-                <option value="">Tous les evenements</option>
-                {% for event in events %}
-                    <option value="{{ event.id }}" {{ selectedEventId == event.id ? 'selected' : '' }}>{{ event.title }}</option>
-                {% endfor %}
-            </select>
-            <button class="btn-sponsor outline" type="submit">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 19a8 8 0 1 0-7-7m7 7l5 5"/></svg>
-                Filtrer
-            </button>
-        </form>
-
-        <div class="sponsor-toolbar-actions">
-            <a class="btn-sponsor secondary" href="{{ path('app_sponsors_export_csv', {q: search, company: selectedCompany, event_id: selectedEventId}) }}">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Exporter CSV
+    {# topbar #}
+    <div class="sp-topbar">
+        <div class="sp-topbar-right" style="margin-left: auto;">
+            <a class="sp-btn sp-btn-ghost" href="{{ path('app_sponsors_export_csv', {q: search, company: selectedCompany, event_id: selectedEventId}) }}">
+                <i class="fa-solid fa-arrow-up-from-bracket"></i> Exporter CSV
             </a>
-            <a class="btn-sponsor success" href="{{ path('app_sponsors_new') }}">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
-                Nouvelle entreprise
+            <a class="sp-btn sp-btn-primary" href="{{ path('app_sponsors_new') }}">
+                <i class="fa-solid fa-plus"></i> Nouvelle entreprise
             </a>
         </div>
     </div>
 
-    <!-- KPI Stats -->
-    <div class="sponsor-kpi-grid">
-        <div class="sponsor-kpi-card tone-blue">
-            <div class="sponsor-kpi-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                </svg>
-            </div>
-            <div class="sponsor-kpi-content">
-                <h4>Total entreprises</h4>
-                <p class="sponsor-kpi-value">{{ stats.total }}</p>
-                <span class="sponsor-kpi-label">Entreprises enregistrees</span>
-            </div>
+    {# kpi #}
+    <div class="sp-kpi">
+        <div class="sp-kpi-card">
+            <div class="sp-kpi-top"><div class="sp-kpi-label">Entreprises</div><div class="sp-kpi-dot dot-v"><i class="fa-solid fa-building"></i></div></div>
+            <div class="sp-kpi-value">{{ stats.total }}</div>
+            <div class="sp-kpi-sub">sponsors enregistrés</div>
         </div>
-
-        <div class="sponsor-kpi-card tone-green">
-            <div class="sponsor-kpi-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                </svg>
-            </div>
-            <div class="sponsor-kpi-content">
-                <h4>Contribution Totale</h4>
-                <p class="sponsor-kpi-value">{{ stats.totalContribution|number_format(0, ',', ' ') }}</p>
-                <span class="sponsor-kpi-label">DT</span>
-            </div>
+        <div class="sp-kpi-card">
+            <div class="sp-kpi-top"><div class="sp-kpi-label">Contribution totale</div><div class="sp-kpi-dot dot-e"><i class="fa-solid fa-coins"></i></div></div>
+            <div class="sp-kpi-value">{{ stats.totalContribution|number_format(0, ',', ' ') }}</div>
+            <div class="sp-kpi-sub">dinars tunisiens</div>
         </div>
-
-        <div class="sponsor-kpi-card tone-amber">
-            <div class="sponsor-kpi-icon" style="background: linear-gradient(135deg, #f59e0b, #f97316);">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
-                </svg>
-            </div>
-            <div class="sponsor-kpi-content">
-                <h4>Moyenne par entreprise</h4>
-                <p class="sponsor-kpi-value">{{ stats.averageContribution|number_format(0, ',', ' ')|default('0') }}</p>
-                <span class="sponsor-kpi-label">DT</span>
-            </div>
+        <div class="sp-kpi-card">
+            <div class="sp-kpi-top"><div class="sp-kpi-label">Moyenne / sponsor</div><div class="sp-kpi-dot dot-a"><i class="fa-solid fa-chart-simple"></i></div></div>
+            <div class="sp-kpi-value">{{ stats.averageContribution|number_format(0, ',', ' ')|default('0') }}</div>
+            <div class="sp-kpi-sub">DT par entreprise</div>
         </div>
-
-        <div class="sponsor-kpi-card tone-violet">
-            <div class="sponsor-kpi-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-                </svg>
-            </div>
-            <div class="sponsor-kpi-content">
-                <h4>Evenements</h4>
-                <p class="sponsor-kpi-value">{{ events|length }}</p>
-                <span class="sponsor-kpi-label">Evenements actifs</span>
-            </div>
+        <div class="sp-kpi-card">
+            <div class="sp-kpi-top"><div class="sp-kpi-label">Événements</div><div class="sp-kpi-dot dot-b"><i class="fa-solid fa-calendar-check"></i></div></div>
+            <div class="sp-kpi-value">{{ events|length }}</div>
+            <div class="sp-kpi-sub">événements associés</div>
         </div>
     </div>
 
-    <!-- Charts Section -->
+    {# analytics #}
     {% if stats.byEvent is not empty %}
-    <div class="sponsor-charts-grid">
-        <div class="sponsor-chart-card">
-            <h3>Repartition par Evenement</h3>
-            <div class="sponsor-chart-container">
-                <canvas id="chartsEventDistribution"></canvas>
+    <div class="sp-analytics">
+        <div class="sp-ana-left">
+            <div class="sp-ana-label"><i class="fa-solid fa-chart-pie"></i> Par événement</div>
+            <div class="sp-donut-wrap">
+                <canvas id="spDonut" style="width:120px;height:120px;" role="img" aria-label="Répartition par événement"></canvas>
+                <div class="sp-donut-center">
+                    <div class="sp-donut-center-val" id="spDonutTotal">—</div>
+                    <div class="sp-donut-center-lbl">DT total</div>
+                </div>
             </div>
+            <div class="sp-event-list" id="spEventList"></div>
         </div>
 
-        {% if sponsors|length > 0 %}
-        <div class="sponsor-chart-card">
-            <h3>Top 5 Contributeurs</h3>
-            <div class="sponsor-chart-container sponsor-chart-horizontal">
-                <canvas id="chartsTopCompanies"></canvas>
+        <div class="sp-ana-center">
+            <div class="sp-ana-center-head">
+                <div class="sp-ana-center-title"><i class="fa-solid fa-trophy"></i> Top contributeurs</div>
+                <span class="sp-top-badge">par montant</span>
+            </div>
+            <div class="sp-rank-list" id="spRankList"></div>
+        </div>
+
+        <div class="sp-ana-right">
+            <div class="sp-stat-mini">
+                <div class="sp-stat-mini-icon" style="background:var(--violet-bg);color:var(--violet);"><i class="fa-solid fa-star"></i></div>
+                <div>
+                    <div class="sp-stat-mini-label">Meilleur sponsor</div>
+                    {% set topName = stats.topCompanies|keys|first %}
+                    <div class="sp-stat-mini-val">{{ topName ?: '—' }}</div>
+                    <div class="sp-stat-mini-sub">1er contributeur</div>
+                </div>
+            </div>
+            <div class="sp-stat-mini">
+                <div class="sp-stat-mini-icon" style="background:var(--emerald-bg);color:var(--emerald);"><i class="fa-solid fa-handshake"></i></div>
+                <div>
+                    <div class="sp-stat-mini-label">Taux couverture</div>
+                    <div class="sp-stat-mini-val">
+                        {% if events|length > 0 %}{{ (stats.total / events|length)|number_format(1, ',', ' ') }}{% else %}0{% endif %}
+                    </div>
+                    <div class="sp-stat-mini-sub">sponsors / événement</div>
+                </div>
+            </div>
+            <div class="sp-stat-mini">
+                <div class="sp-stat-mini-icon" style="background:var(--amber-bg);color:var(--amber);"><i class="fa-solid fa-fire"></i></div>
+                <div>
+                    <div class="sp-stat-mini-label">Événements couverts</div>
+                    <div class="sp-stat-mini-val">{{ stats.byEvent|length }}</div>
+                    <div class="sp-stat-mini-sub">avec sponsors actifs</div>
+                </div>
             </div>
         </div>
-        {% endif %}
     </div>
     {% endif %}
 
-    <div class="sponsor-grid-card">
-        <h3>Liste des entreprises ({{ sponsors|length }})</h3>
+    {# search #}
+    <form method="get" action="{{ path('app_sponsors_index') }}" style="display: flex; gap: 12px; margin-bottom: 0; flex-wrap: wrap; align-items: center;">
+        <div class="sp-search-wrap" style="position: relative; flex: 1; min-width: 200px;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="sponsorSearchInput" name="q" value="{{ search }}" placeholder="Rechercher une entreprise…" autocomplete="off" oninput="showSponsorSuggestions()" onfocus="showSponsorSuggestions()" onblur="setTimeout(hideSponsorSuggestions, 150)">
+            <div id="sponsorSuggestionsList" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1.5px solid var(--border-2); border-top: none; border-radius: 0 0 var(--r-sm) var(--r-sm); max-height: 200px; overflow-y: auto; z-index: 10; display: none; box-shadow: 0 2px 8px rgba(0,0,0,.07);"></div>
+        </div>
+        <select name="company" class="sp-filter-sel">
+            <option value="">Toutes les entreprises</option>
+            {% for item in companies %}
+                <option value="{{ item }}" {{ selectedCompany == item ? 'selected' : '' }}>{{ item }}</option>
+            {% endfor %}
+        </select>
+        <select name="event_id" class="sp-filter-sel">
+            <option value="">Tous les événements</option>
+            {% for event in events %}
+                <option value="{{ event.id }}" {{ selectedEventId == event.id ? 'selected' : '' }}>{{ event.title }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="sp-btn sp-btn-ghost" style="padding: 10px 20px; border-radius: 40px; font-size: 13px; font-weight: 700;">
+            <i class="fa-solid fa-magnifying-glass"></i> Rechercher
+        </button>
+    </form>
 
-        {% if sponsors is empty %}
-            <p class="sponsor-muted">Aucune entreprise trouvee.</p>
-        {% else %}
-            <div class="sponsor-cards">
-                {% for sponsor in sponsors %}
-                    <article class="sponsor-card" data-live-search-item data-search="{{ sponsor.companyName }}" data-live-suggest="{{ sponsor.companyName }}">
-                        <div class="top">
-                            <div class="sponsor-card-brand">
-                                <div class="sponsor-card-logo">
-                                    {% if sponsor.logoUrl %}
-                                        <img src="{{ sponsor.logoUrl }}" alt="{{ sponsor.companyName }}">
-                                    {% else %}
-                                        <span>{{ sponsor.companyName|slice(0, 2)|upper }}</span>
-                                    {% endif %}
-                                </div>
-                                <div>
-                                <h4>{{ sponsor.companyName }}</h4>
-                                <div class="sponsor-muted">{{ sponsor.contactEmail }}</div>
-                                <div class="sponsor-muted">Evenement: {{ eventTitleMap[sponsor.eventId]|default('-') }}</div>
-                                </div>
-                            </div>
-                            <span class="sponsor-badge">{{ sponsor.contributionAmount|number_format(2, ',', ' ') }} DT</span>
-                        </div>
-
-                        <div class="sponsor-actions">
-                            <a class="btn-sponsor light" href="{{ path('app_sponsors_details', {id: sponsor.id}) }}">Details</a>
-                            <a class="btn-sponsor primary" href="{{ path('app_sponsors_contract', {id: sponsor.id}) }}">Contrat</a>
-                            <a class="btn-sponsor warning" href="{{ path('app_sponsors_edit', {id: sponsor.id}) }}">Modifier</a>
-                            <form method="post" action="{{ path('app_sponsors_delete', {id: sponsor.id}) }}" onsubmit="return confirm('Supprimer ce sponsor ?');">
-                                <input type="hidden" name="_token" value="{{ csrf_token('delete_sponsor_' ~ sponsor.id) }}">
-                                <button class="btn-sponsor danger" type="submit">Supprimer</button>
-                            </form>
-                        </div>
-                    </article>
-                {% endfor %}
-            </div>
-            <p class="sponsor-muted" data-live-search-empty hidden>Aucune entreprise ne correspond a votre recherche.</p>
-        {% endif %}
+    {# list #}
+    <div class="sp-section-head" style="margin-top: 12px;">
+        <div class="sp-section-title">Entreprises partenaires</div>
+        <div class="sp-section-count">{{ sponsors|length }} résultat(s)</div>
     </div>
+
+    {% if sponsors is empty %}
+        <div class="sp-empty">
+            <div class="sp-empty-icon"><i class="fa-solid fa-handshake"></i></div>
+            <div class="sp-empty-title">Aucun sponsor trouvé</div>
+            <div class="sp-empty-sub">Ajoutez votre premier partenaire pour commencer.</div>
+        </div>
+    {% else %}
+        <div class="sp-cards">
+            {% for sponsor in sponsors %}
+                <article class="sp-card">
+                    <div class="sp-card-strip"></div>
+                    <div class="sp-card-body">
+                        <div class="sp-card-identity">
+                            <div class="sp-logo">
+                                {% if sponsor.logoUrl %}<img src="{{ sponsor.logoUrl }}" alt="{{ sponsor.companyName }}">
+                                {% else %}{{ sponsor.companyName|slice(0,2)|upper }}{% endif %}
+                            </div>
+                            <div>
+                                <div class="sp-company-name">{{ sponsor.companyName }}</div>
+                                <div class="sp-company-email"><i class="fa-regular fa-envelope"></i> {{ sponsor.contactEmail }}</div>
+                            </div>
+                        </div>
+                        <div class="sp-event-chip"><i class="fa-solid fa-calendar-days"></i> {{ eventTitleMap[sponsor.eventId]|default('—') }}</div>
+                        <div class="sp-contribution">
+                            <div class="sp-contribution-label">Contribution</div>
+                            <div class="sp-contribution-value">{{ sponsor.contributionAmount|number_format(2, ',', ' ') }} DT</div>
+                        </div>
+                    </div>
+                    <div class="sp-card-footer">
+                        <a class="sp-action act-detail"   href="{{ path('app_sponsors_details',  {id: sponsor.id}) }}"><i class="fa-regular fa-eye"></i> Détails</a>
+                        <a class="sp-action act-contract" href="{{ path('app_sponsors_contract', {id: sponsor.id}) }}"><i class="fa-solid fa-file-contract"></i> Contrat</a>
+                        <a class="sp-action act-edit"     href="{{ path('app_sponsors_edit',     {id: sponsor.id}) }}"><i class="fa-regular fa-pen-to-square"></i> Modifier</a>
+                        <form method="post" action="{{ path('app_sponsors_delete', {id: sponsor.id}) }}" onsubmit="return confirm('Supprimer ce sponsor ?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete_sponsor_' ~ sponsor.id) }}">
+                            <button class="sp-action act-del" type="submit"><i class="fa-regular fa-trash-can"></i> Supprimer</button>
+                        </form>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
-
-
-
-

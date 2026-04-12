@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\String\Slugger\SluggerInterface;
@@ -37,12 +37,33 @@ class SponsorController extends AbstractController
         $search = trim((string) $request->query->get('q', ''));
         $company = trim((string) $request->query->get('company', ''));
         $eventId = (int) $request->query->get('event_id', 0);
+        $sort = (string) $request->query->get('sort', 'default');
 
         $sponsors = $this->sponsorRepository->searchForAdmin(
             $search !== '' ? $search : null,
             $company !== '' ? $company : null,
             $eventId > 0 ? $eventId : null
         );
+
+        // Server-side sorting
+        usort($sponsors, function (Sponsor $a, Sponsor $b) use ($sort): int {
+            switch ($sort) {
+                case 'name-asc':
+                    return strcasecmp($a->getCompanyName() ?? '', $b->getCompanyName() ?? '');
+                case 'name-desc':
+                    return strcasecmp($b->getCompanyName() ?? '', $a->getCompanyName() ?? '');
+                case 'contribution-asc':
+                    return ((float) ($a->getContributionAmount() ?? 0)) <=> ((float) ($b->getContributionAmount() ?? 0));
+                case 'contribution-desc':
+                    return ((float) ($b->getContributionAmount() ?? 0)) <=> ((float) ($a->getContributionAmount() ?? 0));
+                case 'date-asc':
+                    return ($a->getCreatedAt() ?? new \DateTime()) <=> ($b->getCreatedAt() ?? new \DateTime());
+                case 'date-desc':
+                    return ($b->getCreatedAt() ?? new \DateTime()) <=> ($a->getCreatedAt() ?? new \DateTime());
+                default:
+                    return 0;
+            }
+        });
 
         $events = $this->sponsorService->fetchEventsCatalog();
         $eventTitleMap = $this->sponsorService->buildEventTitleMapForSponsors($sponsors);
@@ -59,6 +80,7 @@ class SponsorController extends AbstractController
             'search' => $search,
             'selectedCompany' => $company,
             'selectedEventId' => $eventId > 0 ? $eventId : null,
+            'sort' => $sort,
             'stats' => [
                 'total' => $this->sponsorRepository->getTotalSponsors(),
                 'totalContribution' => $this->sponsorRepository->getTotalContribution(),
@@ -234,6 +256,33 @@ class SponsorController extends AbstractController
         return $this->buildCsvResponse($items, 'sponsors_admin_export.csv');
     }
 
+    #[Route('/admin/sponsors/suggestions', name: 'app_sponsors_suggestions', methods: ['GET'])]
+    public function adminSuggestions(Request $request): Response
+    {
+        $this->denyUnlessAdminOrOrganizer();
+
+        $q = trim((string) $request->query->get('q', ''));
+        if (strlen($q) < 1) {
+            return $this->json([]);
+        }
+
+        $sponsors = $this->sponsorRepository->findAll();
+        $searchLower = mb_strtolower($q);
+        $suggestions = [];
+        $seen = [];
+
+        foreach ($sponsors as $sponsor) {
+            $companyName = $sponsor->getCompanyName() ?? '';
+            if (!empty($companyName) && mb_stripos($companyName, $searchLower) !== false && !in_array($companyName, $seen)) {
+                $suggestions[] = $companyName;
+                $seen[] = $companyName;
+            }
+            if (count($suggestions) >= 10) break;
+        }
+
+        return $this->json($suggestions);
+    }
+
     #[Route('/sponsor/portal', name: 'app_sponsor_portal', methods: ['GET'])]
     public function portal(Request $request): Response
     {
@@ -316,6 +365,38 @@ class SponsorController extends AbstractController
             'contributionBars' => $this->sponsorService->toBarRows($contributionsByEvent, 6),
         ]);
     }
+
+    #[Route('/sponsor/portal/suggestions', name: 'app_sponsor_portal_suggestions', methods: ['GET'])]
+    public function portalSuggestions(Request $request): Response
+    {
+        $q = trim((string) $request->query->get('q', ''));
+        if (mb_strlen($q) < 1) {
+            return $this->json([]);
+        }
+
+        $allEvents = $this->sponsorService->fetchEventsCatalog();
+        $needle = mb_strtolower($q);
+        $suggestions = [];
+        $seen = [];
+
+        foreach ($allEvents as $event) {
+            $title = (string) ($event['title'] ?? '');
+            $titleLower = mb_strtolower($title);
+            if ($title !== '' && str_contains($titleLower, $needle) && !in_array($title, $seen, true)) {
+                $suggestions[] = [
+                    'title' => $title,
+                    'location' => (string) ($event['location'] ?? ''),
+                ];
+                $seen[] = $title;
+            }
+            if (count($suggestions) >= 8) {
+                break;
+            }
+        }
+
+        return $this->json($suggestions);
+    }
+
 
     #[Route('/sponsor/portal/history', name: 'app_sponsor_portal_history', methods: ['GET'])]
     public function portalHistory(Request $request): Response

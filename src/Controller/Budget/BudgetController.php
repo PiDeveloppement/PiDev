@@ -9,6 +9,7 @@ use App\Repository\Budget\BudgetRepository;
 use App\Service\Budget\BudgetService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -30,6 +31,9 @@ class BudgetController extends AbstractController
         $eventId = (int) $request->query->get('event_id', 0);
         $health = (string) $request->query->get('health', 'all');
         $status = (string) $request->query->get('status', 'all');
+        $search = (string) $request->query->get('search', '');
+        $sort = (string) $request->query->get('sort', 'default');
+        $state = (string) $request->query->get('state', 'all');
 
         $qb = $this->budgetRepository->createQueryBuilder('b')->orderBy('b.id', 'DESC');
         if ($eventId > 0) {
@@ -44,8 +48,60 @@ class BudgetController extends AbstractController
 
         $budgets = array_values(array_filter($budgets, fn (Budget $budget): bool => $this->budgetService->passesFilters($budget, $health, $status)));
 
-        $stats = $this->budgetService->buildStats($budgets);
+        // Get event title map for searching
         $eventTitleMap = $this->budgetService->getEventTitleMap(array_map(static fn (Budget $budget): int => (int) $budget->getEventId(), $budgets));
+
+        // Filter by search term
+        if (!empty($search)) {
+            $searchLower = strtolower($search);
+            $budgets = array_filter($budgets, function (Budget $budget) use ($searchLower, $eventTitleMap) {
+                $eventTitle = $eventTitleMap[(int) $budget->getEventId()] ?? '';
+                return stripos($eventTitle, $searchLower) !== false;
+            });
+            $budgets = array_values($budgets);
+        }
+
+        // Filter by state
+        if ($state !== 'all' && !empty($state)) {
+            $budgets = array_filter($budgets, function (Budget $budget) use ($state) {
+                $ini = (float) $budget->getInitialBudget();
+                $ren = (float) $budget->getRentabilite();
+                
+                $hClass = 'good';
+                if ($ren >= $ini * 0.5) {
+                    $hClass = 'excellent';
+                } elseif ($ren < 0) {
+                    $hClass = 'critical';
+                } elseif ($ren < $ini * 0.2) {
+                    $hClass = 'fragile';
+                }
+                
+                return $hClass === $state;
+            });
+            $budgets = array_values($budgets);
+        }
+
+        // Apply sorting
+        usort($budgets, function (Budget $a, Budget $b) use ($sort) {
+            switch ($sort) {
+                case 'name-asc':
+                    return strcasecmp($a->getEventId(), $b->getEventId());
+                case 'name-desc':
+                    return strcasecmp($b->getEventId(), $a->getEventId());
+                case 'budget-asc':
+                    return ((float) $a->getInitialBudget()) <=> ((float) $b->getInitialBudget());
+                case 'budget-desc':
+                    return ((float) $b->getInitialBudget()) <=> ((float) $a->getInitialBudget());
+                case 'profitability-asc':
+                    return ((float) $a->getRentabilite()) <=> ((float) $b->getRentabilite());
+                case 'profitability-desc':
+                    return ((float) $b->getRentabilite()) <=> ((float) $a->getRentabilite());
+                default:
+                    return 0;
+            }
+        });
+
+        $stats = $this->budgetService->buildStats($budgets);
 
         $top5 = array_slice($budgets, 0, 5);
         $chartLabels = [];
@@ -74,7 +130,48 @@ class BudgetController extends AbstractController
             'chartInitial' => $chartInitial,
             'chartExpenses' => $chartExpenses,
             'chartRevenue' => $chartRevenue,
+            'search' => $search,
+            'sort' => $sort,
+            'state' => $state,
         ]);
+    }
+
+    #[Route('/admin/budget/suggestions', name: 'app_budget_suggestions', methods: ['GET'])]
+    public function suggestions(Request $request): Response
+    {
+        $this->denyUnlessAdminOrOrganizer();
+
+        $q = (string) $request->query->get('q', '');
+        
+        if (strlen($q) < 1) {
+            return $this->json([]);
+        }
+
+        $budgets = $this->budgetRepository->createQueryBuilder('b')
+            ->orderBy('b.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        $eventTitleMap = $this->budgetService->getEventTitleMap(
+            array_map(static fn (Budget $budget): int => (int) $budget->getEventId(), $budgets)
+        );
+
+        $searchLower = strtolower($q);
+        $suggestions = [];
+        $seen = [];
+
+        foreach ($budgets as $budget) {
+            $eventTitle = $eventTitleMap[(int) $budget->getEventId()] ?? '';
+            if (!empty($eventTitle) && stripos($eventTitle, $searchLower) !== false && !in_array($eventTitle, $seen)) {
+                $suggestions[] = $eventTitle;
+                $seen[] = $eventTitle;
+            }
+            if (count($suggestions) >= 10) {
+                break;
+            }
+        }
+
+        return $this->json($suggestions);
     }
 
     #[Route('/admin/budget/new', name: 'app_budget_new', methods: ['GET', 'POST'])]

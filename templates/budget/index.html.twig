@@ -1,305 +1,930 @@
 ﻿{% extends 'base.html.twig' %}
 
-{% block title %}Budget - EventFlow{% endblock %}
+{% block title %}Budgets - EventFlow{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
-{% endblock %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
 
-{% block javascripts %}
-    {{ parent() }}
-    <script src="{{ asset('js/admin-live-search.js') }}" defer></script>
+        body {
+            background: #f5f4f2;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #1e293b;
+        }
+
+        .budget-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px 80px;
+        }
+
+        /* ── KPI ROW ── */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-card {
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            border: 0.5px solid transparent;
+        }
+
+        .kpi-card .kpi-lbl {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            margin-bottom: .4rem;
+            opacity: .65;
+            display: block;
+        }
+
+        .kpi-card .kpi-val {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1;
+            display: block;
+        }
+
+        .kpi-card .kpi-val small {
+            font-size: 12px;
+            font-weight: 400;
+            margin-left: 3px;
+            opacity: .55;
+        }
+
+        .kpi-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: .5rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        /* KPI colors */
+        .kpi-purple { background: #eeedfe; border-color: #afa9ec; }
+        .kpi-purple .kpi-lbl { color: #534ab7; }
+        .kpi-purple .kpi-val { color: #26215c; }
+        .kpi-badge-purple { background: #cecbf6; color: #3c3489; }
+
+        .kpi-teal { background: #e1f5ee; border-color: #9fe1cb; }
+        .kpi-teal .kpi-lbl { color: #0f6e56; }
+        .kpi-teal .kpi-val { color: #04342c; }
+        .kpi-badge-teal { background: #9fe1cb; color: #085041; }
+
+        .kpi-gray { background: #f1efe8; border-color: #d3d1c7; }
+        .kpi-gray .kpi-lbl { color: #5f5e5a; }
+        .kpi-gray .kpi-val { color: #2c2c2a; }
+        .kpi-sub { font-size: 11px; color: #888780; margin-top: .4rem; display: block; }
+
+        /* ── CHARTS ── */
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .chart-box {
+            background: white;
+            border: 0.5px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+        }
+
+        .chart-box .box-hd {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: .75rem;
+        }
+
+        .chart-box .box-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .chart-box .box-sub {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 8px;
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .chart-legend span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .legend-sq {
+            width: 9px;
+            height: 9px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        /* ── FILTER BAR ── */
+        .filter-section {
+            background: white;
+            border: 0.5px solid #e2e8f0;
+            border-radius: 14px;
+            padding: .875rem 1rem;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            white-space: nowrap;
+        }
+
+        .filter-divider {
+            width: 0.5px;
+            height: 20px;
+            background: #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-wrap i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 7px 10px 7px 30px;
+            border: 0.5px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+            color: #1e293b;
+            font-size: 12px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color .15s, background .15s;
+        }
+
+        .search-input:focus {
+            border-color: #7f77dd;
+            background: white;
+        }
+
+        /* Suggestions dropdown */
+        .suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 0.5px solid #e2e8f0;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,.08);
+        }
+
+        .suggestions-list.active {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #1e293b;
+            cursor: pointer;
+            transition: background .12s;
+            border-bottom: 0.5px solid #f1f5f9;
+        }
+
+        .suggestion-item:hover {
+            background: #f8fafc;
+        }
+
+        .suggestion-item.highlight {
+            background: #eeedfe;
+            color: #26215c;
+        }
+
+        /* Sort dropdown */
+        .sort-select {
+            padding: 7px 10px;
+            border: 0.5px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+            color: #1e293b;
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            outline: none;
+        }
+
+        .sort-select:hover {
+            border-color: #7f77dd;
+        }
+
+        .sort-select:focus {
+            border-color: #7f77dd;
+            background: white;
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 0.5px solid #e2e8f0;
+            background: #f8fafc;
+            color: #64748b;
+            transition: all .12s;
+            font-family: inherit;
+        }
+
+        .chip:hover {
+            border-color: #7f77dd;
+            color: #3c3489;
+        }
+
+        .chip.active {
+            background: #7f77dd;
+            border-color: #7f77dd;
+            color: white;
+        }
+
+        /* ── BUDGET GRID ── */
+        .budget-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        /* ── BUDGET CARD ── */
+        .budget-card {
+            border-radius: 14px;
+            border: 0.5px solid transparent;
+            overflow: hidden;
+            transition: transform .15s, box-shadow .15s;
+        }
+
+        .budget-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, .08);
+        }
+
+        /* Card states */
+        .card-excellent { background: #e1f5ee; border-color: #9fe1cb; }
+        .card-good      { background: #eeedfe; border-color: #afa9ec; }
+        .card-fragile   { background: #faeeda; border-color: #fac775; }
+        .card-critical  { background: #fcebeb; border-color: #f7c1c1; }
+
+        .card-body {
+            padding: 1rem 1.1rem .75rem;
+        }
+
+        /* Notice banner */
+        .card-notice {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 9px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: .65rem;
+        }
+
+        .notice-excellent { background: rgba(29,158,117,.12); color: #0f6e56; }
+        .notice-fragile   { background: rgba(186,117,23,.12);  color: #854f0b; }
+        .notice-critical  { background: rgba(226,75,74,.10);   color: #a32d2d; }
+
+        .card-row1 {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: .6rem;
+        }
+
+        .card-name {
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.35;
+            max-width: 65%;
+        }
+
+        .state-pill {
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .pill-excellent { background: #9fe1cb; color: #085041; }
+        .pill-good      { background: #cecbf6; color: #3c3489; }
+        .pill-fragile   { background: #fac775; color: #633806; }
+        .pill-critical  { background: #f7c1c1; color: #791f1f; }
+
+        /* Metrics */
+        .card-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 7px;
+            margin-bottom: .75rem;
+        }
+
+        .metric-item {
+            padding: 8px 10px;
+            border-radius: 9px;
+        }
+
+        .metric-item .m-lbl {
+            font-size: 10px;
+            font-weight: 600;
+            margin-bottom: 2px;
+            opacity: .6;
+            display: block;
+        }
+
+        .metric-item .m-val {
+            font-size: 13px;
+            font-weight: 700;
+            display: block;
+        }
+
+        .met-neutral-excellent { background: rgba(29,158,117,.10); color: #04342c; }
+        .met-neutral-good      { background: rgba(127,119,221,.08); color: #26215c; }
+        .met-neutral-fragile   { background: rgba(186,117,23,.10); color: #412402; }
+        .met-neutral-critical  { background: rgba(226,75,74,.08); color: #501313; }
+
+        .met-positive { background: rgba(29,158,117,.10); color: #085041; }
+        .met-negative { background: rgba(226,75,74,.08); color: #791f1f; }
+
+        /* Progress */
+        .prog-lbl {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .prog-track {
+            height: 4px;
+            border-radius: 4px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, .07);
+        }
+
+        .prog-fill { height: 100%; border-radius: 4px; }
+
+        .fill-excellent { background: #1d9e75; }
+        .fill-good      { background: #7f77dd; }
+        .fill-fragile   { background: #ba7517; }
+        .fill-critical  { background: #e24b4a; }
+
+        /* Card footer */
+        .card-footer {
+            padding: .55rem 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 0.5px solid rgba(0, 0, 0, .06);
+            background: rgba(255, 255, 255, .3);
+        }
+
+        .action-link {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 9px;
+            border-radius: 7px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            text-decoration: none;
+            transition: background .12s, color .12s;
+        }
+
+        .action-link:hover {
+            background: rgba(0, 0, 0, .06);
+            color: #1e293b;
+        }
+
+        .btn-delete {
+            color: #cbd5e1;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 7px;
+            transition: all .12s;
+            font-size: 11px;
+        }
+
+        .btn-delete:hover {
+            color: #a32d2d;
+            background: #fcebeb;
+        }
+
+        /* Empty state */
+        .empty-state {
+            grid-column: 1/-1;
+            text-align: center;
+            padding: 60px 24px;
+            color: #94a3b8;
+        }
+
+        .empty-state i {
+            font-size: 36px;
+            display: block;
+            margin-bottom: 16px;
+            opacity: .4;
+        }
+
+        .empty-state p { font-size: 14px; }
+
+        /* FAB */
+        .fab {
+            position: fixed;
+            top: 80px;
+            right: 28px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 20px;
+            background: #1e293b;
+            color: white;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,.2);
+            transition: opacity .15s, transform .15s;
+            z-index: 100;
+        }
+
+        .fab:hover {
+            opacity: .88;
+            transform: translateY(-1px);
+            color: white;
+        }
+    </style>
 {% endblock %}
 
 {% block admin_content %}
-<div class="sponsor-page budget-page" data-live-search-root>
-    {% set excellentCount = 0 %}
-    {% set goodCount = 0 %}
-    {% set fragileCount = 0 %}
-    {% set criticalCount = 0 %}
-    {% set totalExpensesAll = 0 %}
-    {% set totalRevenueAll = 0 %}
-    {% for item in budgets %}
-        {% set initialLoop = item.initialBudget + 0 %}
-        {% set rentLoop = item.rentabilite + 0 %}
-        {% set totalExpensesAll = totalExpensesAll + (item.totalExpenses + 0) %}
-        {% set totalRevenueAll = totalRevenueAll + (item.totalRevenue + 0) %}
-        {% if rentLoop >= initialLoop * 0.5 %}
-            {% set excellentCount = excellentCount + 1 %}
-        {% elseif rentLoop >= 0 %}
-            {% set goodCount = goodCount + 1 %}
-        {% elseif rentLoop >= -(initialLoop * 0.2) %}
-            {% set fragileCount = fragileCount + 1 %}
-        {% else %}
-            {% set criticalCount = criticalCount + 1 %}
-        {% endif %}
-    {% endfor %}
-    {% set maxFlow = [stats.totalInitial, totalExpensesAll, totalRevenueAll]|sort|last %}
-    {% set deficitPercent = stats.count > 0 ? ((stats.deficitCount / stats.count) * 100)|round(1) : 0 %}
 
-    <div class="flash-wrap">
-        {% for message in app.flashes('success') %}
-            <div class="flash-success">{{ message }}</div>
-        {% endfor %}
-        {% for message in app.flashes('error') %}
-            <div class="flash-error">{{ message }}</div>
-        {% endfor %}
+{# ── Prepare state counts for charts ── #}
+{% set cntExcellent = 0 %}{% set cntGood = 0 %}{% set cntFragile = 0 %}{% set cntCritical = 0 %}
+{% set budExcellent = 0 %}{% set budGood = 0 %}{% set budFragile = 0 %}{% set budCritical = 0 %}
+{% set expExcellent = 0 %}{% set expGood = 0 %}{% set expFragile = 0 %}{% set expCritical = 0 %}
+{% for b in budgets %}
+    {% set ini = b.initialBudget|default(0) %}
+    {% set exp = b.totalExpenses|default(0) %}
+    {% set ren = b.rentabilite|default(0) %}
+    {% if ren >= ini * 0.5 %}
+        {% set cntExcellent = cntExcellent + 1 %}{% set budExcellent = budExcellent + ini %}{% set expExcellent = expExcellent + exp %}
+    {% elseif ren < 0 %}
+        {% set cntCritical = cntCritical + 1 %}{% set budCritical = budCritical + ini %}{% set expCritical = expCritical + exp %}
+    {% elseif ren < ini * 0.2 %}
+        {% set cntFragile = cntFragile + 1 %}{% set budFragile = budFragile + ini %}{% set expFragile = expFragile + exp %}
+    {% else %}
+        {% set cntGood = cntGood + 1 %}{% set budGood = budGood + ini %}{% set expGood = expGood + exp %}
+    {% endif %}
+{% endfor %}
+
+<div class="budget-container">
+
+    {# ── KPI ROW ── #}
+    <div class="kpi-row">
+        <div class="kpi-card kpi-purple">
+            <span class="kpi-lbl">Budget total</span>
+            <span class="kpi-val">{{ stats.totalInitial|number_format(0, ',', ' ') }}<small>DT</small></span>
+            <span class="kpi-badge kpi-badge-purple">
+                <i class="fa-solid fa-arrow-trend-up" style="font-size:9px"></i>
+                Cumulé
+            </span>
+        </div>
+        <div class="kpi-card kpi-teal">
+            <span class="kpi-lbl">Rentabilité globale</span>
+            <span class="kpi-val" style="{{ stats.globalRent < 0 ? 'color:#791f1f' : '' }}">
+                {{ stats.globalRent >= 0 ? '+' : '' }}{{ stats.globalRent|number_format(0, ',', ' ') }}<small>DT</small>
+            </span>
+            <span class="kpi-badge kpi-badge-teal">
+                {% if stats.totalInitial > 0 %}
+                    Marge {{ ((stats.globalRent / stats.totalInitial) * 100)|round(1) }}%
+                {% else %}
+                    —
+                {% endif %}
+            </span>
+        </div>
+        <div class="kpi-card kpi-gray">
+            <span class="kpi-lbl">Événements</span>
+            <span class="kpi-val">{{ stats.count }}</span>
+            <span class="kpi-sub">{{ cntExcellent + cntGood }} rentables · {{ cntCritical }} en déficit</span>
+        </div>
     </div>
 
-    <section class="budget-stat-grid">
-        <article class="budget-stat-card tone-blue">
-            <div class="budget-stat-top">
-                <span class="budget-stat-emoji" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" class="budget-stat-icon-svg" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 7.5 12 3l9 4.5-9 4.5L3 7.5Z"/>
-                        <path d="M3 7.5V16.5L12 21l9-4.5V7.5"/>
-                        <path d="M12 12v9"/>
-                    </svg>
-                </span>
-                <span>Total budgets</span>
+    {# ── CHARTS ── #}
+    <div class="charts-row">
+        <div class="chart-box">
+            <div class="box-hd">
+                <span class="box-title">Distribution par état</span>
+                <span class="box-sub">{{ stats.count }} budgets</span>
             </div>
-            <strong>{{ stats.count }}</strong>
-            <small>Budgets suivis actuellement</small>
-        </article>
-        <article class="budget-stat-card tone-cyan">
-            <div class="budget-stat-top">
-                <span class="budget-stat-emoji" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" class="budget-stat-icon-svg" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 3v18"/>
-                        <path d="M16.5 7.5c0-1.8-1.9-3-4.5-3s-4.5 1.2-4.5 3 1.9 3 4.5 3 4.5 1.2 4.5 3-1.9 3-4.5 3-4.5-1.2-4.5-3"/>
-                    </svg>
-                </span>
-                <span>Budget initial global</span>
-            </div>
-            <strong>{{ stats.totalInitial|number_format(2, ',', ' ') }} DT</strong>
-            <small>Montant alloue a l'ensemble des evenements</small>
-        </article>
-        <article class="budget-stat-card tone-amber">
-            <div class="budget-stat-top">
-                <span class="budget-stat-emoji" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" class="budget-stat-icon-svg" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 19h16"/>
-                        <path d="M7 16V11"/>
-                        <path d="M12 16V7"/>
-                        <path d="M17 16V9"/>
-                    </svg>
-                </span>
-                <span>Rentabilite globale</span>
-            </div>
-            <strong>{{ stats.globalRent|number_format(2, ',', ' ') }} DT</strong>
-            <small>{{ stats.deficitCount }} budget(s) en deficit</small>
-        </article>
-    </section>
-
-    <section class="budget-insight-grid">
-        <article class="budget-insight-card">
-            <div class="budget-section-head compact">
-                <div>
-                    <h3>Repartition sante</h3>
-                    <p>Lecture instantanee de l'etat des budgets.</p>
-                </div>
-            </div>
-            <div class="budget-mini-bars">
-                <div class="budget-mini-row">
-                    <span>Excellent</span>
-                    <div class="budget-mini-track"><i class="tone-excellent" style="width: {{ stats.count > 0 ? ((excellentCount / stats.count) * 100) : 0 }}%"></i></div>
-                    <strong>{{ excellentCount }}</strong>
-                </div>
-                <div class="budget-mini-row">
-                    <span>Bon</span>
-                    <div class="budget-mini-track"><i class="tone-good" style="width: {{ stats.count > 0 ? ((goodCount / stats.count) * 100) : 0 }}%"></i></div>
-                    <strong>{{ goodCount }}</strong>
-                </div>
-                <div class="budget-mini-row">
-                    <span>Fragile</span>
-                    <div class="budget-mini-track"><i class="tone-fragile" style="width: {{ stats.count > 0 ? ((fragileCount / stats.count) * 100) : 0 }}%"></i></div>
-                    <strong>{{ fragileCount }}</strong>
-                </div>
-                <div class="budget-mini-row">
-                    <span>Critique</span>
-                    <div class="budget-mini-track"><i class="tone-critical" style="width: {{ stats.count > 0 ? ((criticalCount / stats.count) * 100) : 0 }}%"></i></div>
-                    <strong>{{ criticalCount }}</strong>
-                </div>
-            </div>
-        </article>
-
-        <article class="budget-insight-card">
-            <div class="budget-section-head compact">
-                <div>
-                    <h3>Flux financier</h3>
-                    <p>Initial, depenses et revenus compares visuellement.</p>
-                </div>
-            </div>
-            <div class="budget-mini-bars">
-                <div class="budget-mini-row flow">
-                    <span>Initial</span>
-                    <div class="budget-mini-track"><i class="tone-initial" style="width: {{ maxFlow > 0 ? ((stats.totalInitial / maxFlow) * 100) : 0 }}%"></i></div>
-                    <strong>{{ stats.totalInitial|number_format(0, ',', ' ') }}</strong>
-                </div>
-                <div class="budget-mini-row flow">
-                    <span>Depenses</span>
-                    <div class="budget-mini-track"><i class="tone-expenses" style="width: {{ maxFlow > 0 ? ((totalExpensesAll / maxFlow) * 100) : 0 }}%"></i></div>
-                    <strong>{{ totalExpensesAll|number_format(0, ',', ' ') }}</strong>
-                </div>
-                <div class="budget-mini-row flow">
-                    <span>Revenus</span>
-                    <div class="budget-mini-track"><i class="tone-revenue" style="width: {{ maxFlow > 0 ? ((totalRevenueAll / maxFlow) * 100) : 0 }}%"></i></div>
-                    <strong>{{ totalRevenueAll|number_format(0, ',', ' ') }}</strong>
-                </div>
-            </div>
-        </article>
-
-        <article class="budget-insight-card gauge-card">
-            <div class="budget-section-head compact">
-                <div>
-                    <h3>Tension budgetaire</h3>
-                    <p>Part des budgets actuellement en deficit.</p>
-                </div>
-            </div>
-            <div class="budget-gauge-wrap">
-                <div class="budget-gauge" style="--gauge-value: {{ deficitPercent }}%;">
-                    <div class="budget-gauge-inner">
-                        <strong>{{ deficitPercent }}%</strong>
-                        <span>en deficit</span>
-                    </div>
-                </div>
-                <div class="budget-gauge-legend">
-                    <p><strong>{{ stats.deficitCount }}</strong> budget(s) critiques ou deficitaires sur <strong>{{ stats.count }}</strong>.</p>
-                    <small>Un bon point de lecture pour prioriser les corrections.</small>
-                </div>
-            </div>
-        </article>
-    </section>
-
-    <section class="budget-filter-card">
-        <form method="get" action="{{ path('app_budget_index') }}" class="budget-filter-form">
-            <div class="budget-field budget-field-full">
-                <label for="budget-live-search">Recherche rapide</label>
-                <input id="budget-live-search" type="text" placeholder="Tapez un evenement..." autocomplete="off" data-live-search-input>
-            </div>
-            <div class="budget-field">
-                <label for="budget-event-filter">Evenement</label>
-                <select id="budget-event-filter" name="event_id">
-                    <option value="">Tous les evenements</option>
-                    {% for event in events %}
-                        <option value="{{ event.id }}" {{ selectedEventId == event.id ? 'selected' : '' }}>{{ event.title }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="budget-field">
-                <label for="budget-health-filter">Sante</label>
-                <select id="budget-health-filter" name="health">
-                    <option value="all" {{ selectedHealth == 'all' ? 'selected' : '' }}>Toutes</option>
-                    <option value="excellent" {{ selectedHealth == 'excellent' ? 'selected' : '' }}>Excellent</option>
-                    <option value="good" {{ selectedHealth == 'good' ? 'selected' : '' }}>Bon</option>
-                    <option value="fragile" {{ selectedHealth == 'fragile' ? 'selected' : '' }}>Fragile</option>
-                    <option value="critical" {{ selectedHealth == 'critical' ? 'selected' : '' }}>Critique</option>
-                </select>
-            </div>
-
-            <div class="budget-field">
-                <label for="budget-status-filter">Etat</label>
-                <select id="budget-status-filter" name="status">
-                    <option value="all" {{ selectedStatus == 'all' ? 'selected' : '' }}>Tous</option>
-                    <option value="ok" {{ selectedStatus == 'ok' ? 'selected' : '' }}>OK</option>
-                    <option value="deficit" {{ selectedStatus == 'deficit' ? 'selected' : '' }}>Deficit</option>
-                </select>
-            </div>
-
-            <div class="budget-filter-actions">
-                <button class="btn-sponsor outline" type="submit">Filtrer</button>
-                <a class="btn-sponsor success" href="{{ path('app_budget_new') }}">Nouveau budget</a>
-            </div>
-        </form>
-    </section>
-
-    <section class="budget-list-shell">
-        <div class="budget-section-head">
-            <div>
-                <h3>Budgets</h3>
-                <p>{{ budgets|length }} element(s) affiches avec une lecture plus visuelle.</p>
-            </div>
+            <div id="donutChart"></div>
         </div>
+        <div class="chart-box">
+            <div class="box-hd">
+                <span class="box-title">Budget vs dépenses</span>
+                <span class="box-sub">par état</span>
+            </div>
+            <div id="barChart"></div>
+        </div>
+    </div>
 
-        {% if budgets is empty %}
-            <p class="sponsor-muted">Aucun budget trouve.</p>
-        {% else %}
-            <div class="budget-card-grid">
-                {% for budget in budgets %}
-                    {% set initial = budget.initialBudget + 0 %}
-                    {% set expenses = budget.totalExpenses + 0 %}
-                    {% set revenue = budget.totalRevenue + 0 %}
-                    {% set rent = budget.rentabilite + 0 %}
-                    {% set remaining = initial - expenses %}
-                    {% set health = 'Critique' %}
-                    {% set healthClass = 'critical' %}
-                    {% if rent >= initial * 0.5 %}
-                        {% set health = 'Excellent' %}
-                        {% set healthClass = 'excellent' %}
-                    {% elseif rent >= 0 %}
-                        {% set health = 'Bon' %}
-                        {% set healthClass = 'good' %}
-                    {% elseif rent >= -(initial * 0.2) %}
-                        {% set health = 'Fragile' %}
-                        {% set healthClass = 'fragile' %}
+    {# ── FILTER BAR ── #}
+    <form method="get" action="{{ path('app_budget_index') }}" class="filter-section" style="background: white; border: 0.5px solid #e2e8f0; border-radius: 14px; padding: .875rem 1rem; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <div class="search-wrap" style="position: relative; flex: 1; min-width: 200px;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 12px;"></i>
+            <input type="text" name="search" id="searchInput" class="search-input" placeholder="Rechercher un budget…" value="{{ search|default('') }}" oninput="showSuggestions()" onfocus="showSuggestions()" onblur="setTimeout(hideSuggestions, 150)">
+            <div id="suggestionsList" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 0.5px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; box-shadow: 0 4px 8px rgba(0,0,0,.08);"></div>
+        </div>
+        <div class="filter-divider" style="width: 0.5px; height: 20px; background: #e2e8f0; flex-shrink: 0;"></div>
+        <select name="sort" class="sort-select" onchange="this.form.submit()">
+            <option value="default" {{ sort == 'default' ? 'selected' : '' }}>Tri: Défaut</option>
+            <option value="name-asc" {{ sort == 'name-asc' ? 'selected' : '' }}>Nom: A-Z</option>
+            <option value="name-desc" {{ sort == 'name-desc' ? 'selected' : '' }}>Nom: Z-A</option>
+            <option value="budget-asc" {{ sort == 'budget-asc' ? 'selected' : '' }}>Budget: Bas → Haut</option>
+            <option value="budget-desc" {{ sort == 'budget-desc' ? 'selected' : '' }}>Budget: Haut → Bas</option>
+            <option value="profitability-asc" {{ sort == 'profitability-asc' ? 'selected' : '' }}>Rentabilité: Bas → Haut</option>
+            <option value="profitability-desc" {{ sort == 'profitability-desc' ? 'selected' : '' }}>Rentabilité: Haut → Bas</option>
+        </select>
+        <div class="filter-divider" style="width: 0.5px; height: 20px; background: #e2e8f0; flex-shrink: 0;"></div>
+        <div class="filter-chips" style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <a href="{{ path('app_budget_index', {'state': 'all', 'search': search|default(''), 'sort': sort|default('default')}) }}" class="chip {{ state == 'all' or not state ? 'active' : '' }}" style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 0.5px solid #e2e8f0; background: {{ state == 'all' or not state ? '#7f77dd' : '#f8fafc' }}; color: {{ state == 'all' or not state ? 'white' : '#64748b' }}; text-decoration: none; transition: all .12s; font-family: inherit; display: inline-flex; align-items: center;">Tous</a>
+            <a href="{{ path('app_budget_index', {'state': 'excellent', 'search': search|default(''), 'sort': sort|default('default')}) }}" class="chip {{ state == 'excellent' ? 'active' : '' }}" style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 0.5px solid #e2e8f0; background: {{ state == 'excellent' ? '#7f77dd' : '#f8fafc' }}; color: {{ state == 'excellent' ? 'white' : '#64748b' }}; text-decoration: none; transition: all .12s; font-family: inherit; display: inline-flex; align-items: center;">Excellent</a>
+            <a href="{{ path('app_budget_index', {'state': 'good', 'search': search|default(''), 'sort': sort|default('default')}) }}" class="chip {{ state == 'good' ? 'active' : '' }}" style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 0.5px solid #e2e8f0; background: {{ state == 'good' ? '#7f77dd' : '#f8fafc' }}; color: {{ state == 'good' ? 'white' : '#64748b' }}; text-decoration: none; transition: all .12s; font-family: inherit; display: inline-flex; align-items: center;">Bon</a>
+            <a href="{{ path('app_budget_index', {'state': 'fragile', 'search': search|default(''), 'sort': sort|default('default')}) }}" class="chip {{ state == 'fragile' ? 'active' : '' }}" style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 0.5px solid #e2e8f0; background: {{ state == 'fragile' ? '#7f77dd' : '#f8fafc' }}; color: {{ state == 'fragile' ? 'white' : '#64748b' }}; text-decoration: none; transition: all .12s; font-family: inherit; display: inline-flex; align-items: center;">Fragile</a>
+            <a href="{{ path('app_budget_index', {'state': 'critical', 'search': search|default(''), 'sort': sort|default('default')}) }}" class="chip {{ state == 'critical' ? 'active' : '' }}" style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 0.5px solid #e2e8f0; background: {{ state == 'critical' ? '#7f77dd' : '#f8fafc' }}; color: {{ state == 'critical' ? 'white' : '#64748b' }}; text-decoration: none; transition: all .12s; font-family: inherit; display: inline-flex; align-items: center;">Critique</a>
+        </div>
+        <button type="submit" style="padding: 7px 14px; border: 0.5px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #1e293b; font-size: 12px; font-family: inherit; cursor: pointer; transition: border-color .15s, background .15s; font-weight: 600;">Rechercher</button>
+    </form>
+
+    {# ── BUDGET GRID ── #}
+    <div class="budget-grid" id="budgetGrid">
+
+        {% for budget in budgets %}
+            {% set ini = budget.initialBudget|default(0) %}
+            {% set exp = budget.totalExpenses|default(0) %}
+            {% set ren = budget.rentabilite|default(0) %}
+            {% set pct = ini > 0 ? (exp / ini * 100)|round(1) : 0 %}
+            {% set pctCapped = pct > 100 ? 100 : pct %}
+
+            {% set hClass = 'good' %}
+            {% set hLabel = 'Bon' %}
+            {% if ren >= ini * 0.5 %}
+                {% set hClass = 'excellent' %}{% set hLabel = 'Excellent' %}
+            {% elseif ren < 0 %}
+                {% set hClass = 'critical' %}{% set hLabel = 'Critique' %}
+            {% elseif ren < ini * 0.2 %}
+                {% set hClass = 'fragile' %}{% set hLabel = 'Fragile' %}
+            {% endif %}
+
+            <div class="budget-card card-{{ hClass }}">
+
+                <div class="card-body">
+
+                    {# Notice banner #}
+                    {% if hClass == 'excellent' %}
+                        <div class="card-notice notice-excellent">
+                            <i class="fa-solid fa-check" style="font-size:10px"></i> Performance excellente
+                        </div>
+                    {% elseif hClass == 'fragile' %}
+                        <div class="card-notice notice-fragile">
+                            <i class="fa-solid fa-triangle-exclamation" style="font-size:10px"></i> Attention requise
+                        </div>
+                    {% elseif hClass == 'critical' %}
+                        <div class="card-notice notice-critical">
+                            <i class="fa-solid fa-triangle-exclamation" style="font-size:10px"></i> Déficit critique
+                        </div>
                     {% endif %}
 
-                    <article class="budget-card-modern {{ healthClass }}" data-live-search-item data-search="{{ eventTitleMap[budget.eventId]|default('-') }} {{ health }} {{ initial|number_format(2, ',', ' ') }} {{ expenses|number_format(2, ',', ' ') }} {{ revenue|number_format(2, ',', ' ') }}" data-live-suggest="{{ eventTitleMap[budget.eventId]|default('-') }}">
-                        <div class="budget-card-head">
-                            <div>
-                                <h4>{{ eventTitleMap[budget.eventId]|default('-') }}</h4>
-                            </div>
-                            <span class="budget-health-badge {{ healthClass }}">{{ health }}</span>
+                    <div class="card-row1">
+                        <div class="card-name" style="{{ hClass == 'excellent' ? 'color:#04342c' : (hClass == 'good' ? 'color:#26215c' : (hClass == 'fragile' ? 'color:#412402' : 'color:#501313')) }}">
+                            {{ eventTitleMap[budget.eventId]|default('Événement #' ~ budget.eventId) }}
                         </div>
+                        <span class="state-pill pill-{{ hClass }}">{{ hLabel }}</span>
+                    </div>
 
-                        <div class="budget-card-metrics">
-                            <div>
-                                <span>Initial</span>
-                                <strong>{{ initial|number_format(2, ',', ' ') }} DT</strong>
-                            </div>
-                            <div>
-                                <span>Depenses</span>
-                                <strong>{{ expenses|number_format(2, ',', ' ') }} DT</strong>
-                            </div>
-                            <div>
-                                <span>Revenus</span>
-                                <strong>{{ revenue|number_format(2, ',', ' ') }} DT</strong>
-                            </div>
-                            <div>
-                                <span>Rentabilite</span>
-                                <strong class="{{ rent >= 0 ? 'value-positive' : 'value-negative' }}">{{ rent|number_format(2, ',', ' ') }} DT</strong>
-                            </div>
+                    <div class="card-metrics">
+                        <div class="metric-item met-neutral-{{ hClass }}">
+                            <span class="m-lbl">Budget initial</span>
+                            <span class="m-val">{{ ini|number_format(0, ',', ' ') }} DT</span>
                         </div>
+                        <div class="metric-item {{ ren >= 0 ? 'met-positive' : 'met-negative' }}">
+                            <span class="m-lbl">Rentabilité</span>
+                            <span class="m-val">{{ ren >= 0 ? '+' : '' }}{{ ren|number_format(0, ',', ' ') }} DT</span>
+                        </div>
+                    </div>
 
-                        <div class="budget-card-progress">
-                            <div class="budget-card-progress-top">
-                                <span>Utilisation budget</span>
-                                <span>{{ initial > 0 ? ((expenses / initial) * 100)|round(1) : 0 }}%</span>
-                            </div>
-                            <div class="budget-progress-track">
-                                <div class="budget-progress-fill {{ remaining < 0 ? 'danger' : '' }}" style="width: {{ initial > 0 ? (((expenses / initial) * 100) > 100 ? 100 : ((expenses / initial) * 100)) : 0 }}%"></div>
-                            </div>
-                            <small>{{ remaining|number_format(2, ',', ' ') }} DT restants</small>
-                        </div>
+                    <div class="prog-lbl">
+                        <span>Consommation</span>
+                        <span style="font-weight:600">{{ pct }}%</span>
+                    </div>
+                    <div class="prog-track">
+                        <div class="prog-fill fill-{{ hClass }}" style="width:{{ pctCapped }}%;"></div>
+                    </div>
 
-                        <div class="budget-card-actions">
-                            <a class="btn-sponsor light" href="{{ path('app_budget_details', {id: budget.id}) }}">Details</a>
-                            <a class="btn-sponsor warning" href="{{ path('app_budget_edit', {id: budget.id}) }}">Modifier</a>
-                            <form method="post" action="{{ path('app_budget_delete', {id: budget.id}) }}" onsubmit="return confirm('Supprimer ce budget ?');">
-                                <input type="hidden" name="_token" value="{{ csrf_token('delete_budget_' ~ budget.id) }}">
-                                <button class="btn-sponsor danger" type="submit">Supprimer</button>
-                            </form>
-                        </div>
-                    </article>
-                {% endfor %}
+                </div>
+
+                <div class="card-footer">
+                    <div style="display:flex;gap:2px">
+                        <a href="{{ path('app_budget_details', {id: budget.id}) }}" class="action-link">
+                            <i class="fa-regular fa-eye" style="font-size:10px"></i> Voir
+                        </a>
+                        <a href="{{ path('app_budget_edit', {id: budget.id}) }}" class="action-link">
+                            <i class="fa-regular fa-pen-to-square" style="font-size:10px"></i> Éditer
+                        </a>
+                    </div>
+                    <form method="post" action="{{ path('app_budget_delete', {id: budget.id}) }}" onsubmit="return confirm('Supprimer définitivement ce budget ?');" style="margin:0">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete_budget_' ~ budget.id) }}">
+                        <button type="submit" class="btn-delete">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </form>
+                </div>
+
             </div>
-            <p class="sponsor-muted" data-live-search-empty hidden>Aucun budget ne correspond a votre recherche.</p>
-        {% endif %}
-    </section>
+
+        {% else %}
+            <div class="empty-state">
+                <i class="fa-regular fa-folder-open"></i>
+                <p>Aucun budget n'a encore été créé.</p>
+            </div>
+        {% endfor %}
+
+    </div>
+
 </div>
+
+{# ── FAB ── #}
+<a href="{{ path('app_budget_new') }}" class="fab">
+    <i class="fa-solid fa-plus" style="font-size:11px"></i> Nouveau budget
+</a>
+
+<script>
+
+    /* ── Server-side search suggestions ── */
+    async function showSuggestions() {
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsList = document.getElementById('suggestionsList');
+        const q = searchInput.value.trim();
+
+        if (q.length < 1) {
+            suggestionsList.style.display = 'none';
+            return;
+        }
+
+        try {
+            const response = await fetch('{{ path('app_budget_suggestions') }}?q=' + encodeURIComponent(q));
+            const suggestions = await response.json();
+
+            if (suggestions.length === 0) {
+                suggestionsList.style.display = 'none';
+                return;
+            }
+
+            suggestionsList.innerHTML = suggestions.map(item => 
+                `<div style="padding: 8px 12px; font-size: 12px; color: #1e293b; cursor: pointer; transition: background .12s; border-bottom: 0.5px solid #f1f5f9;" onclick="selectSuggestion('${item}')" onmouseover="this.style.background='#eeedfe'" onmouseout="this.style.background='white'">
+                    ${escapeHtml(item)}
+                </div>`
+            ).join('');
+            suggestionsList.style.display = 'block';
+        } catch (error) {
+            console.error('Erreur lors de la récupération des suggestions:', error);
+            suggestionsList.style.display = 'none';
+        }
+    }
+
+    function hideSuggestions() {
+        document.getElementById('suggestionsList').style.display = 'none';
+    }
+
+    function selectSuggestion(value) {
+        document.getElementById('searchInput').value = value;
+        hideSuggestions();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    /* ── ApexCharts ── */
+    document.addEventListener('DOMContentLoaded', function () {
+        
+        const colors = ['#1d9e75', '#7f77dd', '#ba7517', '#e24b4a'];
+        const labels = ['Excellent', 'Bon', 'Fragile', 'Critique'];
+        const donutData = [{{ cntExcellent }}, {{ cntGood }}, {{ cntFragile }}, {{ cntCritical }}];
+
+        /* Pie Chart - Distribution par état */
+        const pieChart = new ApexCharts(document.querySelector('#donutChart'), {
+            series: donutData,
+            chart: {
+                type: 'pie',
+                height: 240,
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                animations: {
+                    enabled: true,
+                    speed: 800,
+                    animateGradually: { enabled: true, delay: 100 },
+                    dynamicAnimation: { enabled: true, speed: 500 }
+                },
+                toolbar: { show: false }
+            },
+            labels: labels,
+            colors: colors,
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '78%',
+                        labels: {
+                            show: false
+                        }
+                    }
+                }
+            },
+            dataLabels: {
+                enabled: false
+            },
+            legend: {
+                position: 'bottom',
+                fontSize: '11px',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                markers: { width: 8, height: 8, radius: 2 },
+                itemMargin: { horizontal: 16, vertical: 8 }
+            },
+            tooltip: {
+                enabled: true,
+                theme: 'light',
+                style: { fontSize: '12px', fontFamily: "'Plus Jakarta Sans', sans-serif" },
+                y: {
+                    formatter: function (val) {
+                        return val + ' budget' + (val > 1 ? 's' : '')
+                    }
+                }
+            }
+        });
+        pieChart.render();
+
+        /* Column Chart - Budget vs Dépenses */
+        const barChart = new ApexCharts(document.querySelector('#barChart'), {
+            series: [
+                {
+                    name: 'Budget initial',
+                    data: [{{ budExcellent }}, {{ budGood }}, {{ budFragile }}, {{ budCritical }}]
+                },
+                {
+                    name: 'Dépenses',
+                    data: [{{ expExcellent }}, {{ expGood }}, {{ expFragile }}, {{ expCritical }}]
+                }
+            ],
+            chart: {
+                type: 'bar',
+                height: 240,
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                animations: {
+                    enabled: true,
+                    speed: 800,
+                    animateGradually: { enabled: true, delay: 130 },
+                    dynamicAnimation: { enabled: true, speed: 500 }
+                },
+                toolbar: { show: false },
+                zoom: { enabled: false }
+            },
+            colors: ['#7f77dd', '#fac775'],
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    columnWidth: '50%',
+                    borderRadius: 6,
+                    dataLabels: { position: 'top' },
+                    distributed: false
+                }
+            },
+            dataLabels: {
+                enabled: false
+            },
+            stroke: {
+                show: false
+            },
+            xaxis: {
+                categories: labels,
+                labels: {
+                    style: {
+                        fontSize: '11px',
+                        fontFamily: "'Plus Jakarta Sans', sans-serif",
+                        color: '#888780'
+                    }
+                },
+                axisBorder: { show: false },
+                axisTicks: { show: false }
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        fontSize: '11px',
+                        fontFamily: "'Plus Jakarta Sans', sans-serif",
+                        color: '#888780'
+                    },
+                    formatter: function (val) {
+                        return (val / 1000).toFixed(0) + 'k'
+                    }
+                }
+            },
+            fill: {
+                opacity: 1,
+                type: 'solid'
+            },
+            grid: {
+                borderColor: 'rgba(0,0,0,.05)',
+                xaxis: { lines: { show: false } },
+                yaxis: { lines: { show: true } },
+                padding: { top: 10, right: 0, bottom: 0, left: 0 }
+            },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'right',
+                fontSize: '11px',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                markers: { width: 8, height: 8, radius: 2 }
+            },
+            tooltip: {
+                enabled: true,
+                theme: 'light',
+                style: { fontSize: '12px', fontFamily: "'Plus Jakarta Sans', sans-serif" },
+                y: {
+                    formatter: function (val) {
+                        return val.toLocaleString('fr-FR') + ' DT'
+                    }
+                }
+            }
+        });
+        barChart.render();
+    });
+</script>
+
 {% endblock %}
-
-
-

@@ -4,586 +4,1048 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
     <style>
         :root {
-            --primary: #3b82f6;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --text-dark: #1e293b;
-            --text-grey: #64748b;
-            --bg-white: #ffffff;
-            --bg-light: #f8fafc;
-            --border: #e2e8f0;
+            --emerald: #059669;
+            --emerald-light: #10b981;
+            --emerald-dark: #047857;
+            --emerald-pale: #d1fae5;
+            --emerald-faint: #ecfdf5;
+            --slate: #0f172a;
+            --slate-700: #334155;
+            --slate-500: #64748b;
+            --slate-300: #cbd5e1;
+            --slate-100: #f1f5f9;
+            --slate-50: #f8fafc;
+            --white: #ffffff;
+            --amber: #d97706;
+            --amber-light: #fef3c7;
+            --red: #dc2626;
+            --red-light: #fef2f2;
+            --blue: #2563eb;
+            --blue-light: #eff6ff;
+            --purple: #7c3aed;
+            --border: rgba(15,23,42,0.08);
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+            --shadow-lg: 0 16px 48px rgba(0,0,0,0.12);
+            --radius-sm: 10px;
+            --radius: 16px;
+            --radius-lg: 20px;
+            --radius-xl: 28px;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background: linear-gradient(135deg, var(--bg-light) 0%, #f0f4f8 100%);
+            background: #f0f4f8;
+            font-family: 'DM Sans', -apple-system, sans-serif;
             font-size: 14px;
             line-height: 1.5;
+            color: var(--slate);
+            -webkit-font-smoothing: antialiased;
         }
-        
-        .depense-page {
-            max-width: 1400px;
+
+        /* ── PAGE WRAPPER ── */
+        .ef-page {
+            max-width: 1520px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 28px 32px;
         }
 
-        .page-info { display: none; }
-
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-
-        /* Métriques améliorées avec dégradés */
-        .depense-metrics {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        /* ── PAGE HEADER ── */
+        .ef-page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
             gap: 16px;
-            margin-bottom: 24px;
+        }
+        .ef-page-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--slate);
+            letter-spacing: -0.6px;
+            line-height: 1.2;
+        }
+        .ef-page-subtitle {
+            font-size: 13px;
+            color: var(--slate-500);
+            margin-top: 4px;
+            font-weight: 400;
+        }
+        .ef-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-export {
+            padding: 9px 18px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1.5px solid var(--border);
+            background: var(--white);
+            color: var(--slate-700);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-export:hover { background: var(--slate-100); border-color: var(--slate-300); }
+        .btn-primary-action {
+            padding: 9px 20px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 700;
+            border: none;
+            background: linear-gradient(135deg, var(--emerald-dark), var(--emerald-light));
+            color: #fff;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            text-decoration: none;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px rgba(5,150,105,0.35);
+        }
+        .btn-primary-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(5,150,105,0.45);
+        }
+
+        /* ── FLASH ── */
+        .flash-wrap { margin-bottom: 24px; }
+        .flash-msg {
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            margin-bottom: 10px;
+            font-weight: 500;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeSlide 0.3s ease;
+        }
+        .flash-success { background: var(--emerald-faint); color: #065f46; border: 1px solid rgba(5,150,105,0.2); }
+        .flash-error { background: var(--red-light); color: #7f1d1d; border: 1px solid rgba(220,38,38,0.2); }
+        @keyframes fadeSlide { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+        /* ── METRIC CARDS ── */
+        .ef-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 28px;
         }
         .metric-card {
-            background: white;
-            padding: 16px;
-            border-radius: 10px;
-            border: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 22px 24px;
             position: relative;
             overflow: hidden;
+            transition: transform 0.25s, box-shadow 0.25s;
+            box-shadow: var(--shadow-xs);
         }
         .metric-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, currentColor, currentColor);
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 3px 3px 0 0;
         }
-        .metric-card.total::before { background: linear-gradient(90deg, var(--primary), #60a5fa); }
-        .metric-card.count::before { background: linear-gradient(90deg, var(--warning), #fbbf24); }
-        .metric-card.average::before { background: linear-gradient(90deg, var(--success), #6ee7b7); }
-        .metric-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+        .metric-card.m-green::before { background: linear-gradient(90deg, var(--emerald-dark), var(--emerald-light)); }
+        .metric-card.m-amber::before { background: linear-gradient(90deg, #b45309, var(--amber)); }
+        .metric-card.m-blue::before { background: linear-gradient(90deg, #1d4ed8, var(--blue)); }
+        .metric-card.m-purple::before { background: linear-gradient(90deg, #5b21b6, var(--purple)); }
+        .metric-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+
+        .metric-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
         }
-        .metric-card .icon {
-            font-size: 32px;
-            width: 56px;
-            height: 56px;
+        .metric-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--slate-500);
+        }
+        .metric-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
-            color: white;
-        }
-        .metric-card.total .icon { background: linear-gradient(135deg, var(--primary), #60a5fa); }
-        .metric-card.count .icon { background: linear-gradient(135deg, var(--warning), #fbbf24); }
-        .metric-card.average .icon { background: linear-gradient(135deg, var(--success), #6ee7b7); }
-        
-        .metric-label {
-            font-size: 12px;
-            color: var(--text-grey);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .metric-value {
-            font-size: 18px;
-            color: var(--text-dark);
-            font-weight: 700;
-        }
-
-        /* Graphiques améliorés */
-        .depense-charts {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .chart-card {
-            background: white;
-            padding: 18px;
-            border-radius: 10px;
-            border: none;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-        }
-        .chart-card:hover {
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
-            transform: translateY(-2px);
-        }
-        .chart-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text-dark);
-            margin-bottom: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .chart-title::before {
-            content: '📊';
-            font-size: 18px;
-        }
-        
-        .bar-chart {
-            display: flex;
-            align-items: flex-end;
-            gap: 14px;
-            height: 110px;
-        }
-        .bar-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        .bar {
-            width: 100%;
-            background: var(--primary);
-            border-radius: 4px 4px 0 0;
-            transition: all 0.3s ease;
-            min-height: 5px;
-            cursor: pointer;
-        }
-        .bar:hover { 
-            opacity: 0.85;
-            filter: brightness(1.1);
-        }
-        .bar-item:nth-child(2) .bar { background: var(--warning); }
-        .bar-item:nth-child(3) .bar { background: var(--danger); }
-        .bar-label {
-            font-size: 11px;
-            color: var(--text-grey);
-            margin-top: 8px;
-            font-weight: 600;
-        }
-        .bar-label strong {
-            display: block;
-            color: var(--text-dark);
-            font-size: 15px;
-            font-weight: 700;
-            margin-top: 2px;
-        }
-
-        /* Filtres améliorés et espacés */
-        .filters-section {
-            background: white;
-            padding: 16px;
-            border-radius: 10px;
-            border: none;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-        .filters-section .btn-sponsor.outline {
-            display: none;
-        }
-        .filters-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 14px;
-            align-items: flex-end;
-        }
-        .filter-field {
-            display: flex;
-            flex-direction: column;
-        }
-        .filter-field label {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-dark);
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .filter-field input, .filter-field select {
-            padding: 10px 12px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 13px;
-            background: white;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-        .filter-field input:focus, .filter-field select:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), white);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
-        .filter-field input::placeholder {
-            color: var(--text-grey);
-        }
-
-        /* Tableau amélioré et plus joli */
-        .table-section {
-            background: white;
-            padding: 16px;
-            border-radius: 10px;
-            border: none;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            overflow-x: auto;
-        }
-        .table-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            gap: 12px;
-        }
-        .table-header h3 {
             font-size: 16px;
-            font-weight: 700;
-            color: var(--text-dark);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
-        .table-header h3::before {
-            content: '📋';
-            font-size: 20px;
-        }
-        .btn-new-depense {
-            width: auto;
-            height: auto;
-            padding: 10px 16px;
-            font-size: 13px;
+        .m-green .metric-icon { background: var(--emerald-faint); color: var(--emerald); }
+        .m-amber .metric-icon { background: var(--amber-light); color: var(--amber); }
+        .m-blue .metric-icon { background: var(--blue-light); color: var(--blue); }
+        .m-purple .metric-icon { background: #f5f3ff; color: var(--purple); }
+
+        .metric-value {
+            font-size: 30px;
             font-weight: 700;
-            border-radius: 6px;
-            text-decoration: none;
-            background: linear-gradient(135deg, var(--success), #6ee7b7);
-            color: white;
-            transition: all 0.3s ease;
+            color: var(--slate);
+            letter-spacing: -1px;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .metric-value sup {
+            font-size: 16px;
+            font-weight: 500;
+            vertical-align: super;
+            color: var(--slate-500);
+            letter-spacing: 0;
+        }
+        .metric-sub {
+            font-size: 12px;
+            color: var(--slate-500);
+            font-weight: 400;
+        }
+        .metric-badge {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 30px;
+            margin-top: 8px;
+        }
+        .badge-up { background: var(--emerald-faint); color: var(--emerald-dark); }
+        .badge-down { background: var(--red-light); color: var(--red); }
+
+        /* ── TWO-COL LAYOUT ── */
+        .ef-row {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+        .ef-row-3 { grid-template-columns: repeat(3, 1fr); }
+        .ef-row-2-1 { grid-template-columns: 2fr 1fr; }
+
+        /* ── CHART CARD ── */
+        .chart-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 22px 24px;
+            box-shadow: var(--shadow-xs);
+            transition: box-shadow 0.25s;
+        }
+        .chart-card:hover { box-shadow: var(--shadow-sm); }
+        .cc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .cc-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .cc-title i { color: var(--emerald); font-size: 13px; }
+        .cc-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 30px;
+            background: var(--emerald-faint);
+            color: var(--emerald-dark);
+        }
+        .chart-container { position: relative; }
+        .chart-container canvas { width: 100% !important; }
+
+        /* ── LEGEND ── */
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 14px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
             gap: 6px;
-            border: none;
+            font-size: 12px;
+            color: var(--slate-500);
+            font-weight: 500;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        /* ── FILTERS ── */
+        .ef-filters {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            box-shadow: var(--shadow-xs);
+        }
+        .filters-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .filters-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--slate-500);
+        }
+        .btn-reset {
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            background: var(--slate-50);
+            color: var(--slate-500);
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+            transition: all 0.2s;
         }
-        .btn-new-depense:hover {
-            background: linear-gradient(135deg, #059669, #5ee8b9);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        .btn-reset:hover { background: var(--slate-100); color: var(--slate); }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 2fr repeat(4, 1fr);
+            gap: 14px;
+            align-items: flex-end;
         }
-        
-        .expenses-table {
+        .filter-group { display: flex; flex-direction: column; gap: 6px; }
+        .filter-group label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--slate-500);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .filter-group input, .filter-group select {
+            padding: 9px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-family: inherit;
+            background: var(--white);
+            color: var(--slate);
+            transition: all 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        .filter-group select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 32px;
+        }
+        .filter-group input:focus, .filter-group select:focus {
+            outline: none;
+            border-color: var(--emerald);
+            box-shadow: 0 0 0 3px rgba(5,150,105,0.1);
+        }
+
+        /* ── TABLE SECTION ── */
+        .ef-table-section {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow-xs);
+        }
+        .table-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            border-bottom: 1px solid rgba(15,23,42,0.06);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .table-topbar-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .table-topbar-title i { color: var(--emerald); }
+        .count-badge {
+            background: var(--emerald-faint);
+            color: var(--emerald-dark);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 30px;
+        }
+
+        /* Expenses table */
+        .ef-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
         }
-        .expenses-table thead {
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            border-bottom: 2px solid var(--primary);
-        }
-        .expenses-table th {
-            padding: 12px 10px;
-            text-align: left;
+        .ef-table thead th {
+            padding: 12px 20px;
+            background: var(--slate-50);
+            font-size: 11px;
             font-weight: 700;
-            color: var(--text-dark);
-            font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.6px;
+            color: var(--slate-500);
+            text-align: left;
+            border-bottom: 1px solid rgba(15,23,42,0.07);
+            white-space: nowrap;
         }
-        .expenses-table td {
-            padding: 12px 10px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-dark);
-            font-weight: 500;
+        .ef-table tbody td {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(15,23,42,0.05);
+            vertical-align: middle;
         }
-        .expenses-table tbody tr {
-            transition: all 0.2s ease;
+        .ef-table tbody tr:last-child td { border-bottom: none; }
+        .ef-table tbody tr {
+            transition: background 0.15s;
         }
-        .expenses-table tbody tr:hover {
-            background: linear-gradient(90deg, rgba(59, 130, 246, 0.05), transparent);
-        }
-        .amount-cell {
-            text-align: right;
-            font-weight: 700;
-            color: var(--primary);
-            font-size: 14px;
-        }
-        .actions-cell {
-            text-align: center;
-        }
-        .actions-cell .btn-group {
+        .ef-table tbody tr:hover { background: rgba(5,150,105,0.025); }
+
+        /* desc cell */
+        .td-desc {
             display: flex;
-            gap: 6px;
-            justify-content: center;
-            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
         }
-        
-        .btn-small {
-            padding: 6px 10px;
-            font-size: 12px;
-            border-radius: 5px;
-            text-decoration: none;
-            border: 1px solid transparent;
+        .td-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--emerald-faint);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--emerald);
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .td-desc-name {
             font-weight: 600;
-            transition: all 0.2s ease;
-            cursor: pointer;
+            color: var(--slate);
+            font-size: 13.5px;
+        }
+        .td-desc-id {
+            font-size: 11px;
+            color: var(--slate-500);
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* category pill */
+        .cat-pill {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-        }
-        .btn-view { background: #ecf0ff; color: #2563eb; }
-        .btn-view:hover { background: #dce4ff; transform: translateY(-1px); }
-        .btn-edit { background: #fffbeb; color: #d97706; }
-        .btn-edit:hover { background: #fef3c7; transform: translateY(-1px); }
-        .btn-delete { background: #fee2e2; color: #dc2626; }
-        .btn-delete:hover { background: #fecaca; transform: translateY(-1px); }
-        
-        /* Badges pour catégories */
-        .category-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
+            gap: 5px;
+            padding: 4px 11px;
+            border-radius: 30px;
             font-size: 12px;
             font-weight: 600;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(96, 165, 250, 0.15));
-            color: var(--primary);
-            border: 1px solid var(--primary);
+            background: var(--emerald-faint);
+            color: var(--emerald-dark);
         }
-        
-        @media (max-width: 768px) {
-            .depense-metrics { grid-template-columns: 1fr; }
-            .depense-charts { grid-template-columns: 1fr; }
+
+        /* budget chip */
+        .budget-chip {
+            font-size: 12.5px;
+            color: var(--slate-700);
+            font-weight: 500;
+        }
+
+        /* date */
+        .td-date {
+            font-size: 12.5px;
+            color: var(--slate-500);
+            white-space: nowrap;
+        }
+
+        /* amount */
+        .td-amount {
+            text-align: right;
+        }
+        .amount-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--slate);
+            font-feature-settings: 'tnum';
+        }
+        .amount-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 5px;
+            justify-content: flex-end;
+        }
+        .amount-bar {
+            width: 70px;
+            height: 4px;
+            background: var(--slate-100);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .amount-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--emerald-dark), var(--emerald-light));
+        }
+        .amount-fill.warn { background: linear-gradient(90deg, #b45309, var(--amber)); }
+        .amount-fill.danger { background: linear-gradient(90deg, #b91c1c, var(--red)); }
+        .amount-pct {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--slate-500);
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* actions */
+        .td-actions { text-align: center; }
+        .btn-grp { display: flex; align-items: center; gap: 6px; justify-content: center; }
+        .ef-btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.18s;
+            text-decoration: none;
+            color: var(--slate-500);
+        }
+        .ef-btn-icon:hover { transform: translateY(-2px); }
+        .ef-btn-icon.view:hover { background: var(--blue-light); color: var(--blue); border-color: var(--blue); }
+        .ef-btn-icon.edit:hover { background: var(--amber-light); color: var(--amber); border-color: var(--amber); }
+        .ef-btn-icon.del:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
+        .ef-btn-icon.del { font-family: inherit; }
+
+        /* empty & no-result */
+        .ef-empty {
+            text-align: center;
+            padding: 56px 20px;
+        }
+        .ef-empty-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: var(--emerald-faint);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: var(--emerald);
+            margin-bottom: 16px;
+        }
+        .ef-empty-title { font-size: 16px; font-weight: 700; color: var(--slate); margin-bottom: 6px; }
+        .ef-empty-sub { font-size: 13px; color: var(--slate-500); }
+        .ef-no-result {
+            text-align: center;
+            padding: 16px;
+            font-size: 13px;
+            color: var(--slate-500);
+        }
+
+        /* section label */
+        .ef-section-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .ef-section-label span {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--slate);
+            letter-spacing: -0.3px;
+        }
+        .ef-section-label i { color: var(--emerald); font-size: 16px; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1200px) {
+            .ef-metrics { grid-template-columns: repeat(2, 1fr); }
+            .ef-row-3 { grid-template-columns: 1fr; }
+            .ef-row-2-1 { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 900px) {
+            .ef-page { padding: 18px 16px; }
+            .filters-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 640px) {
+            .ef-metrics { grid-template-columns: 1fr; }
             .filters-grid { grid-template-columns: 1fr; }
-            .table-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+            .ef-table { font-size: 12px; }
+            .ef-table thead th, .ef-table tbody td { padding: 10px 14px; }
         }
-        
     </style>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="{{ asset('js/admin-live-search.js') }}" defer></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Auto-submit filters on change
-            const selects = document.querySelectorAll('.filters-grid select');
-            selects.forEach(select => {
-                select.addEventListener('change', function() {
-                    this.closest('form').submit();
-                });
-            });
+    document.addEventListener('DOMContentLoaded', function () {
+
+        /* auto-submit selects */
+        document.querySelectorAll('.ef-filters select').forEach(s => {
+            s.addEventListener('change', () => s.closest('form').submit());
         });
+
+        /* reset */
+        const resetBtn = document.getElementById('resetFiltersBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', e => {
+                e.preventDefault();
+                const f = resetBtn.closest('form');
+                if (f) { f.reset(); f.submit(); }
+            });
+        }
+
+        /* shared chart defaults */
+        Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+        /* ── Distribution donut ── */
+        const distEl = document.getElementById('distChart');
+        if (distEl) {
+            const low = parseInt(distEl.dataset.low) || 0;
+            const med = parseInt(distEl.dataset.med) || 0;
+            const hi  = parseInt(distEl.dataset.hi)  || 0;
+            const total = low + med + hi || 1;
+            new Chart(distEl, {
+                type: 'doughnut',
+                data: {
+                    labels: ['<100 DT', '100–1K DT', '>1K DT'],
+                    datasets: [{
+                        data: [low, med, hi],
+                        backgroundColor: ['#059669', '#d97706', '#dc2626'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    cutout: '68%',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.label}: ${ctx.raw} (${((ctx.raw/total)*100).toFixed(1)}%)`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* ── Top categories bar ── */
+        const catEl = document.getElementById('catChart');
+        if (catEl && catEl.dataset.cats) {
+            const cats = JSON.parse(catEl.dataset.cats);
+            const labels = Object.keys(cats);
+            const values = Object.values(cats);
+            new Chart(catEl, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: labels.map((_, i) =>
+                            ['#059669','#10b981','#34d399','#6ee7b7','#a7f3d0'][i] || '#059669'),
+                        borderRadius: 8,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => ` ${ctx.raw.toFixed(2)} DT` } }
+                    },
+                    scales: {
+                        x: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
+                        y: { grid: { display: false }, ticks: { font: { size: 12 } } }
+                    }
+                }
+            });
+        }
+
+        /* ── Monthly evolution line ── */
+        const evEl = document.getElementById('evChart');
+        if (evEl && evEl.dataset.monthly) {
+            const monthly = JSON.parse(evEl.dataset.monthly);
+            new Chart(evEl, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(monthly),
+                    datasets: [{
+                        data: Object.values(monthly),
+                        borderColor: '#059669',
+                        backgroundColor: 'rgba(5,150,105,0.06)',
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#059669',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => ` ${ctx.raw.toFixed(2)} DT` } }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 }, callback: v => v.toLocaleString() + ' DT' } }
+                    }
+                }
+            });
+        }
+    });
     </script>
 {% endblock %}
 
 {% block admin_content %}
-<div class="sponsor-page depense-page" data-live-search-root>
+<div class="ef-page" data-live-search-root>
+
+    {# ── pre-compute distribution + monthly ── #}
     {% set lowCount = 0 %}
-    {% set mediumCount = 0 %}
-    {% set highCount = 0 %}
-    {% for depense in depenses %}
-        {% set amount = depense.amount + 0 %}
-        {% if amount < 100 %}
-            {% set lowCount = lowCount + 1 %}
-        {% elseif amount <= 1000 %}
-            {% set mediumCount = mediumCount + 1 %}
-        {% else %}
-            {% set highCount = highCount + 1 %}
+    {% set medCount = 0 %}
+    {% set hiCount  = 0 %}
+    {% set monthlyData = {} %}
+    {% for d in depenses %}
+        {% set amt = d.amount + 0 %}
+        {% if amt < 100 %}{% set lowCount = lowCount + 1 %}
+        {% elseif amt <= 1000 %}{% set medCount = medCount + 1 %}
+        {% else %}{% set hiCount = hiCount + 1 %}{% endif %}
+        {% set mk = d.expenseDate ? d.expenseDate|date('M Y') : null %}
+        {% if mk %}
+            {% if monthlyData[mk] is defined %}
+                {% set monthlyData = monthlyData|merge({(mk): monthlyData[mk] + amt}) %}
+            {% else %}
+                {% set monthlyData = monthlyData|merge({(mk): amt}) %}
+            {% endif %}
         {% endif %}
     {% endfor %}
 
+    {# Flash #}
     <div class="flash-wrap">
-        {% for message in app.flashes('success') %}
-            <div class="flash-success">{{ message }}</div>
+        {% for msg in app.flashes('success') %}
+            <div class="flash-msg flash-success"><i class="fa-solid fa-circle-check"></i> {{ msg }}</div>
         {% endfor %}
-        {% for message in app.flashes('error') %}
-            <div class="flash-error">{{ message }}</div>
+        {% for msg in app.flashes('error') %}
+            <div class="flash-msg flash-error"><i class="fa-solid fa-circle-exclamation"></i> {{ msg }}</div>
         {% endfor %}
     </div>
 
-    <div class="depense-metrics">
-        <div class="metric-card total">
-            <div class="icon"><i class="fa-solid fa-wallet"></i></div>
-            <div class="metric-label">Total</div>
-            <div class="metric-value">{{ stats.total|number_format(2, ',', ' ') }} DT</div>
+    {# ── Page header ── #}
+    <div class="ef-page-header">
+        <div>
+            <div class="ef-page-title">Gestion des dépenses</div>
+            <div class="ef-page-subtitle">CRUD, filtres et indicateurs</div>
         </div>
-        <div class="metric-card count">
-            <div class="icon"><i class="fa-solid fa-hashtag"></i></div>
-            <div class="metric-label">Nombre</div>
+        <div class="ef-header-actions">
+            <button class="btn-export" onclick="window.print()">
+                <i class="fa-solid fa-arrow-up-from-bracket"></i> Exporter
+            </button>
+            <a class="btn-primary-action" href="{{ path('app_depenses_new') }}">
+                <i class="fa-solid fa-plus"></i> Nouvelle dépense
+            </a>
+        </div>
+    </div>
+
+    {# ── Metrics ── #}
+    <div class="ef-section-label">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Vue d'ensemble</span>
+    </div>
+    <div class="ef-metrics">
+        <div class="metric-card m-green">
+            <div class="metric-top">
+                <div class="metric-label">Total dépenses</div>
+                <div class="metric-icon"><i class="fa-solid fa-wallet"></i></div>
+            </div>
+            <div class="metric-value">{{ stats.total|number_format(2, ',', ' ') }}<sup> DT</sup></div>
+            <div class="metric-sub">toutes périodes confondues</div>
+        </div>
+        <div class="metric-card m-amber">
+            <div class="metric-top">
+                <div class="metric-label">Nombre</div>
+                <div class="metric-icon"><i class="fa-solid fa-receipt"></i></div>
+            </div>
             <div class="metric-value">{{ depenses|length }}</div>
+            <div class="metric-sub">entrées enregistrées</div>
         </div>
-        <div class="metric-card average">
-            <div class="icon"><i class="fa-solid fa-chart-pie"></i></div>
-            <div class="metric-label">Moyenne</div>
-            <div class="metric-value">{{ stats.average|number_format(2, ',', ' ') }} DT</div>
+        <div class="metric-card m-blue">
+            <div class="metric-top">
+                <div class="metric-label">Moyenne</div>
+                <div class="metric-icon"><i class="fa-solid fa-chart-line"></i></div>
+            </div>
+            <div class="metric-value">{{ stats.average|number_format(2, ',', ' ') }}<sup> DT</sup></div>
+            <div class="metric-sub">par dépense</div>
+        </div>
+        <div class="metric-card m-purple">
+            <div class="metric-top">
+                <div class="metric-label">Budget restant</div>
+                <div class="metric-icon"><i class="fa-solid fa-piggy-bank"></i></div>
+            </div>
+            <div class="metric-value">100 000<sup> DT</sup></div>
+            <div class="metric-badge badge-up"><i class="fa-solid fa-arrow-trend-up"></i> +12% ce mois</div>
         </div>
     </div>
 
-    <div class="depense-charts">
+    {# ── Charts ── #}
+    <div class="ef-section-label">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Analyses</span>
+    </div>
+    <div class="ef-row ef-row-3">
+
+        {# Distribution donut #}
         <div class="chart-card">
-            <div class="chart-title">Distribution</div>
-            <div class="bar-chart">
-                <div class="bar-item">
-                    <div class="bar" style="height: {{ lowCount > 0 ? ((lowCount * 100 / (lowCount + mediumCount + highCount))|round(1)) : 5 }}%;"></div>
-                    <div class="bar-label"><strong>{{ lowCount }}</strong><small>&lt;100</small></div>
-                </div>
-                <div class="bar-item">
-                    <div class="bar" style="height: {{ mediumCount > 0 ? ((mediumCount * 100 / (lowCount + mediumCount + highCount))|round(1)) : 5 }}%;"></div>
-                    <div class="bar-label"><strong>{{ mediumCount }}</strong><small>100-1k</small></div>
-                </div>
-                <div class="bar-item">
-                    <div class="bar" style="height: {{ highCount > 0 ? ((highCount * 100 / (lowCount + mediumCount + highCount))|round(1)) : 5 }}%;"></div>
-                    <div class="bar-label"><strong>{{ highCount }}</strong><small>&gt;1k</small></div>
-                </div>
+            <div class="cc-header">
+                <div class="cc-title"><i class="fa-solid fa-chart-pie"></i> Distribution</div>
+                <div class="cc-badge">{{ depenses|length }} total</div>
+            </div>
+            <div class="chart-container" style="height:200px;">
+                <canvas id="distChart"
+                    data-low="{{ lowCount }}"
+                    data-med="{{ medCount }}"
+                    data-hi="{{ hiCount }}"
+                    role="img"
+                    aria-label="Répartition des dépenses par niveau de montant">
+                </canvas>
+            </div>
+            <div class="chart-legend">
+                <div class="legend-item"><div class="legend-dot" style="background:#059669;"></div> &lt;100 DT ({{ lowCount }})</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div> 100–1K DT ({{ medCount }})</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#dc2626;"></div> &gt;1K DT ({{ hiCount }})</div>
             </div>
         </div>
 
+        {# Top categories #}
         <div class="chart-card">
-            <div class="chart-title">Top Catégories</div>
-            {% if stats.byCategory is empty %}
-                <p style="text-align: center; color: var(--text-grey); padding: 10px 0; font-size: 11px;">Aucune donnée</p>
-            {% else %}
-                {% set topCategories = stats.byCategory|slice(0, 3) %}
-                {% set maxCatAmount = 0 %}
-                {% for cat, amount in topCategories %}
-                    {% if amount > maxCatAmount %}{% set maxCatAmount = amount %}{% endif %}
-                {% endfor %}
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    {% for cat, amount in topCategories %}
-                        <div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11px;">
-                                <span style="font-weight: 600; color: var(--text-dark);">{{ cat }}</span>
-                                <strong style="color: var(--primary); font-size: 12px;">{{ amount|number_format(2, ',', ' ') }}</strong>
-                            </div>
-                            <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
-                                <div style="height: 100%; background: var(--primary); width: {{ maxCatAmount > 0 ? (amount * 100 / maxCatAmount) : 0 }}%; transition: width 0.3s ease;"></div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
+            <div class="cc-header">
+                <div class="cc-title"><i class="fa-solid fa-chart-simple"></i> Top catégories</div>
+            </div>
+            <div class="chart-container" style="height:230px;">
+                {% if stats.byCategory is empty %}
+                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--slate-500);font-size:13px;">Aucune donnée</div>
+                {% else %}
+                    <canvas id="catChart"
+                        data-cats="{{ stats.byCategory|slice(0,5)|json_encode() }}"
+                        role="img"
+                        aria-label="Top catégories de dépenses">
+                    </canvas>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Evolution line #}
+        <div class="chart-card">
+            <div class="cc-header">
+                <div class="cc-title"><i class="fa-solid fa-calendar-week"></i> Évolution mensuelle</div>
+            </div>
+            <div class="chart-container" style="height:230px;">
+                <canvas id="evChart"
+                    data-monthly="{{ monthlyData|json_encode() }}"
+                    role="img"
+                    aria-label="Évolution mensuelle des dépenses">
+                </canvas>
+            </div>
         </div>
     </div>
 
-    <div class="filters-section">
+    {# ── Filters ── #}
+    <div class="ef-section-label">
+        <i class="fa-solid fa-sliders"></i>
+        <span>Filtres</span>
+    </div>
+    <div class="ef-filters">
         <form method="get" action="{{ path('app_depenses_index') }}">
+            <div class="filters-top">
+                <div class="filters-label">Affiner les résultats</div>
+                <button type="button" id="resetFiltersBtn" class="btn-reset">
+                    <i class="fa-solid fa-rotate-left"></i> Réinitialiser
+                </button>
+            </div>
             <div class="filters-grid">
-                <div class="filter-field">
-                    <label for="search">🔍 Recherche</label>
-                    <input id="search" type="text" name="q" value="{{ search }}" placeholder="Par description..." data-live-search-input>
+                <div class="filter-group">
+                    <label><i class="fa-solid fa-magnifying-glass"></i> Recherche</label>
+                    <input type="text" name="q" value="{{ search }}" placeholder="Rechercher une dépense..." data-live-search-input>
                 </div>
-
-                <div class="filter-field">
-                    <label for="budget">💰 Budget</label>
-                    <select id="budget" name="budget_id">
+                <div class="filter-group">
+                    <label><i class="fa-solid fa-tag"></i> Budget</label>
+                    <select name="budget_id">
                         <option value="">Tous</option>
                         {% for budget in budgets %}
                             <option value="{{ budget.id }}" {{ selectedBudgetId == budget.id ? 'selected' : '' }}>
-                                {{ budgetDisplayMap[budget.id]|default('Event ' ~ budget.eventId) }}
+                                {{ budgetDisplayMap[budget.id]|default('Budget '~budget.id) }}
                             </option>
                         {% endfor %}
                     </select>
                 </div>
-
-                <div class="filter-field">
-                    <label for="category">📂 Catégorie</label>
-                    <select id="category" name="category">
+                <div class="filter-group">
+                    <label><i class="fa-solid fa-layer-group"></i> Catégorie</label>
+                    <select name="category">
                         <option value="">Toutes</option>
                         {% for cat in categories %}
                             <option value="{{ cat }}" {{ selectedCategory == cat ? 'selected' : '' }}>{{ cat }}</option>
                         {% endfor %}
                     </select>
                 </div>
-
-                <div class="filter-field">
-                    <label for="period">📅 Période</label>
-                    <select id="period" name="period">
+                <div class="filter-group">
+                    <label><i class="fa-regular fa-calendar"></i> Période</label>
+                    <select name="period">
                         <option value="all">Toutes</option>
                         <option value="month" {{ selectedPeriod == 'month' ? 'selected' : '' }}>Ce mois</option>
-                        <option value="quarter" {{ selectedPeriod == 'quarter' ? 'selected' : '' }}>Ce trim.</option>
+                        <option value="quarter" {{ selectedPeriod == 'quarter' ? 'selected' : '' }}>Ce trimestre</option>
                         <option value="year" {{ selectedPeriod == 'year' ? 'selected' : '' }}>Cette année</option>
                     </select>
                 </div>
-
-                <div class="filter-field">
-                    <label for="level">📊 Niveau</label>
-                    <select id="level" name="state">
+                <div class="filter-group">
+                    <label><i class="fa-solid fa-signal"></i> Niveau</label>
+                    <select name="state">
                         <option value="all">Tous</option>
                         <option value="low" {{ selectedState == 'low' ? 'selected' : '' }}>Faible</option>
                         <option value="medium" {{ selectedState == 'medium' ? 'selected' : '' }}>Moyen</option>
                         <option value="high" {{ selectedState == 'high' ? 'selected' : '' }}>Élevé</option>
                     </select>
                 </div>
-
-                <div class="filter-field">
-                    <label>&nbsp;</label>
-                    <button class="btn-sponsor outline" type="submit" title="Filtrer" style="display:none;">
-                        <i class="fa-solid fa-filter" aria-hidden="true"></i>
-                        <span class="sr-only">Filtrer</span>
-                    </button>
-                </div>
             </div>
         </form>
     </div>
 
-    <div class="table-section">
-        <div class="table-header">
-            <h3>Liste des Dépenses</h3>
-            <a class="btn-new-depense" href="{{ path('app_depenses_new') }}" title="Nouvelle dépense">
-                <i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter
-            </a>
+    {# ── Table ── #}
+    <div class="ef-section-label">
+        <i class="fa-solid fa-list-ul"></i>
+        <span>Dépenses</span>
+    </div>
+    <div class="ef-table-section">
+        <div class="table-topbar">
+            <div class="table-topbar-title">
+                <i class="fa-solid fa-table-list"></i>
+                Liste des dépenses
+                <span class="count-badge">{{ depenses|length }}</span>
+            </div>
         </div>
-        
+
         {% if depenses is empty %}
-            <p style="padding: 16px; text-align: center; color: var(--text-grey); font-size: 14px;">📭 Aucune dépense ne correspond à vos critères.</p>
+            <div class="ef-empty">
+                <div class="ef-empty-icon"><i class="fa-regular fa-folder-open"></i></div>
+                <div class="ef-empty-title">Aucune dépense trouvée</div>
+                <div class="ef-empty-sub">Commencez par créer une nouvelle dépense.</div>
+            </div>
         {% else %}
-            <table class="expenses-table">
+            <table class="ef-table">
                 <thead>
                     <tr>
-                        <th>Info</th>
+                        <th>Description</th>
                         <th>Catégorie</th>
                         <th>Budget</th>
                         <th>Date</th>
-                        <th class="amount-cell">Montant</th>
-                        <th class="actions-cell">Actions</th>
+                        <th style="text-align:right;">Montant</th>
+                        <th style="text-align:center;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for depense in depenses %}
-                        {% set budgetLabel = depense.budget ? budgetDisplayMap[depense.budget.id]|default('N/A') : 'Aucun' %}
-                        {% set amountLevel = depense.amount < 100 ? '🟢' : (depense.amount <= 1000 ? '🟡' : '🔴') %}
-                        <tr data-live-search-item data-search="{{ depense.description }}" data-live-suggest="{{ depense.description }}">
-                            <td><strong>💡 {{ depense.description ?: '-' }}</strong></td>
-                            <td><span class="category-badge">{{ depense.category ?: 'Sans cat.' }}</span></td>
-                            <td>{{ budgetLabel }}</td>
-                            <td>{{ depense.expenseDate ? depense.expenseDate|date('d M Y') : '-' }}</td>
-                            <td class="amount-cell">{{ amountLevel }} {{ depense.amount|number_format(2, ',', ' ') }} DT</td>
-                            <td class="actions-cell">
-                                <div class="btn-group">
-                                    <a href="{{ path('app_depenses_details', {id: depense.id}) }}" class="btn-small btn-view" title="Détails"><i class="fa-solid fa-eye"></i></a>
-                                    <a href="{{ path('app_depenses_edit', {id: depense.id}) }}" class="btn-small btn-edit" title="Modifier"><i class="fa-solid fa-pencil"></i></a>
-                                    <form method="post" action="{{ path('app_depenses_delete', {id: depense.id}) }}" onsubmit="return confirm('Êtes-vous sûr ? Cette action est définitive.');" style="display: inline;">
+                        {% set pct = ((depense.amount / 10000) * 100)|round %}
+                        {% if pct > 100 %}{% set pct = 100 %}{% endif %}
+                        <tr data-live-search-item data-search="{{ depense.description }}">
+                            <td>
+                                <div class="td-desc">
+                                    <div class="td-icon"><i class="fa-solid fa-receipt"></i></div>
+                                    <div>
+                                        <div class="td-desc-name">{{ depense.description ?: '—' }}</div>
+                                        <div class="td-desc-id">#{{ depense.id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="cat-pill">{{ depense.category ?: 'Sans catégorie' }}</span>
+                            </td>
+                            <td class="budget-chip">
+                                {{ depense.budget ? budgetDisplayMap[depense.budget.id]|default('N/A') : '—' }}
+                            </td>
+                            <td class="td-date">
+                                {{ depense.expenseDate ? depense.expenseDate|date('d M Y') : '—' }}
+                            </td>
+                            <td class="td-amount">
+                                <div class="amount-value">{{ depense.amount|number_format(2, ',', ' ') }} DT</div>
+                                <div class="amount-bar-wrap">
+                                    <div class="amount-bar">
+                                        <div class="amount-fill {% if pct >= 80 %}danger{% elseif pct >= 60 %}warn{% endif %}"
+                                             style="width:{{ pct }}%;"></div>
+                                    </div>
+                                    <span class="amount-pct">{{ pct }}%</span>
+                                </div>
+                            </td>
+                            <td class="td-actions">
+                                <div class="btn-grp">
+                                    <a href="{{ path('app_depenses_details', {id: depense.id}) }}" class="ef-btn-icon view" title="Voir">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </a>
+                                    <a href="{{ path('app_depenses_edit', {id: depense.id}) }}" class="ef-btn-icon edit" title="Modifier">
+                                        <i class="fa-regular fa-pen-to-square"></i>
+                                    </a>
+                                    <form method="post" action="{{ path('app_depenses_delete', {id: depense.id}) }}"
+                                          onsubmit="return confirm('Supprimer cette dépense ?');" style="display:inline;">
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete_depense_' ~ depense.id) }}">
-                                        <button type="submit" class="btn-small btn-delete" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+                                        <button type="submit" class="ef-btn-icon del" title="Supprimer">
+                                            <i class="fa-regular fa-trash-can"></i>
+                                        </button>
                                     </form>
                                 </div>
                             </td>
@@ -591,7 +1053,9 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <p class="sponsor-muted" data-live-search-empty hidden style="padding: 16px; text-align: center; color: var(--text-grey); font-size: 14px;">🔍 Aucune correspondance.</p>
+            <p class="ef-no-result" data-live-search-empty hidden>
+                <i class="fa-regular fa-face-frown"></i> Aucune correspondance trouvée.
+            </p>
         {% endif %}
     </div>
 </div>
