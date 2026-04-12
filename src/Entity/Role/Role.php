@@ -2,6 +2,7 @@
 // src/Entity/Role.php
 
 namespace App\Entity\Role;
+
 use App\Entity\User\UserModel;
 use App\Repository\Role\RoleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -29,7 +30,7 @@ class Role
     private ?string $roleName = null;
 
     /**
-     * @var Collection<int, UserModel>
+     * @var Collection<int, User>
      */
     #[ORM\OneToMany(mappedBy: 'role', targetEntity: UserModel::class)]
     private Collection $users;
@@ -60,7 +61,7 @@ class Role
     }
 
     /**
-     * @return Collection<int, UserModel>
+     * @return Collection<int, User>
      */
     public function getUsers(): Collection
     {

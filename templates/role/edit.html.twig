@@ -1,55 +1,126 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{{ mode == 'add' ? 'Nouveau rôle' : 'Modifier le rôle' }} - EventFlow{% endblock %}
+{% set current_mode = mode|default('add') %}
+{% block title %}{{ current_mode == 'add' ? 'Nouveau rôle' : 'Modifier le rôle' }} - EventFlow{% endblock %}
 
 {% block admin_content %}
-<div class="container mx-auto px-4 py-8 max-w-2xl">
-    <div class="bg-white rounded-2xl shadow-lg p-8">
-        <!-- En-tête -->
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold text-gray-700">{{ mode == 'add' ? '➕ Nouveau rôle' : '✏️ Modification du rôle' }}</h1>
-            <span class="text-sm text-gray-500">{{ mode == 'add' ? 'Ajoutez un nouveau rôle' : 'Modifiez les informations du rôle' }}</span>
+<div class="main-container" style="
+    background-color: #f8fafc;
+    width: 100%;
+    height: 100%;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+">
+    <div style="flex: 1; overflow-y: auto; background-color: #f8fafc;">
+        <div style="padding: 40px; display: flex; justify-content: center;">
+            
+            <div style="
+                background-color: white;
+                border-radius: 16px;
+                border: 1px solid #e2e8f0;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                padding: 30px;
+                max-width: 600px;
+                width: 100%;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h1 style="font-size: 20px; font-weight: bold; color: #334155; margin: 0;">
+                        {{ current_mode == 'add' ? '➕ Nouveau rôle' : '✏️ Modification du rôle' }}
+                    </h1>
+                    <span style="color: #64748b; font-size: 13px;">
+                        {{ current_mode == 'add' ? 'Ajoutez un nouveau rôle' : 'Modifiez les informations du rôle' }}
+                    </span>
+                </div>
+
+                <form method="post" style="display: flex; flex-direction: column; gap: 25px;">
+                    
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="color: #475569; font-size: 14px; font-weight: bold;">
+                            Nom du rôle <span style="color: #ef4444;">*</span>
+                        </label>
+                        <input type="text" 
+                               name="role_name" 
+                               value="{{ current_mode == 'edit' and role ? role.roleName : '' }}"
+                               placeholder="Entrez le nom du rôle"
+                               required
+                               autofocus
+                               style="
+                                   background-color: white;
+                                   border-radius: 10px;
+                                   padding: 12px 18px;
+                                   height: 45px;
+                                   border: 1px solid #cbd5e1;
+                                   font-size: 14px;
+                                   outline: none;
+                                   transition: all 0.2s;
+                                   box-sizing: border-box;
+                                   width: 100%;
+                               "
+                               onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 2px rgba(59,130,246,0.2)'"
+                               onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'">
+                    </div>
+
+                    <div style="display: flex; gap: 15px; justify-content: center; padding: 15px 0 5px 0;">
+                        <button type="submit" 
+                                style="
+                                    background: {{ current_mode == 'add' ? 'linear-gradient(to right, #10b981, #059669)' : 'linear-gradient(to right, #3b82f6, #1d4ed8)' }};
+                                    color: white;
+                                    font-weight: bold;
+                                    font-size: 15px;
+                                    border-radius: 10px;
+                                    padding: 12px 30px;
+                                    width: 180px;
+                                    border: none;
+                                    cursor: pointer;
+                                    box-shadow: 0 4px 8px {{ current_mode == 'add' ? 'rgba(16,185,129,0.3)' : 'rgba(59,130,246,0.3)' }};
+                                    transition: transform 0.2s;
+                                "
+                                onmouseover="this.style.transform='translateY(-2px)'"
+                                onmouseout="this.style.transform='translateY(0)'">
+                            {{ current_mode == 'add' ? '➕ Ajouter' : '💾 Enregistrer' }}
+                        </button>
+                        
+                        <a href="{{ path('app_role_index') }}" 
+                           style="
+                               background-color: white;
+                               color: #475569;
+                               font-weight: bold;
+                               font-size: 15px;
+                               border-radius: 10px;
+                               padding: 12px 30px;
+                               width: 180px;
+                               text-align: center;
+                               text-decoration: none;
+                               border: 1px solid #cbd5e1;
+                               cursor: pointer;
+                               transition: background 0.2s;
+                           "
+                           onmouseover="this.style.backgroundColor='#f8fafc'"
+                           onmouseout="this.style.backgroundColor='white'">
+                            🔄 Annuler
+                        </a>
+                    </div>
+
+                    <div style="display: flex; justify-content: center; padding: 10px 0 0 0;">
+                        <span style="color: #64748b; font-size: 12px;">
+                            ℹ️ Les champs marqués d'un * sont obligatoires
+                        </span>
+                    </div>
+                </form>
+            </div>
         </div>
-
-        <!-- Formulaire -->
-        <form method="post" action="{{ mode == 'add' ? path('app_role_new') : path('app_role_edit', {'id': role.id}) }}" class="space-y-6">
-            <div class="space-y-2">
-                <label class="block text-sm font-semibold text-gray-600">
-                    Nom du rôle <span class="text-red-500">*</span>
-                </label>
-                <input type="text" 
-                       name="role_name" 
-                       value="{{ mode == 'edit' ? role.roleName : '' }}"
-                       placeholder="Entrez le nom du rôle"
-                       required
-                       class="w-full px-5 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-            </div>
-
-            <!-- Boutons d'action -->
-            <div class="flex justify-center space-x-4 pt-4">
-                <button type="submit" 
-                        class="px-8 py-3 text-white font-bold rounded-lg shadow-lg transition-all hover:-translate-y-0.5"
-                        style="background: linear-gradient(to right, {{ mode == 'add' ? '#10b981, #059669' : '#3b82f6, #1d4ed8' }});">
-                    {{ mode == 'add' ? '➕ Ajouter' : '💾 Enregistrer' }}
-                </button>
-                <a href="{{ path('app_role_index') }}" 
-                   class="px-8 py-3 bg-white text-gray-600 font-bold rounded-lg border border-gray-300 hover:bg-gray-50 transition-all">
-                    🔄 Annuler
-                </a>
-            </div>
-
-            <!-- Indication champ obligatoire -->
-            <div class="text-center text-sm text-gray-500">
-                ℹ️ Les champs marqués d'un * sont obligatoires
-            </div>
-        </form>
     </div>
 
-    <!-- Informations additionnelles -->
-    <div class="flex justify-center space-x-6 mt-6 text-sm">
-        <span class="text-red-500 font-bold">⚡ Action non réversible</span>
-        <span class="text-gray-300">•</span>
-        <span class="text-gray-500">🔄 Retour à la liste après validation</span>
+    <div style="
+        background-color: white;
+        padding: 15px 40px;
+        border-top: 1px solid #e2e8f0;
+        text-align: center;
+    ">
+        <span style="color: #94a3b8; font-size: 12px;">
+            © 2024 EventFlow - Gestion des rôles
+        </span>
     </div>
 </div>
 {% endblock %}

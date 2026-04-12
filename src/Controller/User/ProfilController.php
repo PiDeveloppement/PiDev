@@ -4,19 +4,18 @@ namespace App\Controller\User;
 
 
 use App\Entity\User\UserModel;
-use App\Service\User\UserService;
-use App\Service\Role\RoleService;
-
-use App\Repository\User\UserRepository;
 use App\Repository\Role\RoleRepository;
+use App\Repository\User\UserRepository;
+use App\Service\Role\RoleService;
+use App\Service\User\UserService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-
+use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[Route('/profile')]
@@ -198,4 +197,18 @@ class ProfilController extends AbstractController
 
         $user->setProfilePictureUrl('/uploads/profile_images/' . $newFilename);
     }
+    #[Route('/verify-password', name: 'app_profile_verify_password', methods: ['POST'])]
+public function verifyPassword(Request $request): JsonResponse
+{
+    $user = $this->getUser();
+    
+    if (!$user instanceof UserModel) {
+        return $this->json(['valid' => false], 403);
+    }
+
+    $password = $request->request->get('password');
+    $isValid = $this->passwordHasher->isPasswordValid($user, $password);
+
+    return $this->json(['valid' => $isValid]);
+}
 }

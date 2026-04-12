@@ -71,81 +71,85 @@ class UserRepository extends ServiceEntityRepository
 
     // ==================== MÉTHODES DE RECHERCHE AVANCÉE ====================
 
-    /**
-     * Recherche d'utilisateurs avec filtres multiples
-     * Équivalent de applyFilters() dans UserController.java
-     */
-    public function searchUsers(
-        ?string $keyword = null,
-        ?string $faculte = null,
-        ?string $roleName = null,
-        string $sortBy = 'id',
-        string $sortOrder = 'DESC',
-        int $page = 1,
-        int $limit = 5
-    ): array {
-        $qb = $this->createQueryBuilder('u')
-            ->leftJoin('u.role', 'r')
-            ->addSelect('r');
+public function searchUsers(
+    ?string $keyword = null,
+    ?string $faculte = null,
+    ?string $role = null,
+    int $page = 1,
+    int $limit = 5,
+    ?string $sortBy = null,
+    ?string $sortOrder = null
+): array {
+    $qb = $this->createQueryBuilder('u')
+        ->leftJoin('u.role', 'r')
+        ->addSelect('r');
 
-        // Filtre par mot-clé (recherche dans nom, prénom, email)
-        if ($keyword && !empty($keyword)) {
-            $qb->andWhere('u.firstName LIKE :keyword OR u.lastName LIKE :keyword OR u.email LIKE :keyword')
-                ->setParameter('keyword', '%' . $keyword . '%');
-        }
-
-        // Filtre par faculté
-        if ($faculte && $faculte !== 'Toutes les facultés' && !empty($faculte)) {
-            $qb->andWhere('u.faculte = :faculte')
-                ->setParameter('faculte', $faculte);
-        }
-
-        // Filtre par rôle
-        if ($roleName && $roleName !== 'Tous les rôles' && !empty($roleName)) {
-            $qb->andWhere('r.roleName = :roleName')
-                ->setParameter('roleName', $roleName);
-        }
-
-        // Tri
-        $qb->orderBy('u.' . $sortBy, $sortOrder);
-
-        // Pagination
-        $qb->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit);
-
-        return $qb->getQuery()->getResult();
+    // Filtre par mot-clé (prénom, nom, email)
+    if ($keyword && $keyword !== '') {
+        $qb->andWhere('u.firstName LIKE :keyword OR u.lastName LIKE :keyword OR u.email LIKE :keyword')
+           ->setParameter('keyword', '%' . $keyword . '%');
     }
 
-    /**
-     * Compte le nombre d'utilisateurs avec filtres
-     * Utilisé pour la pagination
-     */
-    public function countUsers(
-        ?string $keyword = null,
-        ?string $faculte = null,
-        ?string $roleName = null
-    ): int {
-        $qb = $this->createQueryBuilder('u')
-            ->select('COUNT(u.id)')
-            ->leftJoin('u.role', 'r');
-
-        if ($keyword && !empty($keyword)) {
-            $qb->andWhere('u.firstName LIKE :keyword OR u.lastName LIKE :keyword OR u.email LIKE :keyword')
-                ->setParameter('keyword', '%' . $keyword . '%');
-        }
-
-        if ($faculte && $faculte !== 'Toutes les facultés' && !empty($faculte)) {
-            $qb->andWhere('u.faculte = :faculte')
-                ->setParameter('faculte', $faculte);
-        }
-
-        if ($roleName && $roleName !== 'Tous les rôles' && !empty($roleName)) {
-            $qb->andWhere('r.roleName = :roleName')
-                ->setParameter('roleName', $roleName);
-        }
-
-        return (int) $qb->getQuery()->getSingleScalarResult();
+    // Filtre par faculté
+    if ($faculte && $faculte !== '') {
+        $qb->andWhere('u.faculte = :faculte')
+           ->setParameter('faculte', $faculte);
     }
+
+    // Filtre par rôle
+    if ($role && $role !== '') {
+        $qb->andWhere('r.roleName = :role')
+           ->setParameter('role', $role);
+    }
+
+    // Tri dynamique
+    $sortBy = $sortBy ?: 'id';
+    $sortOrder = $sortOrder ?: 'DESC';
+    
+    // Validation du champ de tri pour éviter les injections SQL
+    $allowedSortFields = ['id', 'firstName', 'lastName', 'email', 'faculte', 'registrationDate'];
+    if (!in_array($sortBy, $allowedSortFields)) {
+        $sortBy = 'id';
+    }
+    
+    $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
+
+    // Pagination
+    $qb->setFirstResult(($page - 1) * $limit)
+       ->setMaxResults($limit)
+       ->orderBy('u.' . $sortBy, $sortOrder);
+
+    return $qb->getQuery()->getResult();
+}
+public function countUsers(
+    ?string $keyword = null,
+    ?string $faculte = null,
+    ?string $role = null
+): int {
+    $qb = $this->createQueryBuilder('u')
+        ->select('COUNT(u.id)')
+        ->leftJoin('u.role', 'r');
+
+    // Filtre par mot-clé
+    if ($keyword && $keyword !== '') {
+        $qb->andWhere('u.firstName LIKE :keyword OR u.lastName LIKE :keyword OR u.email LIKE :keyword')
+           ->setParameter('keyword', '%' . $keyword . '%');
+    }
+
+    // Filtre par faculté
+    if ($faculte && $faculte !== '') {
+        $qb->andWhere('u.faculte = :faculte')
+           ->setParameter('faculte', $faculte);
+    }
+
+    // Filtre par rôle
+    if ($role && $role !== '') {
+        $qb->andWhere('r.roleName = :role')
+           ->setParameter('role', $role);
+    }
+
+    return (int) $qb->getQuery()->getSingleScalarResult();
+}
 
     // ==================== MÉTHODES DE STATISTIQUES ====================
 
@@ -210,23 +214,24 @@ class UserRepository extends ServiceEntityRepository
 
     // ==================== MÉTHODES DE FILTRES SPÉCIFIQUES ====================
 
-    /**
-     * Récupère toutes les facultés distinctes
-     * Équivalent de getAllFacultes() dans UserService.java
-     */
-    public function findAllFacultes(): array
-    {
-        $result = $this->createQueryBuilder('u')
-            ->select('DISTINCT u.faculte')
-            ->andWhere('u.faculte IS NOT NULL')
-            ->andWhere('u.faculte != :empty')
-            ->setParameter('empty', '')
-            ->orderBy('u.faculte', 'ASC')
-            ->getQuery()
-            ->getSingleColumnResult();
-
-        return $result;
-    }
+  /**
+ * Récupère toutes les facultés distinctes
+ */
+public function findAllFacultes(): array
+{
+    $result = $this->createQueryBuilder('u')
+        ->select('DISTINCT u.faculte')
+        ->where('u.faculte IS NOT NULL')
+        ->andWhere('u.faculte != \'\'')
+        ->orderBy('u.faculte', 'ASC')
+        ->getQuery()
+        ->getResult();
+    
+    // Convertir le résultat en tableau simple de strings
+    return array_map(function($item) {
+        return $item['faculte'];
+    }, $result);
+}
 
     /**
      * Récupère les utilisateurs par rôle (nom du rôle)
@@ -365,17 +370,18 @@ class UserRepository extends ServiceEntityRepository
      * Pagination : récupère une page d'utilisateurs
      * Équivalent de la logique de pagination dans UserController.java
      */
-    public function findPage(int $page, int $limit = 5): array
-    {
-        return $this->createQueryBuilder('u')
-            ->leftJoin('u.role', 'r')
-            ->addSelect('r')
-            ->orderBy('u.id', 'DESC')
-            ->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
-    }
+
+public function findPage(int $page, int $limit = 5): array
+{
+    return $this->createQueryBuilder('u')
+        ->leftJoin('u.role', 'r')
+        ->addSelect('r')
+        ->orderBy('u.id', 'DESC')
+        ->setFirstResult(($page - 1) * $limit)  // ← Utilise $page, pas un chiffre
+        ->setMaxResults($limit)                 // ← Utilise $limit, pas un chiffre
+        ->getQuery()
+        ->getResult();
+}
 
     /**
      * Récupère les utilisateurs pour l'export PDF
@@ -390,4 +396,5 @@ class UserRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+    
 }

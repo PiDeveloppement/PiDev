@@ -2,156 +2,241 @@
 
 {% block title %}Gestion des rôles - EventFlow{% endblock %}
 
-{% block admin_content %}
-<div class="container mx-auto px-6 py-6">
+{% block page_title %}Gestion des rôles{% endblock %}
+{% block page_subtitle %}Gérez et assigner les roles{% endblock %}
 
+{% block admin_content %}
+<div class="main-container" style="
+    background-color: #f8fafc;
+    width: 100%;
+    height: 100%;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+">
     <!-- Barre de recherche et bouton d'ajout -->
-    <div class="bg-gray-100 p-4 rounded-lg mb-6 flex items-center gap-4 border-b border-gray-200">
+    <div style="
+        background-color: #f1f5f9;
+        padding: 15px 30px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    ">
         <input type="text" 
                id="searchField"
+               value="{{ search }}"
                placeholder="🔍 Rechercher un rôle..."
-               class="w-72 px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+               autocomplete="off"
+               style="
+                   background-color: white;
+                   border-radius: 8px;
+                   padding: 10px 15px;
+                   width: 300px;
+                   border: 1px solid #e2e8f0;
+                   outline: none;
+                   font-size: 14px;
+               ">
 
-        <div class="flex-1"></div>
+        <div style="flex: 1;"></div>
 
         <a href="{{ path('app_role_new') }}" 
-           class="bg-green-500 text-white font-bold px-6 py-2.5 rounded-lg hover:bg-green-600 transition shadow-sm">
+           style="
+               background-color: #10b981;
+               color: white;
+               font-weight: bold;
+               border-radius: 8px;
+               padding: 10px 22px;
+               text-decoration: none;
+               font-size: 14px;
+               display: inline-block;
+               cursor: pointer;
+           ">
             ➕ Nouveau rôle
         </a>
 
-        <span class="text-gray-500 text-sm ml-4">{{ totalRoles }} rôles</span>
+        <span id="statsLabel" style="color: #64748b; font-size: 12px; padding-left: 20px;">
+            {{ totalResults }} rôles
+        </span>
     </div>
 
-    <!-- Tableau des rôles -->
-    <div class="bg-white rounded-xl p-4 shadow-sm mb-6">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-gray-200">
-                    <th class="py-3 pl-6 text-left font-semibold text-gray-600">📝 Nom du Rôle</th>
-                    <th class="py-3 text-center font-semibold text-gray-600 w-32">⚡ Actions</th>
-                </tr>
-            </thead>
-            <tbody id="roleTableBody">
-                {% for role in roles %}
-                <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                    <td class="py-4 pl-6">{{ role.roleName }}</td>
-                    <td class="py-4 text-center">
-                        <div class="flex justify-center space-x-3">
-                            <a href="{{ path('app_role_edit', {'id': role.id}) }}" 
-                               class="bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition shadow-sm">
-                                📝
-                            </a>
-                            <form method="post" 
-                                  action="{{ path('app_role_delete', {'id': role.id}) }}" 
-                                  onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce rôle ?');"
-                                  class="inline">
-                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ role.id) }}">
-                                <button type="submit" 
-                                        class="bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition shadow-sm">
-                                    ✂
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="2" class="py-8 text-center text-gray-500">Aucun rôle trouvé</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Pagination -->
-    <div class="flex items-center space-x-4">
-        <div class="flex space-x-2">
-            <button onclick="goToPage({{ currentPage - 1 }})" 
-                    {{ currentPage == 1 ? 'disabled' : '' }}
-                    class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                «
-            </button>
-
-            <div class="flex space-x-1">
-                <button onclick="goToPage(1)" 
-                        class="w-10 h-10 rounded-lg transition {{ currentPage == 1 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' }}">
-                    1
-                </button>
-                {% if totalPages >= 2 %}
-                <button onclick="goToPage(2)" 
-                        class="w-10 h-10 rounded-lg transition {{ currentPage == 2 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' }}">
-                    2
-                </button>
-                {% endif %}
-                {% if totalPages >= 3 %}
-                <button onclick="goToPage(3)" 
-                        class="w-10 h-10 rounded-lg transition {{ currentPage == 3 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' }}">
-                    3
-                </button>
-                {% endif %}
-                {% if totalPages > 3 %}
-                <button onclick="goToPage({{ totalPages }})" 
-                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                    Dernière
-                </button>
-                {% endif %}
-            </div>
-
-            <button onclick="goToPage({{ currentPage + 1 }})" 
-                    {{ currentPage == totalPages ? 'disabled' : '' }}
-                    class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                »
-            </button>
+    <!-- Contenu principal scrollable -->
+    <div style="padding: 20px 30px; height: calc(100% - 80px); overflow-y: auto;">
+        
+        <!-- Tableau des rôles -->
+        <div style="
+            background-color: white;
+            border-radius: 12px;
+            padding: 5px;
+            margin-bottom: 20px;
+        ">
+            <table style="width: 100%; font-size: 15px; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #e2e8f0;">
+                        <th style="padding: 15px 0 15px 25px; text-align: left; font-weight: 600; color: #1e293b;">
+                            📝 Nom du Rôle
+                        </th>
+                        <th style="padding: 15px; text-align: center; font-weight: 600; color: #1e293b; width: 150px;">
+                            ⚡ Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="roleTableBody">
+                    {% for role in roles %}
+                    <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" 
+                        onmouseover="this.style.backgroundColor='#f8fafc'" 
+                        onmouseout="this.style.backgroundColor='transparent'">
+                        <td style="padding: 16px 0 16px 25px;">
+                            {{ role.roleName }}
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <div style="display: flex; justify-content: center; gap: 12px;">
+                                <a href="{{ path('app_role_edit', {'id': role.id}) }}" 
+                                   style="
+                                       background-color: #3b82f6;
+                                       color: white;
+                                       padding: 6px 12px;
+                                       border-radius: 6px;
+                                       text-decoration: none;
+                                       font-size: 14px;
+                                       display: inline-block;
+                                   ">
+                                    📝
+                                </a>
+                                <form method="post" 
+                                      action="{{ path('app_role_delete', {'id': role.id}) }}" 
+                                      onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce rôle ?');"
+                                      style="display: inline;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ role.id) }}">
+                                    <button type="submit" 
+                                            style="
+                                                background-color: #ef4444;
+                                                color: white;
+                                                padding: 6px 12px;
+                                                border-radius: 6px;
+                                                font-size: 14px;
+                                                border: none;
+                                                cursor: pointer;
+                                            ">
+                                        ✂
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2" style="padding: 50px; text-align: center; color: #94a3b8;">
+                            Aucun rôle trouvé
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
 
-        <span class="text-sm text-gray-500">Page {{ currentPage }} sur {{ totalPages }}</span>
+        <!-- Pagination -->
+        <div id="paginationContainer">
+            {% if totalPages > 1 %}
+            <div style="display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 10px;">
+                <button onclick="goToPage({{ currentPage - 1 }})" 
+                        {{ currentPage == 1 ? 'disabled' : '' }}
+                        style="background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 14px;">
+                    «
+                </button>
+
+                <div style="display: flex; gap: 5px;">
+                    {% for i in 1..totalPages %}
+                        {% if i <= 3 or i == totalPages or (i >= currentPage - 1 and i <= currentPage + 1) %}
+                            <button onclick="goToPage({{ i }})" 
+                                    style="background-color: {{ currentPage == i ? '#2196F3' : 'white' }};
+                                           color: {{ currentPage == i ? 'white' : '#475569' }};
+                                           border: {{ currentPage == i ? 'none' : '1px solid #e2e8f0' }};
+                                           border-radius: 8px; width: 40px; height: 40px; cursor: pointer;">
+                                {{ i }}
+                            </button>
+                        {% elseif i == 4 and totalPages > 4 %}
+                            <span style="padding: 0 5px;">...</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <button onclick="goToPage({{ currentPage + 1 }})" 
+                        {{ currentPage == totalPages ? 'disabled' : '' }}
+                        style="background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; cursor: pointer;">
+                    »
+                </button>
+
+                <div style="flex: 1;"></div>
+
+                <span style="color: #64748b; font-size: 12px;">
+                    Page {{ currentPage }} sur {{ totalPages }} 
+                </span>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 
 <script>
+let searchTimeout = null;
+let currentSearch = '{{ search }}';
 let currentPage = {{ currentPage }};
 let totalPages = {{ totalPages }};
-let searchTimeout = null;
 
+// Recherche en temps réel
 document.getElementById('searchField').addEventListener('input', function(e) {
     clearTimeout(searchTimeout);
     const query = e.target.value;
+    currentSearch = query;
     
     searchTimeout = setTimeout(() => {
-        performSearch(query);
+        filterRoles(query, 1); // Toujours page 1 pour une nouvelle recherche
     }, 300);
 });
 
-function performSearch(query) {
-    fetch('{{ path('app_role_search') }}?q=' + encodeURIComponent(query))
+function filterRoles(query, page) {
+    const tbody = document.getElementById('roleTableBody');
+    
+    // Afficher un indicateur de chargement
+    tbody.innerHTML = '<tr><td colspan="2" style="padding: 50px; text-align: center; color: #94a3b8;">🔍 Recherche en cours...</td></tr>';
+    
+    fetch('{{ path('app_role_search') }}?q=' + encodeURIComponent(query) + '&page=' + page)
         .then(response => response.json())
         .then(data => {
-            const tbody = document.getElementById('roleTableBody');
             tbody.innerHTML = '';
             
             if (data.roles.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" class="py-8 text-center text-gray-500">Aucun rôle trouvé</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="2" style="padding: 50px; text-align: center; color: #94a3b8;">Aucun rôle trouvé pour "' + escapeHtml(query) + '"</td></tr>';
+                document.getElementById('statsLabel').innerText = '0 rôles';
+                document.getElementById('paginationContainer').innerHTML = '';
                 return;
             }
             
+            // Mettre à jour le compteur
+            document.getElementById('statsLabel').innerText = data.totalResults + ' rôles';
+            
+            // Mettre à jour la pagination
+            updatePagination(data.currentPage, data.totalPages, query);
+            
+            // Afficher les résultats
             data.roles.forEach(role => {
                 const row = document.createElement('tr');
-                row.className = 'border-b border-gray-100 hover:bg-gray-50 transition';
+                row.style.borderBottom = '1px solid #f1f5f9';
+                row.onmouseover = () => row.style.backgroundColor = '#f8fafc';
+                row.onmouseout = () => row.style.backgroundColor = 'transparent';
                 row.innerHTML = `
-                    <td class="py-4 pl-6">${role.roleName}</td>
-                    <td class="py-4 text-center">
-                        <div class="flex justify-center space-x-3">
+                    <td style="padding: 16px 0 16px 25px;">${escapeHtml(role.roleName)}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <div style="display: flex; justify-content: center; gap: 12px;">
                             <a href="/admin/roles/${role.id}/edit" 
-                               class="bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition shadow-sm">
+                               style="background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none;">
                                 📝
                             </a>
-                            <form method="post" 
-                                  action="/admin/roles/${role.id}" 
+                            <form method="post" action="/admin/roles/${role.id}" 
                                   onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce rôle ?');"
-                                  class="inline">
+                                  style="display: inline;">
                                 <input type="hidden" name="_token" value="${role.csrfToken}">
                                 <button type="submit" 
-                                        class="bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition shadow-sm">
+                                        style="background-color: #ef4444; color: white; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer;">
                                     ✂
                                 </button>
                             </form>
@@ -160,12 +245,80 @@ function performSearch(query) {
                 `;
                 tbody.appendChild(row);
             });
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            tbody.innerHTML = '<tr><td colspan="2" style="padding: 50px; text-align: center; color: #ef4444;">❌ Erreur lors de la recherche</td></tr>';
         });
 }
 
-function goToPage(page) {
+function updatePagination(currentPage, totalPages, searchQuery) {
+    const container = document.getElementById('paginationContainer');
+    if (!container) return;
+    
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    let html = `
+        <div style="display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 10px;">
+            <button onclick="goToSearchPage(${currentPage - 1})" 
+                    ${currentPage == 1 ? 'disabled' : ''}
+                    style="background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 14px;">
+                «
+            </button>
+            <div style="display: flex; gap: 5px;">`;
+    
+    for (let i = 1; i <= totalPages; i++) {
+        if (i <= 3 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            html += `
+                <button onclick="goToSearchPage(${i})" 
+                        style="background-color: ${currentPage === i ? '#2196F3' : 'white'};
+                               color: ${currentPage === i ? 'white' : '#475569'};
+                               border: ${currentPage === i ? 'none' : '1px solid #e2e8f0'};
+                               border-radius: 8px; width: 40px; height: 40px; cursor: pointer;">
+                    ${i}
+                </button>`;
+        } else if (i === 4 && totalPages > 4) {
+            html += `<span style="padding: 0 5px;">...</span>`;
+        }
+    }
+    
+    html += `
+            </div>
+            <button onclick="goToSearchPage(${currentPage + 1})" 
+                    ${currentPage === totalPages ? 'disabled' : ''}
+                    style="background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; cursor: pointer;">
+                »
+            </button>
+            <div style="flex: 1;"></div>
+            <span style="color: #64748b; font-size: 12px;">Page ${currentPage} sur ${totalPages} (5 lignes par page)</span>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function goToSearchPage(page) {
     if (page < 1 || page > totalPages) return;
-    window.location.href = '{{ path('app_role_index') }}?page=' + page;
+    filterRoles(currentSearch, page);
+}
+
+function goToPage(page) {
+    if (page < 1) return;
+    const search = document.getElementById('searchField').value;
+    window.location.href = '{{ path('app_role_index') }}?page=' + page + '&search=' + encodeURIComponent(search);
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
 }
 </script>
 {% endblock %}

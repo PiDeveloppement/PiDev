@@ -1,0 +1,510 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des Questions{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #ffffff;
+    --card-bg:   #f8fafc;
+    --border:    #e2e8f0;
+    --text:      #1e293b;
+    --muted:     #64748b;
+    --accent:    #2563eb;
+    --green:     #d1fae5;
+    --green-t:   #065f46;
+    --mint:      #cffafe;
+    --mint-border: #67e8f9;
+    --lavender:  #e0e7ff;
+    --lav-border: #a5b4fc;
+    --peach:     #fed7aa;
+    --peach-border: #fdba74;
+    --sky:       #dbeafe;
+    --sky-border: #93c5fd;
+    --yellow:    #fef3c7;
+    --yellow-border: #fbbf24;
+    --red:       #fee2e2;
+    --red-t:     #dc2626;
+    --shadow:    0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 14px rgba(0,0,0,0.10);
+    --radius:    12px;
+    --ff:        'Plus Jakarta Sans', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+
+  .qs-page {
+    background: var(--bg);
+    min-height: 100vh;
+    padding: 2.5rem 2rem;
+    font-family: var(--ff);
+    color: var(--text);
+  }
+
+  /* TOP BAR */
+  .qs-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .qs-topbar h1 {
+    font-size: 1.7rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.15rem;
+  }
+  .qs-topbar p { font-size: 0.84rem; color: var(--muted); margin: 0; }
+
+  .topbar-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+
+  .btn-new {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.65rem 1.4rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    font-family: var(--ff);
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(37,99,235,0.25);
+    transition: opacity .18s, transform .15s;
+  }
+  .btn-new:hover { opacity: .88; transform: translateY(-1px); color: #fff; text-decoration: none; }
+
+  .btn-stats {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: #8b5cf6;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.65rem 1.4rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    font-family: var(--ff);
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(139,92,246,0.25);
+    transition: opacity .18s, transform .15s;
+  }
+  .btn-stats:hover { opacity: .88; transform: translateY(-1px); color: #fff; text-decoration: none; }
+
+  /* FILTER / SEARCH BAR */
+  .qs-filterbar {
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    padding: 0.7rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 180px;
+  }
+  .search-wrap i {
+    position: absolute;
+    left: .85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: .8rem;
+    pointer-events: none;
+  }
+  #searchInput {
+    width: 100%;
+    padding: .42rem .9rem .42rem 2.2rem;
+    border: 2px solid var(--border);
+    border-radius: 30px;
+    font-family: var(--ff);
+    font-size: .8rem;
+    font-weight: 500;
+    color: var(--text);
+    background: #fff;
+    outline: none;
+    transition: border-color .2s;
+  }
+  #searchInput:focus { border-color: var(--accent); }
+  #searchInput::placeholder { color: var(--muted); }
+
+  .filter-sep { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
+
+  .sort-wrap { display: flex; align-items: center; gap: .4rem; }
+  .sort-label { font-size: .78rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  #sortSelect {
+    padding: .38rem .9rem;
+    border: 2px solid var(--border);
+    border-radius: 30px;
+    font-family: var(--ff);
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--text);
+    background: #fff;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .2s;
+  }
+  #sortSelect:focus { border-color: var(--accent); }
+
+  .count-label { margin-left: auto; font-size: 0.8rem; color: var(--muted); font-weight: 500; white-space: nowrap; }
+  .count-label strong { color: var(--text); }
+
+  /* FLASH */
+  .flash-ok {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--green);
+    border: 2px solid #6ee7b7;
+    border-radius: 10px;
+    padding: 0.8rem 1.2rem;
+    font-size: 0.875rem;
+    color: var(--green-t);
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+  }
+  .flash-ok button { background: none; border: none; color: var(--green-t); cursor: pointer; font-size: 1rem; opacity: .65; }
+  .flash-ok button:hover { opacity: 1; }
+
+  /* GRID */
+  .qs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(278px, 1fr));
+    gap: 1.25rem;
+  }
+
+  /* CARD */
+  .q-card {
+    border-radius: var(--radius);
+    border: 2px solid transparent;
+    padding: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    box-shadow: var(--shadow);
+    transition: box-shadow .2s, transform .18s;
+    position: relative;
+  }
+  .q-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+  .q-card.hidden { display: none; }
+
+  .q-card.cc-mint     { background: var(--mint);     border-color: var(--mint-border); }
+  .q-card.cc-green    { background: var(--green);    border-color: #6ee7b7; }
+  .q-card.cc-lavender { background: var(--lavender); border-color: var(--lav-border); }
+  .q-card.cc-peach    { background: var(--peach);    border-color: var(--peach-border); }
+  .q-card.cc-sky      { background: var(--sky);      border-color: var(--sky-border); }
+  .q-card.cc-yellow   { background: var(--yellow);   border-color: var(--yellow-border); }
+
+  .card-row1 {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+  }
+  .card-bm {
+    width: 30px; height: 30px;
+    background: rgba(255,255,255,0.7);
+    border: 2px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .card-bm:hover { background: #fff; }
+
+  .card-q {
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.45;
+    color: var(--text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-answer-row {
+    font-size: 0.78rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .card-answer-row i { color: #10b981; font-size: 0.72rem; flex-shrink: 0; }
+
+  .card-tags {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .ctag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.22rem;
+    background: rgba(255,255,255,0.8);
+    border: 2px solid rgba(0,0,0,0.1);
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .ctag-pts::before { content: '★ '; color: #f59e0b; }
+
+  .card-actions {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 0.15rem;
+  }
+  .btn-card-edit {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.3rem;
+    padding: 0.5rem 0;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-family: var(--ff);
+    background: rgba(255,255,255,0.8);
+    border: 2px solid rgba(0,0,0,0.1);
+    color: var(--text);
+    text-decoration: none;
+    transition: background .15s;
+    cursor: pointer;
+  }
+  .btn-card-edit:hover { background: #fff; color: var(--text); text-decoration: none; }
+
+  .btn-card-del {
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.7);
+    border: 2px solid rgba(220,38,38,0.2);
+    color: var(--red-t);
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+  .btn-card-del:hover { background: var(--red); border-color: #fca5a5; }
+
+  /* NO RESULTS */
+  .no-results {
+    display: none;
+    grid-column: 1/-1;
+    background: var(--card-bg);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 4rem 2rem;
+    text-align: center;
+    color: var(--muted);
+  }
+  .no-results i { font-size: 2.2rem; opacity: .3; display: block; margin-bottom: 0.75rem; }
+  .no-results p { font-size: 0.9rem; margin: 0; }
+  .no-results.visible { display: block; }
+
+  /* EMPTY */
+  .empty-card {
+    grid-column: 1/-1;
+    background: var(--card-bg);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 4rem 2rem;
+    text-align: center;
+    color: var(--muted);
+  }
+  .empty-card i { font-size: 2.2rem; opacity: .3; display: block; margin-bottom: 0.75rem; }
+  .empty-card p { font-size: 0.9rem; margin: 0; }
+
+  @media (max-width: 600px) {
+    .qs-page { padding: 1.25rem 1rem; }
+    .qs-grid { grid-template-columns: 1fr; }
+    .qs-topbar { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="qs-page">
+
+  <div class="qs-topbar">
+    <div>
+      <h1>Questions Quiz</h1>
+      <p>Gérez toutes les questions de vos questionnaires d'événements</p>
+    </div>
+    <div class="topbar-actions">
+      <a href="{{ path('app_question_stats') }}" class="btn-stats">
+        <i class="fas fa-chart-bar"></i> Statistiques
+      </a>
+      <a href="{{ path('app_question_new') }}" class="btn-new">
+        <i class="fas fa-plus"></i> Nouvelle question
+      </a>
+    </div>
+  </div>
+
+  <div class="qs-filterbar">
+    <div class="search-wrap">
+      <i class="fas fa-search"></i>
+      <input type="text" id="searchInput" placeholder="Rechercher une question…">
+    </div>
+    <div class="filter-sep"></div>
+    <div class="sort-wrap">
+      <span class="sort-label"><i class="fas fa-sort"></i> Trier :</span>
+      <select id="sortSelect">
+        <option value="default">Par défaut</option>
+        <option value="alpha-asc">A → Z</option>
+        <option value="alpha-desc">Z → A</option>
+        <option value="pts-desc">Points ↓</option>
+        <option value="pts-asc">Points ↑</option>
+        <option value="event">Avec événement</option>
+        <option value="no-event">Sans événement</option>
+      </select>
+    </div>
+    <span class="count-label"><strong id="visibleCount">{{ questions|length }}</strong> résultat{{ questions|length != 1 ? 's' : '' }}</span>
+  </div>
+
+  {% for message in app.flashes('success') %}
+    <div class="flash-ok">
+      <span><i class="fas fa-check-circle" style="margin-right:.4rem;"></i>{{ message }}</span>
+      <button onclick="this.parentElement.remove()">✕</button>
+    </div>
+  {% endfor %}
+
+  {% set pal = ['cc-mint','cc-green','cc-lavender','cc-peach','cc-sky','cc-yellow'] %}
+  <div class="qs-grid" id="questionsGrid">
+    {% for question in questions %}
+      {% set c = pal[loop.index0 % 6] %}
+      <div class="q-card {{ c }}"
+           data-texte="{{ question.texte|lower }}"
+           data-reponse="{{ question.reponse|lower }}"
+           data-points="{{ question.points }}"
+           data-event="{{ question.event ? question.event.title|lower : '' }}"
+           data-has-event="{{ question.event ? '1' : '0' }}">
+
+        <div class="card-row1">
+          <button class="card-bm"><i class="far fa-bookmark"></i></button>
+        </div>
+
+        <div class="card-q">{{ question.texte }}</div>
+
+        <div class="card-answer-row">
+          <i class="fas fa-check-circle"></i>
+          {{ question.reponse ?? 'Réponse non définie' }}
+        </div>
+
+        <div class="card-tags">
+          <span class="ctag ctag-pts">{{ question.points }} pts</span>
+          {% if question.option1 %}<span class="ctag">A</span>{% endif %}
+          {% if question.option2 %}<span class="ctag">B</span>{% endif %}
+          {% if question.option3 %}<span class="ctag">C</span>{% endif %}
+          {% if question.event %}
+            <span class="ctag"><i class="fas fa-calendar-alt" style="font-size:.62rem;color:var(--muted);"></i> {{ question.event.title }}</span>
+          {% else %}
+            <span class="ctag" style="color:var(--muted);">Sans événement</span>
+          {% endif %}
+        </div>
+
+        <div class="card-actions">
+          <a href="{{ path('app_question_edit', {'id': question.id}) }}" class="btn-card-edit">
+            <i class="fas fa-pen" style="font-size:.68rem;"></i> Modifier
+          </a>
+          <form method="post" action="{{ path('app_question_delete', {'id': question.id}) }}"
+                style="display:contents;" onsubmit="return confirm('Supprimer cette question ?');">
+            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ question.id) }}">
+            <button class="btn-card-del" type="submit" title="Supprimer">
+              <i class="fas fa-trash"></i>
+            </button>
+          </form>
+        </div>
+
+      </div>
+    {% else %}
+      <div class="empty-card">
+        <i class="fas fa-question-circle"></i>
+        <p>Aucune question trouvée. Créez-en une pour commencer !</p>
+      </div>
+    {% endfor %}
+
+    <div class="no-results" id="noResults">
+      <i class="fas fa-search"></i>
+      <p>Aucune question ne correspond à votre recherche.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  const searchInput  = document.getElementById('searchInput');
+  const sortSelect   = document.getElementById('sortSelect');
+  const grid         = document.getElementById('questionsGrid');
+  const noResults    = document.getElementById('noResults');
+  const visibleCount = document.getElementById('visibleCount');
+
+  function getCards() {
+    return Array.from(grid.querySelectorAll('.q-card'));
+  }
+
+  function applyFiltersAndSort() {
+    const query = searchInput.value.trim().toLowerCase();
+    const sort  = sortSelect.value;
+    let cards   = getCards();
+
+    // --- FILTER ---
+    cards.forEach(card => {
+      const texte   = card.dataset.texte   || '';
+      const reponse = card.dataset.reponse || '';
+      const event   = card.dataset.event   || '';
+      const match   = !query || texte.includes(query) || reponse.includes(query) || event.includes(query);
+      card.classList.toggle('hidden', !match);
+    });
+
+    // Filter for sort: only visible
+    let visible = cards.filter(c => !c.classList.contains('hidden'));
+
+    // --- SORT ---
+    if (sort === 'alpha-asc') {
+      visible.sort((a, b) => a.dataset.texte.localeCompare(b.dataset.texte));
+    } else if (sort === 'alpha-desc') {
+      visible.sort((a, b) => b.dataset.texte.localeCompare(a.dataset.texte));
+    } else if (sort === 'pts-desc') {
+      visible.sort((a, b) => parseInt(b.dataset.points) - parseInt(a.dataset.points));
+    } else if (sort === 'pts-asc') {
+      visible.sort((a, b) => parseInt(a.dataset.points) - parseInt(b.dataset.points));
+    } else if (sort === 'event') {
+      visible.sort((a, b) => parseInt(b.dataset.hasEvent) - parseInt(a.dataset.hasEvent));
+    } else if (sort === 'no-event') {
+      visible.sort((a, b) => parseInt(a.dataset.hasEvent) - parseInt(b.dataset.hasEvent));
+    }
+
+    // Re-append sorted visible cards
+    visible.forEach(card => grid.appendChild(card));
+
+    // Update count & no-results
+    const count = visible.length;
+    visibleCount.textContent = count;
+    noResults.classList.toggle('visible', count === 0);
+  }
+
+  searchInput.addEventListener('input', applyFiltersAndSort);
+  sortSelect.addEventListener('change', applyFiltersAndSort);
+})();
+</script>
+{% endblock %}

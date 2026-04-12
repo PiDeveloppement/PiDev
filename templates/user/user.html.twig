@@ -2,139 +2,292 @@
 
 {% block title %}Gestion des utilisateurs - EventFlow{% endblock %}
 
+{% block page_title %}Gestion des utilisateurs{% endblock %}
+{% block page_subtitle %}Liste et gestion de tous les utilisateurs{% endblock %}
+
 {% block admin_content %}
-<div class="container mx-auto px-6 py-6">
+<div style="
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    padding: 20px 30px 0 30px;
+">
+    {% set kpis = [
+        {'label': 'Total Utilisateurs', 'id': 'totalUsersCount', 'value': stats.total|default(0), 'icon': '👥', 'bg': '#e0e7ff', 'text': '#4338ca'},
+        {'label': 'Nouveaux (Mois)', 'id': 'newUsersCount', 'value': stats.new_this_month|default(0), 'icon': '📅', 'bg': '#dcfce7', 'text': '#15803d'},
+        {'label': 'Administrateurs', 'id': 'adminsCount', 'value': stats.by_role.Admin|default(0), 'icon': '👑', 'bg': '#f3e8ff', 'text': '#7e22ce'},
+        {'label': 'Organisateurs', 'id': 'organizersCount', 'value': stats.by_role.Organisateur|default(0), 'icon': '🎯', 'bg': '#fef3c7', 'text': '#b45309'}
+    ] %}
+
+    {% for kpi in kpis %}
+    <div style="
+        background-color: {{ kpi.bg }};
+        border: 1px solid rgba(0,0,0,0.05);
+        border-radius: 12px;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    ">
+        <div>
+            <p style="margin: 0; font-size: 12px; color: {{ kpi.text }}; opacity: 0.8; font-weight: 600; text-transform: uppercase;">
+                {{ kpi.label }}
+            </p>
+            <h2 style="margin: 5px 0 0 0; font-size: 26px; font-weight: 800; color: {{ kpi.text }};" id="{{ kpi.id }}">
+                {{ kpi.value }}
+            </h2>
+        </div>
+        <div style="
+            font-size: 24px; 
+            background: white; 
+            width: 45px; 
+            height: 45px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        ">
+            {{ kpi.icon }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
 
     <!-- Barre de recherche et filtres -->
-    <div class="bg-gray-100 p-4 rounded-lg mb-6 flex items-center gap-4 border-b border-gray-200">
+    <div style="
+        background-color: #f1f5f9;
+        padding: 15px 30px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-top: 20px;
+    ">
         <input type="text" 
                id="searchField"
                placeholder="🔍 Rechercher un utilisateur..."
-               class="w-72 px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+               autocomplete="off"
+               value="{{ searchKeyword|default('') }}"
+               style="
+                   background-color: white;
+                   border-radius: 8px;
+                   padding: 10px 15px;
+                   width: 300px;
+                   border: 1px solid #e2e8f0;
+                   outline: none;
+                   font-size: 14px;
+               ">
 
         <select id="faculteFilter" 
                 onchange="applyFilters()"
-                class="w-40 px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                style="
+                    background-color: white;
+                    border-radius: 8px;
+                    padding: 10px 15px;
+                    width: 160px;
+                    border: 1px solid #e2e8f0;
+                    font-size: 14px;
+                    cursor: pointer;
+                ">
             <option value="">📂 Toutes facultés</option>
             {% for faculte in facultes %}
-                <option value="{{ faculte }}">{{ faculte }}</option>
+                <option value="{{ faculte }}" {{ selectedFaculte == faculte ? 'selected' : '' }}>{{ faculte }}</option>
             {% endfor %}
         </select>
 
-        <select id="roleFilter" 
+        <select id="roleFilter"
                 onchange="applyFilters()"
-                class="w-40 px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                style="
+                    background-color: white;
+                    border-radius: 8px;
+                    padding: 10px 15px;
+                    width: 160px;
+                    border: 1px solid #e2e8f0;
+                    font-size: 14px;
+                    cursor: pointer;
+                ">
             <option value="">📊 Tous rôles</option>
             {% for role in roles %}
-                <option value="{{ role }}">{{ role }}</option>
+                <option value="{{ role }}" {{ selectedRole == role ? 'selected' : '' }}>{{ role }}</option>
             {% endfor %}
         </select>
 
         <button onclick="resetFilters()" 
-                class="px-3 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                style="
+                    background-color: white;
+                    border-radius: 8px;
+                    padding: 8px 12px;
+                    border: 1px solid #e2e8f0;
+                    cursor: pointer;
+                    font-size: 14px;
+                    transition: background 0.2s;
+                "
+                onmouseover="this.style.backgroundColor='#f8fafc'"
+                onmouseout="this.style.backgroundColor='white'">
             🔄
         </button>
 
-        <span class="text-sm text-gray-500 ml-auto" id="statsLabel">{{ totalUsers }} utilisateurs</span>
+        <span id="statsLabel" style="color: #64748b; font-size: 12px; padding-left: 20px;">
+            {{ totalResults }} utilisateurs
+        </span>
     </div>
 
-    <!-- Tableau des utilisateurs -->
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50 border-b border-gray-200">
-                <tr>
-                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Prénom</th>
-                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Nom</th>
-                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Email</th>
-                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Faculté</th>
-                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Mot de passe</th>
-                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Rôle</th>
-                    <th class="py-3 px-4 text-center font-semibold text-gray-600">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="userTableBody">
-                {% for user in users %}
-                <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                    <td class="py-3 px-4">{{ user.firstName }}</td>
-                    <td class="py-3 px-4">{{ user.lastName }}</td>
-                    <td class="py-3 px-4">{{ user.email }}</td>
-                    <td class="py-3 px-4">{{ user.faculte }}</td>
-                    <td class="py-3 px-4">••••••••</td>
-                    <td class="py-3 px-4">
-                        <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                            {{ user.role.roleName }}
-                        </span>
-                    </td>
-                    <td class="py-3 px-4">
-                        <div class="flex justify-center space-x-2">
-                            <a href="{{ path('app_user_edit', {'id': user.id}) }}" 
-                               class="bg-blue-500 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-600 transition shadow-sm">
-                                📝
-                            </a>
-                            <form method="post" 
-                                  action="{{ path('app_user_delete', {'id': user.id}) }}" 
-                                  onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?');"
-                                  class="inline">
-                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
-                                <button type="submit" 
-                                        class="bg-red-500 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-red-600 transition shadow-sm">
-                                    ✂
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="7" class="py-8 text-center text-gray-500">Aucun utilisateur trouvé</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Pagination -->
-    <div class="flex items-center space-x-4">
-        <div class="flex space-x-2">
-            <button onclick="goToPage({{ currentPage - 1 }})" 
-                    {{ currentPage == 1 ? 'disabled' : '' }}
-                    class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                «
-            </button>
-
-            <div class="flex space-x-1">
-                <button onclick="goToPage(1)" 
-                        class="w-10 h-10 rounded-lg transition {{ currentPage == 1 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' }}">
-                    1
-                </button>
-                {% if totalPages >= 2 %}
-                <button onclick="goToPage(2)" 
-                        class="w-10 h-10 rounded-lg transition {{ currentPage == 2 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' }}">
-                    2
-                </button>
-                {% endif %}
-                {% if totalPages >= 3 %}
-                <button onclick="goToPage(3)" 
-                        class="w-10 h-10 rounded-lg transition {{ currentPage == 3 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50' }}">
-                    3
-                </button>
-                {% endif %}
-                {% if totalPages > 3 %}
-                <button onclick="goToPage({{ totalPages }})" 
-                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                    Dernière
-                </button>
-                {% endif %}
-            </div>
-
-            <button onclick="goToPage({{ currentPage + 1 }})" 
-                    {{ currentPage == totalPages ? 'disabled' : '' }}
-                    class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                »
-            </button>
+    <!-- Contenu principal scrollable -->
+    <div style="padding: 20px 30px; height: calc(100% - 280px); overflow-y: auto;">
+        
+        <!-- Tableau des utilisateurs -->
+        <div style="
+            background-color: white;
+            border-radius: 12px;
+            padding: 5px;
+            margin-bottom: 20px;
+        ">
+            <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #e2e8f0;">
+                        <th style="padding: 15px 0 15px 15px; text-align: left; font-weight: 600; color: #1e293b; width: 120px;">Prénom</th>
+                        <th style="padding: 15px 0; text-align: left; font-weight: 600; color: #1e293b; width: 120px;">Nom</th>
+                        <th style="padding: 15px 0; text-align: left; font-weight: 600; color: #1e293b; width: 200px;">Email</th>
+                        <th style="padding: 15px 0; text-align: left; font-weight: 600; color: #1e293b; width: 150px;">Faculté</th>
+                        <th style="padding: 15px 0; text-align: left; font-weight: 600; color: #1e293b; width: 120px;">Mot de passe</th>
+                        <th style="padding: 15px 0; text-align: left; font-weight: 600; color: #1e293b; width: 120px;">Rôle</th>
+                        <th style="padding: 15px 15px 15px 0; text-align: center; font-weight: 600; color: #1e293b; width: 120px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    {% for user in users %}
+                    <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" 
+                        onmouseover="this.style.backgroundColor='#f8fafc'" 
+                        onmouseout="this.style.backgroundColor='transparent'">
+                        <td style="padding: 14px 0 14px 15px;">{{ user.firstName }}</td>
+                        <td style="padding: 14px 0;">{{ user.lastName }}</td>
+                        <td style="padding: 14px 0;">{{ user.email }}</td>
+                        <td style="padding: 14px 0;">{{ user.faculte }}</td>
+                        <td style="padding: 14px 0;">••••••••</td>
+                        <td style="padding: 14px 0;">
+                            <span style="padding: 4px 10px; font-size: 11px; border-radius: 20px; background-color: #dbeafe; color: #1e40af;">
+                                {{ user.role ? user.role.roleName : 'Default' }}
+                            </span>
+                        </td>
+                        <td style="padding: 12px 15px 12px 0; text-align: center;">
+                            <div style="display: flex; justify-content: center; gap: 10px;">
+                                <a href="{{ path('app_user_edit', {'id': user.id}) }}" 
+                                   style="
+                                       background-color: #3b82f6;
+                                       color: white;
+                                       padding: 6px 12px;
+                                       border-radius: 6px;
+                                       text-decoration: none;
+                                       font-size: 13px;
+                                       display: inline-block;
+                                       transition: background 0.2s;
+                                   "
+                                   onmouseover="this.style.backgroundColor='#2563eb'"
+                                   onmouseout="this.style.backgroundColor='#3b82f6'">
+                                    📝
+                                </a>
+                                <form method="post" 
+                                      action="{{ path('app_user_delete', {'id': user.id}) }}" 
+                                      onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?');"
+                                      style="display: inline;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                    <button type="submit" 
+                                            style="
+                                                background-color: #ef4444;
+                                                color: white;
+                                                padding: 6px 12px;
+                                                border-radius: 6px;
+                                                font-size: 13px;
+                                                border: none;
+                                                cursor: pointer;
+                                                transition: background 0.2s;
+                                            "
+                                            onmouseover="this.style.backgroundColor='#dc2626'"
+                                            onmouseout="this.style.backgroundColor='#ef4444'">
+                                        ✂
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" style="padding: 50px; text-align: center; color: #94a3b8;">Aucun utilisateur trouvé</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
 
-        <span class="text-sm text-gray-500">Page {{ currentPage }} sur {{ totalPages }}</span>
+        <!-- Pagination -->
+        <div id="paginationContainer">
+            {% if totalPages > 1 %}
+            <div style="display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 10px;">
+                <button onclick="goToPage({{ currentPage - 1 }})" 
+                        {{ currentPage == 1 ? 'disabled' : '' }}
+                        style="
+                            background-color: white;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 8px;
+                            padding: 8px 16px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.backgroundColor='#f8fafc'"
+                        onmouseout="this.style.backgroundColor='white'">
+                    «
+                </button>
+
+                <div style="display: flex; gap: 5px;">
+                    {% for i in 1..totalPages %}
+                        {% if i <= 3 or i == totalPages or (i >= currentPage - 1 and i <= currentPage + 1) %}
+                            <button onclick="goToPage({{ i }})" 
+                                    style="
+                                        background-color: {{ currentPage == i ? '#2196F3' : 'white' }};
+                                        color: {{ currentPage == i ? 'white' : '#475569' }};
+                                        border: {{ currentPage == i ? 'none' : '1px solid #e2e8f0' }};
+                                        border-radius: 8px;
+                                        width: 40px;
+                                        height: 40px;
+                                        cursor: pointer;
+                                        transition: all 0.2s;
+                                    "
+                                    onmouseover="this.style.backgroundColor='{{ currentPage == i ? '#1e88e5' : '#f8fafc' }}'"
+                                    onmouseout="this.style.backgroundColor='{{ currentPage == i ? '#2196F3' : 'white' }}'">
+                                {{ i }}
+                            </button>
+                        {% elseif i == 4 and totalPages > 4 %}
+                            <span style="padding: 0 5px; color: #64748b;">...</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <button onclick="goToPage({{ currentPage + 1 }})" 
+                        {{ currentPage == totalPages ? 'disabled' : '' }}
+                        style="
+                            background-color: white;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 8px;
+                            padding: 8px 16px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            transition: all 0.2s;
+                        "
+                        onmouseover="this.style.backgroundColor='#f8fafc'"
+                        onmouseout="this.style.backgroundColor='white'">
+                    »
+                </button>
+
+                <div style="flex: 1;"></div>
+
+                <span style="color: #64748b; font-size: 12px;">
+                    Page {{ currentPage }} sur {{ totalPages }}
+                </span>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 
@@ -144,90 +297,52 @@ let totalPages = {{ totalPages }};
 let searchTimeout = null;
 
 function applyFilters() {
-    const search = document.getElementById('searchField').value;
-    const faculte = document.getElementById('faculteFilter').value;
-    const role = document.getElementById('roleFilter').value;
-    
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-        performSearch(search, faculte, role);
-    }, 300);
-}
+        const search = document.getElementById('searchField').value;
+        const faculte = document.getElementById('faculteFilter').value;
+        const role = document.getElementById('roleFilter').value;
 
-function performSearch(search, faculte, role) {
-    const params = new URLSearchParams({
-        q: search,
-        faculte: faculte,
-        role: role
-    });
+        const params = new URLSearchParams();
+        if (search) params.set('search', search);
+        if (faculte) params.set('faculte', faculte);
+        if (role) params.set('role', role);
+        params.set('page', 1);
 
-    fetch('{{ path('app_user_search') }}?' + params.toString())
-        .then(response => response.json())
-        .then(data => {
-            updateTable(data.users);
-            document.getElementById('statsLabel').textContent = data.total + ' utilisateurs';
-        });
-}
-
-function updateTable(users) {
-    const tbody = document.getElementById('userTableBody');
-    tbody.innerHTML = '';
-    
-    if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-gray-500">Aucun utilisateur trouvé</td></tr>';
-        return;
-    }
-    
-    users.forEach(user => {
-        const row = document.createElement('tr');
-        row.className = 'border-b border-gray-100 hover:bg-gray-50 transition';
-        row.innerHTML = `
-            <td class="py-3 px-4">${user.firstName}</td>
-            <td class="py-3 px-4">${user.lastName}</td>
-            <td class="py-3 px-4">${user.email}</td>
-            <td class="py-3 px-4">${user.faculte}</td>
-            <td class="py-3 px-4">••••••••</td>
-            <td class="py-3 px-4">
-                <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">${user.role}</span>
-            </td>
-            <td class="py-3 px-4">
-                <div class="flex justify-center space-x-2">
-                    <a href="/admin/users/${user.id}/edit" 
-                       class="bg-blue-500 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-600 transition shadow-sm">
-                        📝
-                    </a>
-                    <form method="post" 
-                          action="/admin/users/${user.id}" 
-                          onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?');"
-                          class="inline">
-                        <input type="hidden" name="_token" value="${user.csrfToken}">
-                        <button type="submit" 
-                                class="bg-red-500 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-red-600 transition shadow-sm">
-                            ✂
-                        </button>
-                    </form>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
+        window.location.href = '{{ path('app_user_index') }}?' + params.toString();
+    }, 500);
 }
 
 function resetFilters() {
-    document.getElementById('searchField').value = '';
-    document.getElementById('faculteFilter').value = '';
-    document.getElementById('roleFilter').value = '';
-    applyFilters();
+    const params = new URLSearchParams();
+    params.set('page', 1);
+    window.location.href = '{{ path('app_user_index') }}?' + params.toString();
 }
 
 function goToPage(page) {
     if (page < 1 || page > totalPages) return;
-    window.location.href = '{{ path('app_user_index') }}?page=' + page;
+    const search = document.getElementById('searchField').value;
+    const faculte = document.getElementById('faculteFilter').value;
+    const role = document.getElementById('roleFilter').value;
+
+    const params = new URLSearchParams();
+    params.set('page', page);
+    if (search) params.set('search', search);
+    if (faculte) params.set('faculte', faculte);
+    if (role) params.set('role', role);
+
+    window.location.href = '{{ path('app_user_index') }}?' + params.toString();
 }
 
 // Écouteurs d'événements
-document.getElementById('searchField').addEventListener('input', applyFilters);
-document.getElementById('faculteFilter').addEventListener('change', applyFilters);
-document.getElementById('roleFilter').addEventListener('change', applyFilters);
+document.addEventListener('DOMContentLoaded', function() {
+    const searchField = document.getElementById('searchField');
+    const faculteFilter = document.getElementById('faculteFilter');
+    const roleFilter = document.getElementById('roleFilter');
+
+    if (searchField) searchField.addEventListener('input', applyFilters);
+    if (faculteFilter) faculteFilter.addEventListener('change', applyFilters);
+    if (roleFilter) roleFilter.addEventListener('change', applyFilters);
+});
 </script>
 {% endblock %}

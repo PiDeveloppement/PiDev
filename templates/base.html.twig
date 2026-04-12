@@ -13,6 +13,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('css/atlantafx-custom.css') }}">
     
@@ -47,7 +50,7 @@
 <body>
     {# ✅ Liste des routes publiques (sans sidebar) #}
     {% set public_routes = [
-        'app_landing',      # Route pour la page d'accueil
+        'app_landing',
         'app_public_events',
         'app_public_event_show',
         'app_my_tickets',
@@ -56,7 +59,10 @@
         'app_forgot_password', 
         'app_reset_password', 
         'app_feedback_view',
-        'app_demo_video'
+        'app_demo_video',
+        'app_quiz_start',
+        'app_quiz_results',
+        'app_quiz_final_results'
     ] %}
     
     {# Debug - À SUPPRIMER APRÈS RÉSOLUTION #}
@@ -123,7 +129,9 @@
                         </div>
                     </div>
                     
-                    <!-- Menu participants -->
+                    <!-- Menu participants (uniquement pour admin) -->
+                    {% set is_admin = app.user and (app.user.role and app.user.role.roleName == 'Admin') or (app.user and app.user.roleId == 2) %}
+                    {% if is_admin %}
                     <div style="margin-bottom: 4px;">
                         <button class="menu-button" onclick="toggleSubmenu('users-submenu', this)">
                             <i class="fas fa-users" style="width: 20px;"></i>
@@ -141,6 +149,7 @@
                             </a>
                         </div>
                     </div>
+                    {% endif %}
                     
                     <!-- Menu sponsors -->
                     <div style="margin-bottom: 4px;">
@@ -150,15 +159,15 @@
                             <i class="fas fa-chevron-right submenu-arrow" style="font-size: 12px;"></i>
                         </button>
                         <div id="sponsors-submenu" class="submenu" style="display: none; margin-left: 20px; margin-top: 2px;">
-                            <a {#href="{{ path('app_sponsors_index') }}"#} class="submenu-button">
+                            <a href="{{ path('app_sponsors_index') }}" class="submenu-button">
                                 <i class="fas fa-list" style="width: 18px;"></i>
                                 Sponsors
                             </a>
-                            <a {#href="{{ path('app_budget_index') }}" #}class="submenu-button">
+                            <a href="{{ path('app_budget_index') }}" class="submenu-button">
                                 <i class="fas fa-coins" style="width: 18px;"></i>
                                 Budget
                             </a>
-                            <a {#href="{{ path('app_depenses_index') }}" #}class="submenu-button">
+                            <a href="{{ path('app_depenses_index') }}" class="submenu-button">
                                 <i class="fas fa-file-invoice" style="width: 18px;"></i>
                                 Dépenses
                             </a>
@@ -167,21 +176,22 @@
                     
                     <!-- Menu ressources -->
                     <div style="margin-bottom: 4px;">
+                        {% set isResourceRoute = app.request.get('_route') in ['app_reservation_resource_index', 'app_reservation_resource_new', 'app_reservation_resource_edit', 'app_resource_equipement_index', 'app_resource_equipement_new', 'app_resource_equipement_edit', 'app_resource_salle_index', 'app_resource_salle_new', 'app_resource_salle_edit'] %}
                         <button class="menu-button" onclick="toggleSubmenu('ressources-submenu', this)">
                             <i class="fas fa-boxes" style="width: 20px;"></i>
                             <span style="flex: 1; text-align: left;">Ressources</span>
                             <i class="fas fa-chevron-right submenu-arrow" style="font-size: 12px;"></i>
                         </button>
-                        <div id="ressources-submenu" class="submenu" style="display: none; margin-left: 20px; margin-top: 2px;">
-                            <a {#href="{{ path('app_reservations_index') }}"#} class="submenu-button">
+                        <div id="ressources-submenu" class="submenu" style="display: {{ isResourceRoute ? 'block' : 'none' }}; margin-left: 20px; margin-top: 2px;">
+                            <a href="{{ path('app_reservation_resource_index') }}" class="submenu-button {{ (app.request.get('_route') == 'app_reservation_resource_index' or app.request.get('_route') == 'app_reservation_resource_new' or app.request.get('_route') == 'app_reservation_resource_edit') ? 'active' : '' }}">
                                 <i class="fas fa-calendar-check" style="width: 18px;"></i>
                                 Réservations
                             </a>
-                            <a {#href="{{ path('app_equipements_index') }}"#} class="submenu-button">
+                            <a href="{{ path('app_resource_equipement_index') }}" class="submenu-button {{ (app.request.get('_route') == 'app_resource_equipement_index' or app.request.get('_route') == 'app_resource_equipement_new' or app.request.get('_route') == 'app_resource_equipement_edit') ? 'active' : '' }}">
                                 <i class="fas fa-laptop" style="width: 18px;"></i>
                                 Équipements
                             </a>
-                            <a {#href="{{ path('app_salles_index') }}"#} class="submenu-button">
+                            <a href="{{ path('app_resource_salle_index') }}" class="submenu-button {{ (app.request.get('_route') == 'app_resource_salle_index' or app.request.get('_route') == 'app_resource_salle_new' or app.request.get('_route') == 'app_resource_salle_edit') ? 'active' : '' }}">
                                 <i class="fas fa-door-open" style="width: 18px;"></i>
                                 Salles
                             </a>
@@ -196,7 +206,11 @@
                             <i class="fas fa-chevron-right submenu-arrow" style="font-size: 12px;"></i>
                         </button>
                         <div id="questionnaires-submenu" class="submenu" style="display: none; margin-left: 20px; margin-top: 2px;">
-                            <a {#href="{{ path('app_questions_index') }}"#} class="submenu-button">
+                            <a href="{{ path('app_questionnaire_feedback_index') }}" class="submenu-button {{ app.request.get('_route') == 'app_questionnaire_feedback_index' ? 'active' : '' }}">
+                                <i class="fas fa-comments" style="width: 18px;"></i>
+                                Avis
+                            </a>
+                            <a href="{{ path('app_question_index') }}" class="submenu-button {{ app.request.get('_route') == 'app_question_index' ? 'active' : '' }}">
                                 <i class="fas fa-question" style="width: 18px;"></i>
                                 Questions
                             </a>
@@ -396,6 +410,29 @@
             }
         }
         
+        // Auto-open questionnaire submenu if on questionnaire page
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentRoute = '{{ app.request.get('_route') }}';
+            const questionnaireSubmenu = document.getElementById('questionnaires-submenu');
+            const questionnaireButton = questionnaireSubmenu ? questionnaireSubmenu.previousElementSibling : null;
+            
+            // Open questionnaire submenu if we're on a questionnaire-related page
+            if (currentRoute === 'app_questionnaire_feedback_index' || 
+                currentRoute === 'app_question_index' ||
+                currentRoute === 'app_question_new' ||
+                currentRoute === 'app_question_edit' ||
+                currentRoute === 'app_question_stats') {
+                
+                if (questionnaireSubmenu && questionnaireButton) {
+                    questionnaireSubmenu.style.display = 'block';
+                    const arrow = questionnaireButton.querySelector('.submenu-arrow');
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(90deg)';
+                    }
+                }
+            }
+        });
+        
         // Gestion du chat
         function toggleChat() {
             const chatPanel = document.getElementById('chatPanel');
@@ -407,21 +444,88 @@
         function sendMessage() {
             const input = document.getElementById('chatInput');
             if (input && input.value.trim()) {
+                const userMessage = input.value;
                 const chatMessages = document.getElementById('chatMessages');
+                
                 if (chatMessages) {
+                    // Afficher le message de l'utilisateur
                     const messageDiv = document.createElement('div');
                     messageDiv.style.display = 'flex';
                     messageDiv.style.justifyContent = 'flex-end';
                     messageDiv.style.marginBottom = '15px';
                     messageDiv.innerHTML = `
                         <div style="background: #1565C0; color: white; border-radius: 16px 5px 16px 16px; padding: 10px; max-width: 70%;">
-                            <p style="margin: 0; font-size: 13px;">${input.value}</p>
+                            <p style="margin: 0; font-size: 13px;">${userMessage}</p>
                         </div>
                     `;
                     chatMessages.appendChild(messageDiv);
                     chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    input.value = '';
+                    
+                    // Afficher un indicateur de chargement
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.style.display = 'flex';
+                    loadingDiv.style.justifyContent = 'flex-start';
+                    loadingDiv.style.marginBottom = '15px';
+                    loadingDiv.id = 'loadingMessage';
+                    loadingDiv.innerHTML = `
+                        <div style="background: #E3F2FD; border-radius: 16px 16px 16px 5px; padding: 10px; max-width: 70%;">
+                            <p style="margin: 0; font-size: 13px; color: #666;">🤖 En train de réfléchir...</p>
+                        </div>
+                    `;
+                    chatMessages.appendChild(loadingDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Envoyer le message à l'API
+                    fetch('/api/ai-chat/send', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ message: userMessage })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Supprimer le message de chargement
+                        const loadingMsg = document.getElementById('loadingMessage');
+                        if (loadingMsg) {
+                            loadingMsg.remove();
+                        }
+                        
+                        // Afficher la réponse de l'AI
+                        const responseDiv = document.createElement('div');
+                        responseDiv.style.display = 'flex';
+                        responseDiv.style.justifyContent = 'flex-start';
+                        responseDiv.style.marginBottom = '15px';
+                        responseDiv.innerHTML = `
+                            <div style="background: #E3F2FD; border-radius: 16px 16px 16px 5px; padding: 10px; max-width: 80%;">
+                                <p style="margin: 0; font-size: 13px; color: #333;">${data.response}</p>
+                                ${data.isSimulated ? '<p style="margin: 5px 0 0 0; font-size: 10px; color: #999;">Mode simulation</p>' : ''}
+                            </div>
+                        `;
+                        chatMessages.appendChild(responseDiv);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    })
+                    .catch(error => {
+                        const loadingMsg = document.getElementById('loadingMessage');
+                        if (loadingMsg) {
+                            loadingMsg.remove();
+                        }
+                        
+                        const errorDiv = document.createElement('div');
+                        errorDiv.style.display = 'flex';
+                        errorDiv.style.justifyContent = 'flex-start';
+                        errorDiv.style.marginBottom = '15px';
+                        errorDiv.innerHTML = `
+                            <div style="background: #FFEBEE; border-radius: 16px 16px 16px 5px; padding: 10px; max-width: 70%;">
+                                <p style="margin: 0; font-size: 13px; color: #c62828;">❌ Erreur: Impossible de contacter l'assistant</p>
+                            </div>
+                        `;
+                        chatMessages.appendChild(errorDiv);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    });
                 }
-                input.value = '';
             }
         }
         
@@ -538,6 +642,9 @@
             }, 4500 + (index * 120));
         });
     </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     {% block javascripts %}{% endblock %}
 </body>

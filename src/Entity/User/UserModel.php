@@ -59,17 +59,17 @@ class UserModel implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $bio = null;
 
-    #[ORM\ManyToOne(targetEntity: Role::class, inversedBy: 'users')]
-    #[ORM\JoinColumn(name: "Role_Id", referencedColumnName: "Id_Role", nullable: false)]
-    private ?Role $role = null;
+#[ORM\ManyToOne(targetEntity: Role::class, inversedBy: "users")] // <-- Ajoute inversedBy
+#[ORM\JoinColumn(name: "Role_Id", referencedColumnName: "Id_Role", nullable: false)]
+private ?Role $role = null;
 
     #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
     private ?PasswordResetToken $resetToken = null;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Feedback::class)]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Feedback::class, cascade: ['remove'])]
     private Collection $feedbacks;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Question::class)]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Question::class, cascade: ['remove'])]
     private Collection $questions;
 
     // Champ temporaire pour le formulaire (non persistant)
@@ -300,33 +300,34 @@ class UserModel implements UserInterface, PasswordAuthenticatedUserInterface
 
     // ==================== MÉTHODES DE SÉCURITÉ ====================
 
-/**
- * @see UserInterface
- */
-// src/Entity/User/UserModel.php
+    /**
+     * @see UserInterface
+     */
+    // src/Entity/User/UserModel.php
 
-public function getRoles(): array
-{
-    // ⚠️ IMPORTANT: Ne JAMAIS retourner un tableau vide
-    // Chaque utilisateur DOIT avoir au moins ROLE_USER
-    
-    $roles = ['ROLE_USER']; // ← TOUJOURS inclure ROLE_USER
-    
-    $roleName = $this->getRole()?->getRoleName() ?? '';
-    $roleName = strtolower($roleName);
-    
-    if ($roleName === 'admin' || $this->roleId == 4) {
-        $roles[] = 'ROLE_ADMIN';
+    public function getRoles(): array
+    {
+        // ⚠️ IMPORTANT: Ne JAMAIS retourner un tableau vide
+        // Chaque utilisateur DOIT avoir au moins ROLE_USER
+
+        $roles = ['ROLE_USER']; // ← TOUJOURS inclure ROLE_USER
+
+        $roleName = $this->getRole()?->getRoleName() ?? '';
+        $roleName = strtolower($roleName);
+
+        // IDs corrects selon la base de données: Admin=2, Organisateur=3, Sponsor=4
+        if ($roleName === 'admin' || $this->roleId == 2) {
+            $roles[] = 'ROLE_ADMIN';
+        }
+        if ($roleName === 'organisateur' || $this->roleId == 3) {
+            $roles[] = 'ROLE_ORGANISATEUR';
+        }
+        if ($roleName === 'sponsor' || $this->roleId == 4) {
+            $roles[] = 'ROLE_SPONSOR';
+        }
+
+        return $roles;
     }
-    if ($roleName === 'organisateur' || $this->roleId == 2) {
-        $roles[] = 'ROLE_ORGANISATEUR';
-    }
-    if ($roleName === 'sponsor' || $this->roleId == 3) {
-        $roles[] = 'ROLE_SPONSOR';
-    }
-    
-    return $roles;
-}
 
     public function eraseCredentials(): void
     {

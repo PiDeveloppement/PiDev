@@ -2,35 +2,25 @@
 
 {% block title %}Tableau de bord - EventFlow{% endblock %}
 
-{# Définir les informations de la page pour le header #}
-{% set pageInfo = {
-    title: 'Tableau de bord',
-    subtitle: 'Aperçu général de votre activité'
-} %}
-
-{# Garder les KPI dans le header #}
-{% block kpi %}
-    <div class="kpi-card kpi-card-blue">
-        <span class="kpi-icon">📅</span>
-        <span class="kpi-value" id="totalEventsKpi">{{ stats.total_events|default(0) }}</span>
-        <span class="kpi-label">Événements</span>
-    </div>
-    <div class="kpi-card kpi-card-green">
-        <span class="kpi-icon">👥</span>
-        <span class="kpi-value" id="totalParticipantsKpi">{{ stats.total_participants|default(0) }}</span>
-        <span class="kpi-label">Participants</span>
-    </div>
-   
+{% block page_title %}
+    {% if is_admin %}Tableau de bord - Administrateur{% else %}Tableau de bord{% endif %}
 {% endblock %}
 
+
 {% block admin_content %}
+<div class="role-banner mb-4">
+    {% if is_admin %}
+        <div class="banner-content admin-banner">
+            <span class="banner-icon">👑</span>
+            <span class="banner-text">Mode Administrateur - Vue globale du système</span>
+        </div>
+    {% endif %}
+</div>
 <div class="dashboard-container">
-    <!-- Contenu principal avec scroll -->
     <div class="dashboard-scroll">
         <div class="dashboard-content-wrapper">
-            <!-- Statistiques principales avec 4 cartes (style FXML) -->
+            <!-- Statistiques principales -->
             <div class="stats-section">
-                <!-- 4 cartes de statistiques (alignées horizontalement) -->
                 <div class="stats-grid">
                     <!-- Événements -->
                     <div class="stat-card">
@@ -43,31 +33,13 @@
                                 <span class="stat-label">Événements</span>
                             </div>
                         </div>
-                        <span class="stat-evolution stat-evolution-positive" id="eventsEvolutionLabel">
+                        <span class="stat-evolution {% if stats.events_evolution|default(0) >= 0 %}stat-evolution-positive{% else %}stat-evolution-negative{% endif %}" id="eventsEvolutionLabel">
                             {% if stats.events_evolution is defined and stats.events_evolution > 0 %}
                                 +{{ stats.events_evolution }}% vs mois dernier
+                            {% elseif stats.events_evolution is defined and stats.events_evolution < 0 %}
+                                {{ stats.events_evolution }}% vs mois dernier
                             {% else %}
-                                {{ stats.events_evolution|default(0) }}% vs mois dernier
-                            {% endif %}
-                        </span>
-                    </div>
-
-                    <!-- Participants -->
-                    <div class="stat-card">
-                        <div class="stat-card-content">
-                            <div class="stat-icon-wrapper stat-icon-green">
-                                <span class="stat-icon">👥</span>
-                            </div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="totalParticipantsLabel">{{ stats.total_participants|default(0) }}</span>
-                                <span class="stat-label">Participants</span>
-                            </div>
-                        </div>
-                        <span class="stat-evolution stat-evolution-positive" id="participantsEvolutionLabel">
-                            {% if stats.participants_evolution is defined and stats.participants_evolution > 0 %}
-                                +{{ stats.participants_evolution }}% vs mois dernier
-                            {% else %}
-                                {{ stats.participants_evolution|default(0) }}% vs mois dernier
+                                0% vs mois dernier
                             {% endif %}
                         </span>
                     </div>
@@ -83,34 +55,56 @@
                                 <span class="stat-label">Taux participation</span>
                             </div>
                         </div>
-                        <span class="stat-evolution stat-evolution-positive" id="participationEvolutionLabel">
+                        <span class="stat-evolution {% if stats.participation_evolution|default(0) >= 0 %}stat-evolution-positive{% else %}stat-evolution-negative{% endif %}" id="participationEvolutionLabel">
                             {% if stats.participation_evolution is defined and stats.participation_evolution > 0 %}
                                 +{{ stats.participation_evolution }}% vs mois dernier
+                            {% elseif stats.participation_evolution is defined and stats.participation_evolution < 0 %}
+                                {{ stats.participation_evolution }}% vs mois dernier
                             {% else %}
-                                {{ stats.participation_evolution|default(0) }}% vs mois dernier
+                                0% vs mois dernier
                             {% endif %}
                         </span>
                     </div>
 
-                    <!-- Billets vendus (4ème carte) -->
+                    <!-- Total Utilisateurs -->
                     <div class="stat-card">
                         <div class="stat-card-content">
-                            <div class="stat-icon-wrapper stat-icon-orange">
-                                <span class="stat-icon">🎫</span>
+                            <div class="stat-icon-wrapper stat-icon-cyan">
+                                <span class="stat-icon">👤</span>
                             </div>
                             <div class="stat-info">
-                                <span class="stat-value" id="totalTicketsLabel">{{ stats.total_tickets|default(0) }}</span>
-                                <span class="stat-label">Billets</span>
+                                <span class="stat-value" id="totalUsersLabel">{{ stats.total_users_stats|default(0) }}</span>
+                                <span class="stat-label">Total Utilisateurs</span>
                             </div>
                         </div>
-                        <span class="stat-evolution stat-evolution-neutral" id="ticketsEvolutionLabel">
-                            {% if stats.tickets_evolution is defined and stats.tickets_evolution > 0 %}
-                                +{{ stats.tickets_evolution }}% ce mois
+                        <span class="stat-evolution {% if stats.users_evolution|default(0) >= 0 %}stat-evolution-positive{% else %}stat-evolution-negative{% endif %}" id="usersEvolutionLabel">
+                            {% if stats.users_evolution is defined and stats.users_evolution > 0 %}
+                                +{{ stats.users_evolution }}% vs mois dernier
+                            {% elseif stats.users_evolution is defined and stats.users_evolution < 0 %}
+                                {{ stats.users_evolution }}% vs mois dernier
                             {% else %}
-                                {{ stats.tickets_evolution|default(0) }}% ce mois
+                                0% vs mois dernier
                             {% endif %}
                         </span>
                     </div>
+
+                    <!-- Nouveaux ce mois -->
+                    <div class="stat-card">
+                        <div class="stat-card-content">
+                            <div class="stat-icon-wrapper stat-icon-pink">
+                                <span class="stat-icon">🆕</span>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="newUsersLabel">{{ stats.new_users_this_month|default(0) }}</span>
+                                <span class="stat-label">Nouveaux ce mois</span>
+                            </div>
+                        </div>
+                        <span class="stat-evolution stat-evolution-neutral" id="newUsersEvolutionLabel">
+                            Ce mois
+                        </span>
+                    </div>
+
+                  
                 </div>
 
                 <!-- Graphiques et visualisations -->
@@ -121,10 +115,8 @@
                             <span class="chart-icon">📊</span>
                             <h3 class="chart-title">Événements par Statut</h3>
                         </div>
-
-                        <!-- Barres de progression -->
                         <div class="progress-bars-container">
-                            <!-- Planifié -->
+                            <!-- À venir -->
                             <div class="progress-item">
                                 <div class="progress-header">
                                     <span class="progress-label">À venir</span>
@@ -168,31 +160,119 @@
                         </div>
                     </div>
 
-                    <!-- Événements à venir -->
+                    <!-- Utilisateurs par Rôle -->
                     <div class="chart-card">
+                        <div class="chart-header">
+                            <span class="chart-icon">👥</span>
+                            <h3 class="chart-title">Utilisateurs par Rôle</h3>
+                        </div>
+                        <div class="progress-bars-container">
+                            <!-- Administrateurs -->
+                            <div class="progress-item">
+                                <div class="progress-header">
+                                    <span class="progress-label">👑 Administrateurs</span>
+                                    <div class="progress-stats">
+                                        <span class="progress-percent progress-percent-purple" id="adminsPercentLabel">{{ stats.admins_percent|default(0) }}%</span>
+                                        <span class="progress-count" id="adminsCountLabel">{{ stats.admins_count|default(0) }} utilisateurs</span>
+                                    </div>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill progress-bar-purple" id="adminsProgress" style="width: {{ stats.admins_percent|default(0) }}%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Organisateurs -->
+                            <div class="progress-item">
+                                <div class="progress-header">
+                                    <span class="progress-label">🎯 Organisateurs</span>
+                                    <div class="progress-stats">
+                                        <span class="progress-percent progress-percent-blue" id="organizersPercentLabel">{{ stats.organizers_percent|default(0) }}%</span>
+                                        <span class="progress-count" id="organizersCountLabel">{{ stats.organizers_count|default(0) }} utilisateurs</span>
+                                    </div>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill progress-bar-blue" id="organizersProgress" style="width: {{ stats.organizers_percent|default(0) }}%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Utilisateurs standard -->
+                            <div class="progress-item">
+                                <div class="progress-header">
+                                    <span class="progress-label">👤 Utilisateurs</span>
+                                    <div class="progress-stats">
+                                        <span class="progress-percent progress-percent-green" id="defaultPercentLabel">{{ stats.default_percent|default(0) }}%</span>
+                                        <span class="progress-count" id="defaultCountLabel">{{ stats.default_count|default(0) }} utilisateurs</span>
+                                    </div>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill progress-bar-green" id="defaultProgress" style="width: {{ stats.default_percent|default(0) }}%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Sponsors -->
+                            <div class="progress-item">
+                                <div class="progress-header">
+                                    <span class="progress-label">💼 Sponsors</span>
+                                    <div class="progress-stats">
+                                        <span class="progress-percent progress-percent-orange" id="sponsorsPercentLabel">{{ stats.sponsors_percent|default(0) }}%</span>
+                                        <span class="progress-count" id="sponsorsCountLabel">{{ stats.sponsors_count|default(0) }} utilisateurs</span>
+                                    </div>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill progress-bar-orange" id="sponsorsProgress" style="width: {{ stats.sponsors_percent|default(0) }}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Événements à venir -->
+                    <div class="chart-card full-width">
                         <div class="chart-header">
                             <span class="chart-icon">📅</span>
                             <h3 class="chart-title">Événements à Venir</h3>
                             <div style="flex: 1;"></div>
-                            <a {#href="{{ path('app_events_index') }}"#} class="view-all-btn">Voir tout</a>
+                            <a href="#" class="view-all-btn">Voir tout</a>
                         </div>
-
-                        <!-- Liste des événements à venir -->
                         <div id="upcomingEventsContainer" class="upcoming-events-container">
                             {% if upcoming_events is defined and upcoming_events|length > 0 %}
                                 {% for event in upcoming_events %}
+                                    {% set now = "now"|date('U') %}
+                                    {% set start = event.startDate ? event.startDate|date('U') : 0 %}
+                                    {% set end = event.endDate ? event.endDate|date('U') : 0 %}
+
+                                    {% if end < now %}
+                                        {% set temporalStatus = 'termine' %}
+                                        {% set statusLabel = 'Terminé' %}
+                                        {% set statusColor = '#64748b' %}
+                                        {% set statusBg = '#e2e8f0' %}
+                                    {% elseif start > now %}
+                                        {% set temporalStatus = 'avenir' %}
+                                        {% set statusLabel = 'À venir' %}
+                                        {% set statusColor = '#22c55e' %}
+                                        {% set statusBg = '#dcfce7' %}
+                                    {% else %}
+                                        {% set temporalStatus = 'encours' %}
+                                        {% set statusLabel = 'En cours' %}
+                                        {% set statusColor = '#3b82f6' %}
+                                        {% set statusBg = '#dbeafe' %}
+                                    {% endif %}
+
                                     <div class="event-item" onclick="window.location.href='{{ path('app_event_show', {'id': event.id}) }}'">
-                                        <div class="event-status-dot" style="background-color: {{ event.statusColor|default('#22c55e') }};"></div>
+                                        <div class="event-status-dot" style="background-color: {{ statusColor }};"></div>
                                         <div class="event-info">
                                             <div class="event-title">{{ event.title }}</div>
                                             <div class="event-meta">
-                                                {{ event.startDate|date('d M Y H:i') }} • 
-                                                {{ event.location|default('Lieu non défini') }} • 
-                                                {{ event.participants|default(0) }}/{{ event.capacity }} participants
+                                                {{ event.startDate ? event.startDate|date('d/m/Y H:i') : '-' }} • 
+                                                {{ event.location ?: 'Lieu non défini' }} • 
+                                                {% if event.isFree %}
+                                                    Gratuit
+                                                {% else %}
+                                                    {{ event.ticketPrice }} DT
+                                                {% endif %}
                                             </div>
                                         </div>
-                                        <span class="event-badge" style="background-color: {{ event.statusBg|default('#dcfce7') }}; color: {{ event.statusColor|default('#22c55e') }};">
-                                            {{ event.statusDisplay|default('Publié') }}
+                                        <span class="event-badge" style="background-color: {{ statusBg }}; color: {{ statusColor }};">
+                                            {{ statusLabel }}
                                         </span>
                                     </div>
                                 {% endfor %}
@@ -210,6 +290,11 @@
                         <button class="btn-outline" onclick="generateReport()">
                             📊 Générer rapport
                         </button>
+                        {% if is_admin %}
+                        <button class="btn-outline" onclick="window.location.href='{{ path('app_user_index') }}'">
+                            👥 Gérer utilisateurs
+                        </button>
+                        {% endif %}
                         <div style="flex: 1;"></div>
                         <button class="btn-primary" onclick="refreshDashboard()">
                             🔄 Actualiser
@@ -231,125 +316,143 @@
 </div>
 
 <style>
-    /* Style global */
+    /* Reset et styles de base */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
     .dashboard-container {
         background-color: #f8fafc;
         min-height: 100vh;
-        display: flex;
-        flex-direction: column;
+        width: 100%;
     }
 
     .dashboard-scroll {
-        flex: 1;
-        overflow-y: auto;
-        padding: 0 40px 20px 40px;
+        width: 100%;
+        padding: 0 24px 24px 24px;
     }
 
     .dashboard-content-wrapper {
-        max-width: 1400px;
+        max-width: 1600px;
         margin: 0 auto;
-        padding: 30px 0;
+        padding: 24px 0;
     }
 
     .stats-section {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 24px;
     }
 
-    /* Grille des statistiques - 4 cartes */
+    /* Grille des statistiques - 5 cartes qui s'étendent */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 25px;
-        margin-bottom: 20px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 24px;
+        width: 100%;
     }
 
     .stat-card {
-        background-color: white;
-        border-radius: 12px;
-        padding: 25px 20px;
+        background: white;
+        border-radius: 16px;
+        padding: 24px 20px;
         border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
         display: flex;
         flex-direction: column;
-        gap: 5px;
+        gap: 12px;
+    }
+
+    .stat-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
     }
 
     .stat-card-content {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 16px;
     }
 
     .stat-icon-wrapper {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
     }
 
     .stat-icon-blue {
-        background-color: #e0f2fe;
-    }
-
-    .stat-icon-green {
-        background-color: #f0fdf4;
+        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
     }
 
     .stat-icon-purple {
-        background-color: #f3e8ff;
+        background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
     }
 
-    .stat-icon-orange {
-        background-color: #fff7ed;
+    .stat-icon-cyan {
+        background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%);
+    }
+
+    .stat-icon-pink {
+        background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
     }
 
     .stat-icon {
-        font-size: 24px;
+        font-size: 28px;
     }
 
     .stat-info {
-        display: flex;
-        flex-direction: column;
+        flex: 1;
     }
 
     .stat-value {
         font-size: 32px;
-        font-weight: bold;
+        font-weight: 700;
         line-height: 1.2;
+        display: block;
+        margin-bottom: 4px;
     }
 
     #totalEventsLabel {
         color: #0ea5e9;
     }
 
-    #totalParticipantsLabel {
-        color: #22c55e;
-    }
-
     #participationRateLabel {
         color: #a855f7;
     }
 
-    #totalTicketsLabel {
-        color: #f97316;
+    #totalUsersLabel {
+        color: #06b6d4;
+    }
+
+    #newUsersLabel {
+        color: #ec4899;
     }
 
     .stat-label {
         color: #64748b;
-        font-size: 13px;
+        font-size: 14px;
+        font-weight: 500;
     }
 
     .stat-evolution {
         font-size: 12px;
-        margin-top: 5px;
+        padding-top: 8px;
+        border-top: 1px solid #f1f5f9;
     }
 
     .stat-evolution-positive {
         color: #22c55e;
+    }
+
+    .stat-evolution-negative {
+        color: #ef4444;
     }
 
     .stat-evolution-neutral {
@@ -359,87 +462,100 @@
     /* Grille des graphiques */
     .charts-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 25px;
-        margin-bottom: 20px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        width: 100%;
     }
 
     .chart-card {
-        background-color: white;
-        border-radius: 12px;
-        padding: 25px;
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
         border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+    }
+
+    .chart-card.full-width {
+        grid-column: span 2;
+    }
+
+    .chart-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
     .chart-header {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #f1f5f9;
     }
 
     .chart-icon {
-        font-size: 18px;
+        font-size: 20px;
     }
 
     .chart-title {
         font-size: 18px;
-        font-weight: bold;
-        color: #1e293b;
+        font-weight: 600;
+        color: #0f172a;
         margin: 0;
     }
 
     .view-all-btn {
-        background-color: #f1f5f9;
+        background: #f1f5f9;
         color: #475569;
-        font-size: 12px;
-        padding: 5px 12px;
-        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 14px;
+        border-radius: 8px;
         text-decoration: none;
-        border: none;
-        cursor: pointer;
+        transition: all 0.2s;
     }
 
     .view-all-btn:hover {
-        background-color: #e2e8f0;
+        background: #e2e8f0;
+        color: #0f172a;
     }
 
     /* Barres de progression */
     .progress-bars-container {
         display: flex;
         flex-direction: column;
-        gap: 15px;
-        padding: 20px 0;
+        gap: 20px;
     }
 
     .progress-item {
         display: flex;
         flex-direction: column;
-        gap: 5px;
+        gap: 8px;
     }
 
     .progress-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
     }
 
     .progress-label {
-        color: #475569;
+        color: #334155;
         font-size: 14px;
-        min-width: 100px;
+        font-weight: 500;
     }
 
     .progress-stats {
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 12px;
     }
 
     .progress-percent {
         font-size: 14px;
-        font-weight: bold;
+        font-weight: 700;
     }
 
     .progress-percent-green {
@@ -454,34 +570,50 @@
         color: #94a3b8;
     }
 
+    .progress-percent-purple {
+        color: #a855f7;
+    }
+
+    .progress-percent-orange {
+        color: #f97316;
+    }
+
     .progress-count {
         color: #94a3b8;
         font-size: 12px;
     }
 
     .progress-bar-container {
-        height: 10px;
-        background-color: #e2e8f0;
-        border-radius: 5px;
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 20px;
         overflow: hidden;
     }
 
     .progress-bar-fill {
         height: 100%;
-        border-radius: 5px;
-        transition: width 0.3s ease;
+        border-radius: 20px;
+        transition: width 0.6s ease;
     }
 
     .progress-bar-green {
-        background-color: #22c55e;
+        background: linear-gradient(90deg, #22c55e, #4ade80);
     }
 
     .progress-bar-blue {
-        background-color: #3b82f6;
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
     }
 
     .progress-bar-gray {
-        background-color: #94a3b8;
+        background: linear-gradient(90deg, #94a3b8, #cbd5e1);
+    }
+
+    .progress-bar-purple {
+        background: linear-gradient(90deg, #a855f7, #c084fc);
+    }
+
+    .progress-bar-orange {
+        background: linear-gradient(90deg, #f97316, #fb923c);
     }
 
     /* Liste des événements */
@@ -489,22 +621,26 @@
         display: flex;
         flex-direction: column;
         gap: 12px;
-        padding: 15px 0;
+        max-height: 400px;
+        overflow-y: auto;
     }
 
     .event-item {
         display: flex;
         align-items: center;
-        gap: 15px;
-        padding: 12px;
-        border-radius: 8px;
-        background-color: #f8fafc;
+        gap: 16px;
+        padding: 16px;
+        background: #f8fafc;
+        border-radius: 12px;
         cursor: pointer;
-        transition: background-color 0.2s;
+        transition: all 0.2s;
+        border: 1px solid transparent;
     }
 
     .event-item:hover {
-        background-color: #f1f5f9;
+        background: #f1f5f9;
+        border-color: #e2e8f0;
+        transform: translateX(4px);
     }
 
     .event-status-dot {
@@ -519,9 +655,10 @@
     }
 
     .event-title {
-        font-weight: bold;
-        color: #1e293b;
-        margin-bottom: 4px;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 6px;
+        font-size: 15px;
     }
 
     .event-meta {
@@ -532,7 +669,7 @@
     .event-badge {
         font-size: 12px;
         padding: 4px 12px;
-        border-radius: 16px;
+        border-radius: 20px;
         font-weight: 500;
         white-space: nowrap;
     }
@@ -540,77 +677,80 @@
     .empty-state {
         text-align: center;
         color: #94a3b8;
-        padding: 20px;
+        padding: 40px;
+        font-size: 14px;
     }
 
     /* Actions rapides */
     .quick-actions-section {
-        background-color: white;
-        border-radius: 12px;
-        padding: 20px;
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
         border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        margin-top: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .quick-actions-title {
         font-size: 18px;
-        font-weight: bold;
-        color: #1e293b;
-        margin: 0 0 15px 0;
+        font-weight: 600;
+        color: #0f172a;
+        margin: 0 0 20px 0;
     }
 
     .quick-actions-bar {
         display: flex;
         align-items: center;
-        gap: 20px;
+        gap: 16px;
+        flex-wrap: wrap;
     }
 
     .btn-outline {
-        background-color: white;
+        background: white;
         color: #475569;
-        font-weight: bold;
+        font-weight: 500;
         font-size: 14px;
-        padding: 12px 25px;
+        padding: 10px 20px;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        border-radius: 10px;
         cursor: pointer;
         transition: all 0.2s;
     }
 
     .btn-outline:hover {
-        background-color: #f8fafc;
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
     }
 
     .btn-primary {
-        background-color: #3b82f6;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
         color: white;
-        font-weight: bold;
+        font-weight: 500;
         font-size: 14px;
-        padding: 12px 25px;
+        padding: 10px 24px;
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         cursor: pointer;
-        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
         transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
     }
 
     .btn-primary:hover {
-        background-color: #2563eb;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
 
     /* Footer */
     .dashboard-footer {
-        background-color: #f8fafc;
-        padding: 20px 0;
-        margin-top: 20px;
+        background: transparent;
+        padding: 24px 0;
+        margin-top: 24px;
         border-top: 1px solid #e2e8f0;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 30px;
+        gap: 24px;
+        flex-wrap: wrap;
     }
 
     .dashboard-footer span {
@@ -621,7 +761,7 @@
     .footer-separator {
         width: 1px;
         height: 12px;
-        background-color: #cbd5e1;
+        background: #cbd5e1;
     }
 
     /* Responsive */
@@ -629,83 +769,224 @@
         .stats-grid {
             grid-template-columns: repeat(2, 1fr);
         }
+        
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .chart-card.full-width {
+            grid-column: span 1;
+        }
     }
 
     @media (max-width: 768px) {
         .dashboard-scroll {
-            padding: 0 20px;
+            padding: 0 16px 16px 16px;
         }
-
+        
         .stats-grid {
             grid-template-columns: 1fr;
+            gap: 16px;
         }
-
+        
         .charts-grid {
-            grid-template-columns: 1fr;
+            gap: 16px;
         }
-
+        
+        .stat-value {
+            font-size: 28px;
+        }
+        
         .quick-actions-bar {
             flex-direction: column;
             align-items: stretch;
         }
-
+        
+        .btn-outline, .btn-primary {
+            width: 100%;
+            text-align: center;
+        }
+        
         .dashboard-footer {
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
-
+        
         .footer-separator {
             display: none;
         }
+    }
+
+    /* Scrollbar personnalisée */
+    .upcoming-events-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .upcoming-events-container::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+    
+    .upcoming-events-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+    
+    .upcoming-events-container::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    /* Bannière de rôle */
+    .role-banner {
+        margin-bottom: 24px;
+    }
+
+    .banner-content {
+        padding: 16px 20px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .admin-banner {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 2px solid #fcd34d;
+    }
+
+    .organizer-banner {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        border: 2px solid #93c5fd;
+    }
+
+    .banner-icon {
+        font-size: 24px;
+    }
+
+    .banner-text {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .mb-4 {
+        margin-bottom: 16px;
     }
 </style>
 
 <script>
 function refreshDashboard() {
+    console.log('🔄 Rafraîchissement du dashboard...');
     fetch('{{ path('app_dashboard_refresh') }}')
         .then(response => response.json())
         .then(data => {
-            // Mettre à jour les KPI du header
-            document.getElementById('totalEventsKpi').textContent = data.totalEvents || 0;
-            document.getElementById('totalParticipantsKpi').textContent = data.totalParticipants || 0;
-            document.getElementById('totalTicketsKpi').textContent = data.totalTickets || 0;
-            
-            // Mettre à jour les cartes de statistiques
-            document.getElementById('totalEventsLabel').textContent = data.totalEvents || 0;
-            document.getElementById('totalParticipantsLabel').textContent = data.totalParticipants || 0;
-            document.getElementById('participationRateLabel').textContent = (data.participationRate || 0) + '%';
-            document.getElementById('totalTicketsLabel').textContent = data.totalTickets || 0;
-            
-            // Mettre à jour les évolutions
-            document.getElementById('eventsEvolutionLabel').textContent = (data.eventsEvolution > 0 ? '+' : '') + (data.eventsEvolution || 0) + '% vs mois dernier';
-            document.getElementById('participantsEvolutionLabel').textContent = (data.participantsEvolution > 0 ? '+' : '') + (data.participantsEvolution || 0) + '% vs mois dernier';
-            document.getElementById('participationEvolutionLabel').textContent = (data.participationEvolution > 0 ? '+' : '') + (data.participationEvolution || 0) + '% vs mois dernier';
-            document.getElementById('ticketsEvolutionLabel').textContent = (data.ticketsEvolution > 0 ? '+' : '') + (data.ticketsEvolution || 0) + '% ce mois';
-            
-            // Mettre à jour les barres de progression
-            document.getElementById('planifiePercentLabel').textContent = (data.planifiePercent || 0) + '%';
-            document.getElementById('planifieCountLabel').textContent = (data.planifieCount || 0) + ' événements';
-            document.getElementById('planifieProgress').style.width = (data.planifiePercent || 0) + '%';
-            
-            document.getElementById('enCoursPercentLabel').textContent = (data.enCoursPercent || 0) + '%';
-            document.getElementById('enCoursCountLabel').textContent = (data.enCoursCount || 0) + ' événements';
-            document.getElementById('enCoursProgress').style.width = (data.enCoursPercent || 0) + '%';
-            
-            document.getElementById('terminePercentLabel').textContent = (data.terminePercent || 0) + '%';
-            document.getElementById('termineCountLabel').textContent = (data.termineCount || 0) + ' événements';
-            document.getElementById('termineProgress').style.width = (data.terminePercent || 0) + '%';
-            
-            console.log('✅ Dashboard rafraîchi avec succès');
+            console.log('✅ Dashboard mis à jour', data);
+            if (data.totalEvents !== undefined) document.getElementById('totalEventsLabel').textContent = data.totalEvents;
+            if (data.participationRate !== undefined) document.getElementById('participationRateLabel').textContent = data.participationRate + '%';
+            if (data.totalUsers !== undefined) document.getElementById('totalUsersLabel').textContent = data.totalUsers;
+            if (data.newUsersThisMonth !== undefined) document.getElementById('newUsersLabel').textContent = data.newUsersThisMonth;
+            if (data.eventsEvolution !== undefined) document.getElementById('eventsEvolutionLabel').textContent = (data.eventsEvolution >= 0 ? '+' : '') + data.eventsEvolution + '% vs mois dernier';
+            if (data.participationEvolution !== undefined) document.getElementById('participationEvolutionLabel').textContent = (data.participationEvolution >= 0 ? '+' : '') + data.participationEvolution + '% vs mois dernier';
+            if (data.usersEvolution !== undefined) document.getElementById('usersEvolutionLabel').textContent = (data.usersEvolution >= 0 ? '+' : '') + data.usersEvolution + '% vs mois dernier';
+
+            if (data.planifiePercent !== undefined) {
+                document.getElementById('planifiePercentLabel').textContent = data.planifiePercent + '%';
+                document.getElementById('planifieCountLabel').textContent = data.planifieCount + ' événements';
+                document.getElementById('planifieProgress').style.width = data.planifiePercent + '%';
+            }
+            if (data.enCoursPercent !== undefined) {
+                document.getElementById('enCoursPercentLabel').textContent = data.enCoursPercent + '%';
+                document.getElementById('enCoursCountLabel').textContent = data.enCoursCount + ' événements';
+                document.getElementById('enCoursProgress').style.width = data.enCoursPercent + '%';
+            }
+            if (data.terminePercent !== undefined) {
+                document.getElementById('terminePercentLabel').textContent = data.terminePercent + '%';
+                document.getElementById('termineCountLabel').textContent = data.termineCount + ' événements';
+                document.getElementById('termineProgress').style.width = data.terminePercent + '%';
+            }
+
+            if (data.adminsPercent !== undefined) {
+                document.getElementById('adminsPercentLabel').textContent = data.adminsPercent + '%';
+                document.getElementById('adminsCountLabel').textContent = data.adminsCount + ' utilisateurs';
+                document.getElementById('adminsProgress').style.width = data.adminsPercent + '%';
+            }
+            if (data.organizersPercent !== undefined) {
+                document.getElementById('organizersPercentLabel').textContent = data.organizersPercent + '%';
+                document.getElementById('organizersCountLabel').textContent = data.organizersCount + ' utilisateurs';
+                document.getElementById('organizersProgress').style.width = data.organizersPercent + '%';
+            }
+            if (data.defaultPercent !== undefined) {
+                document.getElementById('defaultPercentLabel').textContent = data.defaultPercent + '%';
+                document.getElementById('defaultCountLabel').textContent = data.defaultCount + ' utilisateurs';
+                document.getElementById('defaultProgress').style.width = data.defaultPercent + '%';
+            }
+            if (data.sponsorsPercent !== undefined) {
+                document.getElementById('sponsorsPercentLabel').textContent = data.sponsorsPercent + '%';
+                document.getElementById('sponsorsCountLabel').textContent = data.sponsorsCount + ' utilisateurs';
+                document.getElementById('sponsorsProgress').style.width = data.sponsorsPercent + '%';
+            }
+
+            // Mise à jour des événements à venir
+            if (data.upcomingEvents !== undefined) {
+                const container = document.getElementById('upcomingEventsContainer');
+                if (container && Array.isArray(data.upcomingEvents)) {
+                    if (data.upcomingEvents.length > 0) {
+                        const now = Math.floor(Date.now() / 1000);
+                        container.innerHTML = data.upcomingEvents.map(event => {
+                            const start = event.startDate ? new Date(event.startDate).getTime() / 1000 : 0;
+                            const end = event.endDate ? new Date(event.endDate).getTime() / 1000 : 0;
+
+                            let temporalStatus, statusLabel, statusColor, statusBg;
+                            if (end < now) {
+                                temporalStatus = 'termine';
+                                statusLabel = 'Terminé';
+                                statusColor = '#64748b';
+                                statusBg = '#e2e8f0';
+                            } else if (start > now) {
+                                temporalStatus = 'avenir';
+                                statusLabel = 'À venir';
+                                statusColor = '#22c55e';
+                                statusBg = '#dcfce7';
+                            } else {
+                                temporalStatus = 'encours';
+                                statusLabel = 'En cours';
+                                statusColor = '#3b82f6';
+                                statusBg = '#dbeafe';
+                            }
+
+                            const startDate = event.startDate ? new Date(event.startDate).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+                            const location = event.location || 'Lieu non défini';
+                            const price = event.isFree ? 'Gratuit' : `${event.ticketPrice} DT`;
+
+                            return `
+                                <div class="event-item" onclick="window.location.href='/event/${event.id}'">
+                                    <div class="event-status-dot" style="background-color: ${statusColor};"></div>
+                                    <div class="event-info">
+                                        <div class="event-title">${event.title}</div>
+                                        <div class="event-meta">
+                                            ${startDate} • ${location} • ${price}
+                                        </div>
+                                    </div>
+                                    <span class="event-badge" style="background-color: ${statusBg}; color: ${statusColor};">
+                                        ${statusLabel}
+                                    </span>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        container.innerHTML = '<div class="empty-state">Aucun événement à venir</div>';
+                    }
+                }
+            }
+
         })
         .catch(error => console.error('❌ Erreur:', error));
 }
 
 function generateReport() {
-    {# window.open('{{ path('app_report_generate') }}', '_blank', 'width=1200,height=800'); #}
-    console.log('Génération du rapport...');
+    console.log('📊 Génération du rapport...');
+    window.location.href = '{{ path('app_dashboard_report') }}';
 }
-
-// Rafraîchissement automatique toutes les 30 secondes (optionnel)
-// setInterval(refreshDashboard, 30000);
 </script>
 {% endblock %}

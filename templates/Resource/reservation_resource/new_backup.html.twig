@@ -1,0 +1,972 @@
+{% extends 'base.html.twig' %}
+
+
+
+
+{# Infos pour la TopBar #}
+
+
+
+{% set pageInfo = {
+
+
+
+    'title': 'Gestion des réservations',
+
+
+
+    'subtitle': 'Créez une nouvelle réservation de salle ou d\'équipement'
+} %}
+{% block admin_content %}
+
+
+
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 2px; margin-bottom: 20px;">
+
+
+
+    <div style="background: white; border-radius: 14px; padding: 30px;">
+
+
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+
+
+
+            <div>
+
+
+
+                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px;">
+
+
+
+                    <i class="fas fa-calendar-plus" style="color: #667eea; margin-right: 10px;"></i>
+
+
+
+                    Formulaire de Réservation
+
+
+
+                </h3>
+
+
+
+                <p style="color: #64748b; font-size: 14px;">Réservez une salle ou un équipement pour votre événement</p>
+
+
+
+            </div>
+
+
+
+            <a href="{{ path('app_reservation_resource_index') }}" 
+
+
+
+               style="background: #64748b; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; transition: transform 0.2s;">
+
+
+
+                <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>
+
+
+
+                Retour à la liste
+
+
+
+            </a>
+
+
+
+        </div>
+
+
+        {{ form_start(form, {'attr': {'id': 'reservationForm', 'novalidate': 'novalidate'}}) }}
+
+
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+
+
+
+            <!-- Formulaire principal -->
+
+
+
+            <div>
+
+
+
+                <div style="background: #f8fafc; border-radius: 12px; padding: 25px; border: 1px solid #e2e8f0;">
+
+
+
+                    <h4 style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px;">
+
+
+
+                        <i class="fas fa-info-circle" style="color: #667eea; margin-right: 8px;"></i>
+
+
+
+                        Informations de réservation
+
+
+
+                    </h4>
+
+
+
+                    
+
+
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+
+
+
+                        <div>
+
+
+
+                            <label for="{{ form.resourceType.vars.id }}" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
+
+
+
+                                <i class="fas fa-tag" style="margin-right: 5px;"></i>Type
+
+
+
+                            </label>
+
+
+
+                            {{ form_widget(form.resourceType, {
+
+
+
+                                'attr': {
+
+
+
+                                    'id': form.resourceType.vars.id,
+
+
+
+                                    'onchange': 'loadResources()',
+
+
+
+                                    'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;'
+
+
+                                }
+
+
+
+                            }) }}
+
+
+
+                        </div>
+
+
+
+                        <div>
+
+
+
+                            <label for="{{ form.quantity.vars.id }}" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
+
+
+
+                                <i class="fas fa-sort-numeric-up" style="margin-right: 5px;"></i>Qté
+
+
+
+                            </label>
+
+
+
+                            {{ form_widget(form.quantity, {
+
+
+
+                                'attr': {
+
+
+
+                                    'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;',
+
+
+
+                                    'min': '1'
+
+
+
+                                }
+
+
+
+                            }) }}
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+
+
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+
+
+
+                        <div>
+
+
+
+                            <label for="{{ form.startTime.vars.id }}" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
+
+
+
+                                <i class="fas fa-calendar-alt" style="margin-right: 5px;"></i>Début
+
+
+
+                            </label>
+
+
+
+                            {{ form_widget(form.startTime, {
+
+
+
+                                'attr': {
+
+
+
+                                    'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;'
+
+
+
+                                }
+
+
+
+                            }) }}
+
+
+
+                        </div>
+
+
+
+                        <div>
+
+
+
+                            <label for="{{ form.endTime.vars.id }}" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
+
+
+
+                                <i class="fas fa-calendar-check" style="margin-right: 5px;"></i>Fin
+
+
+
+                            </label>
+
+
+
+                            {{ form_widget(form.endTime, {
+
+
+
+                                'attr': {
+
+
+
+                                    'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;'
+
+
+
+                                }
+
+
+
+                            }) }}
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+
+
+
+                    <div style="margin-bottom: 20px;">
+
+
+
+                        <label for="resourceSelect" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
+
+
+
+                            <i class="fas fa-boxes" style="margin-right: 5px;"></i>Ressource
+
+
+
+                        </label>
+
+
+
+                        <select id="resourceSelect" name="resourceSelect" 
+
+
+
+                                style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white; transition: border-color 0.2s;">
+
+
+
+                            <option value="">Sélectionnez d'abord un type</option>
+
+
+
+                        </select>
+
+
+
+                        {{ form_widget(form.salle, {'attr': {'style': 'display: none;'}}) }}
+
+
+
+                        {{ form_widget(form.equipement, {'attr': {'style': 'display: none;'}}) }}
+
+
+
+                    </div>
+
+
+
+
+
+
+
+                    <div style="display: flex; gap: 15px; justify-content: flex-end;">
+
+
+
+                        <a href="{{ path('app_reservation_resource_index') }}" 
+
+
+
+                           style="background: #ef4444; color: white; padding: 12px 30px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; transition: transform 0.2s;">
+
+
+
+                            <i class="fas fa-times" style="margin-right: 8px;"></i>Annuler
+
+
+
+                        </a>
+
+
+
+                        <button type="submit" 
+
+
+
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.2s;">
+
+
+
+                            <i class="fas fa-check" style="margin-right: 8px;"></i>Réserver
+
+
+
+                        </button>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- Aperçu -->
+
+
+
+            <div>
+
+
+
+                <div style="background: #f8fafc; border-radius: 12px; padding: 25px; border: 1px solid #e2e8f0; position: sticky; top: 20px;">
+
+
+
+                    <h4 style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 20px;">
+
+
+
+                        <i class="fas fa-eye" style="color: #667eea; margin-right: 8px;"></i>
+
+
+
+                        Aperçu
+
+
+
+                    </h4>
+
+
+
+                    
+
+
+
+                    <div id="previewContent" style="color: #64748b; font-size: 14px; line-height: 1.6;">
+
+
+
+                        <div style="margin-bottom: 15px;">
+
+
+
+                            <strong>Type:</strong> 
+
+
+
+                            <span id="previewType" style="color: #374151;">Non sélectionné</span>
+
+
+
+                        </div>
+
+
+
+                        <div style="margin-bottom: 15px;">
+
+
+
+                            <strong>Ressource:</strong> 
+
+
+
+                            <span id="previewResource" style="color: #374151;">Non sélectionnée</span>
+
+
+
+                        </div>
+
+
+
+                        <div style="margin-bottom: 15px;">
+
+
+
+                            <strong>Quantité:</strong> 
+
+
+
+                            <span id="previewQuantity" style="color: #374151;">1</span>
+
+
+
+                        </div>
+
+
+
+                        <div style="margin-bottom: 15px;">
+
+
+
+                            <strong>Début:</strong> 
+
+
+
+                            <span id="previewStart" style="color: #374151;">Non défini</span>
+
+
+
+                        </div>
+
+
+
+                        <div style="margin-bottom: 15px;">
+
+
+
+                            <strong>Fin:</strong> 
+
+
+
+                            <span id="previewEnd" style="color: #374151;">Non défini</span>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+
+
+
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+
+
+
+                        <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 12px;">
+
+
+
+                            <p style="margin: 0; color: #92400e; font-size: 12px;">
+
+
+
+                                <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
+
+
+
+                                Les réservations sont soumises à validation et dépendent de la disponibilité des ressources.
+
+
+
+                            </p>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+        {{ form_end(form) }}
+
+
+
+    </div>
+
+
+
+</div>
+
+
+
+
+
+
+
+<script>
+
+// Fonction pour afficher des alertes personnalisées
+function showAlert(message) {
+    // Créer l'élément d'alerte
+    const alertDiv = document.createElement('div');
+    alertDiv.style.cssText = `
+        position: fixed;
+        top: -100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        z-index: 10000;
+        font-size: 14px;
+        font-weight: 500;
+        max-width: 400px;
+        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    `;
+    
+    // Ajouter l'icône
+    alertDiv.innerHTML = `
+        <div style="display: flex; align-items: center;">
+            <i class="fas fa-exclamation-circle" style="margin-right: 10px; font-size: 16px;"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    // Ajouter l'alerte à la page
+    document.body.appendChild(alertDiv);
+    
+    // Animation d'entrée depuis le haut
+    setTimeout(() => {
+        alertDiv.style.top = '20px';
+    }, 100);
+    
+    // Animation de sortie et suppression après 3 secondes
+    setTimeout(() => {
+        alertDiv.style.top = '-100px';
+        alertDiv.style.opacity = '0';
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.parentNode.removeChild(alertDiv);
+            }
+        }, 400);
+    }, 3000);
+    
+    // Fermeture au clic avec animation
+    alertDiv.addEventListener('click', () => {
+        alertDiv.style.top = '-100px';
+        alertDiv.style.opacity = '0';
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.parentNode.removeChild(alertDiv);
+            }
+        }, 400);
+    });
+}
+
+
+
+async function loadResources() {
+    const resourceTypeField = document.getElementById('{{ form.resourceType.vars.id }}');
+    const startTimeField = document.getElementById('{{ form.startTime.vars.id }}');
+    const endTimeField = document.getElementById('{{ form.endTime.vars.id }}');
+    const resourceSelect = document.getElementById('resourceSelect');
+
+    const resourceType = resourceTypeField.value;
+    const startTime = startTimeField.value;
+    const endTime = endTimeField.value;
+
+    // Gérer la quantité en fonction du type de ressource
+    handleQuantityField(resourceType);
+
+    // 1. Si aucun type n'est sélectionné, on vide et on arrête
+    if (!resourceType) {
+        resourceSelect.innerHTML = '<option value="">Sélectionnez d\'abord un type</option>';
+        return;
+    }
+
+    // 2. Affichage du status de chargement
+    resourceSelect.innerHTML = '<option value="">Chargement des disponibilités...</option>';
+
+    try {
+        // 3. Construction de l'URL avec les paramètres de date
+        const url = new URL('{{ url('app_ajax_resources') }}', window.location.origin);
+        url.searchParams.append('type', resourceType);
+        if (startTime) url.searchParams.append('start', startTime);
+        if (endTime) url.searchParams.append('end', endTime);
+
+        // 4. Appel AJAX vers le contrôleur
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Erreur réseau');
+        
+        const resources = await response.json();
+        
+        // 5. Reconstruction du menu déroulant
+        resourceSelect.innerHTML = '<option value="">Sélectionnez une ressource</option>';
+        
+        resources.forEach(resource => {
+            const option = document.createElement('option');
+            option.value = resource.id;
+            
+            // Formatage du texte : Nom + Info (Stock ou Capacité)
+            let statusText = resource.available ? '' : ' - INDISPONIBLE';
+            option.textContent = `${resource.name} (${resource.info})${statusText}`;
+            
+            // Gestion de l'état "Disabled"
+            option.disabled = !resource.available;
+            
+            // Style CSS pour le feedback visuel (Rouge/Vert)
+            if (resource.available) {
+                option.style.color = '#059669'; // Vert
+                option.style.fontWeight = '600';
+            } else {
+                option.style.color = '#dc2626'; // Rouge
+            }
+            
+            resourceSelect.appendChild(option);
+        });
+
+        // 6. Sécurité : Si l'utilisateur avait déjà choisi une ressource qui est devenue 
+        // indisponible après le changement de date, on réinitialise la sélection.
+        const stillAvailable = Array.from(resourceSelect.options).some(opt => opt.value === resourceSelect.value && !opt.disabled);
+        if (!stillAvailable) {
+            resourceSelect.value = "";
+            // Vider aussi les champs cachés du formulaire Symfony
+            document.getElementById('{{ form.salle.vars.id }}').value = '';
+            document.getElementById('{{ form.equipement.vars.id }}').value = '';
+        }
+
+    } catch (error) {
+        console.error('Erreur lors du chargement des ressources:', error);
+        resourceSelect.innerHTML = '<option value="">Erreur de connexion</option>';
+    }
+}
+
+// Fonction pour gérer la visibilité et l'état du champ quantité
+function handleQuantityField(resourceType) {
+    const quantityField = document.getElementById('{{ form.quantity.vars.id }}');
+    const quantityLabel = document.querySelector('label[for="{{ form.quantity.vars.id }}"]');
+    
+    if (resourceType === 'SALLE') {
+        // Les salles se réservent à 1 uniquement
+        quantityField.value = 1;
+        quantityField.disabled = true;
+        if (quantityLabel) {
+            quantityLabel.style.opacity = '0.5';
+        }
+        quantityField.style.opacity = '0.5';
+        quantityField.style.backgroundColor = '#f0f0f0';
+    } else if (resourceType === 'EQUIPEMENT') {
+        // Les équipements peuvent être réservés en quantité
+        quantityField.disabled = false;
+        if (quantityLabel) {
+            quantityLabel.style.opacity = '1';
+        }
+        quantityField.style.opacity = '1';
+        quantityField.style.backgroundColor = 'white';
+    } else {
+        // Pas de type sélectionné
+        quantityField.value = 1;
+        quantityField.disabled = false;
+    }
+}
+
+// Initialisation et écouteurs
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    const typeField = document.getElementById('{{ form.resourceType.vars.id }}');
+
+    const startField = document.getElementById('{{ form.startTime.vars.id }}');
+
+    const endField = document.getElementById('{{ form.endTime.vars.id }}');
+
+
+
+    // Recharger la liste dès que l'un de ces champs change
+
+    [typeField, startField, endField].forEach(field => {
+
+        field.addEventListener('change', loadResources);
+
+    });
+
+
+
+    // Gestion du champ quantité lors de la soumission
+
+    const form = document.getElementById('reservationForm');
+
+    form.addEventListener('submit', function(event) {
+
+        const quantityField = document.getElementById('{{ form.quantity.vars.id }}');
+
+        
+
+        // S'assurer que quantity a une valeur avant la soumission
+
+        if (quantityField.disabled) {
+
+            // Si le champ est désactivé (salles), on le réactive temporairement pour envoyer la valeur
+    }
+
+    async function loadResources() {
+        const resourceTypeField = document.getElementById('{{ form.resourceType.vars.id }}');
+        const startTimeField = document.getElementById('{{ form.startTime.vars.id }}');
+        const endTimeField = document.getElementById('{{ form.endTime.vars.id }}');
+        const resourceSelect = document.getElementById('resourceSelect');
+
+        const resourceType = resourceTypeField.value;
+        const startTime = startTimeField.value;
+        const endTime = endTimeField.value;
+
+        // Gérer la quantité en fonction du type de ressource
+        handleQuantityField(resourceType);
+
+        // 1. Si aucun type n'est sélectionné, on vide et on arrête
+        if (!resourceType) {
+            resourceSelect.innerHTML = '<option value="">Sélectionnez d\'abord un type</option>';
+            return;
+        }
+
+        // 2. Affichage du status de chargement
+        resourceSelect.innerHTML = '<option value="">Chargement des disponibilités...</option>';
+        
+        try {
+            // 3. Construction de l'URL avec les paramètres de date
+            const url = new URL('{{ url('app_ajax_resources') }}', window.location.origin);
+            url.searchParams.append('type', resourceType);
+            if (startTime) url.searchParams.append('start', startTime);
+            if (endTime) url.searchParams.append('end', endTime);
+
+            // 4. Appel AJAX vers le contrôleur
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Erreur réseau');
+            
+            const resources = await response.json();
+            
+            // 5. Reconstruction du menu déroulant
+            resourceSelect.innerHTML = '<option value="">Sélectionnez une ressource</option>';
+            
+            resources.forEach(resource => {
+                const option = document.createElement('option');
+                option.value = resource.id;
+                
+                // Formatage du texte : Nom + Info (Stock ou Capacité)
+                let statusText = resource.available ? '' : ' - INDISPONIBLE';
+                option.textContent = `${resource.name} (${resource.info})${statusText}`;
+                
+                // Gestion de l'état "Disabled"
+                option.disabled = !resource.available;
+                
+                // Style CSS pour le feedback visuel (Rouge/Vert)
+                if (resource.available) {
+                    option.style.color = '#059669'; // Vert
+                    option.style.fontWeight = '600';
+                } else {
+                    option.style.color = '#dc2626'; // Rouge
+                }
+                
+                resourceSelect.appendChild(option);
+            });
+
+            // 6. Sécurité : Si l'utilisateur avait déjà choisi une ressource qui est devenue 
+            // indisponible après le changement de date, on réinitialise la sélection.
+            const stillAvailable = Array.from(resourceSelect.options).some(opt => opt.value === resourceSelect.value && !opt.disabled);
+            if (!stillAvailable) {
+                resourceSelect.value = "";
+                // Vider aussi les champs cachés du formulaire Symfony
+                document.getElementById('{{ form.salle.vars.id }}').value = '';
+                document.getElementById('{{ form.equipement.vars.id }}').value = '';
+            }
+
+        } catch (error) {
+            console.error('Erreur lors du chargement des ressources:', error);
+            resourceSelect.innerHTML = '<option value="">Erreur de connexion</option>';
+        }
+    }
+
+    // Fonction pour gérer la visibilité et l'état du champ quantité
+    function handleQuantityField(resourceType) {
+        const quantityField = document.getElementById('{{ form.quantity.vars.id }}');
+        const quantityLabel = document.querySelector('label[for="{{ form.quantity.vars.id }}"]');
+        
+        if (resourceType === 'SALLE') {
+            // Les salles se réservent à 1 uniquement
+            quantityField.value = 1;
+            quantityField.disabled = true;
+            if (quantityLabel) {
+                quantityLabel.style.opacity = '0.5';
+            }
+            quantityField.style.opacity = '0.5';
+            quantityField.style.backgroundColor = '#f0f0f0';
+        } else if (resourceType === 'EQUIPEMENT') {
+            // Les équipements peuvent être réservés en quantité
+            quantityField.disabled = false;
+            if (quantityLabel) {
+                quantityLabel.style.opacity = '1';
+            }
+            quantityField.style.opacity = '1';
+            quantityField.style.backgroundColor = 'white';
+        } else {
+            // Pas de type sélectionné
+            quantityField.value = 1;
+            quantityField.disabled = false;
+        }
+    }
+
+    // Initialisation et écouteurs
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+        const typeField = document.getElementById('{{ form.resourceType.vars.id }}');
+
+        const startField = document.getElementById('{{ form.startTime.vars.id }}');
+
+        const endField = document.getElementById('{{ form.endTime.vars.id }}');
+
+
+
+        // Recharger la liste dès que l'un de ces champs change
+
+        [typeField, startField, endField].forEach(field => {
+
+            field.addEventListener('change', loadResources);
+
+        });
+
+
+
+        // Gestion du champ quantité lors de la soumission
+
+        const form = document.getElementById('reservationForm');
+
+        form.addEventListener('submit', function(event) {
+
+            const quantityField = document.getElementById('{{ form.quantity.vars.id }}');
+
+
+
+            // S'assurer que quantity a une valeur avant la soumission
+
+            if (quantityField.disabled) {
+
+                // Si le champ est désactivé (salles), on le réactive temporairement pour envoyer la valeur
+
+                quantityField.disabled = false;
+
+            }
+
+            if (!quantityField.value || quantityField.value < 1) {
+
+                quantityField.value = 1;
+
+            }
+
+        });
+
+    });
+</script>
+{% endblock %}

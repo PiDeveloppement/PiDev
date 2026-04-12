@@ -32,7 +32,9 @@ class EventFrontController extends AbstractController
             ->leftJoin('e.category', 'c')
             ->addSelect('c')
             ->andWhere('e.endDate >= :now')
+            ->andWhere('e.status = :status')
             ->setParameter('now', $now)
+            ->setParameter('status', Event::STATUS_PUBLISHED)
             ->orderBy('e.startDate', 'ASC')
             ->getQuery()
             ->getResult();
@@ -63,8 +65,10 @@ class EventFrontController extends AbstractController
             ->addSelect('c')
             ->andWhere('e.id = :id')
             ->andWhere('e.endDate >= :now')
+            ->andWhere('e.status = :status')
             ->setParameter('id', $id)
             ->setParameter('now', $now)
+            ->setParameter('status', Event::STATUS_PUBLISHED)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
@@ -105,8 +109,10 @@ class EventFrontController extends AbstractController
             ->createQueryBuilder('e')
             ->andWhere('e.id = :id')
             ->andWhere('e.endDate >= :now')
+            ->andWhere('e.status = :status')
             ->setParameter('id', $id)
             ->setParameter('now', new \DateTimeImmutable())
+            ->setParameter('status', Event::STATUS_PUBLISHED)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
@@ -118,10 +124,10 @@ class EventFrontController extends AbstractController
 
         $ticketRepo = $em->getRepository(Ticket::class);
         $existingTicket = $ticketRepo->createQueryBuilder('t')
-            ->andWhere('t.eventId = :eventId')
-            ->andWhere('t.userId = :userId')
-            ->setParameter('eventId', $event->getId())
-            ->setParameter('userId', $user->getId())
+            ->andWhere('t.event = :event')
+            ->andWhere('t.user = :user')
+            ->setParameter('event', $event)
+            ->setParameter('user', $user)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
@@ -131,7 +137,7 @@ class EventFrontController extends AbstractController
             return $this->redirectToRoute('app_my_tickets');
         }
 
-        $ticketsForEvent = (int) $ticketRepo->count(['eventId' => $event->getId()]);
+        $ticketsForEvent = (int) $ticketRepo->count(['event' => $event]);
         if ((int) $event->getCapacity() > 0 && $ticketsForEvent >= (int) $event->getCapacity()) {
             $this->addFlash('warning', 'Desole, la capacite maximale est atteinte pour cet evenement.');
             return $this->redirectToRoute('app_public_event_show', ['id' => $id]);
@@ -166,8 +172,10 @@ class EventFrontController extends AbstractController
             ->addSelect('e')
             ->leftJoin('e.category', 'c')
             ->addSelect('c')
-            ->andWhere('t.userId = :userId')
-            ->setParameter('userId', $user->getId())
+            ->leftJoin('t.user', 'u')
+            ->addSelect('u')
+            ->andWhere('t.user = :user')
+            ->setParameter('user', $user)
             ->orderBy('t.createdAt', 'DESC')
             ->getQuery()
             ->getResult();

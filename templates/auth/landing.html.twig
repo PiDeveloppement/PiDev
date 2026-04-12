@@ -547,6 +547,9 @@
             <div class="nav-links">
                 <button class="nav-link" onclick="scrollToSection('home')">Accueil</button>
                 <button class="nav-link" onclick="window.location.href='{{ path('app_public_events') }}'">Événements</button>
+
+                <button class="nav-link" onclick="window.location.href='{{ path('app_sponsor_portal') }}'">Recommandations sponsor</button>
+
                 <button class="nav-link" onclick="scrollToSection('features')">Fonctionnalités</button>
                 <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
                 <button class="nav-link" onclick="scrollToSection('contact')">Contact</button>
@@ -570,7 +573,7 @@
                     <p class="hero-subtitle">EventFlow est la plateforme tout-en-un qui simplifie la gestion de vos événements, participants, sponsors et ressources. Rejoignez des milliers d'organisateurs satisfaits.</p>
                     
                     <div class="hero-buttons">
-                        <button class="btn-primary" onclick="window.location.href='{{ path('app_register') }}'">Commencer maintenant</button>
+                        <button class="btn-primary" onclick="window.location.href='{{ path('app_login') }}'">Commencer maintenant</button>
                         <button class="btn-secondary" onclick="window.location.href='{{ path('app_demo_video') }}'">Voir la démo</button>
                     </div>
 
@@ -782,4 +785,8 @@
             });
         });
     </script>
+
 {% endblock %}
+
+
+

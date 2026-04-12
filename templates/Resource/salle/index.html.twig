@@ -1,0 +1,163 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des Salles - EventFlow{% endblock %}
+
+{% block admin_content %}
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 2px; margin-bottom: 20px;">
+    <div style="background: white; border-radius: 14px; padding: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
+            <div style="flex: 1;">
+                <h3 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 5px;">
+                    <i class="fas fa-door-open" style="color: #667eea; margin-right: 10px;"></i>
+                    Gestion des Salles
+                </h3>
+                <p style="color: #64748b; font-size: 14px;">Consultez et gérez votre inventaire de salles</p>
+            </div>
+            
+            <!-- Stats Boxes on the right -->
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 10px; padding: 15px; color: white; min-width: 140px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
+                    <p style="font-size: 11px; opacity: 0.9; margin: 0;"><i class="fas fa-building" style="margin-right: 6px;"></i>Total</p>
+                    <h4 style="font-size: 20px; font-weight: 700; margin: 5px 0 0 0;">{{ total }}</h4>
+                </div>
+                {% if occupees > 0 %}
+                <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 10px; padding: 15px; color: white; min-width: 120px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);">
+                    <p style="font-size: 11px; opacity: 0.9; margin: 0;"><i class="fas fa-users" style="margin-right: 6px;"></i>Occupées</p>
+                    <h4 style="font-size: 20px; font-weight: 700; margin: 5px 0 0 0;">{{ occupees }}</h4>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid #e2e8f0;">
+            <h4 style="font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 15px;">
+                <i class="fas fa-search" style="color: #667eea; margin-right: 8px;"></i>
+                Recherche et Filtres
+            </h4>
+            <div style="display: grid; grid-template-columns: 2fr 1fr auto auto; gap: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">Nom de la salle</label>
+                    <input type="text" id="searchName" placeholder="Rechercher..." 
+                           style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">Bloc / Bâtiment</label>
+                    <select id="filterBuilding" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
+                        <option value="Tous">Tous les Blocs</option>
+                        {% for building in buildingsList %}
+                            <option value="{{ building }}">{{ building }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="align-self: flex-end;">
+                    <button onclick="location.reload()" style="background: #64748b; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+                        <i class="fas fa-redo" style="margin-right: 5px;"></i>Réinitialiser
+                    </button>
+                </div>
+                <div style="align-self: flex-end;">
+                    <a href="{{ path('app_resource_salle_new') }}" 
+                       style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 20px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: transform 0.2s; display: inline-block;">
+                        <i class="fas fa-plus" style="margin-right: 8px;"></i>Ajouter
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Salles Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+            {% for salle in salles %}
+                <div class="salle-row" 
+                     data-name="{{ salle.name|lower }}" 
+                     data-building="{{ salle.building }}"
+                     style="background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;" 
+                     onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 30px rgba(0,0,0,0.15)'" 
+                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 10px rgba(0,0,0,0.08)'">
+                    
+                    <!-- Image Header -->
+                    <div style="position: relative; height: 180px; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <img src="{{ salle.imagePath|default('https://via.placeholder.com/400x220?text=Salle') }}" 
+                             style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;">
+                        <div style="position: absolute; top: 10px; right: 10px; background: {{ salle.status == 'DISPONIBLE' ? '#10b981' : '#ef4444' }}; color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">
+                            {{ salle.status }}
+                        </div>
+                    </div>
+
+                    <div style="padding: 20px;">
+                        <h4 style="font-size: 18px; font-weight: 600; color: #1f2937; margin: 0 0 10px 0;">{{ salle.name }}</h4>
+                        
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                            <div style="text-align: center;">
+                                <i class="fas fa-users" style="color: #667eea; font-size: 16px; margin-bottom: 5px;"></i>
+                                <p style="font-size: 11px; color: #6b7280; margin: 0;">Capacité</p>
+                                <p style="font-size: 16px; font-weight: 700; color: #1f2937; margin: 5px 0 0 0;">{{ salle.capacity }}</p>
+                            </div>
+                            <div style="text-align: center;">
+                                <i class="fas fa-layer-group" style="color: #10b981; font-size: 16px; margin-bottom: 5px;"></i>
+                                <p style="font-size: 11px; color: #6b7280; margin: 0;">Étage</p>
+                                <p style="font-size: 16px; font-weight: 700; color: #1f2937; margin: 5px 0 0 0;">{{ salle.floor }}</p>
+                            </div>
+                            <div style="text-align: center;">
+                                <i class="fas fa-building" style="color: #f59e0b; font-size: 16px; margin-bottom: 5px;"></i>
+                                <p style="font-size: 11px; color: #6b7280; margin: 0;">Bloc</p>
+                                <p style="font-size: 16px; font-weight: 700; color: #1f2937; margin: 5px 0 0 0;">{{ salle.building }}</p>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+                            <a href="{{ path('app_resource_salle_show', {'id': salle.id}) }}"
+                               style="flex: 1; color: #10b981; text-decoration: none; padding: 10px; text-align: center; border-radius: 6px; transition: background 0.2s; font-weight: 500;"
+                               onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='transparent'">
+                                <i class="fas fa-eye" style="margin-right: 5px;"></i>Voir détails
+                            </a>
+                            <a href="{{ path('app_resource_salle_edit', {'id': salle.id}) }}" 
+                               style="flex: 1; color: #667eea; text-decoration: none; padding: 10px; text-align: center; border-radius: 6px; transition: background 0.2s; font-weight: 500;"
+                               onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                                <i class="fas fa-edit" style="margin-right: 5px;"></i>Modifier
+                            </a>
+                            <form method="post" action="{{ path('app_resource_salle_delete', {'id': salle.id}) }}" 
+                                  onsubmit="return confirm('Supprimer cette salle ?');" style="flex: 1;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ salle.id) }}">
+                                <button style="width: 100%; background: none; border: none; color: #ef4444; cursor: pointer; padding: 10px; border-radius: 6px; transition: background 0.2s; font-weight: 500;"
+                                        onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                                    <i class="fas fa-trash" style="margin-right: 5px;"></i>Supprimer
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: white; border-radius: 12px; border: 2px dashed #d1d5db;">
+                    <i class="fas fa-inbox" style="font-size: 48px; color: #9ca3af; margin-bottom: 15px;"></i>
+                    <h4 style="font-size: 18px; color: #6b7280; margin-bottom: 5px;">Aucune salle trouvée</h4>
+                    <p style="color: #9ca3af;">Essayez de modifier vos filtres de recherche.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    const searchInput = document.getElementById('searchName');
+    const filterBuilding = document.getElementById('filterBuilding');
+
+    function applyFilters() {
+        const nameVal = searchInput.value.toLowerCase();
+        const buildingVal = filterBuilding.value;
+        const cards = document.querySelectorAll('.salle-row');
+
+        cards.forEach(card => {
+            const name = card.getAttribute('data-name');
+            const building = card.getAttribute('data-building');
+            
+            const matchesName = name.includes(nameVal);
+            const matchesBuilding = (buildingVal === "Tous" || building === buildingVal);
+
+            card.style.display = (matchesName && matchesBuilding) ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('keyup', applyFilters);
+    filterBuilding.addEventListener('change', applyFilters);
+</script>
+{% endblock %}
