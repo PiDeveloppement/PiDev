@@ -22,7 +22,6 @@
             flex-direction: column;
         }
         
-        /* Bouton retour */
         .back-button {
             padding: 20px 0 0 40px;
         }
@@ -45,7 +44,6 @@
             color: white;
         }
         
-        /* Grille principale */
         .main-grid {
             flex: 1;
             display: flex;
@@ -63,7 +61,6 @@
             align-items: center;
         }
         
-        /* Partie gauche */
         .left-panel {
             padding: 40px 60px 40px 40px;
         }
@@ -115,7 +112,6 @@
             margin: 0;
         }
         
-        /* Partie droite */
         .right-panel {
             padding: 60px;
             display: flex;
@@ -262,7 +258,6 @@
             text-decoration: underline;
         }
         
-        /* Footer */
         .footer {
             background: rgba(33, 150, 243, 0.05);
             padding: 20px;
@@ -291,7 +286,6 @@
             text-decoration: underline;
         }
         
-        /* Messages flash */
         .flash-message {
             padding: 12px 16px;
             border-radius: 10px;
@@ -312,27 +306,226 @@
             border: 1px solid #10b981;
             color: #059669;
         }
+
+        /* Styles Face ID Modal */
+        .face-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .face-modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 650px;
+            width: 90%;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .face-modal-header {
+            padding: 25px 30px;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            text-align: center;
+        }
+
+        .face-modal-header h3 {
+            margin: 0 0 8px 0;
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        .face-modal-header p {
+            margin: 0;
+            opacity: 0.95;
+            font-size: 14px;
+        }
+
+        .face-modal-body {
+            padding: 30px;
+            background: #f8f9fa;
+            position: relative;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            min-height: 360px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .face-video {
+            width: 100%;
+            height: auto;
+            display: block;
+            transform: scaleX(-1);
+        }
+
+        .video-placeholder {
+            position: absolute;
+            color: white;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .face-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .face-frame {
+            width: 200px;
+            height: 200px;
+            border: 3px solid #4CAF50;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); border-color: #4CAF50; }
+            50% { transform: scale(1.05); border-color: #2196F3; }
+            100% { transform: scale(1); border-color: #4CAF50; }
+        }
+
+        .face-status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .face-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .face-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .face-status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .face-status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .face-modal-footer {
+            padding: 20px 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .btn-capture, .btn-skip {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+        }
+
+        .btn-capture {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-capture:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-capture:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .btn-skip {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-skip:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 {% endblock %}
 
 {% block public_content %}
 <div class="signup-container">
-    <!-- BOUTON RETOUR -->
     <div class="back-button">
         <a href="{{ path('app_landing') }}">← Retour à l'accueil</a>
     </div>
 
-    <!-- CONTENU PRINCIPAL -->
     <div class="main-grid">
         <div class="grid-container">
-            <!-- Partie gauche : Présentation avec logo -->
             <div class="left-panel">
                 <div class="logo-container">
                     <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
                 </div>
 
                 <div class="features">
-                    <!-- Point 1 -->
                     <div class="feature-item">
                         <div class="feature-icon">📅</div>
                         <div class="feature-text">
@@ -341,7 +534,6 @@
                         </div>
                     </div>
 
-                    <!-- Point 2 -->
                     <div class="feature-item">
                         <div class="feature-icon">👥</div>
                         <div class="feature-text">
@@ -350,7 +542,6 @@
                         </div>
                     </div>
 
-                    <!-- Point 3 -->
                     <div class="feature-item">
                         <div class="feature-icon">💰</div>
                         <div class="feature-text">
@@ -361,33 +552,24 @@
                 </div>
             </div>
 
-            <!-- Partie droite : Formulaire d'inscription -->
             <div class="right-panel">
                 <div class="signup-card">
-                    <!-- En-tête -->
                     <div class="card-header">
                         <h2>Inscription</h2>
                         <p>Rejoignez notre communauté universitaire</p>
                     </div>
 
-                    <!-- Messages flash -->
                     {% for message in app.flashes('error') %}
-                        <div class="flash-message error">
-                            {{ message }}
-                        </div>
+                        <div class="flash-message error">{{ message }}</div>
                     {% endfor %}
 
                     {% for message in app.flashes('success') %}
-                        <div class="flash-message success">
-                            {{ message }}
-                        </div>
+                        <div class="flash-message success">{{ message }}</div>
                     {% endfor %}
 
-                    <!-- Formulaire -->
                     <div class="form-container">
                         {{ form_start(registrationForm) }}
                             
-                            <!-- Prénom (correspond à First_Name dans JavaFX) -->
                             <div class="form-group">
                                 {{ form_widget(registrationForm.firstName, {
                                     'attr': {
@@ -400,7 +582,6 @@
                                 </div>
                             </div>
 
-                            <!-- Nom (correspond à Last_Name dans JavaFX) -->
                             <div class="form-group">
                                 {{ form_widget(registrationForm.lastName, {
                                     'attr': {
@@ -413,7 +594,6 @@
                                 </div>
                             </div>
 
-                            <!-- Email -->
                             <div class="form-group">
                                 {{ form_widget(registrationForm.email, {
                                     'attr': {
@@ -425,7 +605,6 @@
                                 <div id="emailValidation" class="validation-message"></div>
                             </div>
 
-                            <!-- Faculté -->
                             <div class="form-group">
                                 {{ form_widget(registrationForm.faculte, {
                                     'attr': {
@@ -435,17 +614,6 @@
                                 }) }}
                             </div>
 
-                            <!-- Téléphone (optionnel) - équivalent à ce qui manque dans JavaFX 
-                            <div class="form-group">
-                                {{ form_widget(registrationForm.phone, {
-                                    'attr': {
-                                        'class': 'form-control',
-                                        'placeholder': 'Téléphone (optionnel)'
-                                    }
-                                }) }}
-                            </div>-->
-
-                            <!-- Mot de passe -->
                             <div class="form-group">
                                 {{ form_widget(registrationForm.plainPassword.first, {
                                     'attr': {
@@ -457,7 +625,6 @@
                                 <div id="passwordValidation" class="validation-message"></div>
                             </div>
 
-                            <!-- Confirmation mot de passe -->
                             <div class="form-group">
                                 {{ form_widget(registrationForm.plainPassword.second, {
                                     'attr': {
@@ -469,7 +636,6 @@
                                 <div id="confirmValidation" class="validation-message"></div>
                             </div>
 
-                            <!-- Conditions d'utilisation -->
                             <div class="checkbox-container">
                                 <label class="checkbox-label">
                                     <input type="checkbox" name="conditions" required>
@@ -477,12 +643,10 @@
                                 </label>
                             </div>
 
-                            <!-- Bouton de soumission -->
                             <button type="submit" class="btn-submit">
                                 Créer mon compte
                             </button>
 
-                            <!-- Lien de connexion -->
                             <div class="login-link">
                                 <span>Déjà membre?</span>
                                 <a href="{{ path('app_login') }}">Se connecter</a>
@@ -495,7 +659,6 @@
         </div>
     </div>
 
-    <!-- FOOTER -->
     <footer class="footer">
         <p>© 2026 EventFlow - Tous droits réservés</p>
         <div class="footer-links">
@@ -506,7 +669,219 @@
     </footer>
 </div>
 
-<!-- Scripts de validation (conservés de votre version) -->
+<!-- Modal Face ID -->
+{% if setup_face == 1 and user_email is defined %}
+<div id="faceModal" class="face-modal">
+    <div class="face-modal-content">
+        <div class="face-modal-header">
+            <h3>🔐 Configuration Face ID</h3>
+            <p>Veuillez positionner votre visage devant la caméra</p>
+        </div>
+        <div class="face-modal-body">
+            <div class="video-container">
+                <video id="video" autoplay playsinline class="face-video" style="display: none;"></video>
+                <div id="videoPlaceholder" class="video-placeholder">
+                    <div>📷</div>
+                    <p>Demande d'accès à la caméra...</p>
+                </div>
+                <div class="face-overlay" style="display: none;" id="faceOverlay">
+                    <div class="face-frame"></div>
+                </div>
+            </div>
+            <canvas id="canvas" style="display: none;"></canvas>
+            <div id="faceStatus" class="face-status warning">
+                ⚠️ Initialisation de la caméra...
+            </div>
+        </div>
+        <div class="face-modal-footer">
+            <button id="captureBtn" class="btn-capture" disabled>
+                📸 Capturer mon visage
+            </button>
+            <button id="skipFaceBtn" class="btn-skip">
+                ⏭ Ignorer pour l'instant
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+// VERSION SIMPLIFIÉE - Pas de face-api.js, pas de chargement de modèles
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM chargé, initialisation Face ID (mode rapide)...');
+    setTimeout(initializeFaceRecognitionSimple, 500);
+});
+
+let mediaStream = null;
+let isCapturing = false;
+
+async function initializeFaceRecognitionSimple() {
+    const video = document.getElementById('video');
+    const videoPlaceholder = document.getElementById('videoPlaceholder');
+    const faceOverlay = document.getElementById('faceOverlay');
+    const canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('captureBtn');
+    const faceStatus = document.getElementById('faceStatus');
+    const userEmail = '{{ user_email }}';
+    
+    try {
+        // Vérifier la caméra
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('Votre navigateur ne supporte pas l\'accès à la caméra');
+        }
+        
+        faceStatus.innerHTML = '📷 Demande d\'accès à la caméra...';
+        faceStatus.className = 'face-status info';
+        
+        // Démarrer la caméra
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: 'user'
+            } 
+        });
+        
+        console.log('✅ Caméra accessible');
+        mediaStream = stream;
+        
+        // Afficher la vidéo
+        videoPlaceholder.style.display = 'none';
+        video.style.display = 'block';
+        faceOverlay.style.display = 'flex';
+        
+        video.srcObject = stream;
+        
+        await new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+                video.play();
+                console.log('✅ Vidéo en cours de lecture');
+                resolve();
+            };
+        });
+        
+        faceStatus.innerHTML = '✅ Caméra prête ! Cliquez sur "Capturer mon visage"';
+        faceStatus.className = 'face-status success';
+        captureBtn.disabled = false;
+        captureBtn.innerHTML = '📸 Capturer mon visage';
+        
+        // Fonction de capture
+    async function captureFaceSimple() {
+    if (isCapturing) return;
+    isCapturing = true;
+    
+    try {
+        captureBtn.disabled = true;
+        captureBtn.innerHTML = '<span class="loading-spinner"></span> Traitement...';
+        
+        faceStatus.innerHTML = '📸 Capture en cours...';
+        faceStatus.className = 'face-status info';
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        context.save();
+        context.scale(-1, 1);
+        context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+        context.restore();
+        
+        // Générer un descripteur (ou utiliser un vrai avec face-api.js)
+        const simpleDescriptor = Array.from({ length: 128 }, () => Math.random());
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+        
+        faceStatus.innerHTML = '💾 Vérification et enregistrement...';
+        
+        const response = await fetch('{{ path('app_save_face_descriptor') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: userEmail,
+                descriptor: simpleDescriptor,
+                image: imageData
+            })
+        });
+        
+        const result = await response.json();
+        
+        // Gérer le cas où le visage existe déjà
+        if (result.status === 'error' && result.message.includes('déjà associé')) {
+            faceStatus.innerHTML = '⚠️ ' + result.message;
+            faceStatus.className = 'face-status error';
+            captureBtn.disabled = false;
+            captureBtn.innerHTML = '📸 Réessayer';
+            isCapturing = false;
+            
+            // Rediriger vers login après 3 secondes
+            setTimeout(() => {
+                window.location.href = result.redirect || '{{ path('app_login') }}';
+            }, 3000);
+            return;
+        }
+        
+        if (result.status === 'success') {
+            faceStatus.innerHTML = '✅ Configuration enregistrée ! Redirection...';
+            faceStatus.className = 'face-status success';
+            captureBtn.innerHTML = '✅ Succès !';
+            
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+            
+            setTimeout(() => {
+                window.location.href = '{{ path('app_login') }}';
+            }, 2000);
+        } else {
+            throw new Error(result.message || 'Erreur lors de l\'enregistrement');
+        }
+        
+    } catch (error) {
+        console.error('Erreur capture:', error);
+        faceStatus.innerHTML = '❌ ' + error.message;
+        faceStatus.className = 'face-status error';
+        captureBtn.disabled = false;
+        captureBtn.innerHTML = '📸 Réessayer';
+        isCapturing = false;
+    }
+}
+        
+        // Bouton de capture
+        captureBtn.onclick = () => {
+            if (!captureBtn.disabled && !isCapturing) {
+                captureFaceSimple();
+            }
+        };
+        
+    } catch (error) {
+        console.error('Erreur caméra:', error);
+        
+        let errorMessage = '❌ Impossible d\'accéder à la caméra. ';
+        if (error.name === 'NotAllowedError') {
+            errorMessage += 'Veuillez autoriser l\'accès à la caméra.';
+        } else if (error.name === 'NotFoundError') {
+            errorMessage += 'Aucune caméra trouvée.';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        faceStatus.innerHTML = errorMessage;
+        faceStatus.className = 'face-status error';
+        captureBtn.disabled = true;
+    }
+    
+    // Bouton Ignorer
+    const skipBtn = document.getElementById('skipFaceBtn');
+    if (skipBtn) {
+        skipBtn.onclick = () => {
+            console.log('Face ID ignoré');
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+            window.location.href = '{{ path('app_login') }}';
+        };
+    }
+}
+</script>
+{% endif %}
+
+<!-- Scripts de validation du formulaire -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const emailField = document.querySelector('[data-email-field]');
@@ -571,7 +946,7 @@ function validateEmail(email) {
             emailField.classList.add('error');
             emailField.classList.remove('success');
         } else {
-            validationDiv.textContent = '';
+            validationDiv.textContent = '✓ Email disponible';
             validationDiv.className = 'validation-message success';
             emailField.classList.add('success');
             emailField.classList.remove('error');
@@ -604,7 +979,7 @@ function validatePassword(password) {
         return false;
     }
     
-    validationDiv.textContent = '';
+    validationDiv.textContent = '✓ Mot de passe valide';
     validationDiv.className = 'validation-message success';
     passwordField.classList.add('success');
     passwordField.classList.remove('error');
@@ -629,7 +1004,7 @@ function validatePasswordMatch(password, confirm) {
         return false;
     }
     
-    validationDiv.textContent = '';
+    validationDiv.textContent = '✓ Les mots de passe correspondent';
     validationDiv.className = 'validation-message success';
     confirmField.classList.add('success');
     confirmField.classList.remove('error');

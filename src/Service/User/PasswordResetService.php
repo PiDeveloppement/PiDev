@@ -113,13 +113,7 @@ class PasswordResetService
         }
     }
 
-    /**
-     * Récupère l'entité token à partir du token string
-     */
-    private function getTokenEntity(string $token): ?PasswordResetToken
-    {
-        return $this->tokenRepository->findOneBy(['token' => $token]);
-    }
+    
 
     /**
      * Marque un token comme utilisé
@@ -392,4 +386,13 @@ class PasswordResetService
         $this->currentUserId = $userId;
         return $this;
     }
+    // Ajoutez cette méthode dans PasswordResetService.php
+
+/**
+ * Récupère l'entité token à partir du token string
+ */
+public function getTokenEntity(string $token): ?PasswordResetToken
+{
+    return $this->tokenRepository->findOneBy(['token' => $token]);
+}
 }

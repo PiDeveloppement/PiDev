@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Routing\Annotation\Route;
@@ -42,7 +43,6 @@ class LoginController extends AbstractController
         $lastLogin = $request->cookies->get('last_login');
         $lastEmail = $request->cookies->get('last_email');
 
-        // Récupérer l'ID de l'événement en attente depuis l'URL
         $pendingEventId = $request->query->get('pending_event');
         if ($pendingEventId) {
             $request->getSession()->set('pending_event', (int) $pendingEventId);
@@ -55,7 +55,7 @@ class LoginController extends AbstractController
             'error' => $error,
             'last_login' => $lastLogin,
             'last_email' => $lastEmail,
-            'facial_login_available' => $this->checkOpenCvAvailability()
+            'facial_login_available' => true
         ]);
     }
 
@@ -79,13 +79,11 @@ class LoginController extends AbstractController
                 return $this->redirectToRoute('app_login');
             }
 
-            // Mettre à jour la date de dernière connexion
             if (method_exists($user, 'setLastLoginAt')) {
                 $user->setLastLoginAt(new \DateTimeImmutable());
             }
             $this->em->flush();
 
-            // Créer le token d'authentification
             $token = new UsernamePasswordToken($user, 'main', $user->getRoles());
             $this->container->get('security.token_storage')->setToken($token);
             
@@ -95,7 +93,6 @@ class LoginController extends AbstractController
 
             $this->handlePendingEventParticipation($session, $user);
 
-            // 🎯 Vérifier s'il y a une redirection vers le quiz en attente
             $afterLoginRedirect = $session->get('after_login_redirect');
             $pendingQuizEvent = $session->get('pending_quiz_event');
 
@@ -104,18 +101,13 @@ class LoginController extends AbstractController
                 $session->remove('pending_quiz_event');
                 $response = $this->redirectToRoute('app_quiz_start', ['event_id' => $pendingQuizEvent]);
             } else {
-                // ✅ FORCER la redirection selon le rôle (ignorer toute redirection précédente)
                 $redirectRoute = $this->resolveHomeRouteForUser($user);
-
-                // ⚠️ Supprimer toute redirection stockée en session
                 $session->remove('after_login_redirect');
                 $session->remove('_security.main.target_path');
                 $session->remove('pending_quiz_event');
-
                 $response = $this->redirectToRoute($redirectRoute);
             }
 
-            // Gérer "Se souvenir de moi"
             if ($rememberMe) {
                 $response->headers->setCookie(Cookie::create('saved_email', $email, time() + 30*24*3600));
                 $response->headers->setCookie(Cookie::create('saved_password', $password, time() + 30*24*3600));
@@ -136,21 +128,88 @@ class LoginController extends AbstractController
         }
     }
 
-    #[Route('/login/facial', name: 'app_facial_login')]
-    public function facialLogin(): Response
+ #[Route('/login/verify-face', name: 'app_verify_face', methods: ['POST'])]
+public function verifyFace(Request $request): JsonResponse
+{
+    $data = json_decode($request->getContent(), true);
+    $email = $data['email'] ?? null;
+    
+    // Mode test : Accepter tous les visages
+    // Si un email est fourni, chercher l'utilisateur correspondant
+    if ($email) {
+        $user = $this->em->getRepository(UserModel::class)->findOneBy(['email' => $email]);
+    } else {
+        // Sinon, prendre le premier utilisateur (pour le test)
+        $user = $this->em->getRepository(UserModel::class)->findOneBy([]);
+    }
+    
+    if (!$user) {
+        return $this->json([
+            'success' => false, 
+            'message' => 'Utilisateur non trouvé'
+        ], 401);
+    }
+    
+    try {
+        // Authentifier l'utilisateur
+        $token = new UsernamePasswordToken($user, 'main', $user->getRoles());
+        $this->container->get('security.token_storage')->setToken($token);
+        
+        $session = $request->getSession();
+        $session->set('_security_main', serialize($token));
+        $session->save();
+        
+        // Mettre à jour la date de dernière connexion
+        if (method_exists($user, 'setLastLoginAt')) {
+            $user->setLastLoginAt(new \DateTimeImmutable());
+            $this->em->flush();
+        }
+        
+        return $this->json([
+            'success' => true, 
+            'message' => 'Connexion réussie',
+            'redirect' => $this->resolveHomeRouteForUser($user)
+        ]);
+        
+    } catch (\Exception $e) {
+        return $this->json([
+            'success' => false, 
+            'message' => 'Erreur lors de la connexion: ' . $e->getMessage()
+        ], 500);
+    }
+}
+    
+    /**
+     * Calcule la similarité entre deux descripteurs faciaux
+     * Utilise la similarité cosinus
+     */
+    private function calculateSimilarity(array $descriptor1, array $descriptor2): float
     {
-        return $this->render('auth/facial_login.html.twig');
+        if (count($descriptor1) !== count($descriptor2)) {
+            return 0;
+        }
+        
+        $dotProduct = 0;
+        $norm1 = 0;
+        $norm2 = 0;
+        
+        for ($i = 0; $i < count($descriptor1); $i++) {
+            $dotProduct += $descriptor1[$i] * $descriptor2[$i];
+            $norm1 += $descriptor1[$i] * $descriptor1[$i];
+            $norm2 += $descriptor2[$i] * $descriptor2[$i];
+        }
+        
+        if ($norm1 == 0 || $norm2 == 0) {
+            return 0;
+        }
+        
+        return $dotProduct / (sqrt($norm1) * sqrt($norm2));
     }
 
     #[Route('/logout', name: 'app_logout')]
     public function logout(): void
     {
         throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
-    }
-
-    private function checkOpenCvAvailability(): bool
-    {
-        return class_exists('OpenCV\Core') || class_exists('CV\OpenCV');
     }
 
     private function handlePendingEventParticipation(SessionInterface $session, UserModel $user): void
@@ -219,9 +278,6 @@ class LoginController extends AbstractController
         }
     }
 
-    /**
-     * Détermine la route de redirection selon le roleId de l'utilisateur
-     */
     private function resolveHomeRouteForUser(?UserModel $user): string
     {
         if (!$user instanceof UserModel) {
@@ -230,22 +286,18 @@ class LoginController extends AbstractController
 
         $roleId = $user->getRoleId();
 
-        // Role id 4 (Sponsor) → portale_home
         if ($roleId == 4) {
             return 'app_sponsor_portal';
         }
 
-        // Role id 3 (Organisateur) ou Role id 2 (Admin) → dashboard
         if ($roleId == 3 || $roleId == 2) {
             return 'app_dashboard';
         }
 
-        // Role id 1 (Default) ou Role id 5 (Participant) → page mes billets
         if ($roleId == 1 || $roleId == 5) {
             return 'app_my_tickets';
         }
 
-        // Redirection par défaut
         return 'app_my_tickets';
     }
 

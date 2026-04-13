@@ -8,6 +8,7 @@ use App\Repository\User\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
+
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -74,6 +75,11 @@ private ?Role $role = null;
 
     // Champ temporaire pour le formulaire (non persistant)
     private ?string $plainPassword = null;
+#[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $faceDescriptor = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $lastLoginAt = null;
 
     public function __construct()
     {
@@ -297,7 +303,26 @@ private ?Role $role = null;
         $this->plainPassword = $plainPassword;
         return $this;
     }
+public function getFaceDescriptor(): ?array
+    {
+        return $this->faceDescriptor;
+    }
 
+    public function setFaceDescriptor(?array $faceDescriptor): self
+    {
+        $this->faceDescriptor = $faceDescriptor;
+        return $this;
+    }
+    public function getLastLoginAt(): ?\DateTimeInterface
+    {
+        return $this->lastLoginAt;
+    }
+
+    public function setLastLoginAt(?\DateTimeInterface $lastLoginAt): self
+    {
+        $this->lastLoginAt = $lastLoginAt;
+        return $this;
+    }
     // ==================== MÉTHODES DE SÉCURITÉ ====================
 
     /**

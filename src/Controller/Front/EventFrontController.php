@@ -161,7 +161,7 @@ class EventFrontController extends AbstractController
         return $this->redirectToRoute('app_my_tickets');
     }
 
-    #[Route('/my-tickets', name: 'app_my_tickets', methods: ['GET'])]
+    #[Route('/my_tickets', name: 'app_my_tickets', methods: ['GET'])]
     public function myTickets(EntityManagerInterface $em): Response
     {
         /** @var UserModel|null $user */

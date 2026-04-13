@@ -1,4 +1,5 @@
 <?php
+// src/Controller/User/ResetPasswordController.php
 
 namespace App\Controller\User;
 
@@ -23,9 +24,27 @@ class ResetPasswordController extends AbstractController
     {
         $token = $request->query->get('token', '');
 
+        // Si un token est fourni dans l'URL, le valider automatiquement
+        if (!empty($token)) {
+            $isValid = $this->resetService->validateToken($token);
+            
+            if ($isValid) {
+                // Token valide, afficher directement le formulaire de nouveau mot de passe
+                return $this->render('user/reset_password.html.twig', [
+                    'token' => $token,
+                    'step' => 'reset',
+                    'valid' => true
+                ]);
+            } else {
+                $this->addFlash('error', '❌ Token invalide ou expiré. Veuillez demander un nouveau code.');
+                return $this->redirectToRoute('app_forgot_password');
+            }
+        }
+
+        // Sinon, afficher la page de saisie du token
         return $this->render('user/reset_password.html.twig', [
-            'token' => $token,
-            'step' => $token ? 'reset' : 'validate'
+            'token' => '',
+            'step' => 'validate'
         ]);
     }
 
@@ -51,7 +70,7 @@ class ResetPasswordController extends AbstractController
         }
 
         $this->addFlash('error', '❌ Token invalide ou expiré. Demandez un nouveau lien.');
-        return $this->redirectToRoute('app_reset_password');
+        return $this->redirectToRoute('app_forgot_password');
     }
 
     #[Route('/reset-password/reset', name: 'app_reset_password_reset', methods: ['POST'])]
@@ -80,8 +99,15 @@ class ResetPasswordController extends AbstractController
         // Valider le token
         if (!$this->resetService->validateToken($token)) {
             $this->addFlash('error', '❌ Token invalide ou expiré');
-            return $this->redirectToRoute('app_reset_password');
+            return $this->redirectToRoute('app_forgot_password');
         }
+
+        // Définir le token courant dans le service
+        $this->resetService->setCurrentToken($token);
+        
+        // Récupérer l'ID utilisateur depuis le token
+        $userId = $this->resetService->getUserIdFromToken($token);
+        $this->resetService->setCurrentUserId($userId);
 
         // Réinitialiser le mot de passe
         $success = $this->resetService->resetPassword($newPassword);
