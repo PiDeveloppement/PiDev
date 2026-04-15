@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 class EventFrontController extends AbstractController
-{
+{//    private EventService $eventService;
     #[Route('/events/public', name: 'app_public_events_legacy', methods: ['GET'])]
     public function legacyRedirect(): Response
     {
