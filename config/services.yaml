@@ -3,6 +3,9 @@ parameters:
     database_url: '%env(DATABASE_URL)%'
 
     profile_images_directory: '%kernel.project_dir%/public/uploads/profile_images'
+    external_ai_reco_api_url: '%env(string:EXTERNAL_AI_RECO_API_URL)%'
+    external_ai_reco_api_key: '%env(string:EXTERNAL_AI_RECO_API_KEY)%'
+    external_ai_reco_model: '%env(string:EXTERNAL_AI_RECO_MODEL)%'
 
 
 services:
@@ -29,6 +32,12 @@ services:
         arguments:
             $requestStack: '@request_stack'
             $logger: '@logger'
+
+    App\Service\Sponsor\ExternalAiRecommendationService:
+        arguments:
+            $apiUrl: '%external_ai_reco_api_url%'
+            $apiKey: '%external_ai_reco_api_key%'
+            $model: '%external_ai_reco_model%'
 
     # ✅ PAS DE LIGNE SUPPLÉMENTAIRE POUR UserSessionService !
     # L'autowiring s'en charge automatiquement

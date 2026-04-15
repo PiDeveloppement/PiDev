@@ -240,9 +240,86 @@
         })();
     </script>
 
-    <section class="portal-box">
-        <div class="portal-box-head portal-box-head-reco">✨ Evenements recommandes</div>
-        <div class="portal-catalog-grid"></div>
+    {# Section Événements recommandés - version moderne et prioritaire #}
+    <section class="portal-box portal-box-recommendations">
+        <div class="reco-header">
+            <div class="reco-header-text">
+                <span class="reco-header-icon">✨</span>
+                <div>
+                    <h2 class="reco-header-title">Événements recommandés</h2>
+                    <p class="reco-header-subtitle">Priorité IA basée sur votre secteur et vos habitudes de sponsoring</p>
+                </div>
+            </div>
+            <div class="reco-priority-badge">Section prioritaire</div>
+        </div>
+
+        {% if recommendedEvents is empty %}
+            <div class="portal-box-empty">Aucune recommandation disponible pour le moment.</div>
+        {% else %}
+            <div class="reco-grid">
+                {% for event in recommendedEvents %}
+                    {# Détermination du type et de l'image par défaut (inchangé) #}
+                    {% set t = event.title|lower %}
+                    {% set type = 'Conference' %}
+                    {% set cls = 'conference' %}
+                    {% set mood = 'Selection intelligente' %}
+                    {% set defaultImage = 'conference.jfif' %}
+                    {% if 'atelier' in t %}
+                        {% set type = 'Atelier' %}
+                        {% set cls = 'atelier' %}
+                        {% set mood = 'Pratique collaborative' %}
+                        {% set defaultImage = 'atelier.jfif' %}
+                    {% elseif 'seminaire' in t or 'séminaire' in t %}
+                        {% set type = 'Seminaire' %}
+                        {% set cls = 'seminaire' %}
+                        {% set mood = 'Prise de parole inspirée' %}
+                        {% set defaultImage = 'formation.jfif' %}
+                    {% elseif 'formation' in t %}
+                        {% set type = 'Formation' %}
+                        {% set cls = 'formation' %}
+                        {% set mood = 'Montée en compétences' %}
+                        {% set defaultImage = 'formation.jfif' %}
+                    {% elseif 'workshop' in t %}
+                        {% set type = 'Workshop' %}
+                        {% set cls = 'workshop' %}
+                        {% set mood = 'Laboratoire d idées' %}
+                        {% set defaultImage = 'atelier.jfif' %}
+                    {% elseif 'carriere' in t or 'career' in t or 'emploi' in t %}
+                        {% set type = 'Carriere' %}
+                        {% set cls = 'carriere' %}
+                        {% set mood = 'Projection professionnelle' %}
+                        {% set defaultImage = 'conference.jfif' %}
+                    {% endif %}
+
+                    <article class="reco-card {{ cls }}">
+                        <div class="reco-rank-badge">Top {{ loop.index }}</div>
+                        <img class="reco-card-image" src="{{ asset('images/' ~ event.title ~ '.jpg') }}" alt="{{ event.title }}" onerror="this.src=&quot;{{ asset('images/sponsor-cards/' ~ defaultImage) }}&quot;">
+                        <div class="reco-card-content">
+                            <div class="reco-card-top">
+                                <span class="reco-type-badge {{ cls }}">{{ type }}</span>
+                                <span class="reco-mood">{{ mood }}</span>
+                            </div>
+                            <h3 class="reco-card-title">{{ event.title }}</h3>
+                            <p class="reco-card-description">{{ event.description ?: "Cet événement a été sélectionné spécialement pour vous selon votre secteur d'activité et vos contributions antérieures."|slice(0, 100) ~ '…' }}</p>
+                            <div class="reco-card-meta">
+                                <div class="reco-meta-item">
+                                    <span class="reco-meta-icon">📅</span>
+                                    <span>{{ event.startDate ? event.startDate|date("d-m-Y") : "-" }}</span>
+                                </div>
+                                <div class="reco-meta-item">
+                                    <span class="reco-meta-icon">📍</span>
+                                    <span>{{ event.location ?: "-" }}</span>
+                                </div>
+                            </div>
+                            <div class="reco-card-actions">
+                                <a class="reco-btn-outline" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir détails</a>
+                                <a class="reco-btn-primary" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
     </section>
 
     <section class="portal-box">
@@ -285,18 +362,18 @@
                     {% endif %}
 
                     <article class="portal-event-card {{ cls }} {{ loop.index == 3 ? 'highlight' : '' }}" data-live-search-item data-search="{{ event.title }}" data-live-suggest="{{ event.title }}">
-                        <img class="portal-event-visual" src="{{ asset('images/' ~ event.title ~ '.jpg') }}" alt="{{ event.title }}" onerror="this.src='{{ asset('images/sponsor-cards/' ~ defaultImage) }}'">
+                        <img class="portal-event-visual" src="{{ asset('images/' ~ event.title ~ '.jpg') }}" alt="{{ event.title }}" onerror="this.src=&quot;{{ asset('images/sponsor-cards/' ~ defaultImage) }}&quot;">
                         <div class="portal-event-content">
                             <div class="portal-event-topline">
                                 <span class="portal-badge {{ cls }}">{{ type }}</span>
                                 <span class="portal-event-mood">{{ mood }}</span>
                             </div>
                             <h3 class="portal-event-title">{{ event.title }}</h3>
-                            <p class="portal-event-description">{{ event.description ?: 'Une occasion soigneusement cadree pour soutenir la vie universitaire, valoriser les talents et renforcer votre presence.' }}</p>
+                            <p class="portal-event-description">{{ event.description ?: "Une occasion pour soutenir la vie universitaire, valoriser les talents et renforcer votre presence." }}</p>
 
                             <div class="portal-event-meta-row">
-                                <div class="portal-event-meta"><span class="portal-event-label">📅 Date:</span> {{ event.startDate ? event.startDate|date('d-m-Y') : '-' }}</div>
-                                <div class="portal-event-meta"><span class="portal-event-label">📍 Lieu:</span> {{ event.location ?: '-' }}</div>
+                                <div class="portal-event-meta"><span class="portal-event-label">📅 Date:</span> {{ event.startDate ? event.startDate|date("d-m-Y") : "-" }}</div>
+                                <div class="portal-event-meta"><span class="portal-event-label">📍 Lieu:</span> {{ event.location ?: "-" }}</div>
                             </div>
                             <div class="portal-card-actions">
                                 <a class="portal-btn-secondary" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir details</a>

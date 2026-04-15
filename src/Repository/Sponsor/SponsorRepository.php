@@ -227,6 +227,31 @@ class SponsorRepository extends ServiceEntityRepository
     }
 
     /**
+     * @return string[]
+     */
+    public function getIndustriesByEmail(string $email): array
+    {
+        $rows = $this->createQueryBuilder('s')
+            ->select('DISTINCT s.industry AS industry')
+            ->andWhere('LOWER(s.contactEmail) = :email')
+            ->andWhere('s.industry IS NOT NULL')
+            ->andWhere("s.industry != ''")
+            ->setParameter('email', mb_strtolower(trim($email)))
+            ->getQuery()
+            ->getArrayResult();
+
+        $values = [];
+        foreach ($rows as $row) {
+            $industry = trim((string) ($row['industry'] ?? ''));
+            if ($industry !== '') {
+                $values[] = $industry;
+            }
+        }
+
+        return array_values(array_unique($values));
+    }
+
+    /**
      * @param int[] $eventIds
      * @return array<int,string>
      */

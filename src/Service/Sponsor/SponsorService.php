@@ -6,6 +6,7 @@ use App\Entity\Sponsor\Sponsor;
 use App\Entity\User\UserModel;
 use App\Repository\Sponsor\SponsorRepository;
 use App\Repository\User\UserRepository;
+use App\Service\Sponsor\ExternalAiRecommendationService;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -15,6 +16,7 @@ class SponsorService
         private EntityManagerInterface $entityManager,
         private SponsorRepository $sponsorRepository,
         private UserRepository $userRepository,
+        private ExternalAiRecommendationService $externalAiRecommendationService,
     ) {
     }
 
@@ -130,51 +132,164 @@ class SponsorService
      */
     public function buildRecommendedEvents(array $events, UserModel $user, string $email): array
     {
-        $industry = trim((string) ($user->getBio() ?? ''));
-        if ($industry === '') {
-            $industry = trim((string) ($this->sponsorRepository->findLastIndustryByEmail($email) ?? ''));
+        $bio = trim((string) ($user->getBio() ?? ''));
+        $lastIndustry = trim((string) ($this->sponsorRepository->findLastIndustryByEmail($email) ?? ''));
+        $industries = $this->sponsorRepository->getIndustriesByEmail($email);
+
+        $sectorContextParts = array_values(array_filter(array_unique(array_merge(
+            $bio !== '' ? [$bio] : [],
+            $lastIndustry !== '' ? [$lastIndustry] : [],
+            $industries
+        )), static fn (string $value): bool => trim($value) !== ''));
+        $sectorContext = implode(' ', $sectorContextParts);
+
+        $contributionsByEvent = $this->sponsorRepository->getMyContributionsByEvent($email);
+        $locallyRanked = $this->rankEventsForSponsor($events, $sectorContext, $contributionsByEvent);
+
+        $profile = [
+            'email' => $email,
+            'industry' => $sectorContext,
+            'stats' => $this->sponsorRepository->getMyStats($email),
+            'contributionsByEvent' => $contributionsByEvent,
+        ];
+
+        $externallyRanked = $this->externalAiRecommendationService->recommend(
+            $profile,
+            array_slice($locallyRanked, 0, 20),
+            6
+        );
+
+        if ($externallyRanked === []) {
+            return array_slice($locallyRanked, 0, 6);
         }
 
-        if ($industry === '') {
-            return array_slice($events, 0, 6);
+        // Keep IA order first, then complete with local ranking to avoid empty slots.
+        $result = [];
+        $seen = [];
+
+        foreach ($externallyRanked as $event) {
+            $id = (int) ($event['id'] ?? 0);
+            if ($id > 0 && !isset($seen[$id])) {
+                $result[] = $event;
+                $seen[$id] = true;
+            }
+            if (count($result) >= 6) {
+                return $result;
+            }
         }
 
-        $tokens = array_values(array_filter(
-            preg_split('/\s+/', mb_strtolower($industry)) ?: [],
-            static fn (string $value): bool => mb_strlen($value) >= 3
-        ));
-
-        if ($tokens === []) {
-            return array_slice($events, 0, 6);
+        foreach ($locallyRanked as $event) {
+            $id = (int) ($event['id'] ?? 0);
+            if ($id > 0 && !isset($seen[$id])) {
+                $result[] = $event;
+                $seen[$id] = true;
+            }
+            if (count($result) >= 6) {
+                break;
+            }
         }
+
+        return $result;
+    }
+
+    /**
+     * @param array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
+     * @param array<string,float> $contributionsByEvent
+     * @return array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
+     */
+    private function rankEventsForSponsor(array $events, string $sectorContext, array $contributionsByEvent): array
+    {
+        $sectorTokens = $this->tokenizeText($sectorContext);
+        $historyTokens = $this->tokenizeText(implode(' ', array_keys($contributionsByEvent)));
 
         $scored = [];
         foreach ($events as $event) {
-            $haystack = mb_strtolower(
-                (string) ($event['title'] ?? '') . ' ' .
-                (string) ($event['description'] ?? '') . ' ' .
-                (string) ($event['location'] ?? '')
-            );
+            $title = mb_strtolower((string) ($event['title'] ?? ''));
+            $description = mb_strtolower((string) ($event['description'] ?? ''));
+            $location = mb_strtolower((string) ($event['location'] ?? ''));
+            $titleTokens = $this->tokenizeText((string) ($event['title'] ?? ''));
+            $descriptionTokens = $this->tokenizeText((string) ($event['description'] ?? ''));
 
-            $score = 0;
-            foreach ($tokens as $token) {
-                if (str_contains($haystack, $token)) {
-                    ++$score;
+            $score = 0.0;
+
+            // Explicitly compare sponsor sector against event title and description.
+            foreach ($sectorTokens as $token) {
+                if ($token !== '' && str_contains($title, $token)) {
+                    $score += 7;
+                }
+                if ($token !== '' && str_contains($description, $token)) {
+                    $score += 4;
+                }
+                if ($token !== '' && str_contains($location, $token)) {
+                    $score += 1;
                 }
             }
 
-            if ($score > 0) {
-                $scored[] = ['event' => $event, 'score' => $score];
+            $sectorCount = count($sectorTokens);
+            if ($sectorCount > 0) {
+                $titleOverlap = count(array_intersect($sectorTokens, $titleTokens));
+                $descriptionOverlap = count(array_intersect($sectorTokens, $descriptionTokens));
+                $score += ($titleOverlap / $sectorCount) * 12;
+                $score += ($descriptionOverlap / $sectorCount) * 8;
             }
+
+            // Light preference for similar themes already sponsored by this sponsor.
+            if ($historyTokens !== [] && $titleTokens !== []) {
+                $historyOverlap = count(array_intersect($historyTokens, $titleTokens));
+                $score += min(4, $historyOverlap * 1.2);
+            }
+
+            // Prefer upcoming events that are not too far in time.
+            $startDate = $event['startDate'] ?? null;
+            if ($startDate instanceof \DateTimeInterface) {
+                $days = (int) ((int) $startDate->format('U') - time()) / 86400;
+                if ($days >= 0 && $days <= 90) {
+                    $score += 2;
+                } elseif ($days > 90) {
+                    $score += 1;
+                }
+            }
+
+            $scored[] = ['event' => $event, 'score' => $score];
         }
 
-        if ($scored === []) {
-            return array_slice($events, 0, 6);
+        usort($scored, static function (array $a, array $b): int {
+            if ((float) $a['score'] === (float) $b['score']) {
+                $aDate = $a['event']['startDate'] instanceof \DateTimeInterface ? $a['event']['startDate']->getTimestamp() : PHP_INT_MAX;
+                $bDate = $b['event']['startDate'] instanceof \DateTimeInterface ? $b['event']['startDate']->getTimestamp() : PHP_INT_MAX;
+                return $aDate <=> $bDate;
+            }
+            return ((float) $b['score']) <=> ((float) $a['score']);
+        });
+
+        return array_values(array_map(static fn (array $row): array => $row['event'], $scored));
+    }
+
+    /**
+     * @return string[]
+     */
+    private function tokenizeText(string $value): array
+    {
+        $normalized = $this->normalizeForMatch($value);
+        if ($normalized === '') {
+            return [];
         }
 
-        usort($scored, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
+        $tokens = preg_split('/[^a-z0-9]+/', $normalized) ?: [];
+        $tokens = array_values(array_filter($tokens, static fn (string $token): bool => strlen($token) >= 3));
 
-        return array_map(static fn (array $row): array => $row['event'], array_slice($scored, 0, 6));
+        return array_values(array_unique($tokens));
+    }
+
+    private function normalizeForMatch(string $value): string
+    {
+        $lower = mb_strtolower(trim($value));
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $lower);
+        if ($ascii === false) {
+            return $lower;
+        }
+
+        return $ascii;
     }
 
     /**
