@@ -80,6 +80,12 @@ class SignupController extends AbstractController
         $success = $this->userService->createUser($user, null);
 
         if ($success) {
+            // Envoyer l'email de bienvenue à l'utilisateur
+            $this->emailService->sendWelcomeEmail($user);
+            
+            // Envoyer la notification aux admins
+            $this->emailService->sendNewUserNotificationToAdmin($user);
+            
             $this->addFlash('success', '✓ Inscription réussie ! Étape finale : Configuration Face ID.');
             return $this->redirectToRoute('app_register', [
                 'setup_face' => 1,

@@ -22,7 +22,7 @@ class ForgotPasswordController extends AbstractController
     #[Route('/forgot-password', name: 'app_forgot_password')]
     public function index(): Response
     {
-        return $this->render('security/forgot_password.html.twig', [
+        return $this->render('user/forgot_password.html.twig', [
             'whatsapp_sandbox' => [
                 'number' => '+14155238886',
                 'code' => 'orange-popsicle'

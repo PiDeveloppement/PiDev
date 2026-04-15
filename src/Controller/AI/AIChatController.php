@@ -7,15 +7,18 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 #[Route('/api/ai-chat')]
 class AIChatController extends AbstractController
 {
     private HttpClientInterface $httpClient;
+    private ParameterBagInterface $params;
 
-    public function __construct(HttpClientInterface $httpClient)
+    public function __construct(HttpClientInterface $httpClient, ParameterBagInterface $params)
     {
         $this->httpClient = $httpClient;
+        $this->params = $params;
     }
 
     #[Route('/send', name: 'app_ai_chat_send', methods: ['POST'])]
@@ -29,10 +32,10 @@ class AIChatController extends AbstractController
         }
 
         try {
-            // Vérifier si la clé API OpenAI est configurée
-            $apiKey = $_ENV['OPENAI_API_KEY'] ?? null;
-
-            if (!$apiKey) {
+            // Vérifier si la clé API Gemini est configurée
+            $apiKey = $_ENV['GEMINI_API_KEY'] ?? null;
+            
+            if (empty($apiKey) || $apiKey === 'your_gemini_api_key_here') {
                 // Réponse simulée si pas de clé API
                 $response = $this->getSimulatedResponse($message);
                 return new JsonResponse([
@@ -41,31 +44,32 @@ class AIChatController extends AbstractController
                 ]);
             }
 
-            // Appel à l'API OpenAI
-            $response = $this->httpClient->request('POST', 'https://api.openai.com/v1/chat/completions', [
+            // Appel à l'API Gemini
+            $response = $this->httpClient->request('POST', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' . $apiKey, [
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $apiKey,
                     'Content-Type' => 'application/json',
                 ],
                 'json' => [
-                    'model' => 'gpt-3.5-turbo',
-                    'messages' => [
+                    'contents' => [
                         [
-                            'role' => 'system',
-                            'content' => 'Tu es un assistant de gestion pour EventFlow, une plateforme de gestion d\'événements. Aide les utilisateurs avec des questions sur les événements, les utilisateurs, les budgets, etc. Sois concis et professionnel. Réponds en français.'
-                        ],
-                        [
-                            'role' => 'user',
-                            'content' => $message
+                            'parts' => [
+                                [
+                                    'text' => 'Tu es un assistant de gestion pour EventFlow, une plateforme de gestion d\'événements. Aide les utilisateurs avec des questions sur les événements, les utilisateurs, les budgets, etc. Sois concis et professionnel. Réponds en français.
+
+Question utilisateur: ' . $message
+                                ]
+                            ]
                         ]
                     ],
-                    'max_tokens' => 500,
-                    'temperature' => 0.7
+                    'generationConfig' => [
+                        'temperature' => 0.7,
+                        'maxOutputTokens' => 500
+                    ]
                 ]
             ]);
 
             $result = $response->toArray();
-            $aiResponse = $result['choices'][0]['message']['content'] ?? 'Désolé, je n\'ai pas pu générer de réponse.';
+            $aiResponse = $result['candidates'][0]['content']['parts'][0]['text'] ?? 'Désolé, je n\'ai pas pu générer de réponse.';
 
             return new JsonResponse([
                 'response' => $aiResponse,
@@ -120,6 +124,6 @@ class AIChatController extends AbstractController
             return "Je peux vous aider avec : la gestion des utilisateurs, des événements, des budgets, des sponsors et des ressources. Posez-moi vos questions !";
         }
 
-        return "Je comprends votre question sur \"" . htmlspecialchars($message) . "\". Pour l'instant, je fonctionne en mode simulation. Configurez une clé API OpenAI dans le fichier .env pour activer les réponses IA avancées.";
+        return "Je comprends votre question sur \"" . htmlspecialchars($message) . "\". Pour l'instant, je fonctionne en mode simulation. Configurez une clé API Gemini dans le fichier .env (GEMINI_API_KEY) pour activer les réponses IA avancées.";
     }
 }
