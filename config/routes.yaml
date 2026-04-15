@@ -1,0 +1,13 @@
+# config/routes.yaml
+
+# Point d'entrée principal
+#index:
+ #   path: /
+  #  controller: App\Controller\Auth\LandingPageController::index
+
+# Import de tous les autres contrôleurs avec leurs attributs
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrat sponsor - {{ sponsor.companyName ?: 'EventFlow' }}</title>
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+</head>
+<body class="contract-page-body">
+<div class="contract-toolbar no-print">
+    <a class="btn-sponsor outline" href="{{ path(backRoute, backRouteParams|default({})) }}">Retour</a>
+    {% if pdfUrl %}
+        <a class="btn-sponsor warning" href="{{ pdfUrl }}" target="_blank" rel="noopener noreferrer">Contrat PDF</a>
+    {% endif %}
+    <button class="btn-sponsor primary" type="button" onclick="window.print()">Imprimer / Export PDF</button>
+</div>
+
+<main class="contract-sheet">
+    <header class="contract-sheet-head">
+        <div class="contract-brand">
+            <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+            <div>
+                <strong>EventFlow</strong>
+                <h1>DETAILS DU SPONSOR</h1>
+            </div>
+        </div>
+
+        <div class="contract-sponsor-logo">
+            {% if sponsor.logoUrl %}
+                <img src="{{ sponsor.logoUrl }}" alt="{{ sponsor.companyName }}">
+            {% else %}
+                <span>{{ sponsor.companyName|slice(0, 2)|upper }}</span>
+            {% endif %}
+        </div>
+    </header>
+
+    <section class="contract-meta">
+        <p><strong>Date:</strong> {{ "now"|date("d/m/Y") }}</p>
+        <p><strong>Evenement:</strong> {{ eventTitle }}</p>
+        {% if event and event.location %}
+            <p><strong>Lieu:</strong> {{ event.location }}</p>
+        {% endif %}
+    </section>
+
+    <section class="contract-block">
+        <h2>Informations</h2>
+        <ul class="contract-info-list">
+            <li><strong>Entreprise:</strong> {{ sponsor.companyName ?: '-' }}</li>
+            <li><strong>Email:</strong> {{ sponsor.contactEmail ?: '-' }}</li>
+            <li><strong>Contribution:</strong> {{ sponsor.contributionAmount|number_format(2, ',', ' ') }} DT</li>
+            <li><strong>Numero fiscal:</strong> {{ sponsor.taxId ?: '-' }}</li>
+            <li><strong>Secteur:</strong> {{ sponsor.industry ?: '-' }}</li>
+            <li><strong>Telephone:</strong> {{ sponsor.phone ?: '-' }}</li>
+        </ul>
+    </section>
+
+    <section class="contract-block">
+        <h2>Contrat Sponsor</h2>
+        <p>
+            Le sponsor confirme sa contribution a l'evenement mentionne ci-dessus. Cette contribution sera
+            utilisee pour couvrir les besoins organisationnels, la communication et les ressources liees a cet evenement.
+        </p>
+        <p>
+            Le present document sert de fiche de validation interne. Lorsqu'un contrat PDF existe deja,
+            il reste disponible comme piece jointe officielle.
+        </p>
+    </section>
+
+    <footer class="contract-signatures">
+        <div class="contract-sign-box">
+            <span>Signature Organisateur:</span>
+            <div class="contract-sign-line"></div>
+        </div>
+        <div class="contract-sign-box">
+            <span>Signature Sponsor:</span>
+            <div class="contract-sign-line"></div>
+        </div>
+    </footer>
+</main>
+</body>
+</html>

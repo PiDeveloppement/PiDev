@@ -1,0 +1,530 @@
+{% extends 'base.html.twig' %}
+{% block title %}Gestion des événements{% endblock %}
+
+{% block kpi %}
+<div id="eventKpiRoot" class="ev-kpi-grid">
+    <div class="ev-kpi-card kpi-events">
+        <i class="fas fa-calendar-alt ev-kpi-icon"></i>
+        <div class="ev-kpi-value">{{ totalEvents }}</div>
+        <div class="ev-kpi-label">Événements</div>
+    </div>
+    <div class="ev-kpi-card kpi-tickets">
+        <i class="fas fa-ticket-alt ev-kpi-icon"></i>
+        <div class="ev-kpi-value">{{ totalTickets }}</div>
+        <div class="ev-kpi-label">Billets</div>
+    </div>
+    <div class="ev-kpi-card kpi-upcoming">
+        <i class="fas fa-clock ev-kpi-icon"></i>
+        <div class="ev-kpi-value">{{ totalAvenir }}</div>
+        <div class="ev-kpi-label">À venir</div>
+    </div>
+    <div class="ev-kpi-card kpi-finished">
+        <i class="fas fa-check-circle ev-kpi-icon"></i>
+        <div class="ev-kpi-value">{{ totalTermine }}</div>
+        <div class="ev-kpi-label">Terminés</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+<style>
+    .ev-kpi-grid {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .ev-kpi-card {
+        min-width: 124px;
+        border-radius: 14px;
+        padding: 12px 20px;
+        text-align: center;
+        border: 1px solid transparent;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+    }
+
+    .ev-kpi-icon {
+        font-size: 20px;
+    }
+
+    .ev-kpi-value {
+        font-size: 1.8rem;
+        line-height: 1.15;
+        font-weight: 800;
+        margin-top: 4px;
+    }
+
+    .ev-kpi-label {
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .ev-kpi-card.kpi-events {
+        background: linear-gradient(135deg, #ecf5ff 0%, #dff0ff 100%);
+        border-color: #c8e2ff;
+        color: #1565c0;
+    }
+
+    .ev-kpi-card.kpi-tickets {
+        background: linear-gradient(135deg, #fffdf2 0%, #fff4cc 100%);
+        border-color: #ffe8a3;
+        color: #d97706;
+    }
+
+    .ev-kpi-card.kpi-upcoming {
+        background: linear-gradient(135deg, #f0fff4 0%, #dbf7e6 100%);
+        border-color: #bceccb;
+        color: #16a34a;
+    }
+
+    .ev-kpi-card.kpi-finished {
+        background: linear-gradient(135deg, #fff1f3 0%, #ffe2e7 100%);
+        border-color: #ffc7d4;
+        color: #dc2626;
+    }
+
+    .ev-toolbar {
+        display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+        background:#fff; border:1px solid #e2e8f0; border-radius:14px;
+        padding:12px 16px; margin-bottom:16px;
+    }
+    .ev-input, .ev-select {
+        border:1px solid #cbd5e1; border-radius:8px;
+        padding:8px 12px; font-size:13px; color:#0f172a; outline:none;
+    }
+    .ev-input { width:280px; }
+    .ev-select { width:150px; }
+    .ev-spacer { flex:1; }
+
+    .ev-table-wrap {
+        background:#fff; border:1px solid #e2e8f0; border-radius:16px;
+        overflow:hidden; box-shadow:0 2px 10px rgba(2,6,23,.04);
+    }
+    .ev-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .ev-table thead th {
+        background:#f8fafc; color:#334155; border-bottom:1px solid #e2e8f0;
+        padding:12px 14px; text-align:left; font-weight:700;
+    }
+    .ev-table tbody td {
+        border-bottom:1px solid #f1f5f9; padding:11px 14px;
+        color:#334155; vertical-align:middle;
+    }
+    .ev-table tbody tr:hover { background:#f8fbff; }
+
+    .badge-status {
+        border-radius:999px; padding:4px 12px;
+        font-size:11px; font-weight:700; display:inline-block;
+    }
+    .s-avenir { background:#dbeafe; color:#1e40af; }
+    .s-encours { background:#dcfce7; color:#166534; }
+    .s-termine { background:#e2e8f0; color:#334155; }
+
+    .btn-action {
+        border:none; border-radius:8px; color:#fff;
+        width:32px; height:32px; cursor:pointer;
+        display:inline-flex; align-items:center; justify-content:center;
+        text-decoration:none; font-size:13px;
+    }
+    .btn-view { background:#0891b2; }
+    .btn-edit { background:#2563eb; }
+    .btn-delete { background:#dc2626; }
+    .btn-view:hover { background:#0e7490; }
+    .btn-edit:hover { background:#1d4ed8; }
+    .btn-delete:hover { background:#b91c1c; }
+
+    .result-pill {
+        color:#64748b; font-size:13px; background:#fff;
+        border:1px solid #e2e8f0; border-radius:20px; padding:5px 14px;
+    }
+
+    .pagination-shell {
+        margin-top: 16px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .pagination-info {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 500;
+        text-align: center;
+        width: 100%;
+    }
+    .pagination-nav {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .page-btn {
+        min-width: 52px;
+        height: 46px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        color: #6b7280;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 14px;
+        transition: all .15s ease;
+    }
+    .page-btn:hover {
+        background: #f8fafc;
+        border-color: #d1d5db;
+        color: #475569;
+    }
+    .page-btn.current {
+        background: #2196f3;
+        color: #fff;
+        border-color: #2196f3;
+        box-shadow: 0 6px 14px rgba(33,150,243,.28);
+        font-weight: 700;
+    }
+    .page-btn.disabled {
+        color: #9ca3af;
+        background: #f9fafb;
+        border-color: #e5e7eb;
+        pointer-events: none;
+    }
+
+    .page-btn.arrow {
+        min-width: 132px;
+        font-size: 13px;
+    }
+
+    @media (max-width: 760px) {
+        .pagination-shell {
+            justify-content: center;
+        }
+        .pagination-info {
+            width: 100%;
+            text-align: center;
+        }
+        .pagination-nav {
+            justify-content: center;
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="ev-toolbar">
+    <input class="ev-input" type="text" id="searchInput" placeholder="🔍 Rechercher par titre..." value="{{ filters.search ?? '' }}"/>
+    <select class="ev-select" id="statusFilter">
+        <option value="">📊 Tous les statuts</option>
+        <option value="avenir" {{ (filters.status ?? '') == 'avenir' ? 'selected' : '' }}>À venir</option>
+        <option value="encours" {{ (filters.status ?? '') == 'encours' ? 'selected' : '' }}>En cours</option>
+        <option value="termine" {{ (filters.status ?? '') == 'termine' ? 'selected' : '' }}>Terminé</option>
+    </select>
+    <select class="ev-select" id="categoryFilter" title="Filtrer par catégorie">
+        <option value="">🏷️ Toutes les catégories</option>
+        {% for category in categories %}
+            <option value="{{ category.id }}" {{ (filters.category ?? '') == category.id ? 'selected' : '' }}>{{ category.icon ?? '📁' }} {{ category.name }}</option>
+        {% endfor %}
+    </select>
+    <select class="ev-select" id="priceFilter">
+        <option value="">💰 Prix</option>
+        <option value="free" {{ (filters.price ?? '') == 'free' ? 'selected' : '' }}>Gratuit</option>
+        <option value="paid" {{ (filters.price ?? '') == 'paid' ? 'selected' : '' }}>Payant</option>
+    </select>
+    <div class="ev-spacer"></div>
+    <span class="result-pill" id="resultCount">{{ filteredEvents ?? events.getTotalItemCount }} résultat(s)</span>
+    <a href="{{ path('app_event_calendar') }}"
+       style="background:#0f766e; color:#fff; border:none; border-radius:8px;
+              padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+              text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fas fa-calendar-week"></i> Calendrier
+    </a>
+    <a href="{{ path('app_event_export_pdf') }}"
+       style="background:#1e293b; color:#fff; border:none; border-radius:8px;
+              padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+              text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fas fa-file-pdf"></i> Exporter PDF
+    </a>
+    <a href="{{ path('app_event_new') }}"
+       style="background:#1565c0; color:#fff; border:none; border-radius:8px;
+              padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+              text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fas fa-plus"></i> Créer événement
+    </a>
+</div>
+
+<div class="ev-table-wrap" id="eventsTableWrapper">
+    <table class="ev-table" id="eventsTable">
+        <thead>
+            <tr>
+                <th>📅 Titre</th>
+                <th>⏱️ Début</th>
+                <th>⏱️ Fin</th>
+                <th>📍 Lieu</th>
+                <th>🏷️ Catégorie</th>
+                <th>📊 Statut</th>
+                <th>💰 Prix</th>
+                <th>⚡ Actions</th>
+            </tr>
+        </thead>
+        <tbody id="eventsTableBody">
+        {% for event in events %}
+            {% set now = "now"|date('U') %}
+            {% set start = event.startDate ? event.startDate|date('U') : 0 %}
+            {% set end = event.endDate ? event.endDate|date('U') : 0 %}
+
+            {% if end < now %}
+                {% set temporalStatus = 'termine' %}
+                {% set statusLabel = 'Terminé' %}
+            {% elseif start > now %}
+                {% set temporalStatus = 'avenir' %}
+                {% set statusLabel = 'À venir' %}
+            {% else %}
+                {% set temporalStatus = 'encours' %}
+                {% set statusLabel = 'En cours' %}
+            {% endif %}
+
+            <tr class="event-row"
+                data-title="{{ event.title|lower }}"
+                data-status="{{ temporalStatus }}"
+                data-price="{{ event.isFree ? 'free' : 'paid' }}"
+                data-category="{{ event.category ? event.category.id : '' }}">
+                <td><strong>{{ event.title }}</strong></td>
+                <td>{{ event.startDate ? event.startDate|date('d/m/Y H:i') : '-' }}</td>
+                <td>{{ event.endDate ? event.endDate|date('d/m/Y H:i') : '-' }}</td>
+                <td>{{ event.location ?: '-' }}</td>
+                <td>{{ event.category ? ((event.category.icon ?? '📁') ~ ' ' ~ event.category.name) : '-' }}</td>
+                <td>
+                    <span class="badge-status s-{{ temporalStatus }}">{{ statusLabel }}</span>
+                </td>
+                <td>
+                    {% if event.isFree %}
+                        <strong style="color:#16a34a;">Gratuit</strong>
+                    {% else %}
+                        <strong style="color:#d97706;">{{ event.ticketPrice }} DT</strong>
+                    {% endif %}
+                </td>
+                <td style="display:flex; gap:6px;">
+                    <a href="{{ path('app_event_show', {'id': event.id}) }}" class="btn-action btn-view" title="Voir">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{{ path('app_event_edit', {'id': event.id}) }}" class="btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-pen"></i>
+                    </a>
+                    <form method="post" action="{{ path('app_event_delete', {'id': event.id}) }}"
+                          onsubmit="return confirm('Supprimer cet événement ?')" style="margin:0;">
+                        <button type="submit" class="btn-action btn-delete" title="Supprimer">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="8" style="text-align:center; color:#64748b; padding:32px;">
+                    <i class="fas fa-calendar-times" style="font-size:2rem; margin-bottom:8px;"></i>
+                    <div>Aucun événement trouvé</div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% set p = events.paginationData %}
+{% set startItem = events.getTotalItemCount > 0 ? ((p.current - 1) * events.getItemNumberPerPage + 1) : 0 %}
+{% set endItem = events.getTotalItemCount > 0 ? (startItem + events|length - 1) : 0 %}
+
+<div class="pagination-shell" id="paginationShell">
+    <div class="pagination-info">
+        Affichage {{ startItem }}-{{ endItem }} sur {{ events.getTotalItemCount }}
+    </div>
+
+    <div class="pagination-nav" aria-label="Pagination événements">
+        {% if p.previous is defined %}
+            <a class="page-btn arrow" href="{{ path('app_event_index', app.request.query.all|merge({'page': p.previous})) }}" aria-label="Page précédente">
+                &laquo; Précédent
+            </a>
+        {% else %}
+            <span class="page-btn arrow disabled" aria-hidden="true">&laquo; Précédent</span>
+        {% endif %}
+
+        {% if events.pageCount > 1 %}
+            {% for page in p.pagesInRange %}
+                {% if page == p.current %}
+                    <span class="page-btn current">{{ page }}</span>
+                {% else %}
+                    <a class="page-btn" href="{{ path('app_event_index', app.request.query.all|merge({'page': page})) }}">{{ page }}</a>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <span class="page-btn current">1</span>
+        {% endif %}
+
+        {% if p.next is defined %}
+            <a class="page-btn arrow" href="{{ path('app_event_index', app.request.query.all|merge({'page': p.next})) }}" aria-label="Page suivante">
+                Suivant &raquo;
+            </a>
+        {% else %}
+            <span class="page-btn arrow disabled" aria-hidden="true">Suivant &raquo;</span>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+(() => {
+    const search = document.getElementById('searchInput');
+    const status = document.getElementById('statusFilter');
+    const category = document.getElementById('categoryFilter');
+    const price = document.getElementById('priceFilter');
+    const tbody = document.getElementById('eventsTableBody');
+    const paginationShell = document.getElementById('paginationShell');
+    const count = document.getElementById('resultCount');
+    const kpiRoot = document.getElementById('eventKpiRoot');
+    const totalCount = {{ totalEvents }};
+    let debounceTimer = null;
+    let latestRequestId = 0;
+
+    function buildUrl(page = 1) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', page);
+        url.searchParams.set('search', search.value.trim());
+        url.searchParams.set('status', status.value);
+        url.searchParams.set('category', category.value);
+        url.searchParams.set('price', price.value);
+        return url.toString();
+    }
+
+    function updatePaginationLinks(container) {
+        container.querySelectorAll('a.page-btn').forEach(link => {
+            const pageMatch = link.getAttribute('href').match(/[?&]page=(\d+)/);
+            if (!pageMatch) {
+                return;
+            }
+
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                loadEvents(parseInt(pageMatch[1], 10));
+            });
+        });
+    }
+
+    function syncFromResponse(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newBody = doc.getElementById('eventsTableBody');
+        const newPagination = doc.getElementById('paginationShell');
+        const newCount = doc.getElementById('resultCount');
+        const newKpiRoot = doc.getElementById('eventKpiRoot');
+
+        if (newBody && tbody) {
+            tbody.innerHTML = newBody.innerHTML;
+        }
+
+        if (newPagination && paginationShell) {
+            paginationShell.innerHTML = newPagination.innerHTML;
+            updatePaginationLinks(paginationShell);
+        }
+
+        if (newCount) {
+            count.textContent = newCount.textContent;
+        }
+
+        if (newKpiRoot && kpiRoot) {
+            kpiRoot.innerHTML = newKpiRoot.innerHTML;
+        }
+    }
+
+    async function loadEvents(page = 1) {
+        const requestId = ++latestRequestId;
+        const url = buildUrl(page);
+
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const html = await response.text();
+            if (requestId !== latestRequestId) {
+                return;
+            }
+            syncFromResponse(html);
+        } catch (error) {
+            console.error('Erreur lors du chargement des événements', error);
+        }
+    }
+
+    function scheduleLoad() {
+        window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(() => loadEvents(1), 250);
+    }
+
+    function applyClientFallback() {
+        const rows = [...document.querySelectorAll('.event-row')];
+        const q = search.value.toLowerCase().trim();
+        const s = status.value;
+        const c = category.value;
+        const p = price.value;
+        let visible = 0;
+
+        const matchesPrefix = (value) => {
+            if (!q) {
+                return true;
+            }
+
+            return String(value || '').toLowerCase().startsWith(q);
+        };
+
+        rows.forEach(row => {
+            const okSearch = matchesPrefix(row.dataset.title || '');
+            const okStatus = !s || row.dataset.status === s;
+            const okCategory = !c || row.dataset.category === c;
+            const okPrice = !p || row.dataset.price === p;
+            const show = okSearch && okStatus && okCategory && okPrice;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        if (!q && !s && !c && !p) {
+            count.textContent = totalCount + ' événement(s) au total';
+            return;
+        }
+
+        count.textContent = visible + ' résultat(s) sur cette page';
+    }
+
+    const supportsAjax = typeof window.fetch === 'function' && typeof window.DOMParser === 'function';
+
+    if (supportsAjax) {
+        const controls = [search, status, category, price];
+        controls.forEach(el => {
+            el.addEventListener('input', () => {
+                applyClientFallback();
+                scheduleLoad();
+            });
+            el.addEventListener('change', () => {
+                applyClientFallback();
+                scheduleLoad();
+            });
+        });
+        updatePaginationLinks(paginationShell);
+        applyClientFallback();
+    } else {
+        [search, status, category, price].forEach(el => {
+            el.addEventListener('input', applyClientFallback);
+            el.addEventListener('change', applyClientFallback);
+        });
+        applyClientFallback();
+    }
+})();
+</script>
+{% endblock %}

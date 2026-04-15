@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des catégories</title>
+    <style>
+        @page {
+            margin: 18mm 12mm 14mm 12mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 12px;
+            color: #1f2937;
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+        }
+
+        .report {
+            width: 100%;
+        }
+
+        .top-band {
+            height: 6px;
+            background: linear-gradient(90deg, #0f4c81 0%, #1d7bbf 55%, #38bdf8 100%);
+            border-radius: 4px;
+            margin-bottom: 14px;
+        }
+
+        .header {
+            border: 1px solid #dbe7f3;
+            border-radius: 10px;
+            padding: 16px 18px;
+            background: #f8fbff;
+            margin-bottom: 14px;
+        }
+
+        .header table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .brand {
+            font-size: 11px;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            color: #0f4c81;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #0f172a;
+            font-weight: 800;
+        }
+
+        .header p {
+            margin: 6px 0 0;
+            font-size: 12px;
+            color: #475569;
+        }
+
+        .meta {
+            text-align: right;
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.5;
+            white-space: nowrap;
+        }
+
+        .stats {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 0 14px;
+            table-layout: fixed;
+        }
+
+        .stats td {
+            width: 33.33%;
+            padding: 0 8px 0 0;
+            vertical-align: top;
+        }
+
+        .stats td:last-child {
+            padding-right: 0;
+        }
+
+        .stat-box {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 14px;
+            background: #ffffff;
+            min-height: 82px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            line-height: 1;
+            font-weight: 800;
+            color: #0f4c81;
+        }
+
+        .stat-note {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #475569;
+        }
+
+        .table-wrap {
+            border: 1px solid #dbe5ef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .data-table thead th {
+            background: #0f4c81;
+            color: #ffffff;
+            padding: 10px 10px;
+            text-align: left;
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .data-table tbody tr:nth-child(odd) {
+            background: #ffffff;
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background: #f8fbff;
+        }
+
+        .data-table tbody td {
+            padding: 9px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 11px;
+            color: #1f2937;
+            vertical-align: top;
+        }
+
+        .col-id { width: 6%; }
+        .col-category { width: 25%; }
+        .col-description { width: 35%; }
+        .col-color { width: 14%; }
+        .col-status { width: 10%; }
+        .col-date { width: 10%; }
+
+        .category-name {
+            font-weight: 700;
+            color: #0f172a;
+            word-break: break-word;
+        }
+
+        .description {
+            color: #334155;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .badge-active {
+            display: inline-block;
+            background: #dcfce7;
+            color: #166534;
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .badge-inactive {
+            display: inline-block;
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .color-dot {
+            display: inline-block;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+            border: 1px solid #cbd5e1;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        .footer {
+            margin-top: 12px;
+            border-top: 1px solid #dbe5ef;
+            padding-top: 8px;
+            color: #64748b;
+            font-size: 10px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="report">
+        <div class="top-band"></div>
+
+        <div class="header">
+            <table>
+                <tr>
+                    <td>
+                        <div class="brand">EventFlow</div>
+                        <h1>Rapport des catégories</h1>
+                        <p>Vue synthétique des catégories d'événements et de leur statut.</p>
+                    </td>
+                    <td class="meta">
+                        Généré le {{ "now"|date("d/m/Y") }}<br>
+                        Heure {{ "now"|date("H:i") }}<br>
+                        Document interne
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <table class="stats">
+            <tr>
+                <td>
+                    <div class="stat-box">
+                        <div class="stat-label">Total catégories</div>
+                        <div class="stat-value">{{ categories|length }}</div>
+                        <div class="stat-note">Périmètre global</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="stat-box">
+                        <div class="stat-label">Catégories actives</div>
+                        <div class="stat-value">{{ categories|filter(c => c.isActive)|length }}</div>
+                        <div class="stat-note">Disponibles pour publication</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="stat-box">
+                        <div class="stat-label">Catégories inactives</div>
+                        <div class="stat-value">{{ categories|filter(c => not c.isActive)|length }}</div>
+                        <div class="stat-note">A revoir ou archiver</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">#</th>
+                        <th class="col-category">Catégorie</th>
+                        <th class="col-description">Description</th>
+                        <th class="col-color">Couleur</th>
+                        <th class="col-status">Statut</th>
+                        <th class="col-date">Créée le</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for category in categories %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="category-name">{{ category.icon ?? '•' }} {{ category.name }}</td>
+                        <td class="description">
+                            {% if category.description %}
+                                {{ category.description|length > 90 ? category.description|slice(0, 90) ~ '...' : category.description }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="color-dot" style="background:{{ category.color ?? '#cbd5e1' }};"></span>
+                            {{ category.color ?? '-' }}
+                        </td>
+                        <td>
+                            {% if category.isActive %}
+                                <span class="badge-active">Actif</span>
+                            {% else %}
+                                <span class="badge-inactive">Inactif</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ category.createdAt ? category.createdAt|date('d/m/Y') : '-' }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="empty">Aucune catégorie disponible.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            EventFlow | Rapport catégories | © {{ "now"|date("Y") }}
+        </div>
+    </div>
+
+</body>
+</html>

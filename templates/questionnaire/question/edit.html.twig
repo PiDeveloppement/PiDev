@@ -1,0 +1,424 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier la Question #{{ question.id }}{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #ffffff;
+    --card-bg:  #f8fafc;
+    --border:   #e2e8f0;
+    --text:     #1e293b;
+    --muted:    #64748b;
+    --accent:   #1e40af;
+    --acc-bg:   #dbeafe;
+    --acc-border: #60a5fa;
+    --green:    #d1fae5;
+    --mint:     #cffafe;
+    --mint-border: #67e8f9;
+    --lavender: #e0e7ff;
+    --peach:    #fed7aa;
+    --peach-border: #fdba74;
+    --sky:      #dbeafe;
+    --yellow:   #fef3c7;
+    --yellow-border: #fbbf24;
+    --red:      #fee2e2;
+    --red-t:    #dc2626;
+    --red-border: #fca5a5;
+    --amber:    #fef3c7;
+    --amber-t:  #d97706;
+    --amber-border: #fbbf24;
+    --shadow:   0 1px 3px rgba(0,0,0,0.08);
+    --radius:   12px;
+    --ff:       'Plus Jakarta Sans', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+
+  .qs-page {
+    background: var(--bg);
+    min-height: 100vh;
+    padding: 2.5rem 2rem;
+    font-family: var(--ff);
+    color: var(--text);
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  /* Animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .breadcrumb-bar {
+    display: flex; align-items: center; gap: .45rem;
+    font-size: .8rem; color: var(--muted); margin-bottom: 2rem;
+  }
+  .breadcrumb-bar a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .breadcrumb-bar a:hover { text-decoration: underline; }
+  .bc-sep { font-size: .7rem; opacity: .5; }
+
+  .form-wrap { max-width: 100%; margin: 0; padding: 0 2rem; }
+
+  /* PAGE TITLE */
+  .page-title-row {
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 1rem;
+    margin-bottom: .35rem; flex-wrap: wrap;
+  }
+  .ptl { display: flex; align-items: center; gap: .9rem; }
+  .title-icon {
+    width: 44px; height: 44px;
+    background: var(--amber);
+    border: 2px solid var(--amber-border);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--amber-t);
+    font-size: 1rem; flex-shrink: 0;
+  }
+  .ptl h1 {
+    font-size: 1.8rem; font-weight: 800;
+    letter-spacing: -.035em; margin: 0;
+  }
+  .id-badge {
+    display: inline-flex; align-items: center; gap: .35rem;
+    background: var(--amber); border: 2px solid var(--amber-border);
+    border-radius: 10px; padding: .42rem .85rem;
+    font-size: .78rem; font-weight: 700; color: var(--amber-t);
+    white-space: nowrap;
+  }
+  .page-subtitle { font-size: .85rem; color: var(--muted); margin: .25rem 0 2rem 3.2rem; }
+
+  /* SECTION CARD */
+  .s-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.75rem 1.75rem 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideInLeft 0.6s ease-out;
+    animation-fill-mode: both;
+  }
+
+  .s-card:nth-child(1) { animation-delay: 0.1s; }
+  .s-card:nth-child(2) { animation-delay: 0.2s; }
+  .s-card:nth-child(3) { animation-delay: 0.3s; }
+
+  .s-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-color: var(--accent);
+  }
+  .s-card.sc-peach   { background: var(--acc-bg);   border-color: var(--acc-border); }
+  .s-card.sc-mint    { background: var(--mint);    border-color: var(--mint-border); }
+  .s-card.sc-yellow  { background: var(--sky);  border-color: var(--sky-border); }
+
+  .s-label {
+    display: flex; align-items: center; gap: .5rem;
+    font-size: .68rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .12em;
+    color: var(--accent); margin-bottom: 1.4rem;
+  }
+  .s-label::after { content: ''; flex: 1; height: 2px; background: rgba(37,99,235,.15); border-radius: 2px; }
+
+  .f-group { margin-bottom: 1.25rem; }
+  .f-group:last-child { margin-bottom: 0; }
+  .f-label {
+    display: block; font-size: .82rem; font-weight: 700;
+    color: var(--text); margin-bottom: .45rem;
+  }
+  .f-label .opt { font-weight: 500; color: var(--muted); font-size: .75rem; }
+
+  .f-input, .f-select {
+    width: 100%;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: .72rem 1rem;
+    font-family: var(--ff); font-size: .9rem; color: var(--text);
+    outline: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-appearance: none;
+    transform: translateY(0);
+  }
+  .f-input:focus, .f-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+    transform: translateY(-2px);
+  }
+
+  .f-input:hover {
+    border-color: var(--acc-border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .form-error-message { color: #dc2626 !important; font-size: 0.77rem; margin-top: 0.35rem; font-weight: 500; }
+  ul.form-error-list { list-style: none; padding: 0; margin: 0; }
+  ul.form-error-list li { color: #dc2626 !important; font-size: 0.77rem; margin-top: 0.35rem; font-weight: 500; }
+  .form-error { color: #dc2626 !important; font-size: 0.77rem; margin-top: 0.35rem; font-weight: 500; }
+  
+  /* Style plus agressif pour les erreurs */
+  .f-group ul { color: #dc2626 !important; }
+  .f-group ul li { color: #dc2626 !important; font-size: 0.77rem; margin-top: 0.35rem; font-weight: 500; }
+  .f-group span { color: #dc2626 !important; }
+  .f-group div { color: #dc2626 !important; }
+  
+  /* Forcer le rouge pour tous les messages d'erreur */
+  .alert-danger { color: #dc2626 !important; }
+  .text-danger { color: #dc2626 !important; }
+  .error { color: #dc2626 !important; }
+  .f-select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%232563eb' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 1rem center;
+    padding-right: 2.5rem;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 3fr 1fr; gap: 2rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; }
+  
+  /* Ajustement pour les grands écrans */
+  @media (min-width: 1200px) {
+    .grid-2 { grid-template-columns: 4fr 1fr; gap: 3rem; }
+    .grid-3 { gap: 2rem; }
+  }
+
+  .opt-card {
+    background: rgba(255,255,255,0.8);
+    border: 2px solid rgba(0,0,0,.08);
+    border-radius: 10px; padding: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(0);
+  }
+
+  .opt-card:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    border-color: var(--accent);
+  }
+  .opt-letter {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 7px;
+    font-size: .75rem; font-weight: 800; margin-bottom: .6rem;
+  }
+  .ol-a { background: var(--accent); color: #fff; border: 2px solid var(--accent); }
+  .ol-b { background: var(--accent); color: #fff; border: 2px solid var(--accent); }
+  .ol-c { background: var(--accent); color: #fff; border: 2px solid var(--accent); }
+
+  /* FORM FOOTER */
+  .form-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--border);
+    margin-top: .5rem;
+  }
+  .btn-back {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .65rem 1.25rem; border-radius: 10px;
+    font-size: .875rem; font-weight: 600; font-family: var(--ff);
+    background: var(--card-bg); border: 2px solid var(--border);
+    color: var(--muted); text-decoration: none; transition: all .18s;
+  }
+  .btn-back:hover { background: var(--border); color: var(--text); border-color: var(--muted); text-decoration: none; }
+
+  .btn-save {
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .65rem 1.6rem; border-radius: 10px;
+    font-size: .875rem; font-weight: 700; font-family: var(--ff);
+    background: var(--accent); border: none; color: #fff;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(37,99,235,.25);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-save::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  .btn-save:hover::before {
+    left: 100%;
+  }
+
+  .btn-save:hover { 
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(37,99,235,0.35);
+  }
+
+  .btn-save:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  /* DANGER ZONE */
+  .danger-zone {
+    background: var(--red);
+    border: 2px solid var(--red-border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.75rem;
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 1rem;
+    margin-top: .5rem;
+  }
+  .dz-text h4 {
+    font-size: .87rem; font-weight: 700; color: var(--red-t);
+    margin: 0 0 .2rem;
+  }
+  .dz-text p { font-size: .78rem; color: #b91c1c; margin: 0; }
+
+  .btn-danger {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .55rem 1.15rem; border-radius: 10px;
+    font-size: .82rem; font-weight: 700; font-family: var(--ff);
+    background: rgba(255,255,255,.7);
+    border: 2px solid var(--red-border);
+    color: var(--red-t); cursor: pointer;
+    transition: all .18s; white-space: nowrap;
+  }
+  .btn-danger:hover { background: #fff; border-color: var(--red-t); }
+
+  @media (max-width: 620px) {
+    .qs-page { padding: 1.25rem 1rem; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .ptl h1 { font-size: 1.4rem; }
+    .page-title-row { flex-direction: column; align-items: flex-start; }
+    .danger-zone { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="qs-page">
+
+  <div class="breadcrumb-bar">
+    <a href="{{ path('app_question_index') }}"><i class="fas fa-brain" style="margin-right:.3rem;font-size:.8rem;"></i> Questions</a>
+    <span class="bc-sep">›</span>
+    <span>Modifier #{{ question.id }}</span>
+  </div>
+
+  <div class="form-wrap">
+
+    <div class="page-title-row">
+      <div class="ptl">
+        <div class="title-icon"><i class="fas fa-pen"></i></div>
+        <h1>Modifier la question</h1>
+      </div>
+      <div class="id-badge"><i class="fas fa-hashtag" style="font-size:.65rem;"></i> Question {{ question.id }}</div>
+    </div>
+    <p class="page-subtitle">Mettez à jour les informations de cette question.</p>
+
+    {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+
+      {# BLOC 1 #}
+      <div class="s-card sc-peach">
+        <div class="s-label"><i class="fas fa-pen-nib"></i> Question &amp; Réponse</div>
+
+        <div class="f-group">
+          <label class="f-label">Énoncé de la question</label>
+          {{ form_widget(form.texte, {'attr': {'class': 'f-input'}}) }}
+          {{ form_errors(form.texte) }}
+        </div>
+
+        <div class="grid-2">
+          <div class="f-group">
+            <label class="f-label">Réponse correcte</label>
+            {{ form_widget(form.reponse, {'attr': {'class': 'f-input'}}) }}
+            {{ form_errors(form.reponse) }}
+          </div>
+          <div class="f-group">
+            <label class="f-label">Points</label>
+            {{ form_widget(form.points, {'attr': {'class': 'f-input', 'min': '0'}}) }}
+            {{ form_errors(form.points) }}
+          </div>
+        </div>
+      </div>
+
+      {# BLOC 2 #}
+      <div class="s-card sc-mint">
+        <div class="s-label"><i class="fas fa-list-check"></i> Options de réponse</div>
+
+        <div class="grid-3">
+          <div class="opt-card">
+            <div class="opt-letter ol-a">A</div>
+            {{ form_widget(form.option1, {'attr': {'class': 'f-input', 'placeholder': 'Option A...'}}) }}
+          </div>
+          <div class="opt-card">
+            <div class="opt-letter ol-b">B</div>
+            {{ form_widget(form.option2, {'attr': {'class': 'f-input', 'placeholder': 'Option B...'}}) }}
+          </div>
+          <div class="opt-card">
+            <div class="opt-letter ol-c">C</div>
+            {{ form_widget(form.option3, {'attr': {'class': 'f-input', 'placeholder': 'Option C...'}}) }}
+          </div>
+        </div>
+      </div>
+
+      {# BLOC 3 #}
+      <div class="s-card sc-yellow">
+        <div class="s-label"><i class="fas fa-calendar-days"></i> Association</div>
+        <div class="f-group" style="margin:0;">
+          <label class="f-label">Événement associé <span class="opt">(optionnel)</span></label>
+          {{ form_widget(form.event, {'attr': {'class': 'f-select'}}) }}
+        </div>
+      </div>
+
+      {# FOOTER #}
+      <div class="form-footer">
+        <a href="{{ path('app_question_index') }}" class="btn-back">
+          <i class="fas fa-arrow-left" style="font-size:.75rem;"></i> Annuler
+        </a>
+        <button type="submit" class="btn-save">
+          <i class="fas fa-save" style="font-size:.82rem;"></i> Mettre à jour
+        </button>
+      </div>
+
+    {{ form_end(form) }}
+
+    {# DANGER ZONE #}
+    <div class="danger-zone">
+      <div class="dz-text">
+        <h4><i class="fas fa-triangle-exclamation" style="margin-right:.35rem;"></i> Zone de danger</h4>
+        <p>La suppression est définitive et irréversible.</p>
+      </div>
+      <form method="post" action="{{ path('app_question_delete', {'id': question.id}) }}"
+            onsubmit="return confirm('Supprimer définitivement cette question ?');">
+        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ question.id) }}">
+        <button class="btn-danger" type="submit">
+          <i class="fas fa-trash" style="font-size:.75rem;"></i> Supprimer cette question
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

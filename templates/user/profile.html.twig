@@ -1,0 +1,486 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon profil - EventFlow{% endblock %}
+{% block page_title %}Profile{% endblock %}
+{% block page_subtitle %}Consultez votre profile{% endblock %}
+
+{% block admin_content %}
+<div class="profile-container" style="background-color: #f8fafc; min-height: 100vh; padding: 20px;">
+
+    <!-- Carte principale de profil -->
+    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 25px; margin-bottom: 20px;">
+
+        <!-- En-tête de profil -->
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <div>
+                <h2 style="font-size: 18px; font-weight: bold; color: #334155; margin: 0;">👤 Informations du compte</h2>
+                <p style="color: #64748b; font-size: 13px; margin: 3px 0 0 0;">Modifiez vos informations personnelles et votre photo de profil</p>
+            </div>
+            <div style="flex: 1;"></div>
+            <span style="color: #059669; font-size: 13px; font-weight: bold; background: #f0fdf4; padding: 5px 10px; border-radius: 6px;">
+                🟢 Compte vérifié
+            </span>
+        </div>
+
+        <!-- Contenu principal -->
+        <div style="display: flex; gap: 30px;">
+
+            <!-- Section photo de profil -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 15px;">
+                <div id="avatarContainer" style="position: relative; cursor: pointer;" onclick="document.getElementById('photoUpload').click()">
+                    <div style="width: 140px; height: 140px; border-radius: 50%; background: linear-gradient(to bottom right, #2196F3, #0D47A1); display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 136px; height: 136px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                            {% if user and user.profilePictureUrl %}
+                                <img src="{{ asset(user.profilePictureUrl) }}" alt="Profile"
+                                     style="width: 132px; height: 132px; border-radius: 50%; object-fit: cover;">
+                            {% else %}
+                                <div style="width: 132px; height: 132px; border-radius: 50%; background: #2196F3; display: flex; align-items: center; justify-content: center;">
+                                    <span style="font-size: 48px; font-weight: bold; color: white;">
+                                        {{ user ? user.firstName|slice(0,1)~user.lastName|slice(0,1) : 'U' }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div style="position: absolute; bottom: 0; right: 0; width: 40px; height: 40px; background: rgba(33, 150, 243, 0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; transform: translate(-10px, -10px);">
+                        <span style="font-size: 20px; color: white;">📷</span>
+                    </div>
+                </div>
+
+                <input type="file" id="photoUpload" accept="image/*" style="display: none;" onchange="uploadPhoto(this)">
+
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <button onclick="document.getElementById('photoUpload').click()"
+                            style="background: linear-gradient(to right, #3b82f6, #1d4ed8); color: white; font-weight: bold; font-size: 13px; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;">
+                        📷 Changer la photo
+                    </button>
+                    <p style="color: #94a3b8; font-size: 11px; margin: 0;">Taille max: 5MB • Formats: JPG, PNG</p>
+                </div>
+            </div>
+
+            <!-- Section informations personnelles -->
+            <div style="flex: 1; max-width: 600px;">
+                <form method="post" action="{{ path('app_profile_update') }}" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <label style="color: #475569; font-size: 13px; font-weight: bold;">Prénom *</label>
+                            <input type="text" name="first_name" value="{{ user.firstName ?? '' }}"
+                                   style="background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; height: 40px; font-size: 14px;">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <label style="color: #475569; font-size: 13px; font-weight: bold;">Nom *</label>
+                            <input type="text" name="last_name" value="{{ user.lastName ?? '' }}"
+                                   style="background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; height: 40px; font-size: 14px;">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <label style="color: #475569; font-size: 13px; font-weight: bold;">Email *</label>
+                            <input type="email" name="email" value="{{ user.email ?? '' }}"
+                                   style="background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; height: 40px; font-size: 14px;">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <label style="color: #475569; font-size: 13px; font-weight: bold;">Téléphone</label>
+                            <input type="tel" name="phone" value="{{ user.phone ?? '' }}" placeholder="+216 XX XXX XXX"
+                                   style="background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; height: 40px; font-size: 14px;">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <label style="color: #475569; font-size: 13px; font-weight: bold;">Faculté *</label>
+                            <input type="text" name="faculty" value="{{ user.faculte ?? '' }}" placeholder="Entrez votre faculté"
+                                   style="background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; height: 40px; font-size: 14px;">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <label style="color: #475569; font-size: 13px; font-weight: bold;">Rôle</label>
+                            <input type="text"
+                                   value="{% if user.role is not null %}{% if user.role.roleName is defined %}{{ user.role.roleName }}{% else %}{{ user.role }}{% endif %}{% else %}Non défini{% endif %}"
+                                   readonly disabled
+                                   style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 15px; height: 40px; font-size: 14px; color: #64748b;">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <label style="color: #475569; font-size: 13px; font-weight: bold;">Date d'inscription</label>
+                            <input type="text" value="{{ user.registrationDate|date('d/m/Y H:i') }}" readonly disabled
+                                   style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 15px; height: 40px; font-size: 14px; color: #64748b;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label style="color: #475569; font-size: 13px; font-weight: bold;">Biographie</label>
+                        <textarea name="bio" rows="3" placeholder="Parlez-nous de vous..."
+                                  oninput="updateCharCount(this)"
+                                  style="background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; font-size: 14px; resize: none;">{{ user.bio ?? '' }}</textarea>
+                        <div style="text-align: right; color: #94a3b8; font-size: 11px;">
+                            <span id="charCount">{{ user.bio|length|default(0) }}</span>/500
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; justify-content: flex-end; padding-top: 10px;">
+                        <button type="button" onclick="cancelChanges()"
+                                style="background: white; color: #475569; font-weight: bold; font-size: 14px; padding: 12px 24px; width: 120px; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer;">
+                            ❌ Annuler
+                        </button>
+                        <button type="submit"
+                                style="background: linear-gradient(to right, #10b981, #059669); color: white; font-weight: bold; font-size: 14px; padding: 12px 24px; width: 120px; border: none; border-radius: 8px; cursor: pointer;">
+                            💾 Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section sécurité avec validation séquentielle -->
+    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 25px; margin-bottom: 20px;">
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <h3 style="font-size: 16px; font-weight: bold; color: #334155; margin: 0;">🔒 Sécurité du compte</h3>
+            <span style="color: #64748b; font-size: 12px;">Dernière connexion: {{ lastLogin|date('d/m/Y H:i')|default('Aujourd\'hui') }}</span>
+        </div>
+
+        <form method="post" action="{{ path('app_profile_change_password') }}" id="passwordForm">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start;">
+
+                <!-- Champ 1 : Mot de passe actuel -->
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <label style="color: #475569; font-size: 13px; font-weight: bold;">Mot de passe actuel</label>
+                    <div style="position: relative;">
+                        <input type="password"
+                               name="current_password"
+                               id="currentPassword"
+                               placeholder="Mot de passe actuel"
+                               autocomplete="current-password"
+                               style="width: 100%; padding: 10px 40px 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; height: 40px; font-size: 14px; outline: none; box-sizing: border-box; transition: border-color 0.2s;">
+                        <span id="currentPasswordIcon"
+                              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none;"></span>
+                    </div>
+                    <p id="currentPasswordMsg" style="font-size: 12px; margin: 2px 0 0 0; min-height: 16px;"></p>
+                </div>
+
+                <!-- Champ 2 : Nouveau mot de passe (désactivé par défaut) -->
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <label style="color: #475569; font-size: 13px; font-weight: bold;">
+                        Nouveau mot de passe
+                        <span id="newPasswordLock" style="color: #94a3b8; font-size: 11px; font-weight: normal; margin-left: 4px;">🔒</span>
+                    </label>
+                    <div style="position: relative;">
+                        <input type="password"
+                               name="new_password"
+                               id="newPassword"
+                               placeholder="Nouveau mot de passe"
+                               autocomplete="new-password"
+                               disabled
+                               style="width: 100%; padding: 10px 40px 10px 15px; border: 1px solid #e2e8f0; border-radius: 8px; height: 40px; font-size: 14px; outline: none; box-sizing: border-box; background: #f8fafc; color: #94a3b8; cursor: not-allowed; transition: all 0.2s;">
+                        <span id="newPasswordIcon"
+                              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none;"></span>
+                    </div>
+                    <p id="newPasswordMsg" style="font-size: 12px; margin: 2px 0 0 0; min-height: 16px;"></p>
+                </div>
+
+                <!-- Champ 3 : Confirmer (désactivé par défaut) -->
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <label style="color: #475569; font-size: 13px; font-weight: bold;">
+                        Confirmer
+                        <span id="confirmPasswordLock" style="color: #94a3b8; font-size: 11px; font-weight: normal; margin-left: 4px;">🔒</span>
+                    </label>
+                    <div style="position: relative;">
+                        <input type="password"
+                               name="confirm_password"
+                               id="confirmPassword"
+                               placeholder="Confirmer le mot de passe"
+                               autocomplete="new-password"
+                               disabled
+                               style="width: 100%; padding: 10px 40px 10px 15px; border: 1px solid #e2e8f0; border-radius: 8px; height: 40px; font-size: 14px; outline: none; box-sizing: border-box; background: #f8fafc; color: #94a3b8; cursor: not-allowed; transition: all 0.2s;">
+                        <span id="confirmPasswordIcon"
+                              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none;"></span>
+                    </div>
+                    <p id="confirmPasswordMsg" style="font-size: 12px; margin: 2px 0 0 0; min-height: 16px;"></p>
+                </div>
+            </div>
+
+            <!-- Barre de progression des étapes -->
+            <div style="display: flex; align-items: center; gap: 8px; margin: 16px 0 0 0;">
+                <div id="step1Dot" style="width: 10px; height: 10px; border-radius: 50%; background: #e2e8f0; transition: background 0.3s;"></div>
+                <div style="flex: 1; height: 2px; background: #e2e8f0; border-radius: 2px;">
+                    <div id="step1Bar" style="height: 100%; width: 0%; background: #22c55e; border-radius: 2px; transition: width 0.4s;"></div>
+                </div>
+                <div id="step2Dot" style="width: 10px; height: 10px; border-radius: 50%; background: #e2e8f0; transition: background 0.3s;"></div>
+                <div style="flex: 1; height: 2px; background: #e2e8f0; border-radius: 2px;">
+                    <div id="step2Bar" style="height: 100%; width: 0%; background: #3b82f6; border-radius: 2px; transition: width 0.4s;"></div>
+                </div>
+                <div id="step3Dot" style="width: 10px; height: 10px; border-radius: 50%; background: #e2e8f0; transition: background 0.3s;"></div>
+                <span id="stepLabel" style="color: #94a3b8; font-size: 12px; margin-left: 8px;">Étape 1 sur 3</span>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+                <button type="submit"
+                        id="submitPasswordBtn"
+                        disabled
+                        style="background: #94a3b8; color: white; font-weight: bold; font-size: 13px; padding: 10px 24px; border: none; border-radius: 8px; cursor: not-allowed; transition: all 0.2s;">
+                    🔒 Changer mot de passe
+                </button>
+            </div>
+        </form>
+
+        <!-- Notifications -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+            <div>
+                <p style="color: #475569; font-size: 13px; font-weight: bold; margin: 0;">📧 Notifications par email</p>
+                <p style="color: #64748b; font-size: 12px; margin: 2px 0 0 0;">Recevez des mises à jour sur vos événements</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="emailNotificationsToggle" onclick="toggleNotifications()"
+                        style="background: #10b981; color: white; font-weight: bold; padding: 5px 15px; border: none; border-radius: 15px; cursor: pointer;">
+                    Activé
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; padding: 10px 0;">
+        <p style="color: #94a3b8; font-size: 12px; margin: 0;">© 2026 EventFlow - Mon profil</p>
+    </div>
+</div>
+
+<script>
+// ===================== UPLOAD PHOTO =====================
+function uploadPhoto(input) {
+    if (input.files && input.files[0]) {
+        const formData = new FormData();
+        formData.append('image', input.files[0]);
+
+        fetch('{{ path('app_profile_upload_image') }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) location.reload();
+            else alert('Erreur: ' + data.error);
+        });
+    }
+}
+
+function updateCharCount(textarea) {
+    document.getElementById('charCount').textContent = textarea.value.length;
+}
+
+function cancelChanges() {
+    if (confirm('Voulez-vous vraiment annuler les modifications ?')) location.reload();
+}
+
+function toggleNotifications() {
+    const toggle = document.getElementById('emailNotificationsToggle');
+    if (toggle.textContent === 'Activé') {
+        toggle.textContent = 'Désactivé';
+        toggle.style.background = '#94a3b8';
+    } else {
+        toggle.textContent = 'Activé';
+        toggle.style.background = '#10b981';
+    }
+}
+
+// ===================== VALIDATION SÉQUENTIELLE MOT DE PASSE =====================
+(function () {
+    const currentInput   = document.getElementById('currentPassword');
+    const newInput       = document.getElementById('newPassword');
+    const confirmInput   = document.getElementById('confirmPassword');
+    const submitBtn      = document.getElementById('submitPasswordBtn');
+
+    const currentIcon    = document.getElementById('currentPasswordIcon');
+    const newIcon        = document.getElementById('newPasswordIcon');
+    const confirmIcon    = document.getElementById('confirmPasswordIcon');
+
+    const currentMsg     = document.getElementById('currentPasswordMsg');
+    const newMsg         = document.getElementById('newPasswordMsg');
+    const confirmMsg     = document.getElementById('confirmPasswordMsg');
+
+    const newLock        = document.getElementById('newPasswordLock');
+    const confirmLock    = document.getElementById('confirmPasswordLock');
+
+    const step1Dot       = document.getElementById('step1Dot');
+    const step2Dot       = document.getElementById('step2Dot');
+    const step3Dot       = document.getElementById('step3Dot');
+    const step1Bar       = document.getElementById('step1Bar');
+    const step2Bar       = document.getElementById('step2Bar');
+    const stepLabel      = document.getElementById('stepLabel');
+
+    let verifyTimeout    = null;
+    let currentValid     = false;
+
+    // ---- Helpers ----
+    function enableField(field) {
+        field.disabled            = false;
+        field.style.background    = 'white';
+        field.style.color         = '#1e293b';
+        field.style.cursor        = 'text';
+        field.style.borderColor   = '#cbd5e1';
+    }
+
+    function disableField(field) {
+        field.disabled            = true;
+        field.value               = '';
+        field.style.background    = '#f8fafc';
+        field.style.color         = '#94a3b8';
+        field.style.cursor        = 'not-allowed';
+        field.style.borderColor   = '#e2e8f0';
+    }
+
+    function setFieldState(field, icon, msg, state, message) {
+        const colors = {
+            success: { border: '#22c55e', text: '#22c55e', ico: '✅' },
+            error:   { border: '#ef4444', text: '#ef4444', ico: '❌' },
+            loading: { border: '#cbd5e1', text: '#64748b', ico: '⏳' },
+            neutral: { border: '#cbd5e1', text: '#64748b', ico: ''   }
+        };
+        const c = colors[state] || colors.neutral;
+        field.style.borderColor = c.border;
+        if (icon) icon.textContent = c.ico;
+        if (msg)  { msg.textContent = message || ''; msg.style.color = c.text; }
+    }
+
+    function updateProgress(step) {
+        // Dots
+        const dots = [step1Dot, step2Dot, step3Dot];
+        const dotColors = ['#22c55e', '#3b82f6', '#a855f7'];
+        dots.forEach((d, i) => {
+            d.style.background = i < step ? dotColors[i] : '#e2e8f0';
+        });
+        // Bars
+        step1Bar.style.width = step >= 2 ? '100%' : '0%';
+        step2Bar.style.width = step >= 3 ? '100%' : '0%';
+        // Label
+        const labels = ['Étape 1 sur 3 — Vérifiez votre mot de passe actuel',
+                        'Étape 2 sur 3 — Choisissez un nouveau mot de passe',
+                        'Étape 3 sur 3 — Confirmez le nouveau mot de passe',
+                        '✅ Prêt à changer le mot de passe'];
+        stepLabel.textContent = labels[Math.min(step, 3)];
+        stepLabel.style.color = step >= 3 ? '#22c55e' : '#94a3b8';
+    }
+
+    function updateSubmitBtn() {
+        const newVal     = newInput.value;
+        const confirmVal = confirmInput.value;
+        const allGood    = currentValid && newVal.length >= 6 && newVal === confirmVal;
+
+        submitBtn.disabled          = !allGood;
+        submitBtn.style.background  = allGood
+            ? 'linear-gradient(to right, #3b82f6, #1d4ed8)'
+            : '#94a3b8';
+        submitBtn.style.cursor      = allGood ? 'pointer' : 'not-allowed';
+        submitBtn.textContent       = allGood ? '🔓 Changer mot de passe' : '🔒 Changer mot de passe';
+
+        if (allGood) updateProgress(3);
+    }
+
+    // ---- Champ 1 : vérification AJAX ----
+    currentInput.addEventListener('input', function () {
+        const val = this.value;
+
+        // Reset
+        setFieldState(currentInput, currentIcon, currentMsg, 'neutral', '');
+        currentValid = false;
+        disableField(newInput);
+        disableField(confirmInput);
+        newLock.textContent    = '🔒';
+        confirmLock.textContent = '🔒';
+        setFieldState(newInput, newIcon, newMsg, 'neutral', '');
+        setFieldState(confirmInput, confirmIcon, confirmMsg, 'neutral', '');
+        updateProgress(0);
+        updateSubmitBtn();
+
+        if (val.length === 0) return;
+
+        clearTimeout(verifyTimeout);
+        setFieldState(currentInput, currentIcon, currentMsg, 'loading', 'Vérification...');
+
+        verifyTimeout = setTimeout(() => {
+            const fd = new FormData();
+            fd.append('password', val);
+
+            fetch('{{ path('app_profile_verify_password') }}', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.valid) {
+                        currentValid = true;
+                        setFieldState(currentInput, currentIcon, currentMsg, 'success', 'Mot de passe correct ✓');
+                        enableField(newInput);
+                        newLock.textContent = '🔓';
+                        updateProgress(1);
+                        newInput.focus();
+                    } else {
+                        currentValid = false;
+                        setFieldState(currentInput, currentIcon, currentMsg, 'error', 'Mot de passe incorrect');
+                        updateProgress(0);
+                    }
+                    updateSubmitBtn();
+                })
+                .catch(() => {
+                    currentIcon.textContent = '⚠️';
+                    currentMsg.textContent  = 'Erreur de vérification';
+                    currentMsg.style.color  = '#f59e0b';
+                });
+        }, 500);
+    });
+
+    // ---- Champ 2 : nouveau mot de passe ----
+    newInput.addEventListener('input', function () {
+        const val = this.value;
+
+        setFieldState(newInput, newIcon, newMsg, 'neutral', '');
+        disableField(confirmInput);
+        confirmLock.textContent = '🔒';
+        setFieldState(confirmInput, confirmIcon, confirmMsg, 'neutral', '');
+        updateSubmitBtn();
+
+        if (val.length === 0) { updateProgress(1); return; }
+
+        if (val.length < 6) {
+            setFieldState(newInput, newIcon, newMsg, 'error', 'Minimum 6 caractères requis');
+            updateProgress(1);
+            return;
+        }
+
+        setFieldState(newInput, newIcon, newMsg, 'success', 'Bon mot de passe ✓');
+        enableField(confirmInput);
+        confirmLock.textContent = '🔓';
+        updateProgress(2);
+        updateSubmitBtn();
+    });
+
+    // ---- Champ 3 : confirmation ----
+    confirmInput.addEventListener('input', function () {
+        const val    = this.value;
+        const newVal = newInput.value;
+
+        setFieldState(confirmInput, confirmIcon, confirmMsg, 'neutral', '');
+
+        if (val.length === 0) { updateSubmitBtn(); return; }
+
+        if (val === newVal) {
+            setFieldState(confirmInput, confirmIcon, confirmMsg, 'success', 'Mots de passe identiques ✓');
+        } else {
+            setFieldState(confirmInput, confirmIcon, confirmMsg, 'error', 'Les mots de passe ne correspondent pas');
+        }
+        updateSubmitBtn();
+    });
+
+    // Init
+    updateProgress(0);
+})();
+</script>
+
+<style>
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+#avatarContainer:hover { opacity: 0.9; }
+</style>
+{% endblock %}

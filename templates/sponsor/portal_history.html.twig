@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique des partenariats - EventFlow</title>
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+</head>
+<body class="portal-body">
+<nav class="portal-navbar">
+    <div class="portal-logo-wrap">
+        <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+    </div>
+
+    <div class="portal-nav-links">
+        <a class="portal-nav-link" href="{{ path('app_landing') }}">Accueil</a>
+        <a class="portal-nav-link" href="{{ path('app_public_events') }}">Evenements</a>
+        <a class="portal-nav-link active" href="{{ path('app_sponsor_portal') }}">Recommandations partenaire</a>
+        <a class="portal-nav-link" href="{{ path('app_landing') }}#features">Fonctionnalites</a>
+        <a class="portal-nav-link" href="{{ path('app_feedback_view') }}">Feedback</a>
+        <a class="portal-nav-link" href="{{ path('app_landing') }}#contact">Contact</a>
+    </div>
+
+    <div>
+        <a class="portal-user-btn" href="{{ path('app_logout') }}">{{ app.user ? (app.user.fullName ?: 'Compte') : 'Compte' }} ?</a>
+    </div>
+</nav>
+
+<main class="portal-page">
+    {% if not isSponsorSession %}
+        <section class="portal-box" style="text-align: center; padding: 60px 20px;">
+            <h2 style="color: #0f172a; font-size: 24px; margin-bottom: 10px;">Connectez-vous pour voir vos partenariats</h2>
+            <p style="color: #64748b; margin-bottom: 20px;">Accedez a votre historique de partenariats en vous connectant a votre compte.</p>
+            <a class="portal-btn-sponso" href="{{ path('app_login') }}" style="display: inline-block;">Se connecter</a>
+        </section>
+    {% else %}
+    <section class="portal-history-page-head">
+        <a class="btn-sponsor outline" href="{{ path('app_sponsor_portal') }}">&lt; Retour</a>
+        <div>
+            <h1>Mes evenements sponsorises</h1>
+            <p>Retrouvez ici tous les evenements deja sponsorises, en cours ou termines, avec acces rapide aux details.</p>
+        </div>
+    </section>
+
+    <section class="portal-history-stats">
+        <div class="portal-history-stat-card">
+            <span>Total partenariats</span>
+            <strong>{{ stats.count }}</strong>
+        </div>
+        <div class="portal-history-stat-card">
+            <span>Contribution totale</span>
+            <strong>{{ stats.total|number_format(2, ',', ' ') }} DT</strong>
+        </div>
+        <div class="portal-history-stat-card">
+            <span>Evenements en cours</span>
+            <strong>{{ stats.ongoing }}</strong>
+        </div>
+        <div class="portal-history-stat-card">
+            <span>Evenements termines</span>
+            <strong>{{ stats.ended }}</strong>
+        </div>
+    </section>
+
+    <section class="portal-history-filters">
+        <form method="get" action="{{ path('app_sponsor_portal_history') }}">
+            <input type="text" name="q" value="{{ search }}" placeholder="Recherche par evenement">
+            <select name="sort">
+                <option value="recent" {{ sort == 'recent' ? 'selected' : '' }}>Plus recents</option>
+                <option value="oldest" {{ sort == 'oldest' ? 'selected' : '' }}>Plus anciens</option>
+                <option value="amount_desc" {{ sort == 'amount_desc' ? 'selected' : '' }}>Montant decroissant</option>
+                <option value="amount_asc" {{ sort == 'amount_asc' ? 'selected' : '' }}>Montant croissant</option>
+            </select>
+            <button type="submit" class="btn-sponsor primary">Rechercher</button>
+        </form>
+    </section>
+
+    <section class="portal-history-list">
+        {% if historyItems is empty %}
+            <div class="portal-box-empty">Aucun evenement sponsorise trouve.</div>
+        {% else %}
+            <div class="history-grid">
+                {% for item in historyItems %}
+                    <article class="history-card wide">
+                        <div class="history-top">
+                            <div class="history-card-brand">
+                                <div class="history-card-logo">
+                                    {% if item.logoUrl %}
+                                        <img src="{{ item.logoUrl }}" alt="{{ item.company }}">
+                                    {% else %}
+                                        <span>{{ item.company|slice(0, 2)|upper }}</span>
+                                    {% endif %}
+                                </div>
+                                <span class="history-status {{ item.statusClass }}">{{ item.statusLabel }}</span>
+                            </div>
+                            <strong>{{ item.contribution|number_format(2, ',', ' ') }} DT</strong>
+                        </div>
+
+                        <h3>{{ item.eventTitle }}</h3>
+                        <p>{{ item.company }}</p>
+                        <div class="history-meta">Lieu: {{ item.location }}</div>
+                        <div class="history-meta">
+                            {{ item.startDate ? item.startDate|date('d/m/Y H:i') : '-' }}
+                            {% if item.endDate %} -> {{ item.endDate|date('d/m/Y H:i') }}{% endif %}
+                        </div>
+
+                        <div class="history-actions">
+                            <a class="btn-sponsor light" href="{{ path('app_sponsor_portal_event', {id: item.eventId}) }}">Voir evenement</a>
+                            <a class="btn-sponsor primary" href="{{ path('app_sponsor_portal_contract', {id: item.id}) }}">Contrat</a>
+                            <a class="btn-sponsor primary" href="{{ path('app_sponsor_portal_details', {id: item.id}) }}">Details du partenariat</a>
+                            <a class="btn-sponsor warning" href="{{ path('app_sponsor_portal_edit', {id: item.id}) }}">Modifier</a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </section>
+    {% endif %}
+</main>
+</body>
+</html>

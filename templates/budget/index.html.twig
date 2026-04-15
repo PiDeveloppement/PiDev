@@ -1,0 +1,305 @@
+﻿{% extends 'base.html.twig' %}
+
+{% block title %}Budget - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('js/admin-live-search.js') }}" defer></script>
+{% endblock %}
+
+{% block admin_content %}
+<div class="sponsor-page budget-page" data-live-search-root>
+    {% set excellentCount = 0 %}
+    {% set goodCount = 0 %}
+    {% set fragileCount = 0 %}
+    {% set criticalCount = 0 %}
+    {% set totalExpensesAll = 0 %}
+    {% set totalRevenueAll = 0 %}
+    {% for item in budgets %}
+        {% set initialLoop = item.initialBudget + 0 %}
+        {% set rentLoop = item.rentabilite + 0 %}
+        {% set totalExpensesAll = totalExpensesAll + (item.totalExpenses + 0) %}
+        {% set totalRevenueAll = totalRevenueAll + (item.totalRevenue + 0) %}
+        {% if rentLoop >= initialLoop * 0.5 %}
+            {% set excellentCount = excellentCount + 1 %}
+        {% elseif rentLoop >= 0 %}
+            {% set goodCount = goodCount + 1 %}
+        {% elseif rentLoop >= -(initialLoop * 0.2) %}
+            {% set fragileCount = fragileCount + 1 %}
+        {% else %}
+            {% set criticalCount = criticalCount + 1 %}
+        {% endif %}
+    {% endfor %}
+    {% set maxFlow = [stats.totalInitial, totalExpensesAll, totalRevenueAll]|sort|last %}
+    {% set deficitPercent = stats.count > 0 ? ((stats.deficitCount / stats.count) * 100)|round(1) : 0 %}
+
+    <div class="flash-wrap">
+        {% for message in app.flashes('success') %}
+            <div class="flash-success">{{ message }}</div>
+        {% endfor %}
+        {% for message in app.flashes('error') %}
+            <div class="flash-error">{{ message }}</div>
+        {% endfor %}
+    </div>
+
+    <section class="budget-stat-grid">
+        <article class="budget-stat-card tone-blue">
+            <div class="budget-stat-top">
+                <span class="budget-stat-emoji" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" class="budget-stat-icon-svg" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7.5 12 3l9 4.5-9 4.5L3 7.5Z"/>
+                        <path d="M3 7.5V16.5L12 21l9-4.5V7.5"/>
+                        <path d="M12 12v9"/>
+                    </svg>
+                </span>
+                <span>Total budgets</span>
+            </div>
+            <strong>{{ stats.count }}</strong>
+            <small>Budgets suivis actuellement</small>
+        </article>
+        <article class="budget-stat-card tone-cyan">
+            <div class="budget-stat-top">
+                <span class="budget-stat-emoji" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" class="budget-stat-icon-svg" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3v18"/>
+                        <path d="M16.5 7.5c0-1.8-1.9-3-4.5-3s-4.5 1.2-4.5 3 1.9 3 4.5 3 4.5 1.2 4.5 3-1.9 3-4.5 3-4.5-1.2-4.5-3"/>
+                    </svg>
+                </span>
+                <span>Budget initial global</span>
+            </div>
+            <strong>{{ stats.totalInitial|number_format(2, ',', ' ') }} DT</strong>
+            <small>Montant alloue a l'ensemble des evenements</small>
+        </article>
+        <article class="budget-stat-card tone-amber">
+            <div class="budget-stat-top">
+                <span class="budget-stat-emoji" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" class="budget-stat-icon-svg" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19h16"/>
+                        <path d="M7 16V11"/>
+                        <path d="M12 16V7"/>
+                        <path d="M17 16V9"/>
+                    </svg>
+                </span>
+                <span>Rentabilite globale</span>
+            </div>
+            <strong>{{ stats.globalRent|number_format(2, ',', ' ') }} DT</strong>
+            <small>{{ stats.deficitCount }} budget(s) en deficit</small>
+        </article>
+    </section>
+
+    <section class="budget-insight-grid">
+        <article class="budget-insight-card">
+            <div class="budget-section-head compact">
+                <div>
+                    <h3>Repartition sante</h3>
+                    <p>Lecture instantanee de l'etat des budgets.</p>
+                </div>
+            </div>
+            <div class="budget-mini-bars">
+                <div class="budget-mini-row">
+                    <span>Excellent</span>
+                    <div class="budget-mini-track"><i class="tone-excellent" style="width: {{ stats.count > 0 ? ((excellentCount / stats.count) * 100) : 0 }}%"></i></div>
+                    <strong>{{ excellentCount }}</strong>
+                </div>
+                <div class="budget-mini-row">
+                    <span>Bon</span>
+                    <div class="budget-mini-track"><i class="tone-good" style="width: {{ stats.count > 0 ? ((goodCount / stats.count) * 100) : 0 }}%"></i></div>
+                    <strong>{{ goodCount }}</strong>
+                </div>
+                <div class="budget-mini-row">
+                    <span>Fragile</span>
+                    <div class="budget-mini-track"><i class="tone-fragile" style="width: {{ stats.count > 0 ? ((fragileCount / stats.count) * 100) : 0 }}%"></i></div>
+                    <strong>{{ fragileCount }}</strong>
+                </div>
+                <div class="budget-mini-row">
+                    <span>Critique</span>
+                    <div class="budget-mini-track"><i class="tone-critical" style="width: {{ stats.count > 0 ? ((criticalCount / stats.count) * 100) : 0 }}%"></i></div>
+                    <strong>{{ criticalCount }}</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="budget-insight-card">
+            <div class="budget-section-head compact">
+                <div>
+                    <h3>Flux financier</h3>
+                    <p>Initial, depenses et revenus compares visuellement.</p>
+                </div>
+            </div>
+            <div class="budget-mini-bars">
+                <div class="budget-mini-row flow">
+                    <span>Initial</span>
+                    <div class="budget-mini-track"><i class="tone-initial" style="width: {{ maxFlow > 0 ? ((stats.totalInitial / maxFlow) * 100) : 0 }}%"></i></div>
+                    <strong>{{ stats.totalInitial|number_format(0, ',', ' ') }}</strong>
+                </div>
+                <div class="budget-mini-row flow">
+                    <span>Depenses</span>
+                    <div class="budget-mini-track"><i class="tone-expenses" style="width: {{ maxFlow > 0 ? ((totalExpensesAll / maxFlow) * 100) : 0 }}%"></i></div>
+                    <strong>{{ totalExpensesAll|number_format(0, ',', ' ') }}</strong>
+                </div>
+                <div class="budget-mini-row flow">
+                    <span>Revenus</span>
+                    <div class="budget-mini-track"><i class="tone-revenue" style="width: {{ maxFlow > 0 ? ((totalRevenueAll / maxFlow) * 100) : 0 }}%"></i></div>
+                    <strong>{{ totalRevenueAll|number_format(0, ',', ' ') }}</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="budget-insight-card gauge-card">
+            <div class="budget-section-head compact">
+                <div>
+                    <h3>Tension budgetaire</h3>
+                    <p>Part des budgets actuellement en deficit.</p>
+                </div>
+            </div>
+            <div class="budget-gauge-wrap">
+                <div class="budget-gauge" style="--gauge-value: {{ deficitPercent }}%;">
+                    <div class="budget-gauge-inner">
+                        <strong>{{ deficitPercent }}%</strong>
+                        <span>en deficit</span>
+                    </div>
+                </div>
+                <div class="budget-gauge-legend">
+                    <p><strong>{{ stats.deficitCount }}</strong> budget(s) critiques ou deficitaires sur <strong>{{ stats.count }}</strong>.</p>
+                    <small>Un bon point de lecture pour prioriser les corrections.</small>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="budget-filter-card">
+        <form method="get" action="{{ path('app_budget_index') }}" class="budget-filter-form">
+            <div class="budget-field budget-field-full">
+                <label for="budget-live-search">Recherche rapide</label>
+                <input id="budget-live-search" type="text" placeholder="Tapez un evenement..." autocomplete="off" data-live-search-input>
+            </div>
+            <div class="budget-field">
+                <label for="budget-event-filter">Evenement</label>
+                <select id="budget-event-filter" name="event_id">
+                    <option value="">Tous les evenements</option>
+                    {% for event in events %}
+                        <option value="{{ event.id }}" {{ selectedEventId == event.id ? 'selected' : '' }}>{{ event.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="budget-field">
+                <label for="budget-health-filter">Sante</label>
+                <select id="budget-health-filter" name="health">
+                    <option value="all" {{ selectedHealth == 'all' ? 'selected' : '' }}>Toutes</option>
+                    <option value="excellent" {{ selectedHealth == 'excellent' ? 'selected' : '' }}>Excellent</option>
+                    <option value="good" {{ selectedHealth == 'good' ? 'selected' : '' }}>Bon</option>
+                    <option value="fragile" {{ selectedHealth == 'fragile' ? 'selected' : '' }}>Fragile</option>
+                    <option value="critical" {{ selectedHealth == 'critical' ? 'selected' : '' }}>Critique</option>
+                </select>
+            </div>
+
+            <div class="budget-field">
+                <label for="budget-status-filter">Etat</label>
+                <select id="budget-status-filter" name="status">
+                    <option value="all" {{ selectedStatus == 'all' ? 'selected' : '' }}>Tous</option>
+                    <option value="ok" {{ selectedStatus == 'ok' ? 'selected' : '' }}>OK</option>
+                    <option value="deficit" {{ selectedStatus == 'deficit' ? 'selected' : '' }}>Deficit</option>
+                </select>
+            </div>
+
+            <div class="budget-filter-actions">
+                <button class="btn-sponsor outline" type="submit">Filtrer</button>
+                <a class="btn-sponsor success" href="{{ path('app_budget_new') }}">Nouveau budget</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="budget-list-shell">
+        <div class="budget-section-head">
+            <div>
+                <h3>Budgets</h3>
+                <p>{{ budgets|length }} element(s) affiches avec une lecture plus visuelle.</p>
+            </div>
+        </div>
+
+        {% if budgets is empty %}
+            <p class="sponsor-muted">Aucun budget trouve.</p>
+        {% else %}
+            <div class="budget-card-grid">
+                {% for budget in budgets %}
+                    {% set initial = budget.initialBudget + 0 %}
+                    {% set expenses = budget.totalExpenses + 0 %}
+                    {% set revenue = budget.totalRevenue + 0 %}
+                    {% set rent = budget.rentabilite + 0 %}
+                    {% set remaining = initial - expenses %}
+                    {% set health = 'Critique' %}
+                    {% set healthClass = 'critical' %}
+                    {% if rent >= initial * 0.5 %}
+                        {% set health = 'Excellent' %}
+                        {% set healthClass = 'excellent' %}
+                    {% elseif rent >= 0 %}
+                        {% set health = 'Bon' %}
+                        {% set healthClass = 'good' %}
+                    {% elseif rent >= -(initial * 0.2) %}
+                        {% set health = 'Fragile' %}
+                        {% set healthClass = 'fragile' %}
+                    {% endif %}
+
+                    <article class="budget-card-modern {{ healthClass }}" data-live-search-item data-search="{{ eventTitleMap[budget.eventId]|default('-') }} {{ health }} {{ initial|number_format(2, ',', ' ') }} {{ expenses|number_format(2, ',', ' ') }} {{ revenue|number_format(2, ',', ' ') }}" data-live-suggest="{{ eventTitleMap[budget.eventId]|default('-') }}">
+                        <div class="budget-card-head">
+                            <div>
+                                <h4>{{ eventTitleMap[budget.eventId]|default('-') }}</h4>
+                            </div>
+                            <span class="budget-health-badge {{ healthClass }}">{{ health }}</span>
+                        </div>
+
+                        <div class="budget-card-metrics">
+                            <div>
+                                <span>Initial</span>
+                                <strong>{{ initial|number_format(2, ',', ' ') }} DT</strong>
+                            </div>
+                            <div>
+                                <span>Depenses</span>
+                                <strong>{{ expenses|number_format(2, ',', ' ') }} DT</strong>
+                            </div>
+                            <div>
+                                <span>Revenus</span>
+                                <strong>{{ revenue|number_format(2, ',', ' ') }} DT</strong>
+                            </div>
+                            <div>
+                                <span>Rentabilite</span>
+                                <strong class="{{ rent >= 0 ? 'value-positive' : 'value-negative' }}">{{ rent|number_format(2, ',', ' ') }} DT</strong>
+                            </div>
+                        </div>
+
+                        <div class="budget-card-progress">
+                            <div class="budget-card-progress-top">
+                                <span>Utilisation budget</span>
+                                <span>{{ initial > 0 ? ((expenses / initial) * 100)|round(1) : 0 }}%</span>
+                            </div>
+                            <div class="budget-progress-track">
+                                <div class="budget-progress-fill {{ remaining < 0 ? 'danger' : '' }}" style="width: {{ initial > 0 ? (((expenses / initial) * 100) > 100 ? 100 : ((expenses / initial) * 100)) : 0 }}%"></div>
+                            </div>
+                            <small>{{ remaining|number_format(2, ',', ' ') }} DT restants</small>
+                        </div>
+
+                        <div class="budget-card-actions">
+                            <a class="btn-sponsor light" href="{{ path('app_budget_details', {id: budget.id}) }}">Details</a>
+                            <a class="btn-sponsor warning" href="{{ path('app_budget_edit', {id: budget.id}) }}">Modifier</a>
+                            <form method="post" action="{{ path('app_budget_delete', {id: budget.id}) }}" onsubmit="return confirm('Supprimer ce budget ?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_budget_' ~ budget.id) }}">
+                                <button class="btn-sponsor danger" type="submit">Supprimer</button>
+                            </form>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+            <p class="sponsor-muted" data-live-search-empty hidden>Aucun budget ne correspond a votre recherche.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+
+
+

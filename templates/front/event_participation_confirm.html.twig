@@ -1,0 +1,230 @@
+{% extends 'auth/landing.html.twig' %}
+
+{% block title %}EventFlow - Confirmation participation{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .confirm-page {
+            margin-top: 80px;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 12% 8%, rgba(13, 71, 161, 0.09), transparent 38%),
+                radial-gradient(circle at 88% 2%, rgba(25, 118, 210, 0.14), transparent 42%),
+                #eef2f6;
+            padding: 36px 16px 56px;
+        }
+
+        .confirm-shell {
+            max-width: 940px;
+            margin: 0 auto;
+        }
+
+        .confirm-card {
+            background: #ffffff;
+            border: 1px solid #d7e2f0;
+            border-radius: 20px;
+            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.1);
+            overflow: hidden;
+        }
+
+        .confirm-head {
+            padding: 26px 28px;
+            background: linear-gradient(120deg, #d7e8fb 0%, #c3daf6 100%);
+            border-bottom: 1px solid #cfe0f4;
+        }
+
+        .confirm-title {
+            margin: 0 0 8px;
+            font-size: clamp(28px, 3.6vw, 40px);
+            color: #0f2037;
+        }
+
+        .confirm-subtitle {
+            margin: 0;
+            color: #4f647b;
+            line-height: 1.6;
+        }
+
+        .confirm-body {
+            padding: 26px 28px 30px;
+        }
+
+        .confirm-message {
+            background: #f8fbff;
+            border: 1px solid #dbe5f2;
+            border-radius: 14px;
+            padding: 18px;
+            color: #31455f;
+            line-height: 1.7;
+            margin-bottom: 18px;
+        }
+
+        .confirm-event-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .confirm-item {
+            border: 1px solid #dbe5f2;
+            border-radius: 12px;
+            background: #f8fbff;
+            padding: 12px;
+        }
+
+        .confirm-label {
+            display: block;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #61748d;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .confirm-value {
+            color: #1a2d45;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .confirm-btn {
+            border-radius: 10px;
+            height: 44px;
+            padding: 0 16px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirm-btn.primary {
+            background: #155ec0;
+            color: #ffffff;
+        }
+
+        .confirm-btn.secondary {
+            background: #e7f1ff;
+            color: #174a92;
+            border: 1px solid #c3d6ee;
+        }
+
+        @media (max-width: 700px) {
+            .confirm-event-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block public_content %}
+    {% set isParticipantUser = app.user and ('ROLE_ADMIN' not in app.user.roles) and ('ROLE_ORGANISATEUR' not in app.user.roles) and ('ROLE_SPONSOR' not in app.user.roles) %}
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo-container">
+                <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+            </div>
+
+            <div class="nav-links">
+                <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}'">Accueil</button>
+                <button class="nav-link" style="color:#0D47A1; font-weight:700; text-decoration:underline;" onclick="window.location.href='{{ path('app_public_events') }}'">Événements</button>
+                <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}#features'">Fonctionnalités</button>
+                <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
+                <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}#contact'">Contact</button>
+            </div>
+
+            <div class="nav-buttons">
+                {% if isParticipantUser %}
+                    <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
+                    <details class="participant-chip-menu">
+                        <summary class="participant-chip">
+                            <span class="participant-chip-avatar">{{ app.user.initials }}</span>
+                            <span class="participant-chip-meta">
+                                <span class="participant-chip-name">{{ app.user.fullName }}</span>
+                                <span class="participant-chip-role">Participant</span>
+                            </span>
+                        </summary>
+                        <div class="participant-chip-dropdown">
+                            <a class="participant-chip-action" href="{{ path('app_logout') }}">Déconnexion</a>
+                        </div>
+                    </details>
+                {% elseif app.user %}
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_logout') }}'">Déconnexion</button>
+                {% else %}
+                    <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="confirm-page">
+        <div class="confirm-shell">
+            <div class="confirm-card">
+                <div class="confirm-head">
+                    <h1 class="confirm-title">Confirmer votre participation</h1>
+                    <p class="confirm-subtitle">Le billet ne sera créé qu'après votre validation finale. Vérifiez les détails avant de continuer.</p>
+                </div>
+
+                <div class="confirm-body">
+                    <div class="flash-stack">
+                        {% for message in app.flashes('success') %}
+                            <div class="flash-msg flash-success">{{ message }}</div>
+                        {% endfor %}
+                        {% for message in app.flashes('error') %}
+                            <div class="flash-msg flash-error">{{ message }}</div>
+                        {% endfor %}
+                        {% for message in app.flashes('info') %}
+                            <div class="flash-msg flash-info">{{ message }}</div>
+                        {% endfor %}
+                        {% for message in app.flashes('warning') %}
+                            <div class="flash-msg flash-warning">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="confirm-message">
+                        Vous êtes sur le point de rejoindre <strong>{{ event.title }}</strong>. Si vous confirmez, votre billet sera créé automatiquement et vous serez dirigé vers vos billets.
+                    </div>
+
+                    <div class="confirm-event-grid">
+                        <div class="confirm-item">
+                            <span class="confirm-label">Date</span>
+                            <div class="confirm-value">{{ event.startDate ? event.startDate|date('d/m/Y H:i') : '-' }}</div>
+                        </div>
+                        <div class="confirm-item">
+                            <span class="confirm-label">Lieu</span>
+                            <div class="confirm-value">{{ event.location ?: 'Lieu non défini' }}</div>
+                        </div>
+                        <div class="confirm-item">
+                            <span class="confirm-label">Catégorie</span>
+                            <div class="confirm-value">{{ event.category ? ((event.category.icon ?? '📁') ~ ' ' ~ event.category.name) : 'Sans catégorie' }}</div>
+                        </div>
+                        <div class="confirm-item">
+                            <span class="confirm-label">Tarif</span>
+                            <div class="confirm-value">{{ event.isFree ? 'Gratuit' : (event.ticketPrice|number_format(2, '.', ' ') ~ ' TND') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="confirm-actions">
+                        <form method="post" action="{{ path('app_public_event_participation_confirm', {'id': event.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('confirm_participation_event_' ~ event.id) }}">
+                            <button type="submit" class="confirm-btn primary">Oui, confirmer ma participation</button>
+                        </form>
+                        <a class="confirm-btn secondary" href="{{ path('app_public_event_show', {'id': event.id}) }}">Annuler</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+{% endblock %}

@@ -1,0 +1,385 @@
+{% extends 'base.html.twig' %}
+{% block title %}Gestion des catégories{% endblock %}
+
+{% block kpi %}
+<div id="categoryKpiRoot" style="display:flex; gap:12px; flex-wrap:wrap;">
+<div style="background:#e8f5e9; border-radius:12px; padding:12px 20px; text-align:center; min-width:130px;">
+    <i class="fas fa-tags" style="color:#16a34a; font-size:20px;"></i>
+    <div style="font-size:1.8rem; font-weight:700; color:#16a34a;">{{ totalCategories }}</div>
+    <div style="color:#64748b; font-size:12px;">Catégories</div>
+</div>
+<div style="background:#e3f2fd; border-radius:12px; padding:12px 20px; text-align:center; min-width:130px;">
+    <i class="fas fa-calendar-alt" style="color:#1565c0; font-size:20px;"></i>
+    <div style="font-size:1.8rem; font-weight:700; color:#1565c0;">{{ totalEvents }}</div>
+    <div style="color:#64748b; font-size:12px;">Événements</div>
+</div>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+<style>
+    .cat-toolbar {
+        display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+        background:#fff; border:1px solid #e2e8f0; border-radius:14px;
+        padding:12px 16px; margin-bottom:16px;
+    }
+    .cat-input, .cat-select {
+        border:1px solid #cbd5e1; border-radius:8px;
+        padding:8px 12px; font-size:13px; color:#0f172a; outline:none;
+    }
+    .cat-input { width:280px; }
+    .cat-select { width:150px; }
+    .cat-spacer { flex:1; }
+
+    .cat-table-wrap {
+        background:#fff; border:1px solid #e2e8f0; border-radius:16px;
+        overflow:hidden; box-shadow:0 2px 10px rgba(2,6,23,.04);
+    }
+    .cat-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .cat-table thead th {
+        background:#f8fafc; color:#334155; border-bottom:1px solid #e2e8f0;
+        padding:12px 14px; text-align:left; font-weight:700;
+    }
+    .cat-table tbody td {
+        border-bottom:1px solid #f1f5f9; padding:11px 14px;
+        color:#334155; vertical-align:middle;
+    }
+    .cat-table tbody tr:hover { background:#f8fbff; }
+
+    .badge-active { background:#dcfce7; color:#166534; border-radius:999px; padding:4px 12px; font-size:11px; font-weight:700; }
+    .badge-inactive { background:#fee2e2; color:#991b1b; border-radius:999px; padding:4px 12px; font-size:11px; font-weight:700; }
+
+    .color-circle { width:24px; height:24px; border-radius:50%; display:inline-block; border:2px solid #e2e8f0; }
+
+    .btn-action {
+        border:none; border-radius:8px; color:#fff;
+        width:32px; height:32px; cursor:pointer;
+        display:inline-flex; align-items:center; justify-content:center;
+        text-decoration:none; font-size:13px;
+    }
+    .btn-view { background:#0891b2; }
+    .btn-edit { background:#2563eb; }
+    .btn-delete { background:#dc2626; }
+    .btn-view:hover { background:#0e7490; }
+    .btn-edit:hover { background:#1d4ed8; }
+    .btn-delete:hover { background:#b91c1c; }
+
+    .result-pill {
+        color:#64748b; font-size:13px; background:#fff;
+        border:1px solid #e2e8f0; border-radius:20px; padding:5px 14px;
+    }
+
+    .pagination-shell {
+        margin-top: 16px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .pagination-info {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 500;
+        text-align: center;
+        width: 100%;
+    }
+    .pagination-nav {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .page-btn {
+        min-width: 52px;
+        height: 46px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        color: #6b7280;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 14px;
+        transition: all .15s ease;
+    }
+    .page-btn:hover {
+        background: #f8fafc;
+        border-color: #d1d5db;
+        color: #475569;
+    }
+    .page-btn.current {
+        background: #2196f3;
+        color: #fff;
+        border-color: #2196f3;
+        box-shadow: 0 6px 14px rgba(33,150,243,.28);
+        font-weight: 700;
+    }
+    .page-btn.disabled {
+        color: #9ca3af;
+        background: #f9fafb;
+        border-color: #e5e7eb;
+        pointer-events: none;
+    }
+
+    .page-btn.arrow {
+        min-width: 132px;
+        font-size: 13px;
+    }
+
+    @media (max-width: 760px) {
+        .pagination-shell {
+            justify-content: center;
+        }
+        .pagination-info {
+            width: 100%;
+            text-align: center;
+        }
+        .pagination-nav {
+            justify-content: center;
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="cat-toolbar">
+    <input class="cat-input" type="text" id="searchInput" placeholder="🔍 Rechercher une catégorie..." value="{{ filters.search ?? '' }}"/>
+    <select class="cat-select" id="statusFilter">
+        <option value="">📊 Tous les statuts</option>
+        <option value="actif" {{ (filters.status ?? '') == 'actif' ? 'selected' : '' }}>Actif</option>
+        <option value="inactif" {{ (filters.status ?? '') == 'inactif' ? 'selected' : '' }}>Inactif</option>
+    </select>
+    <select class="cat-select" id="colorFilter" title="Filtrer par couleur">
+        <option value="">🎨 Toutes les couleurs</option>
+        {% for hex in availableColors %}
+            <option value="{{ hex }}" {{ (filters.color ?? '')|lower == hex|lower ? 'selected' : '' }}>● {{ hex|upper }}</option>
+        {% endfor %}
+    </select>
+    <select class="cat-select" id="orderFilter" title="Trier les catégories">
+        <option value="az" {{ (filters.order ?? 'recent') == 'az' ? 'selected' : '' }}>🔤 A→Z</option>
+        <option value="za" {{ (filters.order ?? 'recent') == 'za' ? 'selected' : '' }}>🔤 Z→A</option>
+        <option value="recent" {{ (filters.order ?? 'recent') == 'recent' ? 'selected' : '' }}>🕒 Plus récents</option>
+        <option value="old" {{ (filters.order ?? 'recent') == 'old' ? 'selected' : '' }}>🕒 Plus anciens</option>
+    </select>
+    <div class="cat-spacer"></div>
+    <span class="result-pill" id="resultCount">{{ filteredCategories ?? categories.getTotalItemCount }} résultat(s)</span>
+    <a href="{{ path('app_category_export_pdf') }}"
+       style="background:#1e293b; color:#fff; border:none; border-radius:8px;
+              padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+              text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fas fa-file-pdf"></i> Exporter PDF
+    </a>
+    <a href="{{ path('app_category_new') }}"
+       style="background:#1565c0; color:#fff; border:none; border-radius:8px;
+              padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+              text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fas fa-plus"></i> Créer une catégorie
+    </a>
+</div>
+
+<div class="cat-table-wrap" id="categoriesTableWrapper">
+    <table class="cat-table" id="categoriesTable">
+        <thead>
+            <tr>
+                <th>🏷️ Catégorie</th>
+                <th>📝 Description</th>
+                <th>🎨 Couleur</th>
+                <th>📊 Statut</th>
+                <th>⚡ Actions</th>
+            </tr>
+        </thead>
+        <tbody id="categoriesTableBody">
+        {% for category in categories %}
+            <tr class="cat-row"
+                data-search="{{ category.name|lower }}"
+                data-status="{{ category.isActive ? 'actif' : 'inactif' }}"
+                data-color="{{ (category.color ?? '#cbd5e1')|lower }}"
+                data-name="{{ category.name|lower }}"
+                data-created="{{ category.createdAt ? category.createdAt|date('U') : 0 }}">
+                <td>
+                    <strong>{{ category.icon ?? '📌' }} {{ category.name }}</strong>
+                </td>
+                <td>{{ category.description ? category.description|slice(0, 60) ~ '...' : '-' }}</td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="color-circle" style="background:{{ category.color ?? '#cbd5e1' }};"></span>
+                        <span style="font-size:12px; color:#64748b;">{{ category.color ?? '-' }}</span>
+                    </div>
+                </td>
+                <td>
+                    {% if category.isActive %}
+                        <span class="badge-active">Actif</span>
+                    {% else %}
+                        <span class="badge-inactive">Inactif</span>
+                    {% endif %}
+                </td>
+                <td style="display:flex; gap:6px;">
+                    <a href="{{ path('app_category_show', {'id': category.id}) }}" class="btn-action btn-view" title="Voir">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{{ path('app_category_edit', {'id': category.id}) }}" class="btn-action btn-edit" title="Modifier">
+                        <i class="fas fa-pen"></i>
+                    </a>
+                    <form method="post" action="{{ path('app_category_delete', {'id': category.id}) }}"
+                          onsubmit="return confirm('Supprimer cette catégorie ?')" style="margin:0;">
+                        <button type="submit" class="btn-action btn-delete" title="Supprimer">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="5" style="text-align:center; color:#64748b; padding:32px;">
+                    <i class="fas fa-tags" style="font-size:2rem; margin-bottom:8px;"></i>
+                    <div>Aucune catégorie trouvée</div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% set p = categories.paginationData %}
+{% set startItem = categories.getTotalItemCount > 0 ? ((p.current - 1) * categories.getItemNumberPerPage + 1) : 0 %}
+{% set endItem = categories.getTotalItemCount > 0 ? (startItem + categories|length - 1) : 0 %}
+
+<div class="pagination-shell" id="paginationShell">
+    <div class="pagination-info">
+        Affichage {{ startItem }}-{{ endItem }} sur {{ categories.getTotalItemCount }}
+    </div>
+
+    <div class="pagination-nav" aria-label="Pagination catégories">
+        {% if p.previous is defined %}
+            <a class="page-btn arrow" href="{{ path('app_category_index', app.request.query.all|merge({'page': p.previous})) }}" aria-label="Page précédente">
+                &laquo; Précédent
+            </a>
+        {% else %}
+            <span class="page-btn arrow disabled" aria-hidden="true">&laquo; Précédent</span>
+        {% endif %}
+
+        {% if categories.pageCount > 1 %}
+            {% for page in p.pagesInRange %}
+                {% if page == p.current %}
+                    <span class="page-btn current">{{ page }}</span>
+                {% else %}
+                    <a class="page-btn" href="{{ path('app_category_index', app.request.query.all|merge({'page': page})) }}">{{ page }}</a>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <span class="page-btn current">1</span>
+        {% endif %}
+
+        {% if p.next is defined %}
+            <a class="page-btn arrow" href="{{ path('app_category_index', app.request.query.all|merge({'page': p.next})) }}" aria-label="Page suivante">
+                Suivant &raquo;
+            </a>
+        {% else %}
+            <span class="page-btn arrow disabled" aria-hidden="true">Suivant &raquo;</span>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+(() => {
+    const search = document.getElementById('searchInput');
+    const status = document.getElementById('statusFilter');
+    const color = document.getElementById('colorFilter');
+    const order = document.getElementById('orderFilter');
+    const tbody = document.getElementById('categoriesTableBody');
+    const paginationShell = document.getElementById('paginationShell');
+    const count = document.getElementById('resultCount');
+    const kpiRoot = document.getElementById('categoryKpiRoot');
+    let debounceTimer = null;
+
+    function buildUrl(page = 1) {
+        const baseUrl = window.location.pathname;
+        const url = new URL(baseUrl, window.location.origin);
+        url.searchParams.set('page', page);
+        url.searchParams.set('search', search.value.trim());
+        url.searchParams.set('status', status.value);
+        url.searchParams.set('color', color.value);
+        url.searchParams.set('order', order.value);
+        return url.toString();
+    }
+
+    function updatePaginationLinks(container) {
+        container.querySelectorAll('a.page-btn').forEach(link => {
+            const pageMatch = link.getAttribute('href').match(/[?&]page=(\d+)/);
+            if (!pageMatch) {
+                return;
+            }
+
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                loadCategories(parseInt(pageMatch[1], 10));
+            });
+        });
+    }
+
+    function syncFromResponse(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newBody = doc.getElementById('categoriesTableBody');
+        const newPagination = doc.getElementById('paginationShell');
+        const newCount = doc.getElementById('resultCount');
+        const newKpiRoot = doc.getElementById('categoryKpiRoot');
+
+        if (newBody && tbody) {
+            tbody.innerHTML = newBody.innerHTML;
+        }
+
+        if (newPagination && paginationShell) {
+            paginationShell.innerHTML = newPagination.innerHTML;
+            updatePaginationLinks(paginationShell);
+        }
+
+        if (newCount) {
+            count.textContent = newCount.textContent;
+        }
+
+        if (newKpiRoot && kpiRoot) {
+            kpiRoot.innerHTML = newKpiRoot.innerHTML;
+        }
+    }
+
+    async function loadCategories(page = 1) {
+        const url = buildUrl(page);
+
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const html = await response.text();
+            syncFromResponse(html);
+        } catch (error) {
+            console.error('Erreur lors du chargement des catégories', error);
+        }
+    }
+
+    function scheduleLoad() {
+        window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(() => loadCategories(1), 250);
+    }
+
+    [search, status, color, order].forEach(el => {
+        el.addEventListener('input', scheduleLoad);
+        el.addEventListener('change', scheduleLoad);
+    });
+
+    updatePaginationLinks(paginationShell);
+})();
+</script>
+{% endblock %}
