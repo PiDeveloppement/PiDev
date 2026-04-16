@@ -5,6 +5,7 @@ namespace App\Controller\Event;
 use App\Entity\Event\Event;
 use App\Entity\User\UserModel;
 use App\Form\Event\EventType;
+use App\Service\Event\AiPosterService;
 use App\Service\Event\EventService;
 use Knp\Component\Pager\PaginatorInterface;
 use Knp\Snappy\Pdf;
@@ -14,6 +15,7 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/event')]
@@ -22,9 +24,89 @@ class EventController extends AbstractController
     public function __construct(
         private FormFactoryInterface $formFactory,
         private EventService $eventService,
+        private AiPosterService $aiPosterService,
         #[Autowire('%env(default::GOOGLE_API_KEY)%')] private readonly ?string $googleApiKey = null,
         #[Autowire('%env(default::GOOGLE_CALENDAR_ID)%')] private readonly ?string $googleCalendarId = null
     ) {}
+
+    #[Route('/generate-poster', name: 'app_event_generate_poster', methods: ['POST'])]
+    public function generatePoster(Request $request): JsonResponse
+    {
+        if (!$this->isGranted('ROLE_ORGANISATEUR') && !$this->isGranted('ROLE_ADMIN')) {
+            return $this->json([
+                'ok' => false,
+                'message' => 'Acces refuse.',
+            ], JsonResponse::HTTP_FORBIDDEN);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json([
+                'ok' => false,
+                'message' => 'Requete invalide.',
+            ], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        $result = $this->aiPosterService->generatePoster($this->buildPosterPrompt($payload));
+
+        $status = (int) ($result['status'] ?? JsonResponse::HTTP_BAD_REQUEST);
+        unset($result['status']);
+
+        return $this->json($result, $status);
+    }
+
+    private function buildPosterPrompt(array $payload): string
+    {
+        $styles = [
+            'vibrant neon colors, futuristic',
+            'elegant gold and black, luxury',
+            'pastel colors, modern minimalist',
+            'bold red and white, energetic',
+            'purple and cyan gradient, tech',
+            'green and yellow, fresh young',
+            'orange and blue, dynamic sport',
+            'dark blue and gold, professional',
+        ];
+
+        $style = $styles[array_rand($styles)];
+
+        $title = trim((string) ($payload['title'] ?? ''));
+        $description = trim((string) ($payload['description'] ?? ''));
+        $location = trim((string) ($payload['location'] ?? ''));
+        $capacity = max(1, (int) ($payload['capacity'] ?? 0));
+        $isFree = filter_var($payload['isFree'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $ticketPrice = (float) ($payload['ticketPrice'] ?? 0);
+        $categoryId = (int) ($payload['categoryId'] ?? 0);
+
+        $categoryName = 'general';
+        if ($categoryId > 0) {
+            $category = $this->eventService->resolveCategoryById($categoryId);
+            if ($category && $category->getName()) {
+                $categoryName = trim((string) $category->getName());
+            }
+        }
+
+        $safeTitle = $title !== '' ? str_replace("'", '', $title) : 'Untitled event';
+        $safeDescription = $description !== ''
+            ? str_replace("'", '', mb_substr($description, 0, 600))
+            : 'No description provided';
+        $safeLocation = $location !== '' ? str_replace("'", '', $location) : 'Tunis';
+
+        $priceText = $isFree
+            ? 'free entry'
+            : sprintf('%.2f DT entrance fee', max(0, $ticketPrice));
+
+        return sprintf(
+            "Professional event poster, title '%s', %s, %s category event, held at %s, capacity %d people, %s, %s, high quality poster design, sharp typography, no blurry text, no watermark",
+            $safeTitle,
+            $safeDescription,
+            $categoryName,
+            $safeLocation,
+            $capacity,
+            $priceText,
+            $style
+        );
+    }
 
     #[Route('/', name: 'app_event_index', methods: ['GET'])]
     public function index(Request $request, PaginatorInterface $paginator): Response

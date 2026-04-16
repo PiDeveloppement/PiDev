@@ -73,6 +73,64 @@
         padding: 8px 20px; color: #64748b; font-size: 14px; cursor: pointer;
         text-decoration: none;
     }
+    .ai-poster-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        align-items: start;
+    }
+    .btn-generate-poster {
+        background: #0ea5a2;
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 10px 14px;
+        width: 100%;
+    }
+    .btn-generate-poster:hover { background: #0b8f8c; }
+    .btn-generate-poster:disabled { background: #9ca3af; cursor: not-allowed; }
+    .poster-preview-wrap {
+        border: 1px dashed #cbd5e1;
+        border-radius: 12px;
+        min-height: 320px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        overflow: hidden;
+    }
+    .poster-preview-wrap img {
+        max-width: 100%;
+        max-height: 420px;
+        object-fit: contain;
+        display: block;
+        margin: 0 auto;
+    }
+    .poster-placeholder {
+        color: #64748b;
+        font-size: 13px;
+        text-align: center;
+        padding: 12px;
+    }
+    .poster-status {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #475569;
+    }
+    .poster-status.error { color: #dc2626; }
+    .poster-status.success { color: #059669; }
+    .ai-poster-actions {
+        display: flex;
+        justify-content: center;
+        margin-top: 10px;
+    }
+    .ai-poster-actions .btn-generate-poster {
+        width: 100%;
+        max-width: 420px;
+    }
 </style>
 
 <form method="post" id="eventForm">
@@ -254,6 +312,30 @@
         </div>
     </div>
 
+    <!-- SECTION 6: AFFICHE IA -->
+    <div class="form-card">
+        <div class="section-title">🖼️ AFFICHE IA (OPTIONNEL)</div>
+
+        <input type="hidden" name="imageUrl" id="imageUrlInput" value="{{ event.imageUrl ?? '' }}" />
+
+        <div class="ai-poster-grid">
+            <div class="poster-preview-wrap" id="posterPreviewWrap">
+                {% if event.imageUrl %}
+                    <img id="posterPreview" src="{{ asset(event.imageUrl) }}" alt="Poster genere" />
+                {% else %}
+                    <div class="poster-placeholder" id="posterPlaceholder">Aucune affiche generee pour le moment.</div>
+                    <img id="posterPreview" src="" alt="Poster genere" style="display:none;" />
+                {% endif %}
+            </div>
+
+            <div class="ai-poster-actions">
+                <button type="button" id="generatePosterBtn" class="btn-generate-poster">Generer une affiche avec l'IA</button>
+            </div>
+
+            <div id="posterStatus" class="poster-status">Chaque generation applique un style visuel different automatiquement.</div>
+        </div>
+    </div>
+
 </form>
 
 {% endblock %}
@@ -414,6 +496,78 @@ document.getElementById('eventForm').addEventListener('submit', function(e) {
     }
 
     if (!valid) e.preventDefault();
+});
+
+// ==================== AFFICHES IA ====================
+const generatePosterBtn = document.getElementById('generatePosterBtn');
+const posterStatus = document.getElementById('posterStatus');
+const imageUrlInput = document.getElementById('imageUrlInput');
+const posterPreview = document.getElementById('posterPreview');
+const posterPlaceholder = document.getElementById('posterPlaceholder');
+
+function setPosterStatus(message, type = '') {
+    posterStatus.textContent = message;
+    posterStatus.classList.remove('error', 'success');
+    if (type) {
+        posterStatus.classList.add(type);
+    }
+}
+
+generatePosterBtn.addEventListener('click', async function() {
+    const title = document.getElementById('titleInput').value.trim();
+    const description = document.getElementById('descInput').value.trim();
+    const categoryId = document.getElementById('categorySelect').value;
+    const location = document.getElementById('locationSelect').value;
+    const capacity = document.getElementById('capacityInput').value;
+    const isFree = document.getElementById('isFreeToggle').checked;
+    const ticketPrice = document.getElementById('priceInput').value;
+
+    if (!title || !description || !categoryId || !location || !capacity) {
+        setPosterStatus('Remplissez d\'abord les champs titre, description, categorie, lieu et capacite.', 'error');
+        return;
+    }
+
+    generatePosterBtn.disabled = true;
+    generatePosterBtn.textContent = 'Generation en cours...';
+    setPosterStatus('Generation automatique du prompt et du poster IA...');
+
+    try {
+        const response = await fetch('{{ path('app_event_generate_poster') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title,
+                description,
+                categoryId,
+                location,
+                capacity,
+                isFree,
+                ticketPrice
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.ok || !data.imageUrl) {
+            setPosterStatus(data.message || 'Echec de la generation IA.', 'error');
+            return;
+        }
+
+        imageUrlInput.value = data.imageUrl;
+        posterPreview.src = data.imageUrl;
+        posterPreview.style.display = 'block';
+        if (posterPlaceholder) {
+            posterPlaceholder.style.display = 'none';
+        }
+
+        setPosterStatus('Affiche generee avec succes. Elle sera enregistree avec l\'evenement.', 'success');
+    } catch (error) {
+        setPosterStatus('Erreur reseau pendant la generation IA.', 'error');
+    } finally {
+        generatePosterBtn.disabled = false;
+        generatePosterBtn.textContent = 'Generer une affiche avec l\'IA';
+    }
 });
 </script>
 {% endblock %}

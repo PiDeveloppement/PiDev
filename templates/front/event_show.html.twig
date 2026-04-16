@@ -95,6 +95,32 @@
             white-space: pre-line;
         }
 
+        .show-poster-wrap {
+            border: 1px solid #dbe5f2;
+            border-radius: 14px;
+            background: #f8fbff;
+            min-height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .show-poster-wrap img {
+            display: block;
+            width: 100%;
+            max-height: 560px;
+            object-fit: contain;
+        }
+
+        .show-poster-empty {
+            color: #5f738c;
+            font-size: 14px;
+            text-align: center;
+            padding: 16px;
+        }
+
         .show-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -324,6 +350,15 @@
 
                 <div class="show-body">
                     <h1 class="show-title">{{ event.title }}</h1>
+
+                    <div class="show-poster-wrap">
+                        {% if event.imageUrl %}
+                            <img src="{{ asset(event.imageUrl) }}" alt="Affiche de {{ event.title }}">
+                        {% else %}
+                            <div class="show-poster-empty">Aucune affiche disponible pour cet événement.</div>
+                        {% endif %}
+                    </div>
+
                     <p class="show-description">{{ event.description ?: 'Description non disponible.' }}</p>
 
                     <div class="show-grid">

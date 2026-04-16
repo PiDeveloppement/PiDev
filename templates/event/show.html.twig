@@ -149,6 +149,32 @@
         white-space: pre-line;
     }
 
+    .event-poster-wrap {
+        margin-bottom: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #f8fafc;
+        min-height: 280px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .event-poster-wrap img {
+        display: block;
+        width: 100%;
+        max-height: 520px;
+        object-fit: contain;
+    }
+
+    .event-poster-empty {
+        color: #64748b;
+        font-size: 13px;
+        text-align: center;
+        padding: 16px;
+    }
+
     .event-data-grid {
         margin-top: 14px;
         display: grid;
@@ -275,6 +301,15 @@
         </div>
 
         <div class="event-main-body">
+            <h4 class="event-block-title">Affiche de l'événement</h4>
+            <div class="event-poster-wrap">
+                {% if event.imageUrl %}
+                    <img src="{{ asset(event.imageUrl) }}" alt="Affiche de {{ event.title }}">
+                {% else %}
+                    <div class="event-poster-empty">Aucune affiche n'a ete generee pour cet evenement.</div>
+                {% endif %}
+            </div>
+
             <h4 class="event-block-title">Description</h4>
             <p class="event-description">{{ event.description ?: 'Aucune description fournie.' }}</p>
 

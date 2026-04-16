@@ -55,6 +55,9 @@ class EventType extends AbstractType
             ->add('gouvernorat', TextType::class, [
                 'required' => false,
             ])
+            ->add('imageUrl', TextType::class, [
+                'required' => false,
+            ])
             ->add('capacity', IntegerType::class, [
                 'constraints' => [
                     new NotBlank(message: 'La capacite est obligatoire.'),
