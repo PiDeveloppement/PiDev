@@ -2,6 +2,7 @@
 namespace App\Entity\Resource;
 
 use App\Repository\Resource\ReservationResourceRepository;
+use App\Entity\Event\Event;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -26,6 +27,11 @@ class ReservationResource
     #[ORM\ManyToOne(targetEntity: Equipement::class)]
     #[ORM\JoinColumn(name: "equipement_id", referencedColumnName: "id", onDelete: "SET NULL")]
     private ?Equipement $equipement = null;
+
+    #[ORM\ManyToOne(targetEntity: Event::class)]
+    #[ORM\JoinColumn(name: "event_id", referencedColumnName: "id", onDelete: "CASCADE")]
+    #[Assert\NotBlank(message: "L'événement est obligatoire")]
+    private ?Event $event = null;
 
     #[ORM\Column(name: "reservation_date_start_time", type: "date")]
     #[Assert\NotBlank(message: "La date de début est obligatoire")]
@@ -71,6 +77,9 @@ class ReservationResource
 
     public function getEquipement(): ?Equipement { return $this->equipement; }
     public function setEquipement(?Equipement $equipement): self { $this->equipement = $equipement; return $this; }
+
+    public function getEvent(): ?Event { return $this->event; }
+    public function setEvent(?Event $event): self { $this->event = $event; return $this; }
 
     public function getStartTime(): ?\DateTimeInterface { return $this->startTime; }
     public function setStartTime(\DateTimeInterface $startTime): self { $this->startTime = $startTime; return $this; }

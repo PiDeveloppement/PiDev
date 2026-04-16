@@ -1,0 +1,260 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Test Voice Form Filler{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <h1>🎤 Test Voice Form Filler</h1>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Configuration du Contexte</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Choisir le formulaire:</label>
+                        <select id="contextSelect" class="form-select">
+                            <option value="">-- Sélectionner --</option>
+                            {% for context in contexts %}
+                            <option value="{{ context }}">{{ context|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button id="setContextBtn" class="btn btn-primary">Définir Contexte</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Contrôle Vocal</h5>
+                    <div id="waitingIndicator" class="alert alert-warning" style="display: none;">
+                        🎤 En attente de la valeur pour: <strong id="waitingField"></strong>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <button id="startVoiceBtn" class="btn btn-success">🎤 Démarrer</button>
+                        <button id="stopVoiceBtn" class="btn btn-danger">⏹️ Arrêter</button>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Commande Test:</label>
+                        <input type="text" id="testCommand" class="form-control" placeholder="Ex: nom (puis la valeur)">
+                        <button id="sendCommandBtn" class="btn btn-info mt-2">Envoyer</button>
+                        <small class="text-muted d-block mt-1">Mode simple: dis juste "nom", "capacité", "bâtiment", etc.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Commandes Disponibles</h5>
+                </div>
+                <div class="card-body">
+                    <ul id="commandsList" class="list-group">
+                        <!-- Sera rempli par JavaScript -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Données du Formulaire</h5>
+                </div>
+                <div class="card-body">
+                    <div id="formDataDisplay">
+                        <p class="text-muted">Aucune donnée saisie...</p>
+                    </div>
+                    <button id="clearFormBtn" class="btn btn-warning mt-2">Effacer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Log des Commandes</h5>
+                </div>
+                <div class="card-body">
+                    <div id="commandLog" style="height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;">
+                        <!-- Log des commandes -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentContext = null;
+let formData = {};
+
+// Définir le contexte
+document.getElementById('setContextBtn').addEventListener('click', function() {
+    const context = document.getElementById('contextSelect').value;
+    if (!context) {
+        alert('Veuillez sélectionner un contexte');
+        return;
+    }
+    
+    fetch(`/voice/form/set-context/${context}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                currentContext = context;
+                formData = {};
+                updateCommandsList(data.available_commands);
+                updateFormDataDisplay();
+                addLog(`Contexte défini: ${context}`, 'success');
+            } else {
+                addLog(`Erreur: ${data.message}`, 'error');
+            }
+        })
+        .catch(error => {
+            addLog(`Erreur réseau: ${error}`, 'error');
+        });
+});
+
+// Envoyer une commande test
+document.getElementById('sendCommandBtn').addEventListener('click', function() {
+    const command = document.getElementById('testCommand').value;
+    if (!command) {
+        alert('Veuillez entrer une commande');
+        return;
+    }
+    
+    sendCommand(command);
+});
+
+// Envoyer une commande au serveur
+function sendCommand(command) {
+    fetch('/voice/form/command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ command: command })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            formData = data.current_form_data;
+            updateFormDataDisplay();
+            
+            // Gérer l'indicateur d'attente
+            const waitingIndicator = document.getElementById('waitingIndicator');
+            const waitingField = document.getElementById('waitingField');
+            
+            if (data.waiting_for_value) {
+                waitingField.textContent = data.waiting_field;
+                waitingIndicator.style.display = 'block';
+                addLog(`🎤 En attente de la valeur pour: ${data.waiting_field}`, 'info');
+            } else {
+                waitingIndicator.style.display = 'none';
+            }
+            
+            if (data.result.action === 'field_filled') {
+                addLog(`✅ Champ rempli: ${data.result.field} = ${data.result.value}`, 'success');
+            } else if (data.result.action === 'waiting_for_value') {
+                addLog(data.result.message, 'info');
+            } else if (data.result.action === 'not_recognized') {
+                addLog(`❌ Commande non reconnue: ${data.result.command}`, 'warning');
+            }
+        } else {
+            addLog(`❌ Erreur: ${data.message}`, 'error');
+        }
+    })
+    .catch(error => {
+        addLog(`❌ Erreur réseau: ${error}`, 'error');
+    });
+}
+
+// Mettre à jour la liste des commandes
+function updateCommandsList(commands) {
+    const list = document.getElementById('commandsList');
+    list.innerHTML = '';
+    
+    for (const [command, description] of Object.entries(commands)) {
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.innerHTML = `<strong>${command}</strong><br><small>${description}</small>`;
+        list.appendChild(li);
+    }
+}
+
+// Mettre à jour l'affichage des données du formulaire
+function updateFormDataDisplay() {
+    const display = document.getElementById('formDataDisplay');
+    
+    if (Object.keys(formData).length === 0) {
+        display.innerHTML = '<p class="text-muted">Aucune donnée saisie...</p>';
+        return;
+    }
+    
+    let html = '<table class="table table-sm">';
+    for (const [field, value] of Object.entries(formData)) {
+        html += `<tr><td><strong>${field}</strong></td><td>${value}</td></tr>`;
+    }
+    html += '</table>';
+    
+    display.innerHTML = html;
+}
+
+// Ajouter un log
+function addLog(message, type = 'info') {
+    const log = document.getElementById('commandLog');
+    const timestamp = new Date().toLocaleTimeString();
+    
+    const div = document.createElement('div');
+    div.className = `log-entry log-${type}`;
+    div.innerHTML = `<small>[${timestamp}]</small> ${message}`;
+    
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+}
+
+// Effacer le formulaire
+document.getElementById('clearFormBtn').addEventListener('click', function() {
+    fetch('/voice/form/clear')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                formData = {};
+                currentContext = null;
+                updateFormDataDisplay();
+                document.getElementById('commandsList').innerHTML = '';
+                document.getElementById('contextSelect').value = '';
+                addLog('Formulaire effacé', 'info');
+            }
+        });
+});
+
+// Simulation de reconnaissance vocale (à remplacer avec vraie API)
+document.getElementById('startVoiceBtn').addEventListener('click', function() {
+    addLog('🎤 Démarrage de la reconnaissance vocale...', 'info');
+    // Ici tu pourras intégrer avec la vraie reconnaissance vocale
+});
+
+document.getElementById('stopVoiceBtn').addEventListener('click', function() {
+    addLog('⏹️ Arrêt de la reconnaissance vocale', 'info');
+});
+</script>
+
+<style>
+.log-success { color: #28a745; }
+.log-error { color: #dc3545; }
+.log-warning { color: #ffc107; }
+.log-info { color: #17a2b8; }
+</style>
+{% endblock %}

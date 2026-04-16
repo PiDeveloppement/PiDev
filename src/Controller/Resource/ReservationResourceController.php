@@ -43,135 +43,105 @@ class ReservationResourceController extends AbstractController
     }
 
     #[Route('/new', name: 'app_reservation_resource_new', methods: ['GET', 'POST'])]
-public function new(Request $request, EntityManagerInterface $em): Response
-{
-    $reservation = new ReservationResource();
-    $form = $this->createForm(ReservationType::class, $reservation);
-    
-    if ($request->isMethod('POST')) {
-        // Récupérer la ressource sélectionnée et l'assigner AVANT la validation du formulaire
-        $resourceType = $request->request->get('reservation_resource')['resourceType'] ?? null;
-        $resourceId = $request->request->get('resourceSelect');
-        
-        // Vérifier qu'une ressource a été sélectionnée
-        if (!$resourceId) {
-            $this->addFlash('error', 'Veuillez sélectionner une ressource');
-            return $this->redirectToRoute('app_reservation_resource_new');
-        }
-        
-        // Assigner la ressource à la réservation AVANT la validation
-        if ($resourceType === 'SALLE') {
-            $salle = $em->find(Salle::class, $resourceId);
-            if (!$salle) {
-                $this->addFlash('error', 'Salle non trouvée');
-                return $this->redirectToRoute('app_reservation_resource_new');
-            }
-            $reservation->setSalle($salle);
-        } elseif ($resourceType === 'EQUIPEMENT') {
-            $equipement = $em->find(Equipement::class, $resourceId);
-            if (!$equipement) {
-                $this->addFlash('error', 'Équipement non trouvé');
-                return $this->redirectToRoute('app_reservation_resource_new');
-            }
-            $reservation->setEquipement($equipement);
-        }
-    }
-    
-    $form->handleRequest($request);
+    public function new(Request $request, EntityManagerInterface $em): Response
+    {
+        $reservation = new ReservationResource();
+        $form = $this->createForm(ReservationType::class, $reservation);
+        $form->handleRequest($request);
 
-    if ($form->isSubmitted() && $form->isValid()) {
-        $em->persist($reservation);
-        $em->flush();
-        
-        $this->addFlash('success', 'Réservation créée avec succès !');
-        return $this->redirectToRoute('app_reservation_resource_index');
-    }
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->persist($reservation);
+            $em->flush();
+            
+            $this->addFlash('success', 'Réservation créée avec succès !');
+            return $this->redirectToRoute('app_reservation_resource_index');
+        }
 
-    return $this->render('resource/reservation_resource/new.html.twig', [
-        'form' => $form->createView(),
-    ]);
-}
+        return $this->render('resource/reservation_resource/new.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
 
     #[Route('/ajax/resources', name: 'app_ajax_resources', methods: ['GET'])]
-public function getResources(Request $request, SalleRepository $salleRepo, EquipementRepository $equipementRepo, ReservationResourceRepository $resRepo): JsonResponse
-{
-    $type = $request->query->get('type');
-    $startStr = $request->query->get('start');
-    $endStr = $request->query->get('end');
-    
-    // Only set dates if BOTH start and end are provided
-    $startDate = null;
-    $endDate = null;
-    if ($startStr && $endStr) {
-        $startDate = new \DateTime($startStr);
-        $endDate = new \DateTime($endStr);
-    }
-
-    $resources = [];
-
-    if ($type === 'SALLE') {
-        $salles = $salleRepo->findAll();
-        foreach ($salles as $salle) {
-            $isReserved = false;
-            // Only check for conflicts if BOTH dates are provided
-            if ($startDate && $endDate) {
-                // Vérifier si la salle est déjà prise sur ce créneau
-                $isReserved = $resRepo->createQueryBuilder('r')
-                    ->select('count(r.id)')
-                    ->where('r.salle = :salle')
-                    ->andWhere('r.startTime < :end AND r.endTime > :start')
-                    ->setParameter('salle', $salle)
-                    ->setParameter('start', $startDate)
-                    ->setParameter('end', $endDate)
-                    ->getQuery()->getSingleScalarResult() > 0;
-            }
-
-            $resources[] = [
-                'id' => $salle->getId(),
-                'name' => $salle->getName(),
-                'available' => ($salle->getStatus() === 'DISPONIBLE' && !$isReserved),
-                'info' => $isReserved ? 'Déjà réservée' : 'Capacité: ' . $salle->getCapacity()
-            ];
+    public function getResources(Request $request, SalleRepository $salleRepo, EquipementRepository $equipementRepo, ReservationResourceRepository $resRepo): JsonResponse
+    {
+        $type = $request->query->get('type');
+        $startStr = $request->query->get('start');
+        $endStr = $request->query->get('end');
+        
+        // Only set dates if BOTH start and end are provided
+        $startDate = null;
+        $endDate = null;
+        if ($startStr && $endStr) {
+            $startDate = new \DateTime($startStr);
+            $endDate = new \DateTime($endStr);
         }
-    } elseif ($type === 'EQUIPEMENT') {
-        $equipements = $equipementRepo->findAll();
-        foreach ($equipements as $equip) {
-            $totalReserved = 0;
-            // Only check for conflicts if BOTH dates are provided
-            if ($startDate && $endDate) {
-                // Sommer les quantités réservées pour cet équipement sur la période
-                $result = $resRepo->createQueryBuilder('r')
-                    ->select('SUM(r.quantity)')
-                    ->where('r.equipement = :equip')
-                    ->andWhere('r.startTime < :end AND r.endTime > :start')
-                    ->setParameter('equip', $equip)
-                    ->setParameter('start', $startDate)
-                    ->setParameter('end', $endDate)
-                    ->getQuery()->getSingleScalarResult();
-                
-                // Handle null result from SUM when no reservations exist
-                $totalReserved = (int)($result ?? 0);
+
+        $resources = [];
+
+        if ($type === 'SALLE') {
+            $salles = $salleRepo->findAll();
+            foreach ($salles as $salle) {
+                $isReserved = false;
+                // Only check for conflicts if BOTH dates are provided
+                if ($startDate && $endDate) {
+                    // Vérifier si la salle est déjà prise sur ce créneau
+                    $isReserved = $resRepo->createQueryBuilder('r')
+                        ->select('count(r.id)')
+                        ->where('r.salle = :salle')
+                        ->andWhere('r.startTime < :end AND r.endTime > :start')
+                        ->setParameter('salle', $salle)
+                        ->setParameter('start', $startDate)
+                        ->setParameter('end', $endDate)
+                        ->getQuery()->getSingleScalarResult() > 0;
+                }
+
+                $resources[] = [
+                    'id' => $salle->getId(),
+                    'name' => $salle->getName(),
+                    'available' => ($salle->getStatus() === 'DISPONIBLE' && !$isReserved),
+                    'info' => $isReserved ? 'Déjà réservée' : 'Capacité: ' . $salle->getCapacity()
+                ];
             }
+        } elseif ($type === 'EQUIPEMENT') {
+            $equipements = $equipementRepo->findAll();
+            foreach ($equipements as $equip) {
+                $totalReserved = 0;
+                // Only check for conflicts if BOTH dates are provided
+                if ($startDate && $endDate) {
+                    // Sommer les quantités réservées pour cet équipement sur la période
+                    $result = $resRepo->createQueryBuilder('r')
+                        ->select('SUM(r.quantity)')
+                        ->where('r.equipement = :equip')
+                        ->andWhere('r.startTime < :end AND r.endTime > :start')
+                        ->setParameter('equip', $equip)
+                        ->setParameter('start', $startDate)
+                        ->setParameter('end', $endDate)
+                        ->getQuery()->getSingleScalarResult();
+                    
+                    // Handle null result from SUM when no reservations exist
+                    $totalReserved = (int)($result ?? 0);
+                }
 
-            $stockInitial = $equip->getQuantity();
-            // If no dates selected, show full available stock
-            $remaining = $stockInitial - $totalReserved;
+                $stockInitial = $equip->getQuantity();
+                // If no dates selected, show full available stock
+                $remaining = $stockInitial - $totalReserved;
 
-            $resources[] = [
-                'id' => $equip->getId(),
-                'name' => $equip->getName(),
-                // Mark as unavailable if: status is not DISPONIBLE OR (dates selected AND no stock remains)
-                'available' => ($equip->getStatus() === 'DISPONIBLE') 
-                    && (($startDate && $endDate) ? ($remaining > 0) : true),
-                'info' => ($startDate && $endDate) 
-                    ? ('Dispo: ' . ($remaining > 0 ? $remaining : 'Épuisé') . ' (Total: ' . $stockInitial . ')')
-                    : ('Dispo: ' . $stockInitial . ' (Total: ' . $stockInitial . ')')
-            ];
+                $resources[] = [
+                    'id' => $equip->getId(),
+                    'name' => $equip->getName(),
+                    // Mark as unavailable if: status is not DISPONIBLE OR (dates selected AND no stock remains)
+                    'available' => ($equip->getStatus() === 'DISPONIBLE') 
+                        && (($startDate && $endDate) ? ($remaining > 0) : true),
+                    'info' => ($startDate && $endDate) 
+                        ? ('Dispo: ' . ($remaining > 0 ? $remaining : 'Épuisé') . ' (Total: ' . $stockInitial . ')')
+                        : ('Dispo: ' . $stockInitial . ' (Total: ' . $stockInitial . ')')
+                ];
+            }
         }
-    }
 
-    return new JsonResponse($resources);
-}
+        return new JsonResponse($resources);
+    }
 
     #[Route('/{id}/edit', name: 'app_reservation_resource_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, ReservationResource $reservation, EntityManagerInterface $em): Response
