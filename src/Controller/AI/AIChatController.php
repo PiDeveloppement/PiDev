@@ -32,48 +32,65 @@ class AIChatController extends AbstractController
         }
 
         try {
-            // Vérifier si la clé API Gemini est configurée
-            $apiKey = $_ENV['GEMINI_API_KEY'] ?? null;
-            
-            if (empty($apiKey) || $apiKey === 'your_gemini_api_key_here') {
-                // Réponse simulée si pas de clé API
-                $response = $this->getSimulatedResponse($message);
-                return new JsonResponse([
-                    'response' => $response,
-                    'isSimulated' => true
-                ]);
+            // Lire directement le fichier .env pour obtenir la clé API
+            $envFile = $this->getParameter('kernel.project_dir') . '/.env';
+            $envContent = file_get_contents($envFile);
+            $groqApiKey = null;
+
+            // Parser le fichier .env pour trouver GROQ_API_KEY
+            foreach (explode("\n", $envContent) as $line) {
+                if (strpos(trim($line), 'GROQ_API_KEY=') === 0) {
+                    $groqApiKey = trim(substr(trim($line), strlen('GROQ_API_KEY=')));
+                    break;
+                }
             }
 
-            // Appel à l'API Gemini
-            $response = $this->httpClient->request('POST', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' . $apiKey, [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ],
-                'json' => [
-                    'contents' => [
-                        [
-                            'parts' => [
+            // Debug: afficher la clé API (partiellement)
+            $debugKey = empty($groqApiKey) ? 'VIDE' : substr($groqApiKey, 0, 10) . '...';
+
+            if (!empty($groqApiKey) && $groqApiKey !== '') {
+                try {
+                    $response = $this->httpClient->request('POST', 'https://api.groq.com/openai/v1/chat/completions', [
+                        'headers' => [
+                            'Authorization' => 'Bearer ' . $groqApiKey,
+                            'Content-Type' => 'application/json',
+                        ],
+                        'json' => [
+                            'model' => 'llama3-8b-8192',
+                            'messages' => [
                                 [
-                                    'text' => 'Tu es un assistant de gestion pour EventFlow, une plateforme de gestion d\'événements. Aide les utilisateurs avec des questions sur les événements, les utilisateurs, les budgets, etc. Sois concis et professionnel. Réponds en français.
-
-Question utilisateur: ' . $message
+                                    'role' => 'system',
+                                    'content' => 'Tu es un assistant de gestion pour EventFlow, une plateforme de gestion d\'événements. Aide les utilisateurs avec des questions sur les événements, les utilisateurs, les budgets, etc. Sois concis et professionnel. Réponds en français.'
+                                ],
+                                [
+                                    'role' => 'user',
+                                    'content' => $message
                                 ]
-                            ]
+                            ],
+                            'temperature' => 0.7,
+                            'max_tokens' => 500
                         ]
-                    ],
-                    'generationConfig' => [
-                        'temperature' => 0.7,
-                        'maxOutputTokens' => 500
-                    ]
-                ]
-            ]);
+                    ]);
 
-            $result = $response->toArray();
-            $aiResponse = $result['candidates'][0]['content']['parts'][0]['text'] ?? 'Désolé, je n\'ai pas pu générer de réponse.';
+                    $result = $response->toArray();
+                    $aiResponse = $result['choices'][0]['message']['content'] ?? 'Désolé, je n\'ai pas pu générer de réponse.';
 
+                    return new JsonResponse([
+                        'response' => $aiResponse,
+                        'isSimulated' => false,
+                        'debug' => 'API Groq utilisée avec succès'
+                    ]);
+                } catch (\Exception $e) {
+                    // Si Groq échoue, continuer vers simulation
+                }
+            }
+
+            // Si Groq n'est pas disponible, retourner simulation
+            $response = $this->getSimulatedResponse($message);
             return new JsonResponse([
-                'response' => $aiResponse,
-                'isSimulated' => false
+                'response' => $response,
+                'isSimulated' => true,
+                'debug' => 'Clé Groq non trouvée ou vide: ' . $debugKey . '. Configurez GROQ_API_KEY dans .env'
             ]);
 
         } catch (\Exception $e) {
@@ -82,7 +99,8 @@ Question utilisateur: ' . $message
             return new JsonResponse([
                 'response' => $response,
                 'isSimulated' => true,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'debug' => 'Erreur API: ' . $e->getMessage()
             ]);
         }
     }
@@ -124,6 +142,6 @@ Question utilisateur: ' . $message
             return "Je peux vous aider avec : la gestion des utilisateurs, des événements, des budgets, des sponsors et des ressources. Posez-moi vos questions !";
         }
 
-        return "Je comprends votre question sur \"" . htmlspecialchars($message) . "\". Pour l'instant, je fonctionne en mode simulation. Configurez une clé API Gemini dans le fichier .env (GEMINI_API_KEY) pour activer les réponses IA avancées.";
+        return "Je comprends votre question sur \"" . htmlspecialchars($message) . "\". Pour l'instant, je fonctionne en mode simulation. Configurez une clé API Groq dans le fichier .env (GROQ_API_KEY) pour activer les réponses IA avancées.";
     }
 }

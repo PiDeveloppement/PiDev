@@ -7,6 +7,7 @@ use App\Service\User\WhatsAppService;
 use App\Service\User\PasswordResetService;
 use App\Service\User\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -22,12 +23,7 @@ class ForgotPasswordController extends AbstractController
     #[Route('/forgot-password', name: 'app_forgot_password')]
     public function index(): Response
     {
-        return $this->render('user/forgot_password.html.twig', [
-            'whatsapp_sandbox' => [
-                'number' => '+14155238886',
-                'code' => 'orange-popsicle'
-            ]
-        ]);
+        return $this->render('user/forgot_password.html.twig');
     }
 
     #[Route('/forgot-password/send', name: 'app_forgot_password_send', methods: ['POST'])]
@@ -44,18 +40,24 @@ class ForgotPasswordController extends AbstractController
         $cleanPhone = $this->cleanPhoneNumber($phoneNumber);
 
         try {
-            // ✅ Récupérer l'utilisateur par téléphone
-            $user = $this->userService->getUserByPhone($cleanPhone);
-
-            if (!$user) {
-                $this->addFlash('error', '❌ Aucun compte avec ce numéro');
+            // Vérifier la configuration Twilio
+            if (!$this->whatsAppService->isConfigured()) {
+                $this->addFlash('error', '❌ Twilio non configuré. Vérifiez TWILIO_ACCOUNT_SID et TWILIO_AUTH_TOKEN dans .env');
                 return $this->redirectToRoute('app_forgot_password');
             }
 
-            // ✅ Créer un token
+            // Récupérer l'utilisateur par téléphone
+            $user = $this->userService->getUserByPhone($cleanPhone);
+
+            if (!$user) {
+                $this->addFlash('error', '❌ Aucun compte avec ce numéro: ' . $cleanPhone);
+                return $this->redirectToRoute('app_forgot_password');
+            }
+
+            // Créer un token
             $token = $this->resetService->createToken($user);
 
-            // ✅ Envoyer le token via WhatsApp
+            // Envoyer le token via WhatsApp
             $sent = $this->whatsAppService->sendResetPasswordWhatsApp(
                 $user->getPhone(),
                 $token->getToken()
@@ -63,21 +65,24 @@ class ForgotPasswordController extends AbstractController
 
             if ($sent) {
                 $this->addFlash('success', '✅ Code de réinitialisation envoyé sur WhatsApp !');
-                $this->addFlash('info', '📱 N\'oubliez pas de rejoindre le sandbox WhatsApp: envoyez "join orange-popsicle" au +14155238886');
+                $this->addFlash('info', '📱 Token: ' . $token->getToken() . ' (pour test)');
+                $this->addFlash('info', '📱 Si vous ne recevez rien, envoyez "join orange-popsicle" au +14155238886 sur WhatsApp');
                 
                 // Stocker le token en session pour la prochaine étape
                 $request->getSession()->set('reset_token', $token->getToken());
                 
-                // Rediriger vers la page de vérification du token
-                return $this->redirectToRoute('app_reset_password_verify', [
+                // Rediriger vers la page de réinitialisation avec le token
+                return $this->redirectToRoute('app_reset_password', [
                     'token' => $token->getToken()
                 ]);
             } else {
-                $this->addFlash('error', '❌ Erreur lors de l\'envoi WhatsApp. Vérifiez votre configuration Twilio.');
+                $this->addFlash('error', '❌ Erreur lors de l\'envoi WhatsApp. Vérifiez que vous avez rejoint le sandbox.');
+                $this->addFlash('info', '📱 Token généré: ' . $token->getToken() . ' (utilisez-le directement)');
             }
 
         } catch (\Exception $e) {
             $this->addFlash('error', '❌ Erreur: ' . $e->getMessage());
+            $this->addFlash('error', '❌ Stack trace: ' . $e->getTraceAsString());
         }
 
         return $this->redirectToRoute('app_forgot_password');
@@ -203,6 +208,73 @@ class ForgotPasswordController extends AbstractController
 
         $this->addFlash('error', '❌ Aucun lien récent à tester');
         return $this->redirectToRoute('app_forgot_password');
+    }
+
+    #[Route('/reset-password', name: 'app_reset_password')]
+    public function resetPasswordPage(Request $request): Response
+    {
+        $token = $request->query->get('token', '');
+        return $this->render('user/reset_password.html.twig', [
+            'token' => $token
+        ]);
+    }
+
+    #[Route('/reset-password/validate-token', name: 'app_reset_password_validate_token', methods: ['POST'])]
+    public function validateTokenApi(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $token = $data['token'] ?? '';
+
+        if (empty($token)) {
+            return new JsonResponse(['valid' => false, 'message' => 'Token vide']);
+        }
+
+        $isValid = $this->resetService->validateToken($token);
+
+        return new JsonResponse(['valid' => $isValid]);
+    }
+
+    #[Route('/reset-password/reset', name: 'app_reset_password_reset_api', methods: ['POST'])]
+    public function resetPasswordApi(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $token = $data['token'] ?? '';
+        $newPassword = $data['newPassword'] ?? '';
+        $confirmPassword = $data['confirmPassword'] ?? '';
+
+        // Validation
+        if (empty($newPassword) || empty($confirmPassword)) {
+            return new JsonResponse(['success' => false, 'message' => 'Veuillez remplir tous les champs']);
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            return new JsonResponse(['success' => false, 'message' => 'Les mots de passe ne correspondent pas']);
+        }
+
+        if (strlen($newPassword) < 6) {
+            return new JsonResponse(['success' => false, 'message' => 'Le mot de passe doit contenir au moins 6 caractères']);
+        }
+
+        // Valider le token
+        if (!$this->resetService->validateToken($token)) {
+            return new JsonResponse(['success' => false, 'message' => 'Token invalide ou expiré']);
+        }
+
+        // Définir le token courant dans le service
+        $this->resetService->setCurrentToken($token);
+        
+        // Récupérer l'ID utilisateur
+        $userId = $this->resetService->getUserIdFromToken($token);
+        $this->resetService->setCurrentUserId($userId);
+
+        // Réinitialiser le mot de passe
+        $success = $this->resetService->resetPassword($newPassword);
+
+        if ($success) {
+            return new JsonResponse(['success' => true]);
+        }
+
+        return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la réinitialisation']);
     }
 
     private function cleanPhoneNumber(string $phone): string

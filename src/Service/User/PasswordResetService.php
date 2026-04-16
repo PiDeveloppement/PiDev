@@ -69,17 +69,16 @@ class PasswordResetService
      */
     private function deactivateExistingTokens(UserModel $user): void
     {
-        $activeTokens = $this->tokenRepository->findActiveByUser($user->getId());
+        $activeTokens = $this->tokenRepository->findValidByUser($user);
         
         foreach ($activeTokens as $token) {
-            $token->setUsed(true);
-            $this->entityManager->persist($token);
+            $this->entityManager->remove($token);
         }
         
         $this->entityManager->flush();
         
         if (count($activeTokens) > 0) {
-            $this->logger->info('🔄 ' . count($activeTokens) . ' anciens tokens désactivés');
+            $this->logger->info('🔄 ' . count($activeTokens) . ' anciens tokens supprimés');
         }
     }
 
