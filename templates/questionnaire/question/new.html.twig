@@ -353,7 +353,12 @@
 
         <div class="f-group">
           <label class="f-label">Énoncé de la question</label>
-          {{ form_widget(form.texte, {'attr': {'class': 'f-input', 'placeholder': 'Ex : Quelle est la capitale de la France ?'}}) }}
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+            {{ form_widget(form.texte, {'attr': {'class': 'f-input', 'placeholder': 'Ex : Quelle est la capitale de la France ?', 'style': 'flex: 1;'}}) }}
+            <button type="button" id="generate-ai-btn" class="btn-ai" style="padding: 0.72rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.3s;">
+              <i class="fas fa-magic" style="margin-right: 0.4rem;"></i> Générer IA
+            </button>
+          </div>
           {{ form_errors(form.texte) }}
         </div>
 
@@ -413,4 +418,131 @@
     {{ form_end(form) }}
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const generateBtn = document.getElementById('generate-ai-btn');
+    const texteField = document.querySelector('[name="{{ form.texte.vars.full_name }}"]');
+    const reponseField = document.querySelector('[name="{{ form.reponse.vars.full_name }}"]');
+    const pointsField = document.querySelector('[name="{{ form.points.vars.full_name }}"]');
+    const option1Field = document.querySelector('[name="{{ form.option1.vars.full_name }}"]');
+    const option2Field = document.querySelector('[name="{{ form.option2.vars.full_name }}"]');
+    const option3Field = document.querySelector('[name="{{ form.option3.vars.full_name }}"]');
+    const eventField = document.querySelector('[name="{{ form.event.vars.full_name }}"]');
+
+    generateBtn.addEventListener('click', function() {
+        // Afficher l'état de chargement
+        const originalText = generateBtn.innerHTML;
+        generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Génération...';
+        generateBtn.disabled = true;
+
+        // Récupérer l'événement sélectionné
+        const eventId = eventField ? eventField.value : null;
+
+        // Préparer les données à envoyer
+        const data = eventId ? { eventId: parseInt(eventId) } : { description: 'Quiz général' };
+
+        // Appeler l'API de génération
+        fetch('{{ path("app_question_generate_ai") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            // Remplir les champs avec les données générées
+            texteField.value = data.texte || '';
+            reponseField.value = data.reponse || '';
+            pointsField.value = data.points || 10;
+            option1Field.value = data.option1 || '';
+            option2Field.value = data.option2 || '';
+            option3Field.value = data.option3 || '';
+
+            // Afficher un message de succès
+            showNotification('Question générée avec succès !', 'success');
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            let errorMessage = error.message;
+            
+            // Messages plus informatifs selon le type d'erreur
+            if (errorMessage.includes('503')) {
+                errorMessage = 'Service Gemini temporairement indisponible. Nouvelle tentative...';
+            } else if (errorMessage.includes('404')) {
+                errorMessage = 'Modèle IA non disponible, essai avec un autre modèle...';
+            } else if (errorMessage.includes('timeout')) {
+                errorMessage = 'Délai d\'attente dépassé, veuillez réessayer...';
+            }
+            
+            showNotification('Erreur lors de la génération: ' + errorMessage, 'error');
+        })
+        .finally(() => {
+            // Restaurer le bouton
+            generateBtn.innerHTML = originalText;
+            generateBtn.disabled = false;
+        });
+    });
+
+    function showNotification(message, type) {
+        // Créer une notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background: ${type === 'success' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'};
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            font-weight: 600;
+            animation: slideInRight 0.3s ease-out;
+        `;
+        notification.textContent = message;
+
+        // Ajouter l'animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        document.body.appendChild(notification);
+
+        // Supprimer après 3 secondes
+        setTimeout(() => {
+            notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    // Améliorer le style du bouton au survol
+    generateBtn.addEventListener('mouseenter', function() {
+        if (!this.disabled) {
+            this.style.transform = 'translateY(-2px) scale(1.05)';
+            this.style.boxShadow = '0 8px 20px rgba(102, 126, 234, 0.4)';
+        }
+    });
+
+    generateBtn.addEventListener('mouseleave', function() {
+        if (!this.disabled) {
+            this.style.transform = 'translateY(0) scale(1)';
+            this.style.boxShadow = 'none';
+        }
+    });
+});
+</script>
 {% endblock %}
