@@ -9,6 +9,7 @@ use App\Form\Resource\ReservationType;
 use App\Repository\Resource\ReservationResourceRepository;
 use App\Repository\Resource\SalleRepository;
 use App\Repository\Resource\EquipementRepository;
+use App\Service\Resource\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -43,7 +44,7 @@ class ReservationResourceController extends AbstractController
     }
 
     #[Route('/new', name: 'app_reservation_resource_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $em): Response
+    public function new(Request $request, EntityManagerInterface $em, MailerService $mailerService): Response
     {
         $reservation = new ReservationResource();
         $form = $this->createForm(ReservationType::class, $reservation);
@@ -53,7 +54,30 @@ class ReservationResourceController extends AbstractController
             $em->persist($reservation);
             $em->flush();
             
-            $this->addFlash('success', 'Réservation créée avec succès !');
+            // Préparer les données pour l'email
+            $reservationData = [
+                'userName' => $this->getUser()->getFullName() ?? $this->getUser()->getEmail(),
+                'email' => $this->getUser()->getEmail(),
+                'resourceType' => $reservation->getResourceType(),
+                'eventName' => $reservation->getEvent()->getTitle(),
+                'startTime' => $reservation->getStartTime(),
+                'endTime' => $reservation->getEndTime(),
+                'quantity' => $reservation->getQuantity()
+            ];
+            
+            if ($reservation->getResourceType() === 'SALLE') {
+                $reservationData['salleName'] = $reservation->getSalle()->getName();
+            } else {
+                $reservationData['equipementName'] = $reservation->getEquipement()->getName();
+            }
+            
+            // Envoyer l'email de confirmation à l'utilisateur
+            $mailerService->sendReservationConfirmation($reservationData);
+            
+            // Envoyer la notification à l'administrateur
+            $mailerService->sendReservationNotification($reservationData);
+            
+            $this->addFlash('success', 'Réservation créée avec succès ! Un email de confirmation vous a été envoyé.');
             return $this->redirectToRoute('app_reservation_resource_index');
         }
 
