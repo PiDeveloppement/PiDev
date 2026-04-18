@@ -413,7 +413,9 @@
                                 <button type="submit" class="show-btn primary">{{ isPendingParticipationForThisEvent ? 'Confirmer ma participation' : 'Participer' }}</button>
                             </form>
                         {% endif %}
-                        <a class="show-btn primary" href="{{ path('app_quiz_start', {'event_id': event.id}) }}" style="background: #9c27b0;">🎯 Quiz</a>
+                        {% if isParticipantUser and hasEventTicket|default(false) %}
+                            <a class="show-btn primary" href="{{ path('app_quiz_start', {'event_id': event.id}) }}" style="background: #9c27b0;">🎯 Quiz</a>
+                        {% endif %}
                     </div>
                 </div>
             </article>

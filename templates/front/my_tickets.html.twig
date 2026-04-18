@@ -277,6 +277,7 @@
                             <div class="ticket-row">🕒 Créé le: {{ ticket.createdAt ? ticket.createdAt|date('d/m/Y H:i') : '-' }}</div>
 
                             <div class="ticket-actions">
+                                <a class="ticket-btn" href="{{ path('app_my_ticket_pdf', {'id': ticket.id}) }}">Télécharger PDF</a>
                                 {% if eventItem %}
                                     <a class="ticket-btn" href="{{ path('app_public_event_show', {'id': eventItem.id}) }}">Voir événement</a>
                                 {% endif %}

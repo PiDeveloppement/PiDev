@@ -8,10 +8,12 @@ use App\Entity\Event\Ticket;
 use App\Entity\User\UserModel;
 use App\Repository\Event\EventRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Snappy\Pdf;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Routing\Annotation\Route;
 
 class EventFrontController extends AbstractController
@@ -180,6 +182,7 @@ class EventFrontController extends AbstractController
             $ticket->setEvent($event);
             $ticket->setUser($user);
             $ticket->setTicketCode(Ticket::generateTicketCode((int) $event->getId(), (int) $user->getId()));
+            $ticket->setQrCode($this->generateUniqueQrToken($em));
 
             $em->persist($ticket);
             $em->flush();
@@ -224,6 +227,65 @@ class EventFrontController extends AbstractController
             'tickets' => $tickets,
             'hasTickets' => count($tickets) > 0,
         ]);
+    }
+
+    #[Route('/my-tickets/{id}/pdf', name: 'app_my_ticket_pdf', methods: ['GET'], requirements: ['id' => '\\d+'])]
+    public function myTicketPdf(int $id, EntityManagerInterface $em, Pdf $pdf): Response
+    {
+        /** @var UserModel|null $user */
+        $user = $this->getUser();
+
+        if (!$user instanceof UserModel) {
+            $this->addFlash('info', 'Connectez-vous pour télécharger vos billets.');
+
+            return $this->redirectToRoute('app_login');
+        }
+
+        $ticket = $em->getRepository(Ticket::class)
+            ->createQueryBuilder('t')
+            ->leftJoin('t.event', 'e')
+            ->addSelect('e')
+            ->leftJoin('e.category', 'c')
+            ->addSelect('c')
+            ->leftJoin('t.user', 'u')
+            ->addSelect('u')
+            ->andWhere('t.id = :id')
+            ->andWhere('t.user = :user')
+            ->setParameter('id', $id)
+            ->setParameter('user', $user)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if (!$ticket instanceof Ticket) {
+            $this->addFlash('warning', 'Billet introuvable ou non autorise.');
+
+            return $this->redirectToRoute('app_my_tickets');
+        }
+
+        if (!$ticket->getQrCode()) {
+            $ticket->setQrCode($this->generateUniqueQrToken($em));
+            $em->flush();
+        }
+
+        $appPublicUrl = $_ENV['APP_PUBLIC_URL'] ?? 'http://127.0.0.1:8000';
+
+        $html = $this->renderView('front/ticket_pdf.html.twig', [
+            'ticket' => $ticket,
+            'appPublicUrl' => $appPublicUrl,
+        ]);
+
+        $eventTitle = $ticket->getEvent() instanceof Event ? (string) $ticket->getEvent()->getTitle() : 'event';
+        $filename = sprintf('billet-%s-%d.pdf', $this->slugifyFilename($eventTitle), (int) $ticket->getId());
+
+        return new Response(
+            $pdf->getOutputFromHtml($html),
+            200,
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]
+        );
     }
 
     #[Route('/my-tickets/{id}/cancel', name: 'app_my_ticket_cancel', methods: ['POST'], requirements: ['id' => '\\d+'])]
@@ -278,6 +340,122 @@ class EventFrontController extends AbstractController
         return $this->redirectToRoute('app_my_tickets');
     }
 
+    #[Route('/admin/tickets/scan/{token}', name: 'app_ticket_scan_auto', methods: ['GET'])]
+    public function scanTicketPreview(string $token, EntityManagerInterface $em): Response
+    {
+        if (!$this->canCurrentUserScanTickets()) {
+            throw new AccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+        }
+
+        $token = trim($token);
+        if ($token === '') {
+            return $this->render('ticket/scan_result.html.twig', [
+                'status' => 'invalid',
+                'title' => 'QR invalide',
+                'message' => 'Le code QR scanne est vide ou invalide.',
+                'ticket' => null,
+            ]);
+        }
+
+        $ticket = $this->findTicketByQrToken($em, $token);
+
+        if (!$ticket instanceof Ticket) {
+            return $this->render('ticket/scan_result.html.twig', [
+                'status' => 'invalid',
+                'title' => 'Billet introuvable',
+                'message' => 'Aucun billet ne correspond a ce QR code.',
+                'ticket' => null,
+            ]);
+        }
+
+        if ((bool) $ticket->isUsed()) {
+            return $this->render('ticket/scan_result.html.twig', [
+                'status' => 'already_used',
+                'title' => 'Billet deja utilise',
+                'message' => 'Ce billet est deja en statut USED. Entree refusee.',
+                'ticket' => $ticket,
+                'token' => $token,
+            ]);
+        }
+
+        return $this->render('ticket/scan_result.html.twig', [
+            'status' => 'preview',
+            'title' => 'Billet trouve',
+            'message' => 'Verifiez visuellement le participant, puis confirmez avec le bouton.',
+            'ticket' => $ticket,
+            'token' => $token,
+        ]);
+    }
+
+    #[Route('/admin/tickets/scan/{token}/validate', name: 'app_ticket_scan_validate', methods: ['POST'])]
+    public function validateScannedTicket(string $token, Request $request, EntityManagerInterface $em): Response
+    {
+        if (!$this->canCurrentUserScanTickets()) {
+            throw new AccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+        }
+
+        $token = trim($token);
+        if ($token === '') {
+            return $this->render('ticket/scan_result.html.twig', [
+                'status' => 'invalid',
+                'title' => 'QR invalide',
+                'message' => 'Le code QR scanne est vide ou invalide.',
+                'ticket' => null,
+            ]);
+        }
+
+        if (!$this->isCsrfTokenValid('scan_validate_' . $token, (string) $request->request->get('_token'))) {
+            return $this->render('ticket/scan_result.html.twig', [
+                'status' => 'invalid',
+                'title' => 'Action invalide',
+                'message' => 'Le jeton de securite est invalide. Re-scannez le billet.',
+                'ticket' => $this->findTicketByQrToken($em, $token),
+                'token' => $token,
+            ]);
+        }
+
+        // Atomic transition VALID -> USED to prevent race conditions on double validation.
+        $updatedRows = $em->createQuery(
+            'UPDATE App\\Entity\\Event\\Ticket t
+             SET t.isUsed = true, t.usedAt = :usedAt
+             WHERE t.qrCode = :token AND t.isUsed = false'
+        )
+            ->setParameter('usedAt', new \DateTime())
+            ->setParameter('token', $token)
+            ->execute();
+
+        $ticket = $this->findTicketByQrToken($em, $token);
+
+        if (!$ticket instanceof Ticket) {
+            return $this->render('ticket/scan_result.html.twig', [
+                'status' => 'invalid',
+                'title' => 'Billet introuvable',
+                'message' => 'Aucun billet ne correspond a ce QR code.',
+                'ticket' => null,
+            ]);
+        }
+
+        if ($updatedRows > 0) {
+            $em->refresh($ticket);
+
+            return $this->render('ticket/scan_result.html.twig', [
+                'status' => 'success',
+                'title' => 'Entree validee',
+                'message' => 'Le billet est maintenant en statut USED. Participant autorise.',
+                'ticket' => $ticket,
+                'token' => $token,
+            ]);
+        }
+
+        return $this->render('ticket/scan_result.html.twig', [
+            'status' => 'already_used',
+            'title' => 'Billet deja utilise',
+            'message' => 'Ce billet a deja ete valide auparavant. Entree refusee.',
+            'ticket' => $ticket,
+            'token' => $token,
+        ]);
+    }
+
     private function currentUserHasTickets(EntityManagerInterface $em): bool
     {
         /** @var UserModel|null $user */
@@ -287,5 +465,57 @@ class EventFrontController extends AbstractController
         }
 
         return (int) $em->getRepository(Ticket::class)->count(['userId' => $user->getId()]) > 0;
+    }
+
+    private function generateUniqueQrToken(EntityManagerInterface $em): string
+    {
+        do {
+            $token = 'tkt_' . bin2hex(random_bytes(24));
+            $exists = (int) $em->getRepository(Ticket::class)->count(['qrCode' => $token]) > 0;
+        } while ($exists);
+
+        return $token;
+    }
+
+    private function canCurrentUserScanTickets(): bool
+    {
+        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_ORGANISATEUR')) {
+            return true;
+        }
+
+        /** @var UserModel|null $user */
+        $user = $this->getUser();
+
+        if (!$user instanceof UserModel) {
+            return false;
+        }
+
+        return in_array((int) $user->getRoleId(), [2, 3], true);
+    }
+
+    private function findTicketByQrToken(EntityManagerInterface $em, string $token): ?Ticket
+    {
+        $ticket = $em->getRepository(Ticket::class)
+            ->createQueryBuilder('t')
+            ->leftJoin('t.event', 'e')
+            ->addSelect('e')
+            ->leftJoin('t.user', 'u')
+            ->addSelect('u')
+            ->andWhere('t.qrCode = :token')
+            ->setParameter('token', $token)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $ticket instanceof Ticket ? $ticket : null;
+    }
+
+    private function slugifyFilename(string $value): string
+    {
+        $value = trim(mb_strtolower($value));
+        $value = preg_replace('/[^a-z0-9]+/', '-', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value) ?: $value) ?? 'ticket';
+        $value = trim($value, '-');
+
+        return $value !== '' ? $value : 'ticket';
     }
 }
