@@ -492,11 +492,137 @@
 
         .empty-state p { font-size: 14px; }
 
-        /* FAB */
+        /* ── DETAILED TABLE ── */
+        .budget-table-wrap {
+            margin-top: 18px;
+            background: #ffffff;
+            border: 0.5px solid #e2e8f0;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+        }
+
+        .budget-table-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+            background: #f8fafc;
+        }
+
+        .budget-table-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .budget-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+        }
+
+        .budget-table thead th {
+            background: #eef2f7;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            font-size: 10.5px;
+            font-weight: 700;
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+            white-space: nowrap;
+        }
+
+        .budget-table tbody td {
+            padding: 11px 12px;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+            color: #0f172a;
+            vertical-align: middle;
+        }
+
+        .budget-table tbody tr:nth-child(even) {
+            background: #fcfdff;
+        }
+
+        .budget-table tbody tr:hover {
+            background: #eef4ff;
+        }
+
+        .budget-money {
+            font-weight: 700;
+            font-feature-settings: 'tnum';
+            white-space: nowrap;
+        }
+
+        .budget-state {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 9px;
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 700;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .state-excellent { background: #dcfce7; color: #166534; border-color: #86efac; }
+        .state-good { background: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
+        .state-fragile { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+        .state-critical { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+        .consumption {
+            min-width: 130px;
+        }
+
+        .consumption-val {
+            font-size: 10.5px;
+            color: #64748b;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .consumption-track {
+            height: 5px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+
+        .consumption-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #7f77dd, #a78bfa);
+        }
+
+        /* Floating top actions (Translate + Nouveau budget) */
+        .budget-top-actions {
+            position: fixed !important;
+            top: 80px !important;
+            right: 28px !important;
+            left: auto !important;
+            bottom: auto !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            z-index: 1300 !important;
+            pointer-events: auto !important;
+        }
+
+        .budget-top-actions #translationWidget {
+            position: static !important;
+            margin: 0 !important;
+            inset: auto !important;
+            z-index: auto !important;
+        }
+
         .fab {
-            position: fixed;
-            top: 80px;
-            right: 28px;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -512,7 +638,6 @@
             cursor: pointer;
             box-shadow: 0 4px 16px rgba(0,0,0,.2);
             transition: opacity .15s, transform .15s;
-            z-index: 100;
         }
 
         .fab:hover {
@@ -622,107 +747,94 @@
         <button type="submit" style="padding: 7px 14px; border: 0.5px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #1e293b; font-size: 12px; font-family: inherit; cursor: pointer; transition: border-color .15s, background .15s; font-weight: 600;">Rechercher</button>
     </form>
 
-    {# ── BUDGET GRID ── #}
-    <div class="budget-grid" id="budgetGrid">
+    {# Les cards budget sont remplacees par le tableau detaille ci-dessous. #}
 
-        {% for budget in budgets %}
-            {% set ini = budget.initialBudget|default(0) %}
-            {% set exp = budget.totalExpenses|default(0) %}
-            {% set ren = budget.rentabilite|default(0) %}
-            {% set pct = ini > 0 ? (exp / ini * 100)|round(1) : 0 %}
-            {% set pctCapped = pct > 100 ? 100 : pct %}
+    <section class="budget-table-wrap" aria-label="Tableau detaille des budgets">
+        <div class="budget-table-head">
+            <span class="budget-table-title"><i class="fa-solid fa-table"></i> Tableau detaille des budgets</span>
+            <span style="font-size:11px;color:#64748b;">{{ budgets|length }} lignes</span>
+        </div>
 
-            {% set hClass = 'good' %}
-            {% set hLabel = 'Bon' %}
-            {% if ren >= ini * 0.5 %}
-                {% set hClass = 'excellent' %}{% set hLabel = 'Excellent' %}
-            {% elseif ren < 0 %}
-                {% set hClass = 'critical' %}{% set hLabel = 'Critique' %}
-            {% elseif ren < ini * 0.2 %}
-                {% set hClass = 'fragile' %}{% set hLabel = 'Fragile' %}
-            {% endif %}
-
-            <div class="budget-card card-{{ hClass }}">
-
-                <div class="card-body">
-
-                    {# Notice banner #}
-                    {% if hClass == 'excellent' %}
-                        <div class="card-notice notice-excellent">
-                            <i class="fa-solid fa-check" style="font-size:10px"></i> Performance excellente
-                        </div>
-                    {% elseif hClass == 'fragile' %}
-                        <div class="card-notice notice-fragile">
-                            <i class="fa-solid fa-triangle-exclamation" style="font-size:10px"></i> Attention requise
-                        </div>
-                    {% elseif hClass == 'critical' %}
-                        <div class="card-notice notice-critical">
-                            <i class="fa-solid fa-triangle-exclamation" style="font-size:10px"></i> Déficit critique
-                        </div>
-                    {% endif %}
-
-                    <div class="card-row1">
-                        <div class="card-name" style="{{ hClass == 'excellent' ? 'color:#04342c' : (hClass == 'good' ? 'color:#26215c' : (hClass == 'fragile' ? 'color:#412402' : 'color:#501313')) }}">
-                            {{ eventTitleMap[budget.eventId]|default('Événement #' ~ budget.eventId) }}
-                        </div>
-                        <span class="state-pill pill-{{ hClass }}">{{ hLabel }}</span>
-                    </div>
-
-                    <div class="card-metrics">
-                        <div class="metric-item met-neutral-{{ hClass }}">
-                            <span class="m-lbl">Budget initial</span>
-                            <span class="m-val">{{ ini|number_format(0, ',', ' ') }} DT</span>
-                        </div>
-                        <div class="metric-item {{ ren >= 0 ? 'met-positive' : 'met-negative' }}">
-                            <span class="m-lbl">Rentabilité</span>
-                            <span class="m-val">{{ ren >= 0 ? '+' : '' }}{{ ren|number_format(0, ',', ' ') }} DT</span>
-                        </div>
-                    </div>
-
-                    <div class="prog-lbl">
-                        <span>Consommation</span>
-                        <span style="font-weight:600">{{ pct }}%</span>
-                    </div>
-                    <div class="prog-track">
-                        <div class="prog-fill fill-{{ hClass }}" style="width:{{ pctCapped }}%;"></div>
-                    </div>
-
-                </div>
-
-                <div class="card-footer">
-                    <div style="display:flex;gap:2px">
-                        <a href="{{ path('app_budget_details', {id: budget.id}) }}" class="action-link">
-                            <i class="fa-regular fa-eye" style="font-size:10px"></i> Voir
-                        </a>
-                        <a href="{{ path('app_budget_edit', {id: budget.id}) }}" class="action-link">
-                            <i class="fa-regular fa-pen-to-square" style="font-size:10px"></i> Éditer
-                        </a>
-                    </div>
-                    <form method="post" action="{{ path('app_budget_delete', {id: budget.id}) }}" onsubmit="return confirm('Supprimer définitivement ce budget ?');" style="margin:0">
-                        <input type="hidden" name="_token" value="{{ csrf_token('delete_budget_' ~ budget.id) }}">
-                        <button type="submit" class="btn-delete">
-                            <i class="fa-regular fa-trash-can"></i>
-                        </button>
-                    </form>
-                </div>
-
+        {% if budgets is empty %}
+            <div class="empty-state" style="padding: 26px 16px;">
+                <p>Aucun budget a afficher dans le tableau.</p>
             </div>
-
         {% else %}
-            <div class="empty-state">
-                <i class="fa-regular fa-folder-open"></i>
-                <p>Aucun budget n'a encore été créé.</p>
-            </div>
-        {% endfor %}
+            <table class="budget-table">
+                <thead>
+                    <tr>
+                        <th>Evenement</th>
+                        <th>Etat</th>
+                        <th>Budget initial</th>
+                        <th>Depenses</th>
+                        <th>Revenus</th>
+                        <th>Rentabilite</th>
+                        <th>Consommation</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for budget in budgets %}
+                        {% set ini = budget.initialBudget|default(0) %}
+                        {% set exp = budget.totalExpenses|default(0) %}
+                        {% set rev = budget.totalRevenue|default(0) %}
+                        {% set ren = budget.rentabilite|default(0) %}
+                        {% set pct = ini > 0 ? (exp / ini * 100)|round(1) : 0 %}
+                        {% set pctCapped = pct > 100 ? 100 : pct %}
 
-    </div>
+                        {% set stateClass = 'state-good' %}
+                        {% set stateLabel = 'Bon' %}
+                        {% if ren >= ini * 0.5 %}
+                            {% set stateClass = 'state-excellent' %}
+                            {% set stateLabel = 'Excellent' %}
+                        {% elseif ren < 0 %}
+                            {% set stateClass = 'state-critical' %}
+                            {% set stateLabel = 'Critique' %}
+                        {% elseif ren < ini * 0.2 %}
+                            {% set stateClass = 'state-fragile' %}
+                            {% set stateLabel = 'Fragile' %}
+                        {% endif %}
+
+                        <tr>
+                            <td><strong>{{ eventTitleMap[budget.eventId]|default('Evenement #' ~ budget.eventId) }}</strong></td>
+                            <td><span class="budget-state {{ stateClass }}">{{ stateLabel }}</span></td>
+                            <td class="budget-money">{{ ini|number_format(0, ',', ' ') }} DT</td>
+                            <td class="budget-money">{{ exp|number_format(0, ',', ' ') }} DT</td>
+                            <td class="budget-money">{{ rev|number_format(0, ',', ' ') }} DT</td>
+                            <td class="budget-money" style="color: {{ ren >= 0 ? '#065f46' : '#991b1b' }};">{{ ren >= 0 ? '+' : '' }}{{ ren|number_format(0, ',', ' ') }} DT</td>
+                            <td class="consumption">
+                                <span class="consumption-val">{{ pct }}%</span>
+                                <div class="consumption-track">
+                                    <div class="consumption-fill" style="width: {{ pctCapped }}%;"></div>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                                    <a href="{{ path('app_budget_details', {id: budget.id}) }}" class="action-link"><i class="fa-regular fa-eye"></i> Voir</a>
+                                    <a href="{{ path('app_budget_edit', {id: budget.id}) }}" class="action-link"><i class="fa-regular fa-pen-to-square"></i> Modifier</a>
+                                    <form method="post" action="{{ path('app_budget_delete', {id: budget.id}) }}" onsubmit="return confirm('Supprimer définitivement ce budget ?');" style="margin:0; display:inline-flex;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_budget_' ~ budget.id) }}">
+                                        <button type="submit" class="btn-delete" style="padding: 5px 9px; border: 0.5px solid #fca5a5; border-radius: 7px; background: #fff1f2; color: #b91c1c;">
+                                            <i class="fa-regular fa-trash-can"></i> Supprimer
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </section>
 
 </div>
 
-{# ── FAB ── #}
-<a href="{{ path('app_budget_new') }}" class="fab">
-    <i class="fa-solid fa-plus" style="font-size:11px"></i> Nouveau budget
-</a>
+{# ── Top actions ── #}
+<div id="budgetTopActions" class="budget-top-actions">
+    <a href="{{ path('app_budget_new') }}" class="fab">
+        <i class="fa-solid fa-plus" style="font-size:11px"></i> Nouveau budget
+    </a>
+</div>
 
 <script>
 
@@ -774,7 +886,44 @@
     }
 
     /* ── ApexCharts ── */
+    function initBudgetTopActions() {
+        const budgetTopActions = document.getElementById('budgetTopActions');
+        if (!budgetTopActions) return;
+
+        // Move to body if needed
+        if (budgetTopActions.parentElement !== document.body) {
+            document.body.appendChild(budgetTopActions);
+        }
+
+        // Move translation widget into fixed container
+        const translationWidget = document.getElementById('translationWidget');
+        if (translationWidget && !budgetTopActions.contains(translationWidget)) {
+            translationWidget.style.position = 'static';
+            translationWidget.style.bottom = 'auto';
+            translationWidget.style.left = 'auto';
+            translationWidget.style.right = 'auto';
+            translationWidget.style.margin = '0';
+            budgetTopActions.appendChild(translationWidget);
+        }
+    }
+
+    // Try immediately and watch for late widget injection
     document.addEventListener('DOMContentLoaded', function () {
+        initBudgetTopActions();
+        
+        // Also watch for translation widget appearing later
+        const observer = new MutationObserver(function(mutations) {
+            const translationWidget = document.getElementById('translationWidget');
+            const budgetTopActions = document.getElementById('budgetTopActions');
+            if (translationWidget && budgetTopActions && !budgetTopActions.contains(translationWidget)) {
+                initBudgetTopActions();
+                observer.disconnect();
+            }
+        });
+        
+        observer.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => observer.disconnect(), 3000); // Stop observing after 3 seconds
+    });
         
         const colors = ['#1d9e75', '#7f77dd', '#ba7517', '#e24b4a'];
         const labels = ['Excellent', 'Bon', 'Fragile', 'Critique'];

@@ -53,6 +53,35 @@
         .sp-flash-ok{background:var(--emerald-bg);color:#065f46;}
         .sp-flash-err{background:var(--rose-bg);color:#9f1239;}
 
+        .sp-notif-wrap{position:relative;display:flex;justify-content:flex-end;margin-bottom:14px;}
+        .sp-notif-btn{display:inline-flex;align-items:center;gap:8px;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:999px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:var(--sh-xs);}
+        .sp-notif-btn:hover{background:#ffedd5;}
+        .sp-notif-badge{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#b45309;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;}
+        .sp-notif-panel{position:absolute;right:0;top:44px;width:min(980px,96vw);background:#fff;border:1px solid #fdba74;border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.15);padding:12px;z-index:30;display:none;}
+        .sp-notif-panel.open{display:block;animation:spNotifIn .18s ease-out;}
+        .sp-notif-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding:0 2px;}
+        .sp-notif-title{font-size:12px;font-weight:800;color:#9a3412;text-transform:uppercase;letter-spacing:.03em;}
+        .sp-notif-sub{font-size:11px;color:#b45309;}
+        .sp-notif-table-wrap{overflow:auto;border:1px solid #fed7aa;border-radius:10px;}
+        .sp-notif-table{width:100%;border-collapse:collapse;min-width:900px;background:#fff;}
+        .sp-notif-table th{position:sticky;top:0;background:#fff7ed;color:#9a3412;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:10px 8px;border-bottom:1px solid #fed7aa;text-align:left;}
+        .sp-notif-table td{padding:10px 8px;border-bottom:1px solid #ffedd5;font-size:12px;color:#7c2d12;vertical-align:middle;}
+        .sp-notif-table tr:last-child td{border-bottom:none;}
+        .sp-notif-score{font-weight:800;}
+        .sp-notif-sev{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:800;text-transform:uppercase;}
+        .sp-notif-sev.medium{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}
+        .sp-notif-sev.high{background:#ffedd5;color:#9a3412;border:1px solid #fdba74;}
+        .sp-notif-sev.critical{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
+        .sp-notif-actions{display:flex;gap:6px;}
+        .sp-notif-btn-mini{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:700;text-decoration:none;cursor:pointer;}
+        .sp-notif-btn-detail{border:1px solid #fdba74;background:#fff7ed;color:#9a3412;}
+        .sp-notif-btn-mail{border:none;background:#9a3412;color:#fff;}
+
+        @keyframes spNotifIn {
+            from { opacity:0; transform:translateY(-6px); }
+            to { opacity:1; transform:translateY(0); }
+        }
+
         /* kpi */
         .sp-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
         .sp-kpi-card{background:var(--surf);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px 22px;box-shadow:var(--sh-xs);transition:transform .25s,box-shadow .25s;position:relative;overflow:hidden;}
@@ -72,47 +101,42 @@
         .sp-kpi-value{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-1px;line-height:1;margin-bottom:4px;font-feature-settings:'tnum';}
         .sp-kpi-sub{font-size:12px;color:var(--ink-3);}
 
-        /* analytics 3-col */
-        .sp-analytics{display:grid;grid-template-columns:240px 1fr 240px;gap:14px;margin-bottom:24px;align-items:start;}
+        .sp-dashboard{background:linear-gradient(135deg,#ffffff 0%,#f8f5ff 58%,#eef5ff 100%);border-radius:var(--r-lg);border:1px solid rgba(124,58,237,.2);box-shadow:var(--sh-sm);padding:20px 22px;margin-bottom:24px;}
+        .sp-dashboard-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px;}
+        .sp-dashboard-title{font-size:14px;font-weight:800;color:var(--ink);letter-spacing:.01em;}
+        .sp-dashboard-sub{font-size:12px;color:var(--ink-3);margin-top:3px;}
+        .sp-dashboard-choice{display:flex;align-items:center;gap:8px;}
+        .sp-dashboard-choice label{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;}
+        .sp-dashboard-choice select{min-width:260px;padding:9px 34px 9px 12px;border:1.5px solid var(--border-2);border-radius:40px;font-size:13px;font-family:inherit;background:#fff;color:var(--ink);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%238c959f' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+        .sp-chart-panels{display:grid;gap:12px;}
+        .sp-chart-panel{display:none;}
+        .sp-chart-panel.is-active{display:block;}
+        .sp-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+        .sp-chart-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px 14px 10px;box-shadow:var(--sh-xs);min-height:350px;display:flex;flex-direction:column;}
+        .sp-chart-panel.is-active .sp-chart-card{opacity:0;transform:translateY(18px);}
+        .sp-chart-card h4{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;}
+        .sp-chart-canvas{position:relative;flex:1;min-height:280px;}
+        .sp-chart-note{font-size:11px;color:var(--ink-4);margin-top:8px;line-height:1.45;}
+        .sp-empty-chart{display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;color:var(--ink-4);}
 
-        /* left: donut + event list */
-        .sp-ana-left{background:var(--surf);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px 18px;box-shadow:var(--sh-xs);display:flex;flex-direction:column;gap:16px;}
-        .sp-ana-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-3);display:flex;align-items:center;gap:7px;}
-        .sp-ana-label i{color:var(--violet);}
-        .sp-donut-wrap{position:relative;width:120px;height:120px;margin:0 auto;}
-        .sp-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
-        .sp-donut-center-val{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-0.8px;}
-        .sp-donut-center-lbl{font-size:9px;font-weight:600;color:var(--ink-4);text-transform:uppercase;letter-spacing:.5px;}
-        .sp-event-list{display:flex;flex-direction:column;gap:8px;}
-        .sp-event-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-        .sp-event-name-wrap{display:flex;align-items:center;gap:6px;min-width:0;flex:1;}
-        .sp-event-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-        .sp-event-name{font-size:11.5px;font-weight:600;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .sp-event-val{font-size:11.5px;font-weight:700;color:var(--ink);font-family:'DM Mono',monospace;white-space:nowrap;}
+        @keyframes spChartFadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-        /* center: rank bars */
-        .sp-ana-center{background:var(--surf);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px 22px;box-shadow:var(--sh-xs);}
-        .sp-ana-center-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
-        .sp-ana-center-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-3);display:flex;align-items:center;gap:7px;}
-        .sp-ana-center-title i{color:var(--amber);}
-        .sp-top-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:30px;background:var(--amber-bg);color:var(--amber);}
-        .sp-rank-list{display:flex;flex-direction:column;gap:12px;}
-        .sp-rank-row{display:flex;align-items:center;gap:11px;}
-        .sp-rank-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;}
-        .rk1{background:#fef3c7;color:#92400e;} .rk2{background:#f1f5f9;color:#475569;} .rk3{background:#fce7f3;color:#9d174d;} .rk4{background:var(--violet-bg);color:var(--violet);} .rk5{background:var(--emerald-bg);color:var(--emerald);}
-        .sp-rank-name{font-size:12.5px;font-weight:600;color:var(--ink-2);min-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .sp-rank-bar-wrap{flex:1;}
-        .sp-rank-track{height:7px;background:var(--surf-3);border-radius:7px;overflow:hidden;}
-        .sp-rank-fill{height:100%;border-radius:7px;transition:width .6s ease;}
-        .sp-rank-amount{font-size:12px;font-weight:700;color:var(--ink);font-family:'DM Mono',monospace;white-space:nowrap;min-width:80px;text-align:right;}
-
-        /* right: mini stat stack */
-        .sp-ana-right{display:flex;flex-direction:column;gap:10px;}
-        .sp-stat-mini{background:var(--surf);border-radius:var(--r-lg);border:1px solid var(--border);padding:15px 16px;box-shadow:var(--sh-xs);display:flex;align-items:center;gap:13px;}
-        .sp-stat-mini-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
-        .sp-stat-mini-label{font-size:10px;font-weight:600;color:var(--ink-4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
-        .sp-stat-mini-val{font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-0.4px;font-feature-settings:'tnum';}
-        .sp-stat-mini-sub{font-size:11px;color:var(--ink-3);margin-top:1px;}
+        @media (prefers-reduced-motion: reduce) {
+            .sp-chart-panel.is-active .sp-chart-card {
+                opacity: 1;
+                transform: none;
+                animation: none !important;
+            }
+        }
 
         /* search */
         .sp-search-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
@@ -145,6 +169,7 @@
         .sp-card:nth-child(8n+7) .sp-card-strip{background:linear-gradient(90deg,#6366f1,#818cf8);}
         .sp-card:nth-child(8n+8) .sp-card-strip{background:linear-gradient(90deg,#ec4899,#f472b6);}
         .sp-card-body{padding:20px 22px;flex:1;}
+        .sp-card-main-link{display:block;text-decoration:none;color:inherit;}
         .sp-card-identity{display:flex;align-items:center;gap:14px;margin-bottom:15px;}
         .sp-logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--violet-bg),var(--blue-bg));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:var(--violet);overflow:hidden;flex-shrink:0;border:1.5px solid var(--border-2);box-shadow:var(--sh-xs);}
         .sp-logo img{width:100%;height:100%;object-fit:contain;padding:6px;background:var(--surf);border-radius:11px;}
@@ -165,27 +190,57 @@
         .act-contract:hover{background:#ede9fe;border-color:rgba(124,58,237,.4);}
         .act-edit{background:var(--amber-bg);color:var(--amber);border-color:rgba(217,119,6,.2);}
         .act-edit:hover{background:#fef3c7;border-color:rgba(217,119,6,.4);}
+        .act-mail{background:var(--blue-bg);color:var(--blue);border-color:rgba(37,99,235,.2);}
+        .act-mail:hover{background:#dbeafe;border-color:rgba(37,99,235,.45);}
         .act-del{background:var(--rose-bg)!important;color:var(--rose)!important;border-color:rgba(225,29,72,.2)!important;transition:all .2s;}
         .act-del:hover{color:white !important;background:var(--rose)!important;}
-        .sp-card-footer form{display:inline-flex;margin:0;margin-left:auto;}
+        .sp-card-footer form{display:inline-flex;margin:0;}
+        .sp-card-footer form.sp-delete-form{margin-left:auto;}
         .sp-empty{text-align:center;padding:64px 24px;background:var(--surf);border-radius:var(--r-lg);border:1px dashed var(--ink-5);}
         .sp-empty-icon{width:72px;height:72px;border-radius:24px;background:var(--violet-bg);display:inline-flex;align-items:center;justify-content:center;font-size:30px;color:var(--violet);margin-bottom:18px;}
         .sp-empty-title{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:6px;}
         .sp-empty-sub{font-size:13px;color:var(--ink-3);}
         .sp-no-result{text-align:center;padding:16px;font-size:13px;color:var(--ink-3);}
 
+        /* Translation button inside sponsor admin topbar */
+        #translationWidget {
+            position: relative !important;
+            top: auto !important;
+            right: auto !important;
+            left: auto !important;
+            bottom: auto !important;
+            margin: 0 !important;
+        }
+
+        #translationWidget #translationToggle {
+            width: auto !important;
+            height: auto !important;
+            border-radius: 40px !important;
+            padding: 10px 16px !important;
+            font-size: 14px !important;
+            background: linear-gradient(135deg, #16a34a, #22c55e) !important;
+            box-shadow: 0 8px 20px rgba(22, 163, 74, 0.35) !important;
+        }
+
+        #translationWidget #translationToggle i {
+            margin-right: 6px;
+        }
+
+        #translationWidget #translationMenu {
+            margin-top: 8px !important;
+        }
+
         @media(max-width:1100px){
             .sp-kpi{grid-template-columns:repeat(2,1fr);}
-            .sp-analytics{grid-template-columns:1fr 1fr;}
-            .sp-ana-left{grid-column:span 2;flex-direction:row;flex-wrap:wrap;gap:20px;}
-            .sp-ana-right{grid-column:span 2;flex-direction:row;flex-wrap:wrap;}
-            .sp-stat-mini{flex:1;min-width:160px;}
+            .sp-dashboard-choice select{min-width:220px;}
+            .sp-chart-grid{grid-template-columns:1fr;}
         }
         @media(max-width:700px){
             .sp-page{padding:18px 16px;}
             .sp-kpi{grid-template-columns:1fr 1fr;}
-            .sp-analytics{grid-template-columns:1fr;}
-            .sp-ana-left,.sp-ana-right{grid-column:auto;flex-direction:column;}
+            .sp-dashboard{padding:16px;}
+            .sp-dashboard-choice{width:100%;}
+            .sp-dashboard-choice select{width:100%;min-width:0;}
             .sp-cards{grid-template-columns:1fr;}
             .sp-search-row{flex-direction:column;align-items:stretch;}
             .sp-filter-sel{width:100%;}
@@ -195,53 +250,95 @@
 
 {% block javascripts %}
     {{ parent() }}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" defer></script>
     <script defer>
     document.addEventListener('DOMContentLoaded', function () {
-        Chart.defaults.font.family = "'Sora', system-ui, sans-serif";
-        const PALETTE = ['#7c3aed','#2563eb','#059669','#d97706','#e11d48','#0891b2','#ec4899','#6366f1'];
+        const chartViewSelect = document.getElementById('chartViewSelect');
+        const chartPanels = document.querySelectorAll('[data-chart-panel]');
+        const alertNotifToggle = document.getElementById('spAlertNotifToggle');
+        const alertNotifPanel = document.getElementById('spAlertNotifPanel');
 
-        /* mini donut */
-        const donutEl = document.getElementById('spDonut');
-        if (donutEl) {
-            const data   = {{ stats.byEvent|json_encode|raw }};
-            const labels = Object.keys(data);
-            const values = Object.values(data);
-            const total  = values.reduce((a,b)=>a+b,0);
-            new Chart(donutEl, {
-                type:'doughnut',
-                data:{labels,datasets:[{data:values,backgroundColor:PALETTE,borderColor:'#ffffff',borderWidth:3,hoverOffset:6}]},
-                options:{cutout:'68%',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw} DT`}}}}
-            });
-            const cv = document.getElementById('spDonutTotal');
-            if(cv) cv.textContent = total.toLocaleString();
-            const list = document.getElementById('spEventList');
-            if(list){
-                labels.forEach((lbl,i)=>{
-                    const pct = total>0?((values[i]/total)*100).toFixed(0):0;
-                    const row = document.createElement('div');
-                    row.className='sp-event-row';
-                    row.innerHTML=`<div class="sp-event-name-wrap"><span class="sp-event-dot" style="background:${PALETTE[i%PALETTE.length]}"></span><span class="sp-event-name" title="${lbl}">${lbl}</span></div><span class="sp-event-val">${pct}%</span>`;
-                    list.appendChild(row);
-                });
+        const translationWidget = document.getElementById('translationWidget');
+        const translationToggle = document.getElementById('translationToggle');
+        const topbarRight = document.querySelector('.sp-topbar-right');
+
+        if (translationWidget && topbarRight) {
+            topbarRight.insertBefore(translationWidget, topbarRight.firstChild);
+            if (translationToggle) {
+                translationToggle.innerHTML = '<i class="fas fa-language"></i> Traduire';
             }
         }
 
-        /* rank bars */
-        const rankEl = document.getElementById('spRankList');
-        if(rankEl){
-            const top    = {{ stats.topCompanies|default({})|json_encode|raw }};
-            const labels = Object.keys(top);
-            const values = Object.values(top);
-            const maxVal = Math.max(...values,1);
-            const rkCls  = ['rk1','rk2','rk3','rk4','rk5'];
-            labels.forEach((lbl,i)=>{
-                const pct = ((values[i]/maxVal)*100).toFixed(1);
-                const row = document.createElement('div');
-                row.className='sp-rank-row';
-                row.innerHTML=`<div class="sp-rank-num ${rkCls[i]||'rk5'}">${i+1}</div><div class="sp-rank-name" title="${lbl}">${lbl}</div><div class="sp-rank-bar-wrap"><div class="sp-rank-track"><div class="sp-rank-fill" style="width:${pct}%;background:${PALETTE[i%PALETTE.length]};"></div></div></div><div class="sp-rank-amount">${Number(values[i]).toLocaleString()} DT</div>`;
-                rankEl.appendChild(row);
+        const animatePanelCards = function(activePanel) {
+            if (!activePanel) {
+                return;
+            }
+
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const cards = activePanel.querySelectorAll('.sp-chart-card');
+
+            cards.forEach(function(card, index) {
+                if (reduceMotion) {
+                    card.style.opacity = '1';
+                    card.style.transform = 'none';
+                    card.style.animation = 'none';
+                    return;
+                }
+
+                card.style.animation = 'none';
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(18px)';
+
+                requestAnimationFrame(function() {
+                    const delay = index * 90;
+                    card.style.animation = 'spChartFadeSlideIn 560ms cubic-bezier(.22,.61,.36,1) forwards';
+                    card.style.animationDelay = delay + 'ms';
+                });
+            });
+        };
+
+        const setActivePanel = function(viewKey) {
+            let activePanel = null;
+            chartPanels.forEach(function(panel) {
+                const isActive = panel.dataset.chartPanel === viewKey;
+                panel.classList.toggle('is-active', isActive);
+                if (isActive) {
+                    activePanel = panel;
+                }
+            });
+
+            animatePanelCards(activePanel);
+        };
+
+        if (chartViewSelect) {
+            setActivePanel(chartViewSelect.value);
+            chartViewSelect.addEventListener('change', function () {
+                setActivePanel(chartViewSelect.value);
+            });
+        }
+
+        if (alertNotifToggle && alertNotifPanel) {
+            alertNotifToggle.addEventListener('click', function (event) {
+                event.stopPropagation();
+                const isOpen = alertNotifPanel.classList.toggle('open');
+                alertNotifToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+
+            alertNotifPanel.addEventListener('click', function (event) {
+                event.stopPropagation();
+            });
+
+            document.addEventListener('click', function () {
+                if (alertNotifPanel.classList.contains('open')) {
+                    alertNotifPanel.classList.remove('open');
+                    alertNotifToggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && alertNotifPanel.classList.contains('open')) {
+                    alertNotifPanel.classList.remove('open');
+                    alertNotifToggle.setAttribute('aria-expanded', 'false');
+                }
             });
         }
 
@@ -312,6 +409,66 @@
         {% endfor %}
     </div>
 
+    {% if inactiveSponsorAlerts is not empty %}
+        <div class="sp-notif-wrap" aria-label="Notification alertes sponsors">
+            <button type="button" class="sp-notif-btn" id="spAlertNotifToggle" aria-expanded="false" aria-controls="spAlertNotifPanel">
+                <i class="fa-regular fa-bell"></i>
+                Alertes sponsors
+                <span class="sp-notif-badge">{{ inactiveSponsorAlerts|length }}</span>
+            </button>
+
+            <section class="sp-notif-panel" id="spAlertNotifPanel" role="dialog" aria-label="Liste des alertes sponsors">
+                <div class="sp-notif-head">
+                    <div class="sp-notif-title">Alertes fidelisation (recence contribution)</div>
+                    <div class="sp-notif-sub">Clique sur Détails pour ouvrir la fiche sponsor</div>
+                </div>
+
+                <div class="sp-notif-table-wrap">
+                    <table class="sp-notif-table">
+                        <thead>
+                            <tr>
+                                <th>Entreprise</th>
+                                <th>Contact</th>
+                                <th>Inactivite</th>
+                                <th>Risque</th>
+                                <th>Niveau</th>
+                                <th>Cumul</th>
+                                <th>Derniere contribution</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in inactiveSponsorAlerts %}
+                                <tr>
+                                    <td>{{ item.companyName }}</td>
+                                    <td>{{ item.contactEmail }}</td>
+                                    <td>{{ item.contributionsSinceLast }} contribution(s)</td>
+                                    <td><span class="sp-notif-score">{{ item.riskScore }}/100</span></td>
+                                    <td><span class="sp-notif-sev {{ item.severity }}">{{ item.severityLabel }}</span></td>
+                                    <td>{{ item.contributionTotal|number_format(0, ',', ' ') }} DT</td>
+                                    <td>{{ item.lastContributionAmount|number_format(2, ',', ' ') }} DT</td>
+                                    <td>
+                                        {% if item.representativeSponsorId > 0 %}
+                                            <div class="sp-notif-actions">
+                                                <a class="sp-notif-btn-mini sp-notif-btn-detail" href="{{ path('app_sponsors_details', {id: item.representativeSponsorId}) }}">
+                                                    <i class="fa-regular fa-eye"></i> Détails
+                                                </a>
+                                                <form method="post" action="{{ path('app_sponsors_send_recommendation_email', {id: item.representativeSponsorId}) }}" onsubmit="return confirm('Envoyer une relance pour ce sponsor inactif ?');">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('send_reco_mail_' ~ item.representativeSponsorId) }}">
+                                                    <button class="sp-notif-btn-mini sp-notif-btn-mail" type="submit"><i class="fa-regular fa-paper-plane"></i> Relancer</button>
+                                                </form>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    {% endif %}
+
     {# topbar #}
     <div class="sp-topbar">
         <div class="sp-topbar-right" style="margin-left: auto;">
@@ -324,7 +481,7 @@
         </div>
     </div>
 
-    {# kpi #}
+    {# Bloc KPI: resume rapide des chiffres cles sponsors. #}
     <div class="sp-kpi">
         <div class="sp-kpi-card">
             <div class="sp-kpi-top"><div class="sp-kpi-label">Entreprises</div><div class="sp-kpi-dot dot-v"><i class="fa-solid fa-building"></i></div></div>
@@ -348,62 +505,94 @@
         </div>
     </div>
 
-    {# analytics #}
+    {# Bloc analytics modernise: graphiques Symfony UX Chartjs avec choix de vue. #}
     {% if stats.byEvent is not empty %}
-    <div class="sp-analytics">
-        <div class="sp-ana-left">
-            <div class="sp-ana-label"><i class="fa-solid fa-chart-pie"></i> Par événement</div>
-            <div class="sp-donut-wrap">
-                <canvas id="spDonut" style="width:120px;height:120px;" role="img" aria-label="Répartition par événement"></canvas>
-                <div class="sp-donut-center">
-                    <div class="sp-donut-center-val" id="spDonutTotal">—</div>
-                    <div class="sp-donut-center-lbl">DT total</div>
-                </div>
+    <section class="sp-dashboard" aria-label="Dashboard graphique sponsors">
+        <div class="sp-dashboard-head">
+            <div>
+                <h3 class="sp-dashboard-title">Dashboard Sponsors Moderne</h3>
+                <p class="sp-dashboard-sub">Choisis une vue pour lire les stats rapidement et comparer les tendances.</p>
             </div>
-            <div class="sp-event-list" id="spEventList"></div>
+            <div class="sp-dashboard-choice">
+                <label for="chartViewSelect">Vue graphique</label>
+                <select id="chartViewSelect" aria-label="Choisir un type de graphique sponsor">
+                    <option value="events">Événements les plus sponsorisés</option>
+                    <option value="top">Meilleurs sponsors</option>
+                    <option value="overview">Vue globale dashboard</option>
+                </select>
+            </div>
         </div>
 
-        <div class="sp-ana-center">
-            <div class="sp-ana-center-head">
-                <div class="sp-ana-center-title"><i class="fa-solid fa-trophy"></i> Top contributeurs</div>
-                <span class="sp-top-badge">par montant</span>
+        <div class="sp-chart-panels">
+            <div class="sp-chart-panel is-active" data-chart-panel="events">
+                <div class="sp-chart-grid">
+                    <article class="sp-chart-card">
+                        <h4>Top 5 événements (montant)</h4>
+                        <div class="sp-chart-canvas">
+                            {{ render_chart(eventsByContributionChart) }}
+                        </div>
+                        <p class="sp-chart-note"><strong>Top 5 des événements qui attirent le plus de budget sponsor.</strong></p>
+                    </article>
+                    <article class="sp-chart-card">
+                        <h4>Top 5 volume sponsors</h4>
+                        <div class="sp-chart-canvas">
+                            {{ render_chart(eventsShareChart) }}
+                        </div>
+                        <p class="sp-chart-note"><strong>Top 5 des événements avec le plus grand nombre de sponsors engagés.</strong></p>
+                    </article>
+                </div>
             </div>
-            <div class="sp-rank-list" id="spRankList"></div>
-        </div>
 
-        <div class="sp-ana-right">
-            <div class="sp-stat-mini">
-                <div class="sp-stat-mini-icon" style="background:var(--violet-bg);color:var(--violet);"><i class="fa-solid fa-star"></i></div>
-                <div>
-                    <div class="sp-stat-mini-label">Meilleur sponsor</div>
-                    {% set topName = stats.topCompanies|keys|first %}
-                    <div class="sp-stat-mini-val">{{ topName ?: '—' }}</div>
-                    <div class="sp-stat-mini-sub">1er contributeur</div>
+            <div class="sp-chart-panel" data-chart-panel="top">
+                <div class="sp-chart-grid">
+                    <article class="sp-chart-card">
+                        <h4>Top sponsors</h4>
+                        <div class="sp-chart-canvas">
+                            {{ render_chart(topSponsorsChart) }}
+                        </div>
+                        <p class="sp-chart-note"><strong>Répartition des contributions sur les entreprises les plus engagées.</strong></p>
+                    </article>
+                    <article class="sp-chart-card">
+                        <h4>Frequence partenariats</h4>
+                        <div class="sp-chart-canvas">
+                            {{ render_chart(topSponsorsComparisonChart) }}
+                        </div>
+                        <p class="sp-chart-note"><strong>Lecture horizontale pour comparer le nombre de partenariats par sponsor.</strong></p>
+                    </article>
                 </div>
             </div>
-            <div class="sp-stat-mini">
-                <div class="sp-stat-mini-icon" style="background:var(--emerald-bg);color:var(--emerald);"><i class="fa-solid fa-handshake"></i></div>
-                <div>
-                    <div class="sp-stat-mini-label">Taux couverture</div>
-                    <div class="sp-stat-mini-val">
-                        {% if events|length > 0 %}{{ (stats.total / events|length)|number_format(1, ',', ' ') }}{% else %}0{% endif %}
-                    </div>
-                    <div class="sp-stat-mini-sub">sponsors / événement</div>
-                </div>
-            </div>
-            <div class="sp-stat-mini">
-                <div class="sp-stat-mini-icon" style="background:var(--amber-bg);color:var(--amber);"><i class="fa-solid fa-fire"></i></div>
-                <div>
-                    <div class="sp-stat-mini-label">Événements couverts</div>
-                    <div class="sp-stat-mini-val">{{ stats.byEvent|length }}</div>
-                    <div class="sp-stat-mini-sub">avec sponsors actifs</div>
+
+            <div class="sp-chart-panel" data-chart-panel="overview">
+                <div class="sp-chart-grid">
+                    <article class="sp-chart-card">
+                        <h4>Vue globale</h4>
+                        <div class="sp-chart-canvas">
+                            {{ render_chart(overviewChart) }}
+                        </div>
+                        <p class="sp-chart-note"><strong>Vision synthétique pour lire l'état global du portefeuille sponsor.</strong></p>
+                    </article>
+                    <article class="sp-chart-card">
+                        <h4>Distribution alertes risque</h4>
+                        <div class="sp-chart-canvas">
+                            {{ render_chart(overviewKpiChart) }}
+                        </div>
+                        <p class="sp-chart-note"><strong>Repartition des alertes inactivite par niveau de criticite.</strong></p>
+                    </article>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
+    {% else %}
+    <section class="sp-dashboard" aria-label="Dashboard graphique sponsors">
+        <div class="sp-empty" style="margin:0;">
+            <div class="sp-empty-icon"><i class="fa-solid fa-chart-column"></i></div>
+            <div class="sp-empty-title">Données insuffisantes pour les graphiques</div>
+            <div class="sp-empty-sub">Ajoute des contributions sponsors pour activer le dashboard visuel.</div>
+        </div>
+    </section>
     {% endif %}
 
-    {# search #}
+    {# Bloc filtres: recherche et filtrage multi-criteres. #}
     <form method="get" action="{{ path('app_sponsors_index') }}" style="display: flex; gap: 12px; margin-bottom: 0; flex-wrap: wrap; align-items: center;">
         <div class="sp-search-wrap" style="position: relative; flex: 1; min-width: 200px;">
             <i class="fa-solid fa-magnifying-glass"></i>
@@ -427,13 +616,13 @@
         </button>
     </form>
 
-    {# list #}
+    {# Bloc liste: cartes sponsors avec actions metier. #}
     <div class="sp-section-head" style="margin-top: 12px;">
         <div class="sp-section-title">Entreprises partenaires</div>
-        <div class="sp-section-count">{{ sponsors|length }} résultat(s)</div>
+        <div class="sp-section-count">{{ companyCards|length }} entreprise(s)</div>
     </div>
 
-    {% if sponsors is empty %}
+    {% if companyCards is empty %}
         <div class="sp-empty">
             <div class="sp-empty-icon"><i class="fa-solid fa-handshake"></i></div>
             <div class="sp-empty-title">Aucun sponsor trouvé</div>
@@ -441,34 +630,37 @@
         </div>
     {% else %}
         <div class="sp-cards">
-            {% for sponsor in sponsors %}
+            {% for company in companyCards %}
                 <article class="sp-card">
                     <div class="sp-card-strip"></div>
-                    <div class="sp-card-body">
-                        <div class="sp-card-identity">
-                            <div class="sp-logo">
-                                {% if sponsor.logoUrl %}<img src="{{ sponsor.logoUrl }}" alt="{{ sponsor.companyName }}">
-                                {% else %}{{ sponsor.companyName|slice(0,2)|upper }}{% endif %}
+                    <a class="sp-card-main-link" href="{{ path('app_sponsors_company_contributions', {company: company.companyName}) }}">
+                        <div class="sp-card-body">
+                            <div class="sp-card-identity">
+                                <div class="sp-logo">
+                                    {% if company.logoUrl %}<img src="{{ company.logoUrl }}" alt="{{ company.companyName }}">
+                                    {% else %}{{ company.companyName|slice(0,2)|upper }}{% endif %}
+                                </div>
+                                <div>
+                                    <div class="sp-company-name">{{ company.companyName }}</div>
+                                    <div class="sp-company-email"><i class="fa-regular fa-envelope"></i> {{ company.contactEmail }}</div>
+                                </div>
                             </div>
-                            <div>
-                                <div class="sp-company-name">{{ sponsor.companyName }}</div>
-                                <div class="sp-company-email"><i class="fa-regular fa-envelope"></i> {{ sponsor.contactEmail }}</div>
+
+                            <div class="sp-event-chip"><i class="fa-solid fa-layer-group"></i> {{ company.contributionsCount }} contribution(s) • {{ company.eventsCount }} evenement(s)</div>
+                            <div class="sp-contribution">
+                                <div class="sp-contribution-label">Contribution totale</div>
+                                <div class="sp-contribution-value">{{ company.contributionTotal|number_format(2, ',', ' ') }} DT</div>
                             </div>
                         </div>
-                        <div class="sp-event-chip"><i class="fa-solid fa-calendar-days"></i> {{ eventTitleMap[sponsor.eventId]|default('—') }}</div>
-                        <div class="sp-contribution">
-                            <div class="sp-contribution-label">Contribution</div>
-                            <div class="sp-contribution-value">{{ sponsor.contributionAmount|number_format(2, ',', ' ') }} DT</div>
-                        </div>
-                    </div>
+                    </a>
                     <div class="sp-card-footer">
-                        <a class="sp-action act-detail"   href="{{ path('app_sponsors_details',  {id: sponsor.id}) }}"><i class="fa-regular fa-eye"></i> Détails</a>
-                        <a class="sp-action act-contract" href="{{ path('app_sponsors_contract', {id: sponsor.id}) }}"><i class="fa-solid fa-file-contract"></i> Contrat</a>
-                        <a class="sp-action act-edit"     href="{{ path('app_sponsors_edit',     {id: sponsor.id}) }}"><i class="fa-regular fa-pen-to-square"></i> Modifier</a>
-                        <form method="post" action="{{ path('app_sponsors_delete', {id: sponsor.id}) }}" onsubmit="return confirm('Supprimer ce sponsor ?');">
-                            <input type="hidden" name="_token" value="{{ csrf_token('delete_sponsor_' ~ sponsor.id) }}">
-                            <button class="sp-action act-del" type="submit"><i class="fa-regular fa-trash-can"></i> Supprimer</button>
-                        </form>
+                        <a class="sp-action act-detail" href="{{ path('app_sponsors_company_contributions', {company: company.companyName}) }}"><i class="fa-regular fa-eye"></i> Voir contributions</a>
+                        {% if company.representativeSponsorId > 0 %}
+                            <form class="sp-mail-form" method="post" action="{{ path('app_sponsors_send_recommendation_email', {id: company.representativeSponsorId}) }}" onsubmit="return confirm('Envoyer un email de recommandations a cette entreprise ?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('send_reco_mail_' ~ company.representativeSponsorId) }}">
+                                <button class="sp-action act-mail" type="submit"><i class="fa-regular fa-paper-plane"></i> Envoyer reco</button>
+                            </form>
+                        {% endif %}
                     </div>
                 </article>
             {% endfor %}

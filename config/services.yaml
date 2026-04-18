@@ -39,5 +39,11 @@ services:
             $apiKey: '%external_ai_reco_api_key%'
             $model: '%external_ai_reco_model%'
 
+    App\Service\Sponsor\SponsorAlertEmailService:
+        arguments:
+            $fromEmail: '%env(string:MAILER_FROM)%'
+
+    Swap\Swap: '@florianv_swap.swap'
+
     # ✅ PAS DE LIGNE SUPPLÉMENTAIRE POUR UserSessionService !
     # L'autowiring s'en charge automatiquement

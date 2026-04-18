@@ -49,6 +49,7 @@
 </head>
 <body>
     {# ✅ Liste des routes publiques (sans sidebar) #}
+    {% set current_route = app.request.get('_route') %}
     {% set public_routes = [
         'app_landing',
         'app_public_events',
@@ -73,7 +74,13 @@
         User: <strong>{{ app.user ? app.user.email : 'NON' }}</strong>
     </div>
     #}
-    {% set is_public = app.request.get('_route') in public_routes %}
+    {% set is_public = current_route in public_routes %}
+    {% set show_translation_widget =
+        current_route starts with 'app_sponsor_portal' or
+        current_route starts with 'app_sponsors_' or
+        current_route starts with 'app_depenses_' or
+        current_route starts with 'app_budget_'
+    %}
     
     {% if is_public %}
         {# ==================== PAGES PUBLIQUES (sans sidebar) ==================== #}
@@ -314,9 +321,13 @@
                         <p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0;">{{ pageInfo.subtitle|default('') }}</p>
                     </div>
                     
-                    <!-- KPI Container -->
-                    <div id="kpiContainer" class="kpi-container" style="display: flex; gap: 20px;">
-                        {% block kpi %}{% endblock %}
+                    <div id="pageHeaderRight" style="display: flex; align-items: center; gap: 12px;">
+                        <div id="translationHeaderSlot"></div>
+
+                        <!-- KPI Container -->
+                        <div id="kpiContainer" class="kpi-container" style="display: flex; gap: 20px;">
+                            {% block kpi %}{% endblock %}
+                        </div>
                     </div>
                 </div>
                 
@@ -391,6 +402,34 @@
         <span>🤖</span>
         <span style="position: absolute; top: 5px; right: 5px; width: 12px; height: 12px; background: #4CAF50; border: 2px solid white; border-radius: 50%;"></span>
     </button>
+    {% endif %}
+
+    {% if show_translation_widget %}
+    <div id="translationWidget" style="position: fixed; bottom: 20px; left: 20px; z-index: 1200;">
+        <button id="translationToggle"
+                type="button"
+                style="width: 54px; height: 54px; border: none; border-radius: 50%; background: linear-gradient(135deg, #0f766e, #0d9488); color: white; font-size: 22px; box-shadow: 0 8px 20px rgba(15, 118, 110, 0.35); cursor: pointer;"
+                title="Traduire la page">
+            <i class="fas fa-language"></i>
+        </button>
+
+        <div id="translationMenu"
+             style="display: none; margin-top: 10px; width: 230px; background: white; border-radius: 14px; border: 1px solid rgba(15,23,42,0.1); box-shadow: 0 14px 28px rgba(15,23,42,0.16); overflow: hidden;">
+            <div style="padding: 11px 14px; font-size: 12px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #eef2f7;">
+                Traduire toute la page
+            </div>
+
+            <div style="padding: 8px 10px; display: grid; gap: 6px;">
+                <button type="button" class="translation-lang-btn" data-lang="fr" style="border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 10px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer;">Francais</button>
+                <button type="button" class="translation-lang-btn" data-lang="en" style="border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 10px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer;">English</button>
+                <button type="button" class="translation-lang-btn" data-lang="ar" style="border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 10px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer;">Arabic</button>
+                <button type="button" class="translation-lang-btn" data-lang="es" style="border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 10px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer;">Espanol</button>
+                <button type="button" class="translation-lang-btn" data-lang="de" style="border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 10px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer;">Deutsch</button>
+                <button type="button" class="translation-lang-btn" data-lang="it" style="border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 10px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer;">Italiano</button>
+            </div>
+        </div>
+    </div>
+    <div id="google_translate_element" style="display: none;"></div>
     {% endif %}
     
     <script>
@@ -574,12 +613,117 @@
                 }, 380);
             }, 4500 + (index * 120));
         });
+
+        // Translation widget (Google Translate in-page mode)
+        const currentRoute = '{{ current_route }}';
+        const translationToggle = document.getElementById('translationToggle');
+        const translationMenu = document.getElementById('translationMenu');
+        const translationButtons = document.querySelectorAll('.translation-lang-btn');
+
+        const setTranslateCookie = function (value) {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=' + value + ';path=/';
+
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=' + value + ';path=/;domain=.' + host;
+            }
+        };
+
+        if (translationToggle && translationMenu) {
+            translationToggle.addEventListener('click', function () {
+                translationMenu.style.display = translationMenu.style.display === 'none' || translationMenu.style.display === ''
+                    ? 'block'
+                    : 'none';
+            });
+
+            document.addEventListener('click', function (event) {
+                const widget = document.getElementById('translationWidget');
+                if (!widget || widget.contains(event.target)) {
+                    return;
+                }
+
+                translationMenu.style.display = 'none';
+            });
+        }
+
+        // Route-specific placement for translation button.
+        const translationWidget = document.getElementById('translationWidget');
+        const translationHeaderSlot = document.getElementById('translationHeaderSlot');
+        const styleTranslationAsPill = function () {
+            translationWidget.style.position = 'relative';
+            translationWidget.style.inset = 'auto';
+            translationWidget.style.margin = '0';
+            translationWidget.style.zIndex = '10';
+
+            translationToggle.style.width = 'auto';
+            translationToggle.style.height = 'auto';
+            translationToggle.style.borderRadius = '40px';
+            translationToggle.style.padding = '9px 14px';
+            translationToggle.style.fontSize = '14px';
+            translationToggle.style.background = 'linear-gradient(135deg, #16a34a, #22c55e)';
+            translationToggle.style.boxShadow = '0 8px 20px rgba(22, 163, 74, 0.35)';
+            translationToggle.innerHTML = '<i class="fas fa-language"></i> Traduire';
+        };
+
+        if (translationWidget && translationToggle) {
+            if (currentRoute === 'app_budget_index') {
+                const budgetTopActions = document.getElementById('budgetTopActions');
+                if (budgetTopActions) {
+                    styleTranslationAsPill();
+                    budgetTopActions.insertBefore(translationWidget, budgetTopActions.firstChild);
+                }
+            } else if (currentRoute === 'app_depenses_index') {
+                const depenseHeaderActions = document.querySelector('.ef-header-actions');
+                if (depenseHeaderActions) {
+                    styleTranslationAsPill();
+                    depenseHeaderActions.insertBefore(translationWidget, depenseHeaderActions.firstChild);
+                }
+            } else if (translationHeaderSlot &&
+                (currentRoute.indexOf('app_depenses_') === 0 || currentRoute.indexOf('app_budget_') === 0)) {
+                // Fallback for other budget/depense pages.
+                styleTranslationAsPill();
+                translationHeaderSlot.appendChild(translationWidget);
+            }
+        }
+
+        translationButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                const targetLanguage = button.getAttribute('data-lang') || 'en';
+
+                if (targetLanguage === 'fr') {
+                    setTranslateCookie('/fr/fr');
+                } else {
+                    setTranslateCookie('/fr/' + targetLanguage);
+                }
+
+                window.location.reload();
+            });
+        });
     </script>
+
+    {% if show_translation_widget %}
+    <script>
+        function googleTranslateElementInit() {
+            if (!window.google || !window.google.translate || !window.google.translate.TranslateElement) {
+                return;
+            }
+
+            new window.google.translate.TranslateElement({
+                pageLanguage: 'fr',
+                includedLanguages: 'fr,en,ar,es,de,it',
+                autoDisplay: false,
+                multilanguagePage: true
+            }, 'google_translate_element');
+        }
+    </script>
+    <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    {% endif %}
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     {% block javascripts %}{% endblock %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
 </body>
 
 </html>

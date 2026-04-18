@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrat sponsor - {{ sponsor.companyName ?: 'EventFlow' }}</title>
+    <style>
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 12px;
+            color: #1f2937;
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+        }
+
+        .page {
+            padding: 28px 26px 22px;
+        }
+
+        .head {
+            display: table;
+            width: 100%;
+            margin-bottom: 18px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 12px;
+        }
+
+        .head-left,
+        .head-right {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .head-right {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .sponsor-brand {
+            width: 96px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sponsor-logo-wrap {
+            width: 84px;
+            height: 84px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 0;
+        }
+
+        .sponsor-logo {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .sponsor-logo-fallback {
+            font-size: 26px;
+            font-weight: 700;
+            color: #6b7280;
+        }
+
+        .brand-logo {
+            height: 42px;
+            margin-bottom: 6px;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0;
+            color: #111827;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            margin: 4px 0 0;
+            color: #6b7280;
+        }
+
+        .company {
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+            line-height: 1.2;
+            text-align: center;
+            width: 100%;
+            word-break: break-word;
+        }
+
+        .meta {
+            margin: 16px 0;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: #f9fafb;
+        }
+
+        .meta p {
+            margin: 4px 0;
+            font-size: 12px;
+        }
+
+        .section {
+            margin-top: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
+
+        .section h2 {
+            margin: 0 0 10px;
+            font-size: 14px;
+            color: #111827;
+        }
+
+        .list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .list li {
+            margin-bottom: 7px;
+        }
+
+        .paragraph {
+            line-height: 1.55;
+            margin: 0 0 8px;
+            color: #374151;
+        }
+
+        .signatures {
+            margin-top: 26px;
+            display: table;
+            width: 100%;
+        }
+
+        .sign-box {
+            display: table-cell;
+            width: 50%;
+            vertical-align: bottom;
+            padding-right: 16px;
+        }
+
+        .sign-box:last-child {
+            padding-right: 0;
+            padding-left: 16px;
+        }
+
+        .sign-label {
+            font-size: 12px;
+            color: #374151;
+            margin-bottom: 28px;
+            display: block;
+        }
+
+        .sign-line {
+            border-bottom: 1px solid #111827;
+            height: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="head">
+            <div class="head-left">
+                <img class="brand-logo" src="{{ absolute_url(asset('images/logo.png')) }}" alt="EventFlow">
+                <h1 class="title">Contrat Sponsor</h1>
+                <p class="subtitle">Document de partenariat EventFlow</p>
+            </div>
+            <div class="head-right">
+                <div class="sponsor-brand">
+                    <div class="sponsor-logo-wrap">
+                        {% if sponsor.logoUrl %}
+                            <img class="sponsor-logo" src="{{ sponsor.logoUrl }}" alt="{{ sponsor.companyName ?: 'Logo sponsor' }}">
+                        {% else %}
+                            <span class="sponsor-logo-fallback">{{ (sponsor.companyName ?: 'SP')|slice(0, 2)|upper }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="company">{{ sponsor.companyName ?: 'Sponsor' }}</div>
+                </div>
+            </div>
+        </header>
+
+        <section class="meta">
+            <p><strong>Date:</strong> {{ generatedAt|date('d/m/Y') }}</p>
+            <p><strong>Evenement:</strong> {{ eventTitle }}</p>
+            {% if event and event.location %}
+                <p><strong>Lieu:</strong> {{ event.location }}</p>
+            {% endif %}
+            {% if event and event.startDate %}
+                <p><strong>Debut:</strong> {{ event.startDate|date('d/m/Y H:i') }}</p>
+            {% endif %}
+        </section>
+
+        <section class="section">
+            <h2>Informations Sponsor</h2>
+            <ul class="list">
+                <li><strong>Entreprise:</strong> {{ sponsor.companyName ?: '-' }}</li>
+                <li><strong>Email:</strong> {{ sponsor.contactEmail ?: '-' }}</li>
+                <li><strong>Contribution:</strong> {{ sponsor.contributionAmount|number_format(2, ',', ' ') }} DT</li>
+                <li><strong>Numero fiscal:</strong> {{ sponsor.taxId ?: '-' }}</li>
+                <li><strong>Secteur:</strong> {{ sponsor.industry ?: '-' }}</li>
+                <li><strong>Telephone:</strong> {{ sponsor.phone ?: '-' }}</li>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>Engagement</h2>
+            <p class="paragraph">Le sponsor confirme sa contribution a l'evenement mentionne ci-dessus.</p>
+            <p class="paragraph">La contribution est affectee aux besoins organisationnels, a la communication et aux ressources liees a l'evenement.</p>
+            <p class="paragraph">Ce document formalise l'accord de sponsoring entre EventFlow et l'entreprise sponsor.</p>
+        </section>
+
+        <section class="signatures">
+            <div class="sign-box">
+                <span class="sign-label">Signature Organisateur</span>
+                <div class="sign-line"></div>
+            </div>
+            <div class="sign-box">
+                <span class="sign-label">Signature Sponsor</span>
+                <div class="sign-line"></div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

@@ -25,15 +25,17 @@ class SponsorService
      */
     public function fetchEventsCatalog(bool $activeOnly = false): array
     {
-        $sql = 'SELECT id, title, description, location, start_date, end_date FROM event';
+        $sql = 'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity,
+                      COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
+                FROM event e';
         $params = [];
 
         if ($activeOnly) {
-            $sql .= ' WHERE end_date IS NULL OR end_date >= :now';
+            $sql .= ' WHERE e.end_date IS NULL OR e.end_date >= :now';
             $params['now'] = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
         }
 
-        $sql .= ' ORDER BY start_date ASC';
+        $sql .= ' ORDER BY e.start_date ASC';
         $rows = $this->entityManager->getConnection()->fetchAllAssociative($sql, $params);
 
         return array_map(static fn (array $row): array => self::mapEventRow($row), $rows);
@@ -91,7 +93,11 @@ class SponsorService
         }
 
         $rows = $this->entityManager->getConnection()->fetchAllAssociative(
-            'SELECT id, title, description, location, start_date, end_date FROM event WHERE id = :id LIMIT 1',
+            'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity,
+                          COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
+             FROM event e
+             WHERE e.id = :id
+             LIMIT 1',
             ['id' => $eventId]
         );
 
@@ -132,64 +138,10 @@ class SponsorService
      */
     public function buildRecommendedEvents(array $events, UserModel $user, string $email): array
     {
-        $bio = trim((string) ($user->getBio() ?? ''));
-        $lastIndustry = trim((string) ($this->sponsorRepository->findLastIndustryByEmail($email) ?? ''));
-        $industries = $this->sponsorRepository->getIndustriesByEmail($email);
-
-        $sectorContextParts = array_values(array_filter(array_unique(array_merge(
-            $bio !== '' ? [$bio] : [],
-            $lastIndustry !== '' ? [$lastIndustry] : [],
-            $industries
-        )), static fn (string $value): bool => trim($value) !== ''));
-        $sectorContext = implode(' ', $sectorContextParts);
-
         $contributionsByEvent = $this->sponsorRepository->getMyContributionsByEvent($email);
-        $locallyRanked = $this->rankEventsForSponsor($events, $sectorContext, $contributionsByEvent);
+        $ranked = $this->rankEventsForSponsor($events, $contributionsByEvent);
 
-        $profile = [
-            'email' => $email,
-            'industry' => $sectorContext,
-            'stats' => $this->sponsorRepository->getMyStats($email),
-            'contributionsByEvent' => $contributionsByEvent,
-        ];
-
-        $externallyRanked = $this->externalAiRecommendationService->recommend(
-            $profile,
-            array_slice($locallyRanked, 0, 20),
-            6
-        );
-
-        if ($externallyRanked === []) {
-            return array_slice($locallyRanked, 0, 6);
-        }
-
-        // Keep IA order first, then complete with local ranking to avoid empty slots.
-        $result = [];
-        $seen = [];
-
-        foreach ($externallyRanked as $event) {
-            $id = (int) ($event['id'] ?? 0);
-            if ($id > 0 && !isset($seen[$id])) {
-                $result[] = $event;
-                $seen[$id] = true;
-            }
-            if (count($result) >= 6) {
-                return $result;
-            }
-        }
-
-        foreach ($locallyRanked as $event) {
-            $id = (int) ($event['id'] ?? 0);
-            if ($id > 0 && !isset($seen[$id])) {
-                $result[] = $event;
-                $seen[$id] = true;
-            }
-            if (count($result) >= 6) {
-                break;
-            }
-        }
-
-        return $result;
+        return array_slice($ranked, 0, 6);
     }
 
     /**
@@ -197,46 +149,32 @@ class SponsorService
      * @param array<string,float> $contributionsByEvent
      * @return array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
      */
-    private function rankEventsForSponsor(array $events, string $sectorContext, array $contributionsByEvent): array
+    private function rankEventsForSponsor(array $events, array $contributionsByEvent): array
     {
-        $sectorTokens = $this->tokenizeText($sectorContext);
-        $historyTokens = $this->tokenizeText(implode(' ', array_keys($contributionsByEvent)));
-
         $scored = [];
         foreach ($events as $event) {
-            $title = mb_strtolower((string) ($event['title'] ?? ''));
-            $description = mb_strtolower((string) ($event['description'] ?? ''));
-            $location = mb_strtolower((string) ($event['location'] ?? ''));
-            $titleTokens = $this->tokenizeText((string) ($event['title'] ?? ''));
-            $descriptionTokens = $this->tokenizeText((string) ($event['description'] ?? ''));
-
             $score = 0.0;
 
-            // Explicitly compare sponsor sector against event title and description.
-            foreach ($sectorTokens as $token) {
+            // New business rule: prioritize visibility by participant volume.
+            $participantsCount = max(0, (int) ($event['participantsCount'] ?? 0));
+            $capacity = max(0, (int) ($event['capacity'] ?? 0));
+            $fillRate = $capacity > 0 ? min(1, $participantsCount / $capacity) : 0;
+
+            $score += $participantsCount * 100;
+            $score += $fillRate * 20;
+
+            // Small continuity bonus if event title overlaps with previously sponsored titles.
+            $title = mb_strtolower((string) ($event['title'] ?? ''));
+            foreach ($contributionsByEvent as $eventTitle => $amount) {
+                if ((float) $amount <= 0) {
+                    continue;
+                }
+
+                $token = mb_strtolower(trim((string) $eventTitle));
                 if ($token !== '' && str_contains($title, $token)) {
-                    $score += 7;
+                    $score += 5;
+                    break;
                 }
-                if ($token !== '' && str_contains($description, $token)) {
-                    $score += 4;
-                }
-                if ($token !== '' && str_contains($location, $token)) {
-                    $score += 1;
-                }
-            }
-
-            $sectorCount = count($sectorTokens);
-            if ($sectorCount > 0) {
-                $titleOverlap = count(array_intersect($sectorTokens, $titleTokens));
-                $descriptionOverlap = count(array_intersect($sectorTokens, $descriptionTokens));
-                $score += ($titleOverlap / $sectorCount) * 12;
-                $score += ($descriptionOverlap / $sectorCount) * 8;
-            }
-
-            // Light preference for similar themes already sponsored by this sponsor.
-            if ($historyTokens !== [] && $titleTokens !== []) {
-                $historyOverlap = count(array_intersect($historyTokens, $titleTokens));
-                $score += min(4, $historyOverlap * 1.2);
             }
 
             // Prefer upcoming events that are not too far in time.
@@ -255,8 +193,8 @@ class SponsorService
 
         usort($scored, static function (array $a, array $b): int {
             if ((float) $a['score'] === (float) $b['score']) {
-                $aDate = $a['event']['startDate'] instanceof \DateTimeInterface ? $a['event']['startDate']->getTimestamp() : PHP_INT_MAX;
-                $bDate = $b['event']['startDate'] instanceof \DateTimeInterface ? $b['event']['startDate']->getTimestamp() : PHP_INT_MAX;
+                $aDate = $a['event']['startDate'] instanceof \DateTimeInterface ? $a['event']['startDate']->getTimestamp() : \PHP_INT_MAX;
+                $bDate = $b['event']['startDate'] instanceof \DateTimeInterface ? $b['event']['startDate']->getTimestamp() : \PHP_INT_MAX;
                 return $aDate <=> $bDate;
             }
             return ((float) $b['score']) <=> ((float) $a['score']);
@@ -532,7 +470,10 @@ class SponsorService
         }
 
         $rows = $this->entityManager->getConnection()->fetchAllAssociative(
-            'SELECT id, title, description, location, start_date, end_date FROM event WHERE id IN (?)',
+            'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity,
+                          COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
+             FROM event e
+             WHERE e.id IN (?)',
             [$ids],
             [ArrayParameterType::INTEGER]
         );
@@ -642,6 +583,8 @@ class SponsorService
             'title' => (string) ($row['title'] ?? ''),
             'description' => (string) ($row['description'] ?? ''),
             'location' => (string) ($row['location'] ?? ''),
+            'capacity' => isset($row['capacity']) ? (int) $row['capacity'] : 0,
+            'participantsCount' => isset($row['participants_count']) ? (int) $row['participants_count'] : 0,
             'startDate' => !empty($row['start_date']) ? new \DateTimeImmutable((string) $row['start_date']) : null,
             'endDate' => !empty($row['end_date']) ? new \DateTimeImmutable((string) $row['end_date']) : null,
         ];

@@ -21,7 +21,7 @@
         /* ==================== NAVBAR ==================== */
         .navbar {
             background: white;
-            padding: 15 60px;
+            padding: 0 60px;
             border-bottom: 1px solid #e2e8f0;
             height: 80px;
             display: flex;
@@ -41,13 +41,18 @@
         }
         
         .logo-container img {
-            width: 140px;
-            height: auto;
+            width: auto;
+            height: 56px;
+            max-width: 180px;
+            object-fit: contain;
+            display: block;
         }
         
         .nav-links {
             display: flex;
             gap: 40px;
+            position: relative;
+            top: -4px;
         }
         
         .nav-link {
@@ -58,6 +63,7 @@
             border: none;
             cursor: pointer;
             padding: 0;
+            text-decoration: none;
         }
         
         .nav-link:hover {
@@ -67,6 +73,8 @@
         .nav-buttons {
             display: flex;
             gap: 15px;
+            position: relative;
+            top: -4px;
         }
         
         .btn-login {
@@ -545,14 +553,12 @@
             </div>
 
             <div class="nav-links">
-                <button class="nav-link" onclick="scrollToSection('home')">Accueil</button>
-                <button class="nav-link" onclick="window.location.href='{{ path('app_public_events') }}'">Événements</button>
-
-                <button class="nav-link" onclick="window.location.href='{{ path('app_sponsor_portal') }}'">Recommandations sponsor</button>
-
-                <button class="nav-link" onclick="scrollToSection('features')">Fonctionnalités</button>
-                <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
-                <button class="nav-link" onclick="scrollToSection('contact')">Contact</button>
+                <a class="nav-link" href="{{ path('app_landing') }}">Accueil</a>
+                <a class="nav-link" href="{{ path('app_public_events') }}">Événements</a>
+                <a class="nav-link" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
+                <a class="nav-link" href="{{ path('app_landing') }}#features">Fonctionnalités</a>
+                <a class="nav-link" href="{{ path('app_feedback_view') }}">Feedback</a>
+                <a class="nav-link" href="{{ path('app_landing') }}#contact">Contact</a>
             </div>
 
             <div class="nav-buttons">
@@ -620,7 +626,7 @@
                     <p class="feature-description">Gérez les inscriptions, les présences et l'historique.</p>
                 </div>
 
-                <div class="feature-card" onclick="window.location.href='{{ path('app_public_events') }}'">
+                <div class="feature-card" onclick="window.location.href='{{ path('app_sponsor_portal') }}'">
                     <div class="feature-icon">💼</div>
                     <h3 class="feature-title">Sponsors</h3>
                     <p class="feature-description">Trouvez et gérez vos partenaires et leurs contrats.</p>

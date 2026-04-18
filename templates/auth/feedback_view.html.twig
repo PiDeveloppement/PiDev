@@ -1,10 +1,71 @@
-{% extends 'base.html.twig' %}
+{% extends 'auth/landing.html.twig' %}
 
 {% block title %}Feedback{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .feedback-page-shell {
+            margin-top: 80px;
+            min-height: calc(100vh - 80px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(13, 71, 161, 0.08), transparent 36%),
+                radial-gradient(circle at 100% 8%, rgba(25, 118, 210, 0.1), transparent 38%),
+                #eef3fa;
+        }
+
+        .feedback-card {
+            width: min(900px, 100%);
+            padding: 26px;
+            border-radius: 16px;
+            border: 1px solid #d9e4f2;
+            background: #ffffff;
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+        }
+
+        .feedback-card h1 {
+            margin: 0 0 12px 0;
+            color: #0a1929;
+        }
+
+        .feedback-card p {
+            margin: 0;
+            color: #475569;
+        }
+    </style>
+{% endblock %}
+
 {% block public_content %}
-<div style="max-width:900px;margin:40px auto;padding:24px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.08)">
-    <h1 style="margin:0 0 12px 0;color:#0A1929">Feedback</h1>
-    <p style="margin:0;color:#475569">Vue temporaire: le module feedback détaillé n'est pas encore réactivé.</p>
-</div>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo-container">
+                <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+            </div>
+
+            <div class="nav-links">
+                <a class="nav-link" href="{{ path('app_landing') }}">Accueil</a>
+                <a class="nav-link" href="{{ path('app_public_events') }}">Événements</a>
+                <a class="nav-link" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
+                <a class="nav-link" href="{{ path('app_landing') }}#features">Fonctionnalités</a>
+                <a class="nav-link" style="color:#0D47A1; font-weight:700; text-decoration:underline;" href="{{ path('app_feedback_view') }}">Feedback</a>
+                <a class="nav-link" href="{{ path('app_landing') }}#contact">Contact</a>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
+                <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="feedback-page-shell">
+        <div class="feedback-card">
+            <h1>Feedback</h1>
+            <p>Vue temporaire: le module feedback detaille n'est pas encore reactive.</p>
+        </div>
+    </div>
 {% endblock %}

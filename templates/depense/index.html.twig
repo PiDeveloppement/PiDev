@@ -56,7 +56,7 @@
         .ef-page {
             max-width: 1520px;
             margin: 0 auto;
-            padding: 28px 32px;
+            padding: 12px 32px 28px;
         }
 
         /* ── PAGE HEADER ── */
@@ -284,6 +284,51 @@
             gap: 14px;
             margin-top: 14px;
         }
+        .fx-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .fx-toolbar label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--slate-500);
+        }
+        .fx-select {
+            min-width: 190px;
+            padding: 7px 34px 7px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            background: var(--white);
+            color: var(--slate);
+            font-size: 12px;
+            font-weight: 600;
+            font-family: inherit;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+        .fx-select:focus {
+            outline: none;
+            border-color: var(--emerald);
+            box-shadow: 0 0 0 3px rgba(5,150,105,0.12);
+        }
+        .fx-meta {
+            font-size: 12px;
+            color: var(--slate-500);
+            font-weight: 500;
+        }
+        .fx-empty {
+            display: none;
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--slate-500);
+        }
         .legend-item {
             display: flex;
             align-items: center;
@@ -383,9 +428,9 @@
         .ef-table-section {
             background: var(--white);
             border-radius: var(--radius-lg);
-            border: 1px solid var(--border);
+            border: 1px solid rgba(15,23,42,0.14);
             overflow: hidden;
-            box-shadow: var(--shadow-xs);
+            box-shadow: 0 10px 28px rgba(15,23,42,0.08);
         }
         .table-topbar {
             display: flex;
@@ -420,36 +465,64 @@
         .ef-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
             font-size: 13px;
+        }
+
+        .ef-table thead th:nth-child(1),
+        .ef-table tbody td:nth-child(1) { width: 19%; }
+        .ef-table thead th:nth-child(2),
+        .ef-table tbody td:nth-child(2) { width: 13%; }
+        .ef-table thead th:nth-child(3),
+        .ef-table tbody td:nth-child(3) { width: 12%; }
+        .ef-table thead th:nth-child(4),
+        .ef-table tbody td:nth-child(4) { width: 11%; }
+        .ef-table thead th:nth-child(5),
+        .ef-table tbody td:nth-child(5) { width: 13%; }
+        .ef-table thead th:nth-child(6),
+        .ef-table tbody td:nth-child(6) { width: 9%; }
+        .ef-table thead th:nth-child(7),
+        .ef-table tbody td:nth-child(7) { width: 13%; }
+        .ef-table thead th:nth-child(8),
+        .ef-table tbody td:nth-child(8) { width: 10%; }
+
+        .ef-table thead th:last-child,
+        .ef-table tbody td:last-child {
+            min-width: 110px;
+            padding-left: 8px;
+            padding-right: 8px;
         }
         .ef-table thead th {
             padding: 12px 20px;
-            background: var(--slate-50);
+            background: #e8eef6;
             font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.6px;
-            color: var(--slate-500);
+            color: #334155;
             text-align: left;
-            border-bottom: 1px solid rgba(15,23,42,0.07);
+            border-bottom: 1px solid rgba(15,23,42,0.16);
             white-space: nowrap;
         }
         .ef-table tbody td {
-            padding: 15px 20px;
-            border-bottom: 1px solid rgba(15,23,42,0.05);
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(15,23,42,0.10);
             vertical-align: middle;
+            color: #0f172a;
         }
         .ef-table tbody tr:last-child td { border-bottom: none; }
         .ef-table tbody tr {
             transition: background 0.15s;
         }
-        .ef-table tbody tr:hover { background: rgba(5,150,105,0.025); }
+        .ef-table tbody tr:nth-child(even) { background: #f8fbff; }
+        .ef-table tbody tr:hover { background: rgba(37,99,235,0.08); }
 
         /* desc cell */
         .td-desc {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
+            min-width: 0;
         }
         .td-icon {
             width: 36px;
@@ -467,10 +540,12 @@
             font-weight: 600;
             color: var(--slate);
             font-size: 13.5px;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
         }
         .td-desc-id {
             font-size: 11px;
-            color: var(--slate-500);
+            color: #475569;
             font-family: 'DM Mono', monospace;
         }
 
@@ -483,22 +558,69 @@
             border-radius: 30px;
             font-size: 12px;
             font-weight: 600;
-            background: var(--emerald-faint);
-            color: var(--emerald-dark);
+            background: #d9f5e8;
+            color: #065f46;
+            border: 1px solid rgba(5,150,105,0.24);
         }
 
         /* budget chip */
         .budget-chip {
             font-size: 12.5px;
-            color: var(--slate-700);
-            font-weight: 500;
+            color: #1e293b;
+            font-weight: 600;
+            overflow-wrap: anywhere;
         }
 
         /* date */
         .td-date {
-            font-size: 12.5px;
-            color: var(--slate-500);
-            white-space: nowrap;
+            font-size: 12px;
+            color: #475569;
+            white-space: normal;
+        }
+
+        .td-origin {
+            font-size: 11.5px;
+            color: #334155;
+            line-height: 1.35;
+        }
+
+        .origin-main {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .origin-sub {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .level-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .level-low {
+            background: #dcfce7;
+            color: #166534;
+            border-color: #86efac;
+        }
+
+        .level-medium {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #fcd34d;
+        }
+
+        .level-high {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fca5a5;
         }
 
         /* amount */
@@ -508,7 +630,7 @@
         .amount-value {
             font-size: 15px;
             font-weight: 700;
-            color: var(--slate);
+            color: #0b1324;
             font-feature-settings: 'tnum';
         }
         .amount-bar-wrap {
@@ -541,21 +663,21 @@
 
         /* actions */
         .td-actions { text-align: center; }
-        .btn-grp { display: flex; align-items: center; gap: 6px; justify-content: center; }
+        .btn-grp { display: flex; align-items: center; gap: 4px; justify-content: center; flex-wrap: nowrap; }
         .ef-btn-icon {
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             border-radius: 9px;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(15,23,42,0.18);
             background: var(--white);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
             transition: all 0.18s;
             text-decoration: none;
-            color: var(--slate-500);
+            color: #334155;
         }
         .ef-btn-icon:hover { transform: translateY(-2px); }
         .ef-btn-icon.view:hover { background: var(--blue-light); color: var(--blue); border-color: var(--blue); }
@@ -619,6 +741,27 @@
             .filters-grid { grid-template-columns: 1fr; }
             .ef-table { font-size: 12px; }
             .ef-table thead th, .ef-table tbody td { padding: 10px 14px; }
+        }
+
+        /* Fixed top actions for Depense page */
+        .depense-top-actions {
+            position: fixed !important;
+            top: 80px !important;
+            right: 28px !important;
+            left: auto !important;
+            bottom: auto !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            z-index: 1300 !important;
+            pointer-events: auto !important;
+        }
+
+        .depense-top-actions #translationWidget {
+            position: static !important;
+            margin: 0 !important;
+            inset: auto !important;
+            z-index: auto !important;
         }
     </style>
 {% endblock %}
@@ -752,6 +895,156 @@
                 }
             });
         }
+
+        /* ── FX vs TND line (7 days) ── */
+        const fxEl = document.getElementById('fxChart');
+        const fxSelect = document.getElementById('fxCurrency');
+        const fxPair = document.getElementById('fxPairLabel');
+        const fxEmpty = document.getElementById('fxChartEmpty');
+        let fxChart = null;
+
+        const renderFxChart = (labels, rates, from) => {
+            if (!fxEl) {
+                return;
+            }
+
+            if (fxChart) {
+                fxChart.destroy();
+            }
+
+            const context = fxEl.getContext('2d');
+            const gradient = context.createLinearGradient(0, 0, 0, 220);
+            gradient.addColorStop(0, 'rgba(37, 99, 235, 0.28)');
+            gradient.addColorStop(1, 'rgba(37, 99, 235, 0.04)');
+
+            fxChart = new Chart(fxEl, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: rates,
+                        borderColor: '#2563eb',
+                        backgroundColor: gradient,
+                        fill: true,
+                        borderWidth: 2.3,
+                        tension: 0.32,
+                        pointRadius: 2,
+                        pointHoverRadius: 5,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#2563eb',
+                        pointBorderWidth: 1.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` 1 ${from} = ${Number(ctx.raw).toFixed(4)} TND`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#64748b', font: { size: 11 } }
+                        },
+                        y: {
+                            grid: { color: '#e2e8f0' },
+                            ticks: {
+                                color: '#64748b',
+                                callback: value => Number(value).toFixed(3)
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        const loadFxHistory = async () => {
+            if (!fxSelect || !fxEl) {
+                return;
+            }
+
+            const from = fxSelect.value || 'USD';
+            if (fxPair) {
+                fxPair.textContent = `1 ${from} = ? TND`;
+            }
+            if (fxEmpty) {
+                fxEmpty.style.display = 'none';
+            }
+
+            try {
+                const url = `{{ path('app_currency_history') }}?from=${encodeURIComponent(from)}&to=TND&days=7`;
+                const response = await fetch(url);
+                const payload = await response.json();
+
+                if (!response.ok || !payload.ok || !Array.isArray(payload.labels) || !Array.isArray(payload.rates)) {
+                    throw new Error('Invalid history payload');
+                }
+
+                renderFxChart(payload.labels, payload.rates, from);
+
+                if (fxPair && payload.rates.length > 0) {
+                    const latestRate = Number(payload.rates[payload.rates.length - 1]);
+                    fxPair.textContent = `1 ${from} = ${latestRate.toFixed(4)} TND`;
+                }
+            } catch (error) {
+                if (fxChart) {
+                    fxChart.destroy();
+                    fxChart = null;
+                }
+
+                if (fxEmpty) {
+                    fxEmpty.style.display = 'block';
+                }
+            }
+        };
+
+        if (fxSelect) {
+            fxSelect.addEventListener('change', loadFxHistory);
+            loadFxHistory();
+        }
+
+        // Initialize fixed top actions for depense page
+        function initDepenseTopActions() {
+            const depenseTopActions = document.getElementById('depenseTopActions');
+            if (!depenseTopActions) return;
+
+            // Move to body if needed
+            if (depenseTopActions.parentElement !== document.body) {
+                document.body.appendChild(depenseTopActions);
+            }
+
+            // Move translation widget into fixed container
+            const translationWidget = document.getElementById('translationWidget');
+            if (translationWidget && !depenseTopActions.contains(translationWidget)) {
+                translationWidget.style.position = 'static';
+                translationWidget.style.bottom = 'auto';
+                translationWidget.style.left = 'auto';
+                translationWidget.style.right = 'auto';
+                translationWidget.style.margin = '0';
+                depenseTopActions.appendChild(translationWidget);
+            }
+        }
+
+        // Call on DOMContentLoaded (already inside DOMContentLoaded handler)
+        initDepenseTopActions();
+        
+        // Watch for translation widget appearing later
+        const observer = new MutationObserver(function(mutations) {
+            const translationWidget = document.getElementById('translationWidget');
+            const depenseTopActions = document.getElementById('depenseTopActions');
+            if (translationWidget && depenseTopActions && !depenseTopActions.contains(translationWidget)) {
+                initDepenseTopActions();
+                observer.disconnect();
+            }
+        });
+        
+        observer.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => observer.disconnect(), 3000);
     });
     </script>
 {% endblock %}
@@ -789,20 +1082,13 @@
         {% endfor %}
     </div>
 
-    {# ── Page header ── #}
-    <div class="ef-page-header">
-        <div>
-            <div class="ef-page-title">Gestion des dépenses</div>
-            <div class="ef-page-subtitle">CRUD, filtres et indicateurs</div>
-        </div>
-        <div class="ef-header-actions">
-            <button class="btn-export" onclick="window.print()">
-                <i class="fa-solid fa-arrow-up-from-bracket"></i> Exporter
-            </button>
-            <a class="btn-primary-action" href="{{ path('app_depenses_new') }}">
-                <i class="fa-solid fa-plus"></i> Nouvelle dépense
-            </a>
-        </div>
+    <div class="ef-header-actions" id="depenseHeaderActions" style="justify-content: flex-end; margin-bottom: 14px; display: none;">
+        <button class="btn-export" onclick="window.print()">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i> Exporter
+        </button>
+        <a class="btn-primary-action" href="{{ path('app_depenses_new') }}">
+            <i class="fa-solid fa-plus"></i> Nouvelle dépense
+        </a>
     </div>
 
     {# ── Metrics ── #}
@@ -907,6 +1193,27 @@
         </div>
     </div>
 
+    <div class="chart-card" style="margin-bottom: 28px;">
+        <div class="cc-header">
+            <div class="cc-title"><i class="fa-solid fa-money-bill-trend-up"></i> Taux du dinar tunisien</div>
+            <div class="fx-toolbar">
+                <label for="fxCurrency">Devise</label>
+                <select id="fxCurrency" class="fx-select" aria-label="Selection devise de reference">
+                    <option value="USD">Dollar americain (USD)</option>
+                    <option value="EUR">Euro (EUR)</option>
+                    <option value="GBP">Livre sterling (GBP)</option>
+                    <option value="CHF">Franc suisse (CHF)</option>
+                    <option value="CAD">Dollar canadien (CAD)</option>
+                </select>
+            </div>
+        </div>
+        <div class="fx-meta" id="fxPairLabel">1 USD = ? TND</div>
+        <div class="chart-container" style="height:220px; margin-top: 10px;">
+            <canvas id="fxChart" role="img" aria-label="Historique 7 jours du taux contre le TND"></canvas>
+        </div>
+        <div class="fx-empty" id="fxChartEmpty">Impossible de charger le taux de change pour cette devise.</div>
+    </div>
+
     {# ── Filters ── #}
     <div class="ef-section-label">
         <i class="fa-solid fa-sliders"></i>
@@ -995,6 +1302,8 @@
                         <th>Catégorie</th>
                         <th>Budget</th>
                         <th>Date</th>
+                        <th>Devise source</th>
+                        <th>Niveau</th>
                         <th style="text-align:right;">Montant</th>
                         <th style="text-align:center;">Actions</th>
                     </tr>
@@ -1003,6 +1312,17 @@
                     {% for depense in depenses %}
                         {% set pct = ((depense.amount / 10000) * 100)|round %}
                         {% if pct > 100 %}{% set pct = 100 %}{% endif %}
+                        {% set amountFloat = depense.amount + 0 %}
+                        {% if amountFloat < 100 %}
+                            {% set levelClass = 'level-low' %}
+                            {% set levelLabel = 'Faible' %}
+                        {% elseif amountFloat <= 1000 %}
+                            {% set levelClass = 'level-medium' %}
+                            {% set levelLabel = 'Moyen' %}
+                        {% else %}
+                            {% set levelClass = 'level-high' %}
+                            {% set levelLabel = 'Eleve' %}
+                        {% endif %}
                         <tr data-live-search-item data-search="{{ depense.description }}">
                             <td>
                                 <div class="td-desc">
@@ -1021,6 +1341,18 @@
                             </td>
                             <td class="td-date">
                                 {{ depense.expenseDate ? depense.expenseDate|date('d M Y') : '—' }}
+                            </td>
+                            <td class="td-origin">
+                                {% if depense.originalCurrency is defined and depense.originalCurrency != 'TND' and depense.originalAmount is not null %}
+                                    <div class="origin-main">{{ depense.originalAmount|number_format(2, ',', ' ') }} {{ depense.originalCurrency }}</div>
+                                    <div class="origin-sub">Converti en TND</div>
+                                {% else %}
+                                    <div class="origin-main">{{ depense.amount|number_format(2, ',', ' ') }} TND</div>
+                                    <div class="origin-sub">Montant natif</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="level-pill {{ levelClass }}">{{ levelLabel }}</span>
                             </td>
                             <td class="td-amount">
                                 <div class="amount-value">{{ depense.amount|number_format(2, ',', ' ') }} DT</div>
@@ -1058,5 +1390,15 @@
             </p>
         {% endif %}
     </div>
+</div>
+
+{# ── Top fixed actions for Depense page ── #}
+<div id="depenseTopActions" class="depense-top-actions">
+    <button class="btn-export" onclick="window.print()" style="position: static;">
+        <i class="fa-solid fa-arrow-up-from-bracket"></i> Exporter
+    </button>
+    <a class="btn-primary-action" href="{{ path('app_depenses_new') }}" style="position: static;">
+        <i class="fa-solid fa-plus"></i> Nouvelle dépense
+    </a>
 </div>
 {% endblock %}

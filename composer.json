@@ -12,10 +12,12 @@
         "doctrine/doctrine-migrations-bundle": "^3.7",
         "doctrine/orm": "^3.1",
         "dompdf/dompdf": "^3.1",
+        "florianv/swap-bundle": "6.0",
         "google/apiclient": "*",
         "knplabs/knp-paginator-bundle": "^6.2",
         "knplabs/knp-snappy-bundle": "^1.10",
         "symfony/asset": "6.4.*",
+        "symfony/asset-mapper": "6.4.*",
         "symfony/console": "6.4.*",
         "symfony/dotenv": "6.4.*",
         "symfony/expression-language": "6.4.*",
@@ -26,9 +28,11 @@
         "symfony/mailer": "6.4.*",
         "symfony/runtime": "6.4.*",
         "symfony/security-bundle": "6.4.*",
+        "symfony/stimulus-bundle": "^2.35",
         "symfony/translation": "6.4.*",
         "symfony/twig-bundle": "6.4.*",
         "symfony/uid": "6.4.*",
+        "symfony/ux-chartjs": "^2.35",
         "symfony/validator": "6.4.*",
         "symfony/yaml": "6.4.*",
         "twilio/sdk": "*"
@@ -63,7 +67,8 @@
     "scripts": {
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
-            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+            "assets:install %PUBLIC_DIR%": "symfony-cmd",
+            "importmap:install": "symfony-cmd"
         },
         "post-install-cmd": [
             "@auto-scripts"

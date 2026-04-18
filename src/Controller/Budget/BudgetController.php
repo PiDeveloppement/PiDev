@@ -7,9 +7,9 @@ use App\Entity\User\UserModel;
 use App\Form\Budget\BudgetType;
 use App\Repository\Budget\BudgetRepository;
 use App\Service\Budget\BudgetService;
+use App\Service\Currency\CurrencyConverterService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -19,7 +19,8 @@ class BudgetController extends AbstractController
     public function __construct(
         private EntityManagerInterface $entityManager,
         private BudgetRepository $budgetRepository,
-        private BudgetService $budgetService
+        private BudgetService $budgetService,
+        private CurrencyConverterService $currencyConverter
     ) {
     }
 
@@ -118,7 +119,7 @@ class BudgetController extends AbstractController
         }
 
         return $this->render('budget/index.html.twig', [
-            'pageInfo' => ['title' => 'Gestion du budget', 'subtitle' => 'CRUD, KPI et previsions budget'],
+                'pageInfo' => ['title' => 'Gestion du budget', 'subtitle' => 'Pilotez vos budgets, mesurez la rentabilite et anticipez les ecarts financiers.'],
             'budgets' => $budgets,
             'events' => $this->budgetService->fetchEventRows(),
             'eventTitleMap' => $eventTitleMap,
@@ -194,17 +195,27 @@ class BudgetController extends AbstractController
             } elseif ($this->budgetRepository->existsForEvent($eventId)) {
                 $this->addFlash('error', 'Un budget existe deja pour cet evenement.');
             } else {
-                $this->budgetService->recomputeBudget($budget);
-                $this->entityManager->persist($budget);
-                $this->entityManager->flush();
+                try {
+                    $initialCurrency = (string) $form->get('initialBudgetCurrency')->getData();
+                    $revenueCurrency = (string) $form->get('totalRevenueCurrency')->getData();
 
-                $this->addFlash('success', 'Budget ajoute avec succes.');
-                return $this->redirectToRoute('app_budget_index');
+                    $budget->setInitialBudget($this->currencyConverter->convert((float) $budget->getInitialBudget(), $initialCurrency, 'TND'));
+                    $budget->setTotalRevenue($this->currencyConverter->convert((float) $budget->getTotalRevenue(), $revenueCurrency, 'TND'));
+
+                    $this->budgetService->recomputeBudget($budget);
+                    $this->entityManager->persist($budget);
+                    $this->entityManager->flush();
+
+                    $this->addFlash('success', 'Budget ajoute avec succes.');
+                    return $this->redirectToRoute('app_budget_index');
+                } catch (\RuntimeException $exception) {
+                    $this->addFlash('error', $exception->getMessage());
+                }
             }
         }
 
         return $this->render('budget/form.html.twig', [
-            'pageInfo' => ['title' => 'Nouveau budget', 'subtitle' => 'Creation budget'],
+                'pageInfo' => ['title' => 'Nouveau budget', 'subtitle' => 'Creez un budget evenementiel avec montants initiaux et previsions de revenus.'],
             'form' => $form->createView(),
             'isEdit' => false,
         ]);
@@ -228,16 +239,26 @@ class BudgetController extends AbstractController
             } elseif ($this->budgetRepository->existsForEvent($eventId, $budgetId)) {
                 $this->addFlash('error', 'Un autre budget existe deja pour cet evenement.');
             } else {
-                $this->budgetService->recomputeBudget($budget);
-                $this->entityManager->flush();
+                try {
+                    $initialCurrency = (string) $form->get('initialBudgetCurrency')->getData();
+                    $revenueCurrency = (string) $form->get('totalRevenueCurrency')->getData();
 
-                $this->addFlash('success', 'Budget modifie avec succes.');
-                return $this->redirectToRoute('app_budget_index');
+                    $budget->setInitialBudget($this->currencyConverter->convert((float) $budget->getInitialBudget(), $initialCurrency, 'TND'));
+                    $budget->setTotalRevenue($this->currencyConverter->convert((float) $budget->getTotalRevenue(), $revenueCurrency, 'TND'));
+
+                    $this->budgetService->recomputeBudget($budget);
+                    $this->entityManager->flush();
+
+                    $this->addFlash('success', 'Budget modifie avec succes.');
+                    return $this->redirectToRoute('app_budget_index');
+                } catch (\RuntimeException $exception) {
+                    $this->addFlash('error', $exception->getMessage());
+                }
             }
         }
 
         return $this->render('budget/form.html.twig', [
-            'pageInfo' => ['title' => 'Modifier budget', 'subtitle' => 'Mise a jour budget'],
+                'pageInfo' => ['title' => 'Modifier budget', 'subtitle' => 'Ajustez les valeurs du budget pour refleter l etat financier actuel de l evenement.'],
             'form' => $form->createView(),
             'isEdit' => true,
             'budget' => $budget,
@@ -278,7 +299,7 @@ class BudgetController extends AbstractController
         }
 
         return $this->render('budget/details.html.twig', [
-            'pageInfo' => ['title' => 'Details budget', 'subtitle' => 'Previsions et simulation'],
+                'pageInfo' => ['title' => 'Details budget', 'subtitle' => 'Analysez le budget, les depenses, les revenus et la simulation de rentabilite.'],
             'budget' => $budget,
             'eventTitle' => (string) ($event['title'] ?? ('Event #' . (int) $budget->getEventId())),
             'remaining' => $remaining,
@@ -318,9 +339,9 @@ class BudgetController extends AbstractController
             return;
         }
 
-        // Vérification de secours via roleId (Admin=2, Organisateur=3)
+        // Verification de secours via roleId (Organisateur=2, Administrateur=4)
         $roleId = (int) ($user->getRoleId() ?? 0);
-        if ($roleId === 2 || $roleId === 3) {
+        if ($roleId === 2 || $roleId === 4) {
             return;
         }
 

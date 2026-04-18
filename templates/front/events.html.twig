@@ -131,9 +131,30 @@
         }
 
         .event-cover {
-            height: 188px;
             background: linear-gradient(120deg, #d7e5f9, #c4daf7 55%, #b6d1f2);
             position: relative;
+            overflow: hidden;
+        }
+
+        .event-cover.no-image {
+            min-height: 188px;
+        }
+
+        .event-cover.has-image {
+            background: transparent;
+        }
+
+        .event-cover::after {
+            content: none;
+        }
+
+        .event-cover-image {
+            position: relative;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            object-position: center;
+            display: block;
         }
 
         .event-status {
@@ -144,6 +165,7 @@
             padding: 6px 12px;
             font-size: 12px;
             font-weight: 700;
+            z-index: 2;
         }
 
         .event-status.live {
@@ -170,6 +192,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            z-index: 2;
         }
 
         .event-body {
@@ -324,6 +347,7 @@
 {% endblock %}
 
 {% block public_content %}
+    {% set isParticipantUser = app.user and ('ROLE_ADMIN' not in app.user.roles) and ('ROLE_ORGANISATEUR' not in app.user.roles) and ('ROLE_SPONSOR' not in app.user.roles) %}
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo-container">
@@ -339,11 +363,27 @@
             </div>
 
             <div class="nav-buttons">
-                {% if app.user and hasTickets %}
+                {% if isParticipantUser %}
                     <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
+                    <details class="participant-chip-menu">
+                        <summary class="participant-chip">
+                            <span class="participant-chip-avatar">{{ app.user.initials }}</span>
+                            <span class="participant-chip-meta">
+                                <span class="participant-chip-name">{{ app.user.fullName }}</span>
+                                <span class="participant-chip-role">Participant</span>
+                            </span>
+                        </summary>
+                        <div class="participant-chip-dropdown">
+                            <a class="participant-chip-action" href="{{ path('app_logout') }}">Déconnexion</a>
+                        </div>
+                    </details>
+                {% elseif app.user %}
+                    <button class="btn-login" onclick="window.location.href='{{ path('app_dashboard') }}'">Back-office</button>
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_logout') }}'">Déconnexion</button>
+                {% else %}
+                    <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
                 {% endif %}
-                <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
-                <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
             </div>
         </div>
     </nav>
@@ -392,10 +432,14 @@
                     <article class="event-card"
                              data-title="{{ event.title|lower }}"
                              data-location="{{ (event.location ?? '')|lower }}"
+                             data-category-name="{{ (event.category ? event.category.name : '')|lower }}"
                              data-category="{{ event.category ? event.category.id : '' }}"
                              data-price="{{ event.isFree ? 'free' : 'paid' }}"
                              data-start="{{ event.startDate ? event.startDate|date('U') : 0 }}">
-                        <div class="event-cover">
+                        <div class="event-cover {{ event.imageUrl ? 'has-image' : 'no-image' }}">
+                            {% if event.imageUrl %}
+                                <img class="event-cover-image" src="{{ asset(event.imageUrl) }}" alt="Affiche de {{ event.title }}">
+                            {% endif %}
                             <span class="event-status {{ statusType }}">{{ statusType == 'upcoming' ? 'À venir' : 'En cours' }}</span>
                             <span class="event-badge">{{ event.category ? ((event.category.icon ?? '📁') ~ ' ' ~ event.category.name) : 'Sans catégorie' }}</span>
                         </div>
@@ -525,8 +569,36 @@
                 paginationWrap.appendChild(nextBtn);
             };
 
+            const normalizeText = (value) => {
+                return String(value || '')
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9\s-]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            };
+
+            const matchesPrefixSearch = (query, ...fields) => {
+                const normalizedQuery = normalizeText(query);
+                if (!normalizedQuery) {
+                    return true;
+                }
+
+                const searchable = normalizeText(fields.join(' '));
+                if (!searchable) {
+                    return false;
+                }
+
+                const queryTokens = normalizedQuery.split(' ').filter(Boolean);
+                const words = searchable.split(' ').filter(Boolean);
+
+                // Advanced behavior: each typed token must match the prefix of at least one word.
+                return queryTokens.every((token) => words.some((word) => word.startsWith(token)));
+            };
+
             const applyFilters = () => {
-                const q = (searchInput.value || '').toLowerCase().trim();
+                const q = (searchInput.value || '').trim();
                 const category = categoryFilter.value;
                 const price = priceFilter.value;
                 const date = dateFilter.value;
@@ -534,12 +606,13 @@
                 const filtered = cards.filter((card) => {
                     const title = card.dataset.title || '';
                     const location = card.dataset.location || '';
+                    const categoryName = card.dataset.categoryName || '';
                     const cardCategory = card.dataset.category || '';
                     const cardPrice = card.dataset.price || '';
                     const startTimestamp = Number(card.dataset.start || 0);
                     const cardDateBucket = getDateBucket(startTimestamp);
 
-                    const matchSearch = !q || title.includes(q) || location.includes(q);
+                    const matchSearch = matchesPrefixSearch(q, title, location, categoryName);
                     const matchCategory = !category || category === cardCategory;
                     const matchPrice = !price || price === cardPrice;
                     const matchDate = !date || cardDateBucket === date;

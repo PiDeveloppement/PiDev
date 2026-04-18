@@ -275,4 +275,27 @@ class SponsorRepository extends ServiceEntityRepository
 
         return $map;
     }
+
+    /**
+     * @return string[]
+     */
+    public function getDistinctContactEmails(): array
+    {
+        $rows = $this->createQueryBuilder('s')
+            ->select('DISTINCT LOWER(s.contactEmail) AS email')
+            ->where('s.contactEmail IS NOT NULL')
+            ->andWhere("s.contactEmail != ''")
+            ->getQuery()
+            ->getArrayResult();
+
+        $emails = [];
+        foreach ($rows as $row) {
+            $email = trim((string) ($row['email'] ?? ''));
+            if ($email !== '') {
+                $emails[] = $email;
+            }
+        }
+
+        return array_values(array_unique($emails));
+    }
 }

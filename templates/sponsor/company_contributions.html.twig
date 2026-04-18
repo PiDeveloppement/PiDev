@@ -1,0 +1,389 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contributions entreprise - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --ink: #0d1117;
+            --ink-3: #57606a;
+            --surf: #ffffff;
+            --surf-2: #f6f8fa;
+            --border: rgba(13, 17, 23, .12);
+            --violet: #7c3aed;
+            --violet-bg: #f5f3ff;
+            --blue: #2563eb;
+            --blue-bg: #eff6ff;
+            --rose: #e11d48;
+            --rose-bg: #fff1f2;
+            --r: 14px;
+            --r-lg: 20px;
+        }
+
+        .sp-page {
+            max-width: 1480px;
+            margin: 0 auto;
+            padding: 0 32px 36px;
+            font-family: 'Sora', system-ui, sans-serif;
+            color: var(--ink);
+        }
+
+        .sp-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .sp-title {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+        }
+
+        .sp-sub {
+            margin-top: 4px;
+            color: var(--ink-3);
+            font-size: 13px;
+        }
+
+        .sp-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            background: var(--surf);
+            color: var(--ink);
+        }
+
+        .sp-kpi {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .sp-kpi-card {
+            background: var(--surf);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 14px 16px;
+        }
+
+        .sp-kpi-label {
+            font-size: 11px;
+            color: var(--ink-3);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .sp-kpi-value {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .sp-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 14px;
+        }
+
+        .sp-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8f5ff 44%, #eef5ff 100%);
+            border: 1px solid rgba(124, 58, 237, .24);
+            border-radius: var(--r-lg);
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(13, 17, 23, .12);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sp-card-strip {
+            height: 4px;
+            background: linear-gradient(90deg, #7c3aed, #60a5fa);
+        }
+
+        .sp-card-body {
+            padding: 20px 22px;
+            flex: 1;
+        }
+
+        .sp-card-identity {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .sp-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--violet-bg), var(--blue-bg));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--violet);
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 1.5px solid rgba(13, 17, 23, .18);
+        }
+
+        .sp-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 6px;
+            background: #fff;
+            border-radius: 11px;
+        }
+
+        .sp-company-name {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--violet);
+            line-height: 1.25;
+            margin-bottom: 3px;
+        }
+
+        .sp-company-email {
+            font-size: 12px;
+            color: var(--ink-3);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .sp-event-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 11px;
+            background: var(--surf-2);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #21262d;
+            margin-bottom: 14px;
+        }
+
+        .sp-contribution {
+            background: linear-gradient(135deg, var(--violet-bg), #ede9fe);
+            border-radius: 10px;
+            padding: 12px 14px;
+            border: 1px solid rgba(124, 58, 237, .16);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sp-contribution-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            font-weight: 700;
+            color: var(--violet);
+        }
+
+        .sp-contribution-value {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--violet);
+        }
+
+        .sp-card-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            background: var(--surf-2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .sp-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 11px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid transparent;
+            background: #fff;
+            color: #21262d;
+        }
+
+        .act-contract {
+            background: var(--violet-bg);
+            color: var(--violet);
+            border-color: rgba(124, 58, 237, .22);
+        }
+
+        .act-edit {
+            background: #fffbeb;
+            color: #d97706;
+            border-color: rgba(217, 119, 6, .24);
+        }
+
+        .act-mail {
+            background: var(--blue-bg);
+            color: var(--blue);
+            border-color: rgba(37, 99, 235, .24);
+        }
+
+        .act-del {
+            background: var(--rose-bg) !important;
+            color: var(--rose) !important;
+            border-color: rgba(225, 29, 72, .24) !important;
+        }
+
+        .sp-card-footer form {
+            display: inline-flex;
+            margin: 0;
+        }
+
+        .sp-card-footer form.sp-delete-form {
+            margin-left: auto;
+        }
+
+        /* Translation button: embed into this page topbar (not sidebar) */
+        #translationWidget {
+            position: relative !important;
+            top: auto !important;
+            right: auto !important;
+            left: auto !important;
+            bottom: auto !important;
+            margin-left: auto;
+        }
+
+        #translationMenu {
+            margin-top: 8px !important;
+        }
+
+        #translationWidget #translationToggle {
+            background: linear-gradient(135deg, #16a34a, #22c55e) !important;
+            box-shadow: 0 8px 20px rgba(22, 163, 74, 0.35) !important;
+        }
+
+        @media (max-width: 1000px) {
+            .sp-kpi {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .sp-page {
+                padding: 0 16px 26px;
+            }
+
+            .sp-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="sp-page">
+    <div class="sp-topbar">
+        <div>
+            <div class="sp-title">{{ companyName }}</div>
+            <div class="sp-sub">Toutes les contributions de cette entreprise.</div>
+        </div>
+        <a class="sp-btn" href="{{ path('app_sponsors_index') }}"><i class="fa-solid fa-arrow-left"></i> Retour admin sponsors</a>
+    </div>
+
+    <div class="sp-kpi">
+        <article class="sp-kpi-card">
+            <div class="sp-kpi-label">Contributions</div>
+            <div class="sp-kpi-value">{{ sponsors|length }}</div>
+        </article>
+        <article class="sp-kpi-card">
+            <div class="sp-kpi-label">Contribution totale</div>
+            <div class="sp-kpi-value">{{ contributionTotal|number_format(2, ',', ' ') }} DT</div>
+        </article>
+        <article class="sp-kpi-card">
+            <div class="sp-kpi-label">Evenements couverts</div>
+            <div class="sp-kpi-value">{{ eventsCount }}</div>
+        </article>
+    </div>
+
+    <div class="sp-cards">
+        {% for sponsor in sponsors %}
+            <article class="sp-card">
+                <div class="sp-card-strip"></div>
+                <div class="sp-card-body">
+                    <div class="sp-card-identity">
+                        <div class="sp-logo">
+                            {% if sponsor.logoUrl %}
+                                <img src="{{ sponsor.logoUrl }}" alt="{{ sponsor.companyName }}">
+                            {% else %}
+                                {{ sponsor.companyName|slice(0, 2)|upper }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="sp-company-name">{{ sponsor.companyName }}</div>
+                            <div class="sp-company-email"><i class="fa-regular fa-envelope"></i> {{ sponsor.contactEmail }}</div>
+                        </div>
+                    </div>
+
+                    <div class="sp-event-chip"><i class="fa-solid fa-calendar-days"></i> {{ eventTitleMap[sponsor.eventId]|default('—') }}</div>
+                    <div class="sp-contribution">
+                        <div class="sp-contribution-label">Contribution</div>
+                        <div class="sp-contribution-value">{{ sponsor.contributionAmount|number_format(2, ',', ' ') }} DT</div>
+                    </div>
+                </div>
+
+                <div class="sp-card-footer">
+                    <a class="sp-action" href="{{ path('app_sponsors_details', {id: sponsor.id}) }}"><i class="fa-regular fa-eye"></i> Details</a>
+                    <a class="sp-action act-contract" href="{{ path('app_sponsors_contract', {id: sponsor.id}) }}"><i class="fa-solid fa-file-contract"></i> Contrat</a>
+                    <a class="sp-action act-edit" href="{{ path('app_sponsors_edit', {id: sponsor.id}) }}"><i class="fa-regular fa-pen-to-square"></i> Modifier</a>
+                    <form class="sp-mail-form" method="post" action="{{ path('app_sponsors_send_recommendation_email', {id: sponsor.id}) }}" onsubmit="return confirm('Envoyer un email de recommandations a cette entreprise ?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('send_reco_mail_' ~ sponsor.id) }}">
+                        <button class="sp-action act-mail" type="submit"><i class="fa-regular fa-paper-plane"></i> Envoyer reco</button>
+                    </form>
+                    <form class="sp-delete-form" method="post" action="{{ path('app_sponsors_delete', {id: sponsor.id}) }}" onsubmit="return confirm('Supprimer ce sponsor ?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete_sponsor_' ~ sponsor.id) }}">
+                        <button class="sp-action act-del" type="submit"><i class="fa-regular fa-trash-can"></i> Supprimer</button>
+                    </form>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const topbar = document.querySelector('.sp-topbar');
+            const translationWidget = document.getElementById('translationWidget');
+
+            if (!topbar || !translationWidget) {
+                return;
+            }
+
+            topbar.appendChild(translationWidget);
+        });
+    </script>
+{% endblock %}

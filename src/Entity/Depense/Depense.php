@@ -19,7 +19,6 @@ class Depense
 
     #[ORM\ManyToOne(targetEntity: Budget::class)]
     #[ORM\JoinColumn(name: 'budget_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
-    #[Assert\NotNull(message: 'Le budget est obligatoire.')]
     private ?Budget $budget = null;
 
     #[ORM\Column(length: 1000)]
