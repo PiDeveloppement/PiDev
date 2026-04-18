@@ -80,16 +80,14 @@ class SignupController extends AbstractController
         $success = $this->userService->createUser($user, null);
 
         if ($success) {
-            // Envoyer l'email de bienvenue à l'utilisateur
-            $this->emailService->sendWelcomeEmail($user);
-            
-            // Envoyer la notification aux admins
-            $this->emailService->sendNewUserNotificationToAdmin($user);
-            
+            // L'email de bienvenue est envoyé dans UserService
+            // Envoyer la notification aux admins (désactivé temporairement)
+            // $this->emailService->sendNewUserNotificationToAdmin($user);
+
             $this->addFlash('success', '✓ Inscription réussie ! Étape finale : Configuration Face ID.');
             return $this->redirectToRoute('app_register', [
                 'setup_face' => 1,
-                'email' => $user->getEmail() 
+                'email' => $user->getEmail()
             ]);
         }
 
@@ -161,8 +159,8 @@ public function saveFaceDescriptor(Request $request, EntityManagerInterface $em)
             if ($storedDescriptor) {
                 $similarity = $this->calculateSimilarity($faceDescriptor, $storedDescriptor);
                 
-                // Si la similarité est supérieure à 0.6 (seuil à ajuster)
-                if ($similarity > 0.6) {
+                // Si la similarité est supérieure à 0.85 (seuil plus strict pour éviter les faux positifs)
+                if ($similarity > 0.85) {
                     return $this->json([
                         'status' => 'error', 
                         'message' => 'Ce visage est déjà associé à un compte existant. Veuillez vous connecter.',

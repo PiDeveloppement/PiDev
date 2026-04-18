@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenue sur EventFlow</title>
+    <title>Confirmation d'inscription - EventFlow</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -64,45 +64,66 @@
             padding: 15px;
             margin: 20px 0;
         }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎉 Bienvenue sur EventFlow !</h1>
+            <h1>✅ Confirmation d'inscription</h1>
         </div>
-        
+
         <div class="content">
             <h2>Bonjour {{ user.firstName }} !</h2>
-            
-            <p>Nous sommes ravis de vous accueillir parmi nous. Votre compte a été créé avec succès.</p>
-            
+
+            <p>Votre inscription sur <strong>EventFlow</strong> a été confirmée avec succès.</p>
+
+            <div class="success-box">
+                <p>🎉 <strong>Félicitations !</strong></p>
+                <p>Votre compte est maintenant actif et prêt à être utilisé.</p>
+            </div>
+
             <div class="info-box">
-                <p><strong>Vos informations :</strong></p>
+                <p><strong>Vos informations d'inscription :</strong></p>
                 <ul>
                     <li>Nom : {{ user.lastName }}</li>
                     <li>Email : {{ user.email }}</li>
                     <li>Faculté : {{ user.faculte }}</li>
                 </ul>
             </div>
-            
-            <p>Avec EventFlow, vous pouvez :</p>
+
+            <p>Vous pouvez maintenant accéder à votre compte et commencer à :</p>
             <ul>
                 <li>Découvrir et participer à des événements passionnants</li>
                 <li>Gérer vos billets et réservations</li>
                 <li>Recevoir des notifications personnalisées</li>
                 <li>Profiter d'une expérience unique avec reconnaissance faciale</li>
             </ul>
-            
+
+            <div class="info-box">
+                <p>📧 <strong>Prêt à vous connecter ?</strong></p>
+                <p>Cliquez sur le bouton ci-dessous pour accéder à votre compte :</p>
+            </div>
+
             <p style="text-align: center;">
-                <a href="{{ absolute_url(path('app_login')) }}" class="button">Se connecter</a>
+                <a href="{{ absolute_url(path('app_login')) }}" class="button">Se connecter à mon compte</a>
             </p>
-            
+
+            <p style="font-size: 14px; color: #666; text-align: center;">
+                Ou copiez ce lien dans votre navigateur :<br>
+                <a href="{{ absolute_url(path('app_login')) }}" style="color: #667eea;">{{ absolute_url(path('app_login')) }}</a>
+            </p>
+
             <p>Si vous avez des questions, n'hésitez pas à nous contacter.</p>
-            
+
             <p>Cordialement,<br><strong>L'équipe EventFlow</strong></p>
         </div>
-        
+
         <div class="footer">
             <p>© {{ "now"|date("Y") }} EventFlow. Tous droits réservés.</p>
             <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>

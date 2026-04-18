@@ -34,6 +34,14 @@ class LoginController extends AbstractController
     #[Route('/login', name: 'app_login')]
     public function login(AuthenticationUtils $authenticationUtils, Request $request): Response
     {
+        // Déconnecter l'utilisateur s'il est déjà connecté
+        if ($this->getUser()) {
+            $this->container->get('security.token_storage')->setToken(null);
+            $session = $request->getSession();
+            $session->invalidate();
+            $session->clear();
+        }
+
         $error = $authenticationUtils->getLastAuthenticationError();
         $lastUsername = $authenticationUtils->getLastUsername();
 
@@ -131,25 +139,68 @@ class LoginController extends AbstractController
  #[Route('/login/verify-face', name: 'app_verify_face', methods: ['POST'])]
 public function verifyFace(Request $request): JsonResponse
 {
+    // Nettoyer toute session existante avant de tenter la reconnaissance faciale
+    $this->container->get('security.token_storage')->setToken(null);
+    $session = $request->getSession();
+    $session->invalidate();
+    $session->clear();
+
     $data = json_decode($request->getContent(), true);
-    $email = $data['email'] ?? null;
-    
-    // Mode test : Accepter tous les visages
-    // Si un email est fourni, chercher l'utilisateur correspondant
-    if ($email) {
-        $user = $this->em->getRepository(UserModel::class)->findOneBy(['email' => $email]);
-    } else {
-        // Sinon, prendre le premier utilisateur (pour le test)
-        $user = $this->em->getRepository(UserModel::class)->findOneBy([]);
-    }
-    
-    if (!$user) {
+    $faceDescriptor = $data['descriptor'] ?? null;
+
+    // Vérifier si le face descriptor est fourni
+    if (!$faceDescriptor || !is_array($faceDescriptor)) {
         return $this->json([
-            'success' => false, 
-            'message' => 'Utilisateur non trouvé'
+            'success' => false,
+            'message' => 'Descripteur facial non fourni ou invalide'
+        ], 400);
+    }
+
+    // Récupérer tous les utilisateurs avec un face descriptor
+    $users = $this->em->getRepository(UserModel::class)
+        ->createQueryBuilder('u')
+        ->where('u.faceDescriptor IS NOT NULL')
+        ->getQuery()
+        ->getResult();
+
+    if (empty($users)) {
+        return $this->json([
+            'success' => false,
+            'message' => 'Aucun utilisateur avec visage enregistré dans la base de données'
         ], 401);
     }
-    
+
+    // Chercher l'utilisateur avec la plus haute similarité
+    $bestMatch = null;
+    $bestSimilarity = -1; // Initialiser à -1 pour éviter les faux positifs avec similarité 0
+    $threshold = 0.6; // Seuil de similarité (60%) pour face-api.js
+
+    foreach ($users as $user) {
+        $userDescriptor = $user->getFaceDescriptor();
+        if ($userDescriptor && is_array($userDescriptor) && count($userDescriptor) > 0) {
+            $similarity = $this->calculateSimilarity($faceDescriptor, $userDescriptor);
+            if ($similarity > $bestSimilarity) {
+                $bestSimilarity = $similarity;
+                $bestMatch = $user;
+            }
+        }
+    }
+
+    // Vérifier si la similarité dépasse le seuil
+    if (!$bestMatch || $bestSimilarity < $threshold) {
+        // Réinitialiser le token storage pour éviter toute connexion résiduelle
+        $this->container->get('security.token_storage')->setToken(null);
+
+        return $this->json([
+            'success' => false,
+            'message' => 'Visage non reconnu. Aucune correspondance trouvée dans la base de données.',
+            'similarity' => round($bestSimilarity * 100, 2) . '%',
+            'threshold' => round($threshold * 100, 2) . '%'
+        ], 401);
+    }
+
+    $user = $bestMatch;
+
     try {
         // Authentifier l'utilisateur
         $token = new UsernamePasswordToken($user, 'main', $user->getRoles());
@@ -165,15 +216,32 @@ public function verifyFace(Request $request): JsonResponse
             $this->em->flush();
         }
         
+        // Redirection selon le rôle
+        $redirectRoute = $this->resolveHomeRouteForUser($user);
+
+        error_log('Redirection calculée: ' . $redirectRoute . ' pour roleId: ' . $user->getRoleId());
+
         return $this->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Connexion réussie',
-            'redirect' => $this->resolveHomeRouteForUser($user)
+            'redirect' => $redirectRoute,
+            'user' => [
+                'id' => $user->getId(),
+                'firstName' => $user->getFirstName(),
+                'lastName' => $user->getLastName(),
+                'email' => $user->getEmail(),
+                'roleId' => $user->getRoleId()
+            ],
+            'similarity' => round($bestSimilarity * 100, 2) . '%',
+            'debug' => [
+                'role_id' => $user->getRoleId(),
+                'redirect_route' => $redirectRoute
+            ]
         ]);
         
     } catch (\Exception $e) {
         return $this->json([
-            'success' => false, 
+            'success' => false,
             'message' => 'Erreur lors de la connexion: ' . $e->getMessage()
         ], 500);
     }

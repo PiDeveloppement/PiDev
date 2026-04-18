@@ -104,7 +104,6 @@
                         </span>
                     </div>
 
-                  
                 </div>
 
                 <!-- Graphiques et visualisations -->
@@ -281,6 +280,28 @@
                             {% endif %}
                         </div>
                     </div>
+
+                    <!-- Graphique Taux de Participation -->
+                    <div class="chart-card full-width">
+                        <div class="chart-header">
+                            <span class="chart-icon">📊</span>
+                            <h3 class="chart-title">Taux de Participation</h3>
+                        </div>
+                        <div style="height: 250px;">
+                            <canvas id="participationChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Graphique Circulaire Participants -->
+                    <div class="chart-card full-width">
+                        <div class="chart-header">
+                            <span class="chart-icon">👥</span>
+                            <h3 class="chart-title">Répartition Participants</h3>
+                        </div>
+                        <div style="height: 250px;">
+                            <canvas id="participantsPieChart"></canvas>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Actions rapides -->
@@ -309,11 +330,128 @@
                 <span class="footer-separator"></span>
                 <span>🏫 Département Informatique</span>
                 <span class="footer-separator"></span>
-                <span>© 2024 EventFlow v3.0</span>
+                <span> 2024 EventFlow v3.0</span>
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Données des statistiques
+const participationRate = {{ participation_stats.participation_rate|default(0) }};
+const uniqueParticipants = {{ participation_stats.unique_participants|default(0) }};
+const totalUsers = {{ participation_stats.total_users|default(0) }};
+const nonParticipants = {{ participation_stats.non_participants|default(0) }};
+const participationHistory = {{ participation_history|json_encode()|raw }};
+
+// Extraire les données d'historique pour le graphique
+const historyLabels = participationHistory.map(h => h.month);
+const historyRates = participationHistory.map(h => h.rate);
+
+// Graphique de ligne pour l'évolution du taux de participation
+const participationCtx = document.getElementById('participationChart').getContext('2d');
+new Chart(participationCtx, {
+    type: 'line',
+    data: {
+        labels: historyLabels,
+        datasets: [{
+            label: 'Taux de Participation (%)',
+            data: historyRates,
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#f97316',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+            duration: 1500,
+            easing: 'easeInOutQuart'
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    font: {
+                        size: 12,
+                        family: 'Arial'
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Graphique circulaire pour la répartition participants
+const pieCtx = document.getElementById('participantsPieChart').getContext('2d');
+new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Participants', 'Non-participants'],
+        datasets: [{
+            data: [uniqueParticipants, nonParticipants],
+            backgroundColor: ['#22c55e', '#e2e8f0'],
+            borderColor: ['#16a34a', '#cbd5e1'],
+            borderWidth: 2,
+            hoverOffset: 10
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+            animateRotate: true,
+            animateScale: true,
+            duration: 1500,
+            easing: 'easeInOutQuart'
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'bottom',
+                labels: {
+                    font: {
+                        size: 12,
+                        family: 'Arial'
+                    },
+                    padding: 20
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((context.raw / total) * 100).toFixed(1);
+                        return context.label + ': ' + context.raw + ' (' + percentage + '%)';
+                    }
+                }
+            }
+        },
+        cutout: '60%'
+    }
+});
+</script>
 
 <style>
     /* Reset et styles de base */
@@ -346,10 +484,10 @@
         gap: 24px;
     }
 
-    /* Grille des statistiques - 5 cartes qui s'étendent */
+    /* Grille des statistiques - 4 cartes qui s'étendent sur toute la largeur */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 24px;
         width: 100%;
     }

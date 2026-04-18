@@ -4,15 +4,15 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/design-system.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
-        * {
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            overflow-x: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
         
         .login-page {
@@ -778,7 +778,7 @@
 <div id="faceModal" class="face-modal">
     <div class="face-modal-content">
         <div class="face-modal-header">
-            <h3>🔐 Connexion Face ID</h3>
+            <h3> Connexion Face ID</h3>
             <p>Regardez la caméra pour vous connecter</p>
         </div>
         <div class="face-modal-body">
@@ -834,111 +834,157 @@ async function initializeFaceRecognition() {
     const canvas = document.getElementById('canvas');
     const captureBtn = document.getElementById('captureBtn');
     const faceStatus = document.getElementById('faceStatus');
-    
+
     try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             throw new Error('Votre navigateur ne supporte pas l\'accès à la caméra');
         }
-        
-        faceStatus.innerHTML = '📷 Demande d\'accès à la caméra...';
+
+        if (typeof faceapi === 'undefined') {
+            throw new Error('La bibliothèque face-api.js n\'est pas chargée. Veuillez actualiser la page.');
+        }
+
+        faceStatus.innerHTML = '📷 Chargement des modèles de reconnaissance faciale...';
         faceStatus.className = 'face-status info';
-        
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
+
+        const MODEL_URL = '/models';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+
+        faceStatus.innerHTML = '📷 Demande d\'accès à la caméra...';
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
                 width: { ideal: 640 },
                 height: { ideal: 480 },
                 facingMode: 'user'
-            } 
+            }
         });
-        
+
         mediaStream = stream;
-        
+
         videoPlaceholder.style.display = 'none';
         video.style.display = 'block';
         faceOverlay.style.display = 'flex';
-        
+
         video.srcObject = stream;
-        
+
         await new Promise((resolve) => {
             video.onloadedmetadata = () => {
                 video.play();
                 resolve();
             };
         });
-        
+
         faceStatus.innerHTML = '✅ Caméra prête ! Regardez la caméra';
         faceStatus.className = 'face-status success';
         captureBtn.disabled = false;
-        
+
         captureBtn.onclick = () => {
             if (!captureBtn.disabled && !isScanning) {
                 scanFace();
             }
         };
-        
+
         document.getElementById('cancelFaceBtn').onclick = closeFacialLogin;
-        
+
         async function scanFace() {
             if (isScanning) return;
             isScanning = true;
-            
+
             try {
                 captureBtn.disabled = true;
                 captureBtn.innerHTML = '<span class="loading-spinner"></span> Vérification...';
-                
-                faceStatus.innerHTML = '🔍 Analyse du visage en cours...';
+
+                faceStatus.innerHTML = '🔍 Détection du visage en cours...';
                 faceStatus.className = 'face-status info';
-                
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const context = canvas.getContext('2d');
-                
-                context.save();
-                context.scale(-1, 1);
-                context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-                context.restore();
-                
-                const mockDescriptor = generateMockFaceDescriptor();
-                
+
+                console.log('Début détection visage...');
+
+                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptors();
+
+                console.log('Visages détectés:', detections.length);
+
+                if (detections.length === 0) {
+                    faceStatus.innerHTML = '❌ Aucun visage détecté. Veuillez réessayer.';
+                    faceStatus.className = 'face-status error';
+                    captureBtn.disabled = false;
+                    captureBtn.innerHTML = '🔍 Réessayer';
+                    isScanning = false;
+                    return;
+                }
+
+                // Prendre le premier visage détecté
+                const descriptor = Array.from(detections[0].descriptor);
+                console.log('Descripteur généré, taille:', descriptor.length);
+
                 faceStatus.innerHTML = '📡 Vérification auprès du serveur...';
-                
+
                 const response = await fetch('{{ path('app_verify_face') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        descriptor: mockDescriptor
+                        descriptor: descriptor
                     })
                 });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    faceStatus.innerHTML = '✅ Connexion réussie ! Redirection...';
-                    faceStatus.className = 'face-status success';
-                    captureBtn.innerHTML = '✅ Succès !';
-                    
-                    if (mediaStream) {
-                        mediaStream.getTracks().forEach(track => track.stop());
-                    }
-                    
-                    setTimeout(() => {
-    // Utiliser l'URL directe si c'est app_my_tickets
-    let redirectUrl = result.redirect;
-    if (result.redirect === 'app_my_tickets') {
-        redirectUrl = '/my_tickets';
-    }
-    window.location.href = redirectUrl || '/dashboard';
-}, 1500);
-                } else {
+
+                console.log('Réponse serveur reçue, status:', response.status);
+
+                // Vérifier d'abord le code HTTP avant de traiter le JSON
+                if (response.status !== 200) {
+                    const result = await response.json();
+                    console.error('Erreur HTTP:', response.status, result);
                     faceStatus.innerHTML = '❌ ' + (result.message || 'Visage non reconnu. Veuillez réessayer.');
                     faceStatus.className = 'face-status error';
                     captureBtn.disabled = false;
                     captureBtn.innerHTML = '🔍 Réessayer';
                     isScanning = false;
+                    return;
                 }
-                
+
+                const result = await response.json();
+
+                console.log('Résultat serveur:', result);
+
+                if (result.success === true) {
+                    faceStatus.innerHTML = '✅ Connexion réussie ! Redirection...';
+                    faceStatus.className = 'face-status success';
+                    captureBtn.innerHTML = '✅ Succès !';
+
+                    if (mediaStream) {
+                        mediaStream.getTracks().forEach(track => track.stop());
+                    }
+
+                    setTimeout(() => {
+                        let redirectUrl = result.redirect;
+                        if (result.redirect === 'app_my_tickets') {
+                            redirectUrl = '/my_tickets';
+                        } else if (result.redirect === 'app_dashboard') {
+                            redirectUrl = '/dashboard';
+                        } else if (result.redirect === 'app_sponsor_portal') {
+                            redirectUrl = '/sponsor/portal';
+                        }
+                        window.location.href = redirectUrl || '/dashboard';
+                    }, 1500);
+                } else {
+                    // Afficher le message d'erreur détaillé
+                    let errorMessage = result.message || 'Visage non reconnu. Veuillez réessayer.';
+                    if (result.similarity && result.threshold) {
+                        errorMessage += ` (Similarité: ${result.similarity}, Seuil: ${result.threshold})`;
+                    }
+                    faceStatus.innerHTML = '❌ ' + errorMessage;
+                    faceStatus.className = 'face-status error';
+                    captureBtn.disabled = false;
+                    captureBtn.innerHTML = '🔍 Réessayer';
+                    isScanning = false;
+                    console.error('Face recognition failed:', result);
+                }
+
             } catch (error) {
                 console.error('Erreur scan:', error);
                 faceStatus.innerHTML = '❌ Erreur lors de la vérification. Veuillez réessayer.';
@@ -948,18 +994,10 @@ async function initializeFaceRecognition() {
                 isScanning = false;
             }
         }
-        
-        function generateMockFaceDescriptor() {
-            const descriptor = [];
-            for (let i = 0; i < 128; i++) {
-                descriptor.push(Math.random() * 2 - 1);
-            }
-            return descriptor;
-        }
-        
+
     } catch (error) {
         console.error('Erreur caméra:', error);
-        
+
         let errorMessage = '❌ Impossible d\'accéder à la caméra. ';
         if (error.name === 'NotAllowedError') {
             errorMessage += 'Veuillez autoriser l\'accès à la caméra.';
@@ -970,11 +1008,11 @@ async function initializeFaceRecognition() {
         } else {
             errorMessage += error.message || 'Vérifiez vos permissions et réessayez.';
         }
-        
+
         faceStatus.innerHTML = errorMessage;
         faceStatus.className = 'face-status error';
         captureBtn.disabled = true;
-        
+
         const videoPlaceholder = document.getElementById('videoPlaceholder');
         videoPlaceholder.innerHTML = `
             <div style="font-size: 48px;">📷</div>
@@ -988,7 +1026,7 @@ function togglePassword() {
     const passwordField = document.getElementById('passwordField');
     const visiblePasswordField = document.getElementById('visiblePasswordField');
     const eyeIcon = document.getElementById('eyeIcon');
-    
+
     if (passwordField.style.display !== 'none') {
         passwordField.style.display = 'none';
         visiblePasswordField.style.display = 'block';
@@ -1016,22 +1054,22 @@ function validateLoginForm() {
     const emailField = document.getElementById('emailField');
     const passwordField = document.getElementById('passwordField');
     const visiblePasswordField = document.getElementById('visiblePasswordField');
-    
+
     const passwordValue = passwordField.style.display !== 'none' ? passwordField.value : visiblePasswordField.value;
-    
+
     if (!emailField.value || emailField.value.trim() === '') {
         showInlineError('Veuillez saisir votre email');
         emailField.focus();
         return false;
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailField.value)) {
         showInlineError('Veuillez saisir un email valide');
         emailField.focus();
         return false;
     }
-    
+
     if (!passwordValue || passwordValue.trim() === '') {
         showInlineError('Veuillez saisir votre mot de passe');
         if (passwordField.style.display !== 'none') {
@@ -1041,7 +1079,7 @@ function validateLoginForm() {
         }
         return false;
     }
-    
+
     return true;
 }
 
@@ -1056,15 +1094,15 @@ function showInlineError(message) {
     if (existingAlert) {
         existingAlert.remove();
     }
-    
+
     const formContainer = document.querySelector('.form-container');
     const alertDiv = document.createElement('div');
     alertDiv.id = 'inlineErrorAlert';
     alertDiv.className = 'login-message';
     alertDiv.textContent = message;
-    
+
     formContainer.parentNode.insertBefore(alertDiv, formContainer);
-    
+
     setTimeout(() => {
         const alert = document.getElementById('inlineErrorAlert');
         if (alert) {

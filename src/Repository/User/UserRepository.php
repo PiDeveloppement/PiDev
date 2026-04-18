@@ -262,7 +262,7 @@ public function findAllFacultes(): array
             ->getQuery()
             ->getSingleColumnResult();
 
-        return !empty($result) ? $result : ['sellamiarij7@gmail.com']; // Email par défaut
+        return !empty($result) ? $result : [];
     }
 
     // ==================== MÉTHODES POUR LE TÉLÉPHONE ====================

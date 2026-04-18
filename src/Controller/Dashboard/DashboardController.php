@@ -5,6 +5,7 @@ namespace App\Controller\Dashboard;
 use App\Entity\Event\Event;
 use App\Entity\User\UserModel;
 use App\Service\User\UserService;
+use App\Service\Statistics\ParticipationStatisticsService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,16 +23,19 @@ class DashboardController extends AbstractController
     private EntityManagerInterface $entityManager;
     private LoggerInterface $logger;
     private \DateTime $lastUpdate;
-    private UserService $userService;  // Ajoutez cette ligne
+    private UserService $userService;
+    private ParticipationStatisticsService $participationStatisticsService;
 
     public function __construct(
         EntityManagerInterface $entityManager,
         LoggerInterface $logger,
-        UserService $userService  // Ajoutez ce paramètre
+        UserService $userService,
+        ParticipationStatisticsService $participationStatisticsService
     ) {
         $this->entityManager = $entityManager;
         $this->logger = $logger;
-        $this->userService = $userService;  // Ajoutez cette ligne
+        $this->userService = $userService;
+        $this->participationStatisticsService = $participationStatisticsService;
         $this->lastUpdate = new \DateTime();
     }
 
@@ -62,6 +66,10 @@ class DashboardController extends AbstractController
         try {
             $stats = $this->loadDashboardData($isOrganizer, $isAdmin);
 
+            // Récupérer les statistiques de participation depuis le service
+            $participationStats = $this->participationStatisticsService->getParticipationRate();
+            $participationHistory = $this->participationStatisticsService->getParticipationHistory();
+
             // Afficher les statistiques dans les logs pour déboguer
             $this->logger->info('📊 Statistiques calculées:', [
                 'total_events' => $stats['total_events'],
@@ -71,15 +79,25 @@ class DashboardController extends AbstractController
                 'planned_percent' => $stats['planned_percent'],
                 'ongoing_percent' => $stats['ongoing_percent'],
                 'completed_percent' => $stats['completed_percent'],
+                'participation_rate' => $participationStats['participation_rate'],
             ]);
 
         } catch (\Exception $e) {
             $this->logger->error('❌ Erreur chargement données: ' . $e->getMessage());
             $stats = $this->getErrorStats();
+            $participationStats = [
+                'total_users' => 0,
+                'unique_participants' => 0,
+                'participation_rate' => 0,
+                'non_participants' => 0,
+            ];
+            $participationHistory = [];
         }
 
         return $this->render('dashboard/dashboard.html.twig', [
             'stats' => $stats,
+            'participation_stats' => $participationStats,
+            'participation_history' => $participationHistory,
             'upcoming_events' => $stats['upcoming_events'] ?? [],
             'user_role' => $userRole,
             'is_organizer' => $isOrganizer,
