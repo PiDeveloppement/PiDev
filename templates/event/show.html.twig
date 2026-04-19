@@ -216,6 +216,61 @@
         background: #ffffff;
     }
 
+    .weather-card {
+        background: linear-gradient(135deg, #fff8e1, #fff3c4);
+        border: 1px solid #fbbf24;
+    }
+
+    .weather-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .weather-title {
+        margin: 0;
+        color: #92400e;
+        font-size: 15px;
+        font-weight: 800;
+    }
+
+    .weather-icon {
+        font-size: 28px;
+        line-height: 1;
+    }
+
+    .weather-temp {
+        margin-top: 8px;
+        color: #0f172a;
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: -0.4px;
+    }
+
+    .weather-desc {
+        margin-top: 4px;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .weather-meta {
+        margin-top: 8px;
+        display: grid;
+        gap: 4px;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .weather-error {
+        color: #b45309;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.5;
+    }
+
     .event-side-label {
         color: #94a3b8;
         font-size: 11px;
@@ -344,6 +399,26 @@
         <div class="event-side-item">
             <div class="event-side-label">Créé par</div>
             <div class="event-side-value">{{ event.creator ? (event.creator.firstName ~ ' ' ~ event.creator.lastName) : 'Non défini' }}</div>
+        </div>
+
+        <div class="event-side-item weather-card">
+            <div class="weather-head">
+                <div class="weather-title">Météo actuelle</div>
+                <div class="weather-icon">{{ eventWeather ? eventWeather.icon : '🌤️' }}</div>
+            </div>
+            {% if eventWeather %}
+                <div class="weather-temp">{{ eventWeather.temperature|number_format(1, '.', ' ') }}°C</div>
+                <div class="weather-desc">{{ eventWeather.description }}</div>
+                <div class="weather-meta">
+                    <div>📍 {{ eventWeather.governorate }}</div>
+                    <div>💨 {{ eventWeather.windSpeed }} km/h</div>
+                    <div>💧 {{ eventWeather.humidity }} %</div>
+                </div>
+            {% elseif weatherError %}
+                <div class="weather-error">{{ weatherError }}</div>
+            {% else %}
+                <div class="weather-error">Aucune météo disponible pour cet événement.</div>
+            {% endif %}
         </div>
 
         <div class="event-side-item">

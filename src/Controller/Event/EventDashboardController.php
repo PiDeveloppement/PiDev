@@ -11,6 +11,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\UX\Chartjs\Builder\ChartBuilderInterface;
+use Symfony\UX\Chartjs\Model\Chart;
 
 #[Route('/event/dashboard')]
 class EventDashboardController extends AbstractController
@@ -30,7 +32,7 @@ class EventDashboardController extends AbstractController
     }
 
     #[Route('/stats', name: 'app_event_dashboard_stats', methods: ['GET'])]
-    public function stats(Request $request, EntityManagerInterface $em): JsonResponse
+    public function stats(Request $request, EntityManagerInterface $em, ChartBuilderInterface $chartBuilder): JsonResponse
     {
         $months = $request->query->getInt('months', 6);
         if (!in_array($months, [3, 6, 12], true)) {
@@ -130,6 +132,69 @@ class EventDashboardController extends AbstractController
         $gratuits = count(array_filter($filteredEvents, fn(Event $e) => $e->isFree()));
         $payants = $totalEvents - $gratuits;
 
+        $eventsByCategoryLabels = array_map(static fn(array $row) => $row['label'], $eventsByCategory);
+        $eventsByCategoryValues = array_map(static fn(array $row) => $row['value'], $eventsByCategory);
+        $eventsByCategoryColors = array_map(static fn(array $row) => $row['color'], $eventsByCategory);
+
+        $eventsByMonthLabels = array_map(static fn(array $row) => $row['label'], $eventsByMonth);
+        $eventsByMonthValues = array_map(static fn(array $row) => $row['value'], $eventsByMonth);
+
+        $ticketsByMonthLabels = array_map(static fn(array $row) => $row['label'], $ticketsByMonth);
+        $ticketsByMonthValues = array_map(static fn(array $row) => $row['value'], $ticketsByMonth);
+
+        $prixDistributionLabels = array_map(static fn(array $row) => $row['label'], [
+            ['label' => 'Gratuits', 'value' => $gratuits, 'color' => '#16a34a'],
+            ['label' => 'Payants', 'value' => $payants, 'color' => '#1565c0'],
+        ]);
+        $prixDistributionValues = [$gratuits, $payants];
+        $prixDistributionColors = ['#16a34a', '#1565c0'];
+
+        $eventsByCategoryChart = $chartBuilder->createChart(Chart::TYPE_DOUGHNUT)
+            ->setData([
+                'labels' => $eventsByCategoryLabels,
+                'datasets' => [[
+                    'data' => $eventsByCategoryValues,
+                    'backgroundColor' => $eventsByCategoryColors,
+                    'borderColor' => '#ffffff',
+                    'borderWidth' => 2,
+                ]],
+            ]);
+
+        $eventsByMonthChart = $chartBuilder->createChart(Chart::TYPE_BAR)
+            ->setData([
+                'labels' => $eventsByMonthLabels,
+                'datasets' => [[
+                    'label' => 'Événements',
+                    'data' => $eventsByMonthValues,
+                    'backgroundColor' => 'rgba(21, 101, 192, 0.75)',
+                    'borderColor' => '#1565c0',
+                    'borderWidth' => 1,
+                ]],
+            ]);
+
+        $ticketsByMonthChart = $chartBuilder->createChart(Chart::TYPE_BAR)
+            ->setData([
+                'labels' => $ticketsByMonthLabels,
+                'datasets' => [[
+                    'label' => 'Billets',
+                    'data' => $ticketsByMonthValues,
+                    'backgroundColor' => 'rgba(13, 148, 136, 0.75)',
+                    'borderColor' => '#0d9488',
+                    'borderWidth' => 1,
+                ]],
+            ]);
+
+        $prixDistributionChart = $chartBuilder->createChart(Chart::TYPE_PIE)
+            ->setData([
+                'labels' => $prixDistributionLabels,
+                'datasets' => [[
+                    'data' => $prixDistributionValues,
+                    'backgroundColor' => $prixDistributionColors,
+                    'borderColor' => '#ffffff',
+                    'borderWidth' => 2,
+                ]],
+            ]);
+
         $upcoming = array_values(array_filter($filteredEvents, fn(Event $e) => $e->getStartDate() && $e->getStartDate() >= $now));
         usort($upcoming, fn(Event $a, Event $b) => $a->getStartDate() <=> $b->getStartDate());
         $upcoming = array_slice($upcoming, 0, 5);
@@ -159,6 +224,12 @@ class EventDashboardController extends AbstractController
             'prixDistribution' => [
                 ['label' => 'Gratuits', 'value' => $gratuits, 'color' => '#16a34a'],
                 ['label' => 'Payants', 'value' => $payants, 'color' => '#1565c0'],
+            ],
+            'charts' => [
+                'eventsByCategory' => $eventsByCategoryChart->createView(),
+                'eventsByMonth' => $eventsByMonthChart->createView(),
+                'ticketsByMonth' => $ticketsByMonthChart->createView(),
+                'prixDistribution' => $prixDistributionChart->createView(),
             ],
             'upcomingEvents' => $upcomingEvents,
             'meta' => [

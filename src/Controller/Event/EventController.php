@@ -7,6 +7,7 @@ use App\Entity\User\UserModel;
 use App\Form\Event\EventType;
 use App\Service\Event\AiPosterService;
 use App\Service\Event\EventService;
+use App\Service\Event\WeatherService;
 use Knp\Component\Pager\PaginatorInterface;
 use Knp\Snappy\Pdf;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -25,6 +26,7 @@ class EventController extends AbstractController
         private FormFactoryInterface $formFactory,
         private EventService $eventService,
         private AiPosterService $aiPosterService,
+        private WeatherService $weatherService,
         #[Autowire('%env(default::GOOGLE_API_KEY)%')] private readonly ?string $googleApiKey = null,
         #[Autowire('%env(default::GOOGLE_CALENDAR_ID)%')] private readonly ?string $googleCalendarId = null
     ) {}
@@ -214,6 +216,33 @@ class EventController extends AbstractController
         ]);
     }
 
+    #[Route('/weather', name: 'app_event_weather', methods: ['GET'])]
+    public function weather(Request $request): JsonResponse
+    {
+        $governorate = trim((string) $request->query->get('gouvernorat', ''));
+
+        if ($governorate === '') {
+            return $this->json([
+                'ok' => false,
+                'message' => 'Le gouvernorat est requis.',
+            ], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $weather = $this->weatherService->getCurrentWeatherForGovernorate($governorate);
+
+            return $this->json([
+                'ok' => true,
+                'weather' => $weather,
+            ]);
+        } catch (\RuntimeException $exception) {
+            return $this->json([
+                'ok' => false,
+                'message' => $exception->getMessage(),
+            ], JsonResponse::HTTP_BAD_GATEWAY);
+        }
+    }
+
     #[Route('/calendar', name: 'app_event_calendar', methods: ['GET'])]
     public function calendar(): Response
     {
@@ -261,12 +290,26 @@ class EventController extends AbstractController
     {
         $this->eventService->syncFromGoogleCalendarToEventFlow();
 
+        $eventWeather = null;
+        $weatherError = null;
+        $governorate = (string) ($event->getGouvernorat() ?? '');
+
+        if ($governorate !== '') {
+            try {
+                $eventWeather = $this->weatherService->getCurrentWeatherForGovernorate($governorate);
+            } catch (\RuntimeException $exception) {
+                $weatherError = $exception->getMessage();
+            }
+        }
+
         if ($event->getId() !== null) {
             $entityManager->refresh($event);
         }
 
         return $this->render('event/show.html.twig', [
             'event' => $event,
+            'eventWeather' => $eventWeather,
+            'weatherError' => $weatherError,
             'pageInfo' => [
                 'title' => "Détails de l'Événement",
                 'subtitle' => "Consultation des informations de l'événement",

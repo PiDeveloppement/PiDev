@@ -5,6 +5,7 @@ namespace App\Controller\Event;
 use App\Entity\Event\Ticket;
 use App\Repository\Event\TicketRepository;
 use App\Service\Event\TicketService;
+use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -52,13 +53,18 @@ class TicketController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_ticket_show', methods: ['GET'], requirements: ['id' => '\\d+'])]
-    public function show(int $id, TicketRepository $ticketRepository): Response
+    public function show(int $id, TicketRepository $ticketRepository, EntityManagerInterface $entityManager): Response
     {
         $ticket = $ticketRepository->find($id);
         if (!$ticket instanceof Ticket) {
             $this->addFlash('warning', 'Billet introuvable.');
 
             return $this->redirectToRoute('app_ticket_index');
+        }
+
+        if (!$ticket->getQrCode()) {
+            $ticket->setQrCode($this->generateUniqueQrToken($entityManager));
+            $entityManager->flush();
         }
 
         return $this->render('ticket/show.html.twig', [
@@ -85,5 +91,15 @@ class TicketController extends AbstractController
         $this->addFlash('success', 'Billet supprimé avec succès.');
 
         return $this->redirectToRoute('app_ticket_index');
+    }
+
+    private function generateUniqueQrToken(EntityManagerInterface $entityManager): string
+    {
+        do {
+            $token = 'tkt_' . bin2hex(random_bytes(24));
+            $exists = (int) $entityManager->getRepository(Ticket::class)->count(['qrCode' => $token]) > 0;
+        } while ($exists);
+
+        return $token;
     }
 }

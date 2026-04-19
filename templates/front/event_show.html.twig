@@ -158,6 +158,64 @@
             margin-bottom: 18px;
         }
 
+        .weather-panel {
+            border: 1px solid #fbbf24;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #fff8e1, #fff3c4);
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .weather-panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .weather-panel-title {
+            margin: 0;
+            color: #92400e;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .weather-panel-icon {
+            font-size: 30px;
+            line-height: 1;
+        }
+
+        .weather-panel-temp {
+            color: #0f172a;
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: -0.4px;
+        }
+
+        .weather-panel-desc {
+            margin-top: 4px;
+            color: #334155;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .weather-panel-meta {
+            margin-top: 10px;
+            display: grid;
+            gap: 4px;
+            color: #475569;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .weather-panel-error {
+            color: #b45309;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
         .experience-box {
             border: 1px solid #d1ddef;
             border-radius: 14px;
@@ -392,6 +450,26 @@
                         </div>
                     </div>
 
+                    <section class="weather-panel">
+                        <div class="weather-panel-head">
+                            <h2 class="weather-panel-title">Météo actuelle</h2>
+                            <div class="weather-panel-icon">{{ eventWeather ? eventWeather.icon : '🌤️' }}</div>
+                        </div>
+                        {% if eventWeather %}
+                            <div class="weather-panel-temp">{{ eventWeather.temperature|number_format(1, '.', ' ') }}°C</div>
+                            <div class="weather-panel-desc">{{ eventWeather.description }}</div>
+                            <div class="weather-panel-meta">
+                                <div>📍 {{ eventWeather.governorate }}</div>
+                                <div>💨 {{ eventWeather.windSpeed }} km/h</div>
+                                <div>💧 {{ eventWeather.humidity }} %</div>
+                            </div>
+                        {% elseif weatherError %}
+                            <div class="weather-panel-error">{{ weatherError }}</div>
+                        {% else %}
+                            <div class="weather-panel-error">Aucune météo disponible pour cet événement.</div>
+                        {% endif %}
+                    </section>
+
                     <div class="show-price">{{ event.isFree ? 'Gratuit' : (event.ticketPrice|number_format(2, '.', ' ') ~ ' TND') }}</div>
 
                     <section class="experience-box">
@@ -412,9 +490,6 @@
                                 <input type="hidden" name="_token" value="{{ csrf_token('participate_event_' ~ event.id) }}">
                                 <button type="submit" class="show-btn primary">{{ isPendingParticipationForThisEvent ? 'Confirmer ma participation' : 'Participer' }}</button>
                             </form>
-                        {% endif %}
-                        {% if isParticipantUser and hasEventTicket|default(false) %}
-                            <a class="show-btn primary" href="{{ path('app_quiz_start', {'event_id': event.id}) }}" style="background: #9c27b0;">🎯 Quiz</a>
                         {% endif %}
                     </div>
                 </div>

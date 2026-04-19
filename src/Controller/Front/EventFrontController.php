@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Routing\Annotation\Route;
+use App\Service\Event\WeatherService;
 
 class EventFrontController extends AbstractController
 {//    private EventService $eventService;
@@ -22,6 +23,12 @@ class EventFrontController extends AbstractController
     public function legacyRedirect(): Response
     {
         return $this->redirectToRoute('app_public_events');
+    }
+
+    #[Route('/events/calendar', name: 'app_public_events_calendar', methods: ['GET'])]
+    public function calendarView(): Response
+    {
+        return $this->render('front/events_calendar.html.twig');
     }
 
     #[Route('/events', name: 'app_public_events', methods: ['GET'])]
@@ -57,7 +64,7 @@ class EventFrontController extends AbstractController
     }
 
     #[Route('/events/{id}', name: 'app_public_event_show', methods: ['GET'], requirements: ['id' => '\\d+'])]
-    public function show(int $id, EventRepository $eventRepository, EntityManagerInterface $em): Response
+    public function show(int $id, EventRepository $eventRepository, EntityManagerInterface $em, WeatherService $weatherService): Response
     {
         $now = new \DateTimeImmutable();
 
@@ -79,7 +86,19 @@ class EventFrontController extends AbstractController
             throw $this->createNotFoundException('Evenement introuvable.');
         }
 
+        $eventWeather = null;
+        $weatherError = null;
+        $governorate = (string) ($event->getGouvernorat() ?? '');
+        if ($governorate !== '') {
+            try {
+                $eventWeather = $weatherService->getCurrentWeatherForGovernorate($governorate);
+            } catch (\RuntimeException $exception) {
+                $weatherError = $exception->getMessage();
+            }
+        }
+
         $hasEventTicket = false;
+        $hasUsedEventTicket = false;
         /** @var UserModel|null $user */
         $user = $this->getUser();
         if ($user instanceof UserModel) {
@@ -87,12 +106,21 @@ class EventFrontController extends AbstractController
                 'event' => $event,
                 'user' => $user,
             ]) > 0;
+
+            $hasUsedEventTicket = (int) $em->getRepository(Ticket::class)->count([
+                'event' => $event,
+                'user' => $user,
+                'isUsed' => true,
+            ]) > 0;
         }
 
         return $this->render('front/event_show.html.twig', [
             'event' => $event,
+            'eventWeather' => $eventWeather,
+            'weatherError' => $weatherError,
             'hasTickets' => $this->currentUserHasTickets($em),
             'hasEventTicket' => $hasEventTicket,
+            'hasUsedEventTicket' => $hasUsedEventTicket,
         ]);
     }
 
@@ -223,8 +251,33 @@ class EventFrontController extends AbstractController
             ->getQuery()
             ->getResult();
 
+        $now = new \DateTimeImmutable();
+        $upcomingTickets = [];
+        $historyTickets = [];
+
+        foreach ($tickets as $ticket) {
+            if (!$ticket instanceof Ticket) {
+                continue;
+            }
+
+            $event = $ticket->getEvent();
+            $isPastEvent = $event instanceof Event
+                && $event->getEndDate() instanceof \DateTimeInterface
+                && $event->getEndDate() < $now;
+
+            if ((bool) $ticket->isUsed() || $isPastEvent) {
+                $historyTickets[] = $ticket;
+                continue;
+            }
+
+            $upcomingTickets[] = $ticket;
+        }
+
         return $this->render('front/my_tickets.html.twig', [
             'tickets' => $tickets,
+            'upcomingTickets' => $upcomingTickets,
+            'historyTickets' => $historyTickets,
+            'now' => $now,
             'hasTickets' => count($tickets) > 0,
         ]);
     }
@@ -378,6 +431,20 @@ class EventFrontController extends AbstractController
             ]);
         }
 
+        if (!$this->isTicketScanDayOpen($ticket)) {
+            $event = $ticket->getEvent();
+            $startAt = $event instanceof Event ? $event->getStartDate() : null;
+            $formattedStartAt = $startAt instanceof \DateTimeInterface ? $startAt->format('d/m/Y H:i') : 'date inconnue';
+
+            return $this->render('ticket/scan_result.html.twig', [
+                'status' => 'too_early',
+                'title' => 'Événement pas encore commencé',
+                'message' => sprintf('Ce billet ne peut pas être validé maintenant. L événement est prévu le %s.', $formattedStartAt),
+                'ticket' => $ticket,
+                'token' => $token,
+            ]);
+        }
+
         return $this->render('ticket/scan_result.html.twig', [
             'status' => 'preview',
             'title' => 'Billet trouve',
@@ -414,16 +481,6 @@ class EventFrontController extends AbstractController
             ]);
         }
 
-        // Atomic transition VALID -> USED to prevent race conditions on double validation.
-        $updatedRows = $em->createQuery(
-            'UPDATE App\\Entity\\Event\\Ticket t
-             SET t.isUsed = true, t.usedAt = :usedAt
-             WHERE t.qrCode = :token AND t.isUsed = false'
-        )
-            ->setParameter('usedAt', new \DateTime())
-            ->setParameter('token', $token)
-            ->execute();
-
         $ticket = $this->findTicketByQrToken($em, $token);
 
         if (!$ticket instanceof Ticket) {
@@ -434,6 +491,30 @@ class EventFrontController extends AbstractController
                 'ticket' => null,
             ]);
         }
+
+        if (!$this->isTicketScanDayOpen($ticket)) {
+            $event = $ticket->getEvent();
+            $startAt = $event instanceof Event ? $event->getStartDate() : null;
+            $formattedStartAt = $startAt instanceof \DateTimeInterface ? $startAt->format('d/m/Y H:i') : 'date inconnue';
+
+            return $this->render('ticket/scan_result.html.twig', [
+                'status' => 'too_early',
+                'title' => 'Événement pas encore commencé',
+                'message' => sprintf('Ce billet ne peut pas être validé maintenant. L événement est prévu le %s.', $formattedStartAt),
+                'ticket' => $ticket,
+                'token' => $token,
+            ]);
+        }
+
+        // Atomic transition VALID -> USED to prevent race conditions on double validation.
+        $updatedRows = $em->createQuery(
+            'UPDATE App\\Entity\\Event\\Ticket t
+             SET t.isUsed = true, t.usedAt = :usedAt
+             WHERE t.qrCode = :token AND t.isUsed = false'
+        )
+            ->setParameter('usedAt', new \DateTime())
+            ->setParameter('token', $token)
+            ->execute();
 
         if ($updatedRows > 0) {
             $em->refresh($ticket);
@@ -508,6 +589,23 @@ class EventFrontController extends AbstractController
             ->getOneOrNullResult();
 
         return $ticket instanceof Ticket ? $ticket : null;
+    }
+
+    private function isTicketScanDayOpen(Ticket $ticket): bool
+    {
+        $event = $ticket->getEvent();
+
+        if (!$event instanceof Event) {
+            return false;
+        }
+
+        $startAt = $event->getStartDate();
+
+        if (!$startAt instanceof \DateTimeInterface) {
+            return false;
+        }
+
+        return $startAt->format('Y-m-d') === (new \DateTimeImmutable('today'))->format('Y-m-d');
     }
 
     private function slugifyFilename(string $value): string

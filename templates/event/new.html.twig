@@ -50,10 +50,92 @@
     .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
 
     .weather-box {
-        background: #fffbeb; border: 1px solid #fbbf24; border-radius: 12px;
-        padding: 15px; margin-top: 10px; display: none;
+        background: linear-gradient(135deg, #fff8e1, #fff3c4);
+        border: 1px solid #fbbf24;
+        border-radius: 16px;
+        padding: 16px;
+        margin-top: 10px;
+        display: none;
+        box-shadow: 0 10px 24px rgba(251, 191, 36, 0.16);
     }
     .weather-box.show { display: block; }
+    .weather-box.is-clear {
+        background: linear-gradient(135deg, #eff6ff, #dbeafe);
+        border-color: #60a5fa;
+    }
+    .weather-box.is-cloudy {
+        background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+        border-color: #94a3b8;
+    }
+    .weather-box.is-fog {
+        background: linear-gradient(135deg, #f8fafc, #e5e7eb);
+        border-color: #cbd5e1;
+    }
+    .weather-box.is-rain {
+        background: linear-gradient(135deg, #eff6ff, #dbeafe);
+        border-color: #38bdf8;
+    }
+    .weather-box.is-snow {
+        background: linear-gradient(135deg, #f8fbff, #eef6ff);
+        border-color: #93c5fd;
+    }
+    .weather-box.is-storm {
+        background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+        border-color: #a78bfa;
+    }
+    .weather-main {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        color: #92400e;
+        margin-bottom: 8px;
+        font-size: 15px;
+    }
+    .weather-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .weather-emoji {
+        font-size: 36px;
+        line-height: 1;
+    }
+    .weather-temp {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        text-align: right;
+    }
+    .weather-temp-value {
+        font-size: 30px;
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1;
+    }
+    .weather-temp-label {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 4px;
+    }
+    .weather-description {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 10px;
+    }
+    .weather-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 14px;
+        color: #475569;
+        font-size: 13px;
+    }
+    .weather-item strong {
+        color: #0f172a;
+    }
 
     .char-counter { font-size: 12px; color: #6c757d; }
 
@@ -267,9 +349,22 @@
 
         <!-- Météo -->
         <div class="weather-box" id="weatherBox">
-            <div style="font-weight:700; color:#92400e; margin-bottom:10px;">🌤️ MÉTÉO PRÉVUE</div>
+            <div class="weather-header">
+                <div>
+                    <div class="weather-main" id="weatherTitle">🌤️ MÉTÉO PRÉVUE</div>
+                    <div class="weather-description" id="weatherDescription">Sélectionnez un gouvernorat pour afficher la météo.</div>
+                </div>
+                <div class="weather-temp">
+                    <div class="weather-emoji" id="weatherEmoji">🌤️</div>
+                    <div class="weather-temp-value" id="weatherTemperature">--°</div>
+                    <div class="weather-temp-label">Température actuelle</div>
+                </div>
+            </div>
             <div id="weatherContent" style="color:#64748b; font-size:13px;">
-                Chargement de la météo...
+                <div class="weather-grid">
+                    <div class="weather-item"><strong>Vent :</strong> -- km/h</div>
+                    <div class="weather-item"><strong>Humidité :</strong> -- %</div>
+                </div>
             </div>
         </div>
     </div>
@@ -359,6 +454,82 @@ const facultesParGouvernorat = {
 };
 
 const currentLocation = "{{ event.location ?? '' }}";
+const currentGovernorate = "{{ event.gouvernorat ?? '' }}";
+
+async function loadWeather(governorate) {
+    const weatherBox = document.getElementById('weatherBox');
+    const weatherContent = document.getElementById('weatherContent');
+    const weatherTitle = document.getElementById('weatherTitle');
+    const weatherDescription = document.getElementById('weatherDescription');
+    const weatherEmoji = document.getElementById('weatherEmoji');
+    const weatherTemperature = document.getElementById('weatherTemperature');
+
+    if (!governorate) {
+        weatherBox.className = 'weather-box';
+        weatherTitle.textContent = '🌤️ MÉTÉO PRÉVUE';
+        weatherDescription.textContent = 'Sélectionnez un gouvernorat pour afficher la météo.';
+        weatherEmoji.textContent = '🌤️';
+        weatherTemperature.textContent = '--°';
+        weatherContent.innerHTML = `
+            <div class="weather-grid">
+                <div class="weather-item"><strong>Vent :</strong> -- km/h</div>
+                <div class="weather-item"><strong>Humidité :</strong> -- %</div>
+            </div>
+        `;
+        weatherBox.classList.remove('show');
+        return;
+    }
+
+    weatherBox.classList.add('show');
+    weatherContent.textContent = 'Chargement de la météo...';
+
+    try {
+        const response = await fetch(`{{ path('app_event_weather') }}?gouvernorat=${encodeURIComponent(governorate)}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.ok || !data.weather) {
+            weatherContent.innerHTML = `<div style="color:#b45309;">${data.message || 'Impossible de charger la météo.'}</div>`;
+            return;
+        }
+
+        const weather = data.weather;
+        const normalizedDescription = String(weather.description || '').toLowerCase();
+        weatherBox.className = 'weather-box show';
+
+        if (normalizedDescription.includes('orage')) {
+            weatherBox.classList.add('is-storm');
+        } else if (normalizedDescription.includes('pluie') || normalizedDescription.includes('bruine') || normalizedDescription.includes('averses')) {
+            weatherBox.classList.add('is-rain');
+        } else if (normalizedDescription.includes('neige')) {
+            weatherBox.classList.add('is-snow');
+        } else if (normalizedDescription.includes('brouillard')) {
+            weatherBox.classList.add('is-fog');
+        } else if (normalizedDescription.includes('nuage')) {
+            weatherBox.classList.add('is-cloudy');
+        } else {
+            weatherBox.classList.add('is-clear');
+        }
+
+        weatherTitle.textContent = `MÉTÉO PRÉVUE - ${weather.governorate}`;
+        weatherDescription.textContent = weather.description;
+        weatherEmoji.textContent = weather.icon;
+        weatherTemperature.textContent = `${Number(weather.temperature).toFixed(1)}°C`;
+        weatherContent.innerHTML = `
+            <div class="weather-grid">
+                <div class="weather-item"><strong>Température :</strong> ${weather.temperature} °C</div>
+                <div class="weather-item"><strong>Description :</strong> ${weather.description}</div>
+                <div class="weather-item"><strong>Vent :</strong> ${weather.windSpeed} km/h</div>
+                <div class="weather-item"><strong>Humidité :</strong> ${weather.humidity} %</div>
+            </div>
+        `;
+    } catch (error) {
+        weatherBox.className = 'weather-box show is-fog';
+        weatherDescription.textContent = 'Impossible de charger la météo en ce moment.';
+        weatherEmoji.textContent = '⚠️';
+        weatherTemperature.textContent = '--°';
+        weatherContent.innerHTML = '<div style="color:#b91c1c;">Erreur réseau pendant le chargement de la météo.</div>';
+    }
+}
 
 function syncDateTimeFields() {
     const startDateOnly = document.getElementById('startDateOnly').value;
@@ -394,9 +565,11 @@ document.getElementById('gouvernoratSelect').addEventListener('change', function
             locationSelect.appendChild(opt);
         });
         document.getElementById('weatherBox').classList.add('show');
+        loadWeather(gov);
     } else {
         locationSelect.innerHTML = '<option value="">Saisir le lieu manuellement</option>';
         document.getElementById('weatherBox').classList.remove('show');
+        document.getElementById('weatherContent').textContent = 'Sélectionnez un gouvernorat pour afficher la météo.';
     }
 });
 
@@ -404,6 +577,9 @@ document.getElementById('gouvernoratSelect').addEventListener('change', function
 window.addEventListener('load', function() {
     const gov = document.getElementById('gouvernoratSelect').value;
     if (gov) {
+        document.getElementById('gouvernoratSelect').dispatchEvent(new Event('change'));
+    } else if (currentGovernorate) {
+        document.getElementById('gouvernoratSelect').value = currentGovernorate;
         document.getElementById('gouvernoratSelect').dispatchEvent(new Event('change'));
     }
 

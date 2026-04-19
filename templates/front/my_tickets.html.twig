@@ -98,6 +98,18 @@
             gap: 16px;
         }
 
+        .tickets-section-title {
+            color: #10345f;
+            font-size: 22px;
+            margin: 8px 0 12px;
+        }
+
+        .tickets-section-subtitle {
+            color: #5b6b7f;
+            font-size: 14px;
+            margin: 0 0 14px;
+        }
+
         .ticket-card {
             background: #ffffff;
             border: 1px solid #d8e4f3;
@@ -261,8 +273,11 @@
                     <p>Participez à un événement pour créer votre premier billet.</p>
                 </div>
             {% else %}
-                <section class="tickets-grid">
-                    {% for ticket in tickets %}
+                {% if upcomingTickets is not empty %}
+                <h3 class="tickets-section-title">Billets à venir</h3>
+                <p class="tickets-section-subtitle">Événements à venir avec billets actifs.</p>
+                <section class="tickets-grid" style="margin-bottom: 20px;">
+                    {% for ticket in upcomingTickets %}
                         {% set eventItem = ticket.event %}
                         <article class="ticket-card">
                             <div class="ticket-top">
@@ -281,14 +296,49 @@
                                 {% if eventItem %}
                                     <a class="ticket-btn" href="{{ path('app_public_event_show', {'id': eventItem.id}) }}">Voir événement</a>
                                 {% endif %}
-                                <form method="post" action="{{ path('app_my_ticket_cancel', {'id': ticket.id}) }}" onsubmit="return confirm('Voulez-vous vraiment annuler ce billet ?');" style="display:inline-flex;">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('cancel_ticket_' ~ ticket.id) }}">
-                                    <button type="submit" class="ticket-btn danger">Annuler mon billet</button>
-                                </form>
+                                {% if not ticket.isUsed and eventItem and eventItem.startDate and eventItem.startDate > now %}
+                                    <form method="post" action="{{ path('app_my_ticket_cancel', {'id': ticket.id}) }}" onsubmit="return confirm('Voulez-vous vraiment annuler ce billet ?');" style="display:inline-flex;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('cancel_ticket_' ~ ticket.id) }}">
+                                        <button type="submit" class="ticket-btn danger">Annuler mon billet</button>
+                                    </form>
+                                {% endif %}
                             </div>
                         </article>
                     {% endfor %}
                 </section>
+                {% endif %}
+
+                {% if historyTickets is not empty %}
+                <h3 class="tickets-section-title">Historique de participation</h3>
+                <p class="tickets-section-subtitle">Événements terminés ou billets déjà utilisés.</p>
+                <section class="tickets-grid">
+                    {% for ticket in historyTickets %}
+                        {% set eventItem = ticket.event %}
+                        <article class="ticket-card">
+                            <div class="ticket-top">
+                                <span class="ticket-code">🎫 {{ ticket.ticketCode }}</span>
+                                <span class="ticket-status {{ ticket.isUsed ? 'used' : 'active' }}">{{ ticket.isUsed ? 'Utilisé' : 'Actif' }}</span>
+                            </div>
+                            <h2 class="ticket-event">{{ eventItem ? eventItem.title : 'Événement supprimé' }}</h2>
+                            <div class="ticket-row">📆 Date: {{ eventItem and eventItem.startDate ? eventItem.startDate|date('d/m/Y') : '-' }}</div>
+                            <div class="ticket-row">⏰ Heure: {{ eventItem and eventItem.startDate ? eventItem.startDate|date('H:i') : '-' }}</div>
+                            <div class="ticket-row">📍 Lieu: {{ eventItem and eventItem.location ? eventItem.location : '-' }}</div>
+                            <div class="ticket-row">🏷️ Catégorie: {{ eventItem and eventItem.category ? ((eventItem.category.icon ?? '📁') ~ ' ' ~ eventItem.category.name) : 'Sans catégorie' }}</div>
+                            <div class="ticket-row">🕒 Créé le: {{ ticket.createdAt ? ticket.createdAt|date('d/m/Y H:i') : '-' }}</div>
+
+                            <div class="ticket-actions">
+                                <a class="ticket-btn" href="{{ path('app_my_ticket_pdf', {'id': ticket.id}) }}">Télécharger PDF</a>
+                                {% if eventItem and eventItem.endDate and eventItem.endDate >= now %}
+                                    <a class="ticket-btn" href="{{ path('app_public_event_show', {'id': eventItem.id}) }}">Voir événement</a>
+                                {% endif %}
+                                {% if eventItem and ticket.isUsed %}
+                                    <a class="ticket-btn" href="{{ path('app_quiz_start', {'event_id': eventItem.id}) }}" style="background: #f3e9ff; color: #6f2dbd; border-color: #d8b4f8;">🎯 Passer le Quiz</a>
+                                {% endif %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </section>
+                {% endif %}
             {% endif %}
         </div>
     </main>
