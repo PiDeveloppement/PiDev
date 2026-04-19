@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ac61955315d6c3d3dc213abf7e6c6ba3",
+    "content-hash": "5fa2e171a91e4bc716e417055c3e58a7",
     "packages": [
         {
             "name": "doctrine/cache",
@@ -5287,6 +5287,82 @@
                 }
             ],
             "time": "2026-03-31T20:38:11+00:00"
+        },
+        {
+            "name": "symfony/infobip-notifier",
+            "version": "v6.4.24",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/infobip-notifier.git",
+                "reference": "cb08f55c404199d981df53017ceea28865b06c35"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/infobip-notifier/zipball/cb08f55c404199d981df53017ceea28865b06c35",
+                "reference": "cb08f55c404199d981df53017ceea28865b06c35",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1",
+                "symfony/http-client": "^5.4|^6.0|^7.0",
+                "symfony/notifier": "^6.2.7|^7.0"
+            },
+            "type": "symfony-notifier-bridge",
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Notifier\\Bridge\\Infobip\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Jérémy Romey",
+                    "email": "jeremy@free-agent.fr"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony Infobip Notifier Bridge",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "Infobip",
+                "notifier",
+                "sms"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/infobip-notifier/tree/v6.4.24"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2025-07-10T08:14:14+00:00"
         },
         {
             "name": "symfony/mailer",

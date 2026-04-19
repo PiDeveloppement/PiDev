@@ -17,6 +17,8 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\Notifier\TexterInterface;
+use Symfony\Component\Notifier\Message\SmsMessage;
 
 class LoginController extends AbstractController
 {
@@ -26,6 +28,7 @@ class LoginController extends AbstractController
     public function __construct(
         UserService $userService,
         EntityManagerInterface $em,
+        private TexterInterface $texter
     ) {
         $this->userService = $userService;
         $this->em = $em;
@@ -91,6 +94,20 @@ class LoginController extends AbstractController
                 $user->setLastLoginAt(new \DateTimeImmutable());
             }
             $this->em->flush();
+
+            // Envoyer notification SMS via Infobip lors du login
+            if ($user->getPhone()) {
+                try {
+                    $sms = new SmsMessage(
+                        $user->getPhone(),
+                        'Nouvelle connexion détectée sur votre compte. Si vous n\'êtes pas à l\'origine de cette action, contactez le support immédiatement.'
+                    );
+                    $this->texter->send($sms);
+                } catch (\Exception $e) {
+                    // Log l'erreur mais ne pas bloquer l'action
+                    error_log('Erreur envoi SMS: ' . $e->getMessage());
+                }
+            }
 
             $token = new UsernamePasswordToken($user, 'main', $user->getRoles());
             $this->container->get('security.token_storage')->setToken($token);
@@ -201,6 +218,20 @@ public function verifyFace(Request $request): JsonResponse
         if (method_exists($user, 'setLastLoginAt')) {
             $user->setLastLoginAt(new \DateTimeImmutable());
             $this->em->flush();
+        }
+
+        // Envoyer notification SMS via Infobip lors du login facial
+        if ($user->getPhone()) {
+            try {
+                $sms = new SmsMessage(
+                    $user->getPhone(),
+                    'Nouvelle connexion détectée sur votre compte (reconnaissance faciale). Si vous n\'êtes pas à l\'origine de cette action, contactez le support immédiatement.'
+                );
+                $this->texter->send($sms);
+            } catch (\Exception $e) {
+                // Log l'erreur mais ne pas bloquer l'action
+                error_log('Erreur envoi SMS: ' . $e->getMessage());
+            }
         }
 
         $redirectRoute = $this->resolveHomeRouteForUser($user);
