@@ -130,22 +130,19 @@ class SignupController extends AbstractController
         return match($score) { 5 => 'Très fort', 4 => 'Fort', 3 => 'Moyen', default => 'Faible' };
     }
     
-
 #[Route('/save-face-descriptor', name: 'app_save_face_descriptor', methods: ['POST'])]
 public function saveFaceDescriptor(Request $request, EntityManagerInterface $em): Response
 {
     $data = json_decode($request->getContent(), true);
     $user = $em->getRepository(UserModel::class)->findOneBy(['email' => $data['email']]);
-    
+
     if (!$user) {
         return $this->json(['status' => 'error', 'message' => 'Utilisateur non trouvé'], 404);
     }
-    
-    // VÉRIFIER SI UN AUTRE UTILISATEUR A DÉJÀ CE VISAGE
+
     $faceDescriptor = $data['descriptor'] ?? [];
-    
+
     if (!empty($faceDescriptor)) {
-        // Récupérer tous les utilisateurs qui ont un descripteur facial
         $usersWithFace = $em->getRepository(UserModel::class)
             ->createQueryBuilder('u')
             ->where('u.faceDescriptor IS NOT NULL')
@@ -153,56 +150,52 @@ public function saveFaceDescriptor(Request $request, EntityManagerInterface $em)
             ->setParameter('currentUserId', $user->getId())
             ->getQuery()
             ->getResult();
-        
+
         foreach ($usersWithFace as $existingUser) {
             $storedDescriptor = $existingUser->getFaceDescriptor();
-            if ($storedDescriptor) {
-                $similarity = $this->calculateSimilarity($faceDescriptor, $storedDescriptor);
-                
-                // Si la similarité est supérieure à 0.85 (seuil plus strict pour éviter les faux positifs)
-                if ($similarity > 0.85) {
+            if ($storedDescriptor && is_array($storedDescriptor)) {
+                $distance = $this->calculateEuclideanDistance($faceDescriptor, $storedDescriptor);
+
+                if ($distance < 0.6) {
+                    // ✅ Supprimer le compte qui vient d'être créé
+                    $em->remove($user);
+                    $em->flush();
+
                     return $this->json([
-                        'status' => 'error', 
-                        'message' => 'Ce visage est déjà associé à un compte existant. Veuillez vous connecter.',
+                        'status' => 'error',
+                        'message' => 'Ce visage est déjà associé à un compte existant. Votre inscription a été annulée.',
                         'redirect' => $this->generateUrl('app_login')
                     ], 409);
                 }
             }
         }
     }
-    
-    // Sauvegarder le descripteur facial
-    $user->setFaceDescriptor($data['descriptor']); 
+
+    $user->setFaceDescriptor($faceDescriptor);
     $em->flush();
-    
+
     return $this->json(['status' => 'success']);
 }
 
 /**
- * Calcule la similarité entre deux descripteurs faciaux
+ * Distance euclidienne — seuil face-api.js : < 0.6 = même personne
  */
-private function calculateSimilarity(array $descriptor1, array $descriptor2): float
+private function calculateEuclideanDistance(array $descriptor1, array $descriptor2): float
 {
     if (count($descriptor1) !== count($descriptor2)) {
-        return 0;
+        return PHP_FLOAT_MAX;
     }
-    
-    $dotProduct = 0;
-    $norm1 = 0;
-    $norm2 = 0;
-    
+
+    $sumSquares = 0;
     for ($i = 0; $i < count($descriptor1); $i++) {
-        $dotProduct += $descriptor1[$i] * $descriptor2[$i];
-        $norm1 += $descriptor1[$i] * $descriptor1[$i];
-        $norm2 += $descriptor2[$i] * $descriptor2[$i];
+        $diff = $descriptor1[$i] - $descriptor2[$i];
+        $sumSquares += $diff * $diff;
     }
-    
-    if ($norm1 == 0 || $norm2 == 0) {
-        return 0;
-    }
-    
-    return $dotProduct / (sqrt($norm1) * sqrt($norm2));
+
+    return sqrt($sumSquares);
 }
+
+
 
 
 }

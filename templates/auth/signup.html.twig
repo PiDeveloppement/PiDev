@@ -772,96 +772,109 @@ async function initializeFaceRecognitionSimple() {
         captureBtn.disabled = false;
         captureBtn.innerHTML = ' Capturer mon visage';
 
-        async function captureFaceSimple() {
-            if (isCapturing) return;
-            isCapturing = true;
+  async function captureFaceSimple() {
+    if (isCapturing) return;
+    isCapturing = true;
 
-            try {
-                captureBtn.disabled = true;
-                captureBtn.innerHTML = '<span class="loading-spinner"></span> Traitement...';
+    try {
+        captureBtn.disabled = true;
+        captureBtn.innerHTML = '<span class="loading-spinner"></span> Traitement...';
 
-                faceStatus.innerHTML = ' Détection du visage en cours...';
-                faceStatus.className = 'face-status info';
+        faceStatus.innerHTML = ' Détection du visage en cours...';
+        faceStatus.className = 'face-status info';
 
-                // Détecter le visage avec face-api.js
-                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-                    .withFaceLandmarks()
-                    .withFaceDescriptors();
+        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks()
+            .withFaceDescriptors();
 
-                if (detections.length === 0) {
-                    faceStatus.innerHTML = ' Aucun visage détecté. Veuillez réessayer.';
-                    faceStatus.className = 'face-status error';
-                    captureBtn.disabled = false;
-                    captureBtn.innerHTML = ' Réessayer';
-                    isCapturing = false;
-                    return;
-                }
-
-                // Prendre le premier visage détecté
-                const descriptor = Array.from(detections[0].descriptor);
-
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const context = canvas.getContext('2d');
-                context.save();
-                context.scale(-1, 1);
-                context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-                context.restore();
-
-                const imageData = canvas.toDataURL('image/jpeg', 0.8);
-
-                faceStatus.innerHTML = ' Vérification et enregistrement...';
-
-                const response = await fetch('{{ path('app_save_face_descriptor') }}', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: userEmail,
-                        descriptor: descriptor,
-                        image: imageData
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.status === 'error' && result.message.includes('déjà associé')) {
-                    faceStatus.innerHTML = ' ' + result.message;
-                    faceStatus.className = 'face-status error';
-                    captureBtn.disabled = false;
-                    captureBtn.innerHTML = ' Réessayer';
-                    isCapturing = false;
-
-                    setTimeout(() => {
-                        window.location.href = result.redirect || '{{ path('app_login') }}';
-                    }, 3000);
-                    return;
-                }
-
-                if (result.status === 'success') {
-                    faceStatus.innerHTML = ' Configuration enregistrée ! Redirection...';
-                    faceStatus.className = 'face-status success';
-                    captureBtn.innerHTML = ' Succès !';
-
-                    if (mediaStream) {
-                        mediaStream.getTracks().forEach(track => track.stop());
-                    }
-
-                    setTimeout(() => {
-                        window.location.href = '{{ path('app_login') }}';
-                    }, 2000);
-                } else {
-                    throw new Error(result.message || 'Erreur lors de l\'enregistrement');
-                }
-
-            } catch (error) {
-                console.error('Erreur capture:', error);
-                faceStatus.innerHTML = ' ' + error.message;
-                faceStatus.className = 'face-status error';
-                captureBtn.disabled = false;
-                captureBtn.innerHTML = ' Réessayer';
-                isCapturing = false;
-            }
+        if (detections.length === 0) {
+            faceStatus.innerHTML = '❌ Aucun visage détecté. Veuillez réessayer.';
+            faceStatus.className = 'face-status error';
+            captureBtn.disabled = false;
+            captureBtn.innerHTML = '📸 Réessayer';
+            isCapturing = false;
+            return;
         }
+
+        const descriptor = Array.from(detections[0].descriptor);
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        context.save();
+        context.scale(-1, 1);
+        context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+        context.restore();
+
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+
+        faceStatus.innerHTML = '🔍 Vérification et enregistrement...';
+
+        // ✅ ÉTAPE 1 — appel fetch
+        const response = await fetch('{{ path('app_save_face_descriptor') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: userEmail,
+                descriptor: descriptor,
+                image: imageData
+            })
+        });
+
+        // ✅ ÉTAPE 2 — parse JSON
+        const result = await response.json();
+
+        // ✅ ÉTAPE 3 — visage déjà enregistré sur un autre compte → supprimer le compte et rediriger
+        if (response.status === 409) {
+            faceStatus.innerHTML = '❌ ' + result.message;
+            faceStatus.className = 'face-status error';
+
+            captureBtn.disabled = true;
+            captureBtn.innerHTML = '❌ Inscription annulée';
+
+            const skipBtn = document.getElementById('skipFaceBtn');
+            if (skipBtn) {
+                skipBtn.disabled = true;
+                skipBtn.style.opacity = '0.5';
+                skipBtn.style.cursor = 'not-allowed';
+            }
+
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+
+            setTimeout(() => {
+                window.location.href = result.redirect || '{{ path('app_login') }}';
+            }, 3000);
+            return;
+        }
+
+        // ✅ ÉTAPE 4 — succès
+        if (result.status === 'success') {
+            faceStatus.innerHTML = '✅ Configuration enregistrée ! Redirection...';
+            faceStatus.className = 'face-status success';
+            captureBtn.innerHTML = '✅ Succès !';
+
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+
+            setTimeout(() => {
+                window.location.href = '{{ path('app_login') }}';
+            }, 2000);
+        } else {
+            throw new Error(result.message || 'Erreur lors de l\'enregistrement');
+        }
+
+    } catch (error) {
+        console.error('Erreur capture:', error);
+        faceStatus.innerHTML = '❌ ' + error.message;
+        faceStatus.className = 'face-status error';
+        captureBtn.disabled = false;
+        captureBtn.innerHTML = '📸 Réessayer';
+        isCapturing = false;
+    }
+}
 
         captureBtn.onclick = () => {
             if (!captureBtn.disabled && !isCapturing) {

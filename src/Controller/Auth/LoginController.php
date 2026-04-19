@@ -135,20 +135,13 @@ class LoginController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
     }
-
- #[Route('/login/verify-face', name: 'app_verify_face', methods: ['POST'])]
+#[Route('/login/verify-face', name: 'app_verify_face', methods: ['POST'])]
+#[Route('/login/verify-face', name: 'app_verify_face', methods: ['POST'])]
 public function verifyFace(Request $request): JsonResponse
 {
-    // Nettoyer toute session existante avant de tenter la reconnaissance faciale
-    $this->container->get('security.token_storage')->setToken(null);
-    $session = $request->getSession();
-    $session->invalidate();
-    $session->clear();
-
     $data = json_decode($request->getContent(), true);
     $faceDescriptor = $data['descriptor'] ?? null;
 
-    // Vérifier si le face descriptor est fourni
     if (!$faceDescriptor || !is_array($faceDescriptor)) {
         return $this->json([
             'success' => false,
@@ -156,7 +149,6 @@ public function verifyFace(Request $request): JsonResponse
         ], 400);
     }
 
-    // Récupérer tous les utilisateurs avec un face descriptor
     $users = $this->em->getRepository(UserModel::class)
         ->createQueryBuilder('u')
         ->where('u.faceDescriptor IS NOT NULL')
@@ -166,65 +158,58 @@ public function verifyFace(Request $request): JsonResponse
     if (empty($users)) {
         return $this->json([
             'success' => false,
-            'message' => 'Aucun utilisateur avec visage enregistré dans la base de données'
+            'message' => 'Aucun utilisateur avec visage enregistré'
         ], 401);
     }
 
-    // Chercher l'utilisateur avec la plus haute similarité
     $bestMatch = null;
-    $bestSimilarity = -1; // Initialiser à -1 pour éviter les faux positifs avec similarité 0
-    $threshold = 0.6; // Seuil de similarité (60%) pour face-api.js
+    $bestDistance = PHP_FLOAT_MAX; // ✅ On cherche la distance MINIMALE
+    $threshold = 0.6; // ✅ Seuil euclidien : < 0.6 = même personne
 
     foreach ($users as $user) {
         $userDescriptor = $user->getFaceDescriptor();
         if ($userDescriptor && is_array($userDescriptor) && count($userDescriptor) > 0) {
-            $similarity = $this->calculateSimilarity($faceDescriptor, $userDescriptor);
-            if ($similarity > $bestSimilarity) {
-                $bestSimilarity = $similarity;
+            $distance = $this->calculateEuclideanDistance($faceDescriptor, $userDescriptor);
+            if ($distance < $bestDistance) {
+                $bestDistance = $distance;
                 $bestMatch = $user;
             }
         }
     }
 
-    // Vérifier si la similarité dépasse le seuil
-    if (!$bestMatch || $bestSimilarity < $threshold) {
-        // Réinitialiser le token storage pour éviter toute connexion résiduelle
-        $this->container->get('security.token_storage')->setToken(null);
-
+    // ✅ Refusé si distance >= seuil (trop différent)
+    if (!$bestMatch || $bestDistance >= $threshold) {
         return $this->json([
             'success' => false,
-            'message' => 'Visage non reconnu. Aucune correspondance trouvée dans la base de données.',
-            'similarity' => round($bestSimilarity * 100, 2) . '%',
-            'threshold' => round($threshold * 100, 2) . '%'
+            'message' => 'Visage non reconnu. Aucune correspondance trouvée.',
+            'distance' => round($bestDistance, 4),
+            'threshold' => $threshold
         ], 401);
     }
 
-    $user = $bestMatch;
-
     try {
-        // Authentifier l'utilisateur
+        $user = $bestMatch;
+
+        $session = $request->getSession();
+        $session->migrate(true);
+
         $token = new UsernamePasswordToken($user, 'main', $user->getRoles());
         $this->container->get('security.token_storage')->setToken($token);
-        
-        $session = $request->getSession();
         $session->set('_security_main', serialize($token));
         $session->save();
-        
-        // Mettre à jour la date de dernière connexion
+
         if (method_exists($user, 'setLastLoginAt')) {
             $user->setLastLoginAt(new \DateTimeImmutable());
             $this->em->flush();
         }
-        
-        // Redirection selon le rôle
-        $redirectRoute = $this->resolveHomeRouteForUser($user);
 
-        error_log('Redirection calculée: ' . $redirectRoute . ' pour roleId: ' . $user->getRoleId());
+        $redirectRoute = $this->resolveHomeRouteForUser($user);
+        $redirectUrl = $this->generateUrl($redirectRoute);
 
         return $this->json([
             'success' => true,
             'message' => 'Connexion réussie',
-            'redirect' => $redirectRoute,
+            'redirect' => $redirectUrl,
             'user' => [
                 'id' => $user->getId(),
                 'firstName' => $user->getFirstName(),
@@ -232,13 +217,9 @@ public function verifyFace(Request $request): JsonResponse
                 'email' => $user->getEmail(),
                 'roleId' => $user->getRoleId()
             ],
-            'similarity' => round($bestSimilarity * 100, 2) . '%',
-            'debug' => [
-                'role_id' => $user->getRoleId(),
-                'redirect_route' => $redirectRoute
-            ]
+            'distance' => round($bestDistance, 4)
         ]);
-        
+
     } catch (\Exception $e) {
         return $this->json([
             'success' => false,
@@ -246,6 +227,26 @@ public function verifyFace(Request $request): JsonResponse
         ], 500);
     }
 }
+
+/**
+ * ✅ Distance euclidienne — métrique officielle de face-api.js
+ * Seuil : < 0.6 = même personne, >= 0.6 = personnes différentes
+ */
+private function calculateEuclideanDistance(array $descriptor1, array $descriptor2): float
+{
+    if (count($descriptor1) !== count($descriptor2)) {
+        return PHP_FLOAT_MAX;
+    }
+
+    $sumSquares = 0;
+    for ($i = 0; $i < count($descriptor1); $i++) {
+        $diff = $descriptor1[$i] - $descriptor2[$i];
+        $sumSquares += $diff * $diff;
+    }
+
+    return sqrt($sumSquares);
+}
+
     
     /**
      * Calcule la similarité entre deux descripteurs faciaux

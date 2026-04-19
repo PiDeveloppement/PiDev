@@ -952,26 +952,19 @@ async function initializeFaceRecognition() {
                 console.log('Résultat serveur:', result);
 
                 if (result.success === true) {
-                    faceStatus.innerHTML = '✅ Connexion réussie ! Redirection...';
-                    faceStatus.className = 'face-status success';
-                    captureBtn.innerHTML = '✅ Succès !';
+    faceStatus.innerHTML = '✅ Connexion réussie ! Redirection...';
+    faceStatus.className = 'face-status success';
+    captureBtn.innerHTML = '✅ Succès !';
 
-                    if (mediaStream) {
-                        mediaStream.getTracks().forEach(track => track.stop());
-                    }
+    if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+    }
 
-                    setTimeout(() => {
-                        let redirectUrl = result.redirect;
-                        if (result.redirect === 'app_my_tickets') {
-                            redirectUrl = '/my_tickets';
-                        } else if (result.redirect === 'app_dashboard') {
-                            redirectUrl = '/dashboard';
-                        } else if (result.redirect === 'app_sponsor_portal') {
-                            redirectUrl = '/sponsor/portal';
-                        }
-                        window.location.href = redirectUrl || '/dashboard';
-                    }, 1500);
-                } else {
+    setTimeout(() => {
+        // ✅ result.redirect est maintenant une URL directe (ex: /dashboard)
+        window.location.href = result.redirect;
+    }, 1500);
+} else {
                     // Afficher le message d'erreur détaillé
                     let errorMessage = result.message || 'Visage non reconnu. Veuillez réessayer.';
                     if (result.similarity && result.threshold) {
