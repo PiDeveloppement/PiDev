@@ -31,17 +31,22 @@
             background-color: #f8fafc;
             min-height: 100vh;
             overflow-x: hidden;
+            position: relative;
         }
         
         .app-container {
             display: flex;
             min-height: 100vh;
-            position: relative;
         }
         
         .public-container {
             width: 100%;
             min-height: 100vh;
+        }
+        
+        /* Ensure top-actions remain fixed */
+        [class*="top-actions"] {
+            position: fixed !important;
         }
     </style>
     
@@ -105,6 +110,13 @@
                         <a href="{{ path('app_dashboard') }}" class="menu-button {{ app.request.get('_route') == 'app_dashboard' ? 'active' : '' }}">
                             <i class="fas fa-chart-pie" style="width: 20px;"></i>
                             Dashboard
+                        </a>
+                    </div>
+
+                    <div style="margin-bottom: 4px;">
+                        <a href="{{ path('app_ai_assistant_index') }}" class="menu-button {{ app.request.get('_route') starts with 'app_ai_assistant_' ? 'active' : '' }}">
+                            <i class="fas fa-robot" style="width: 20px;"></i>
+                            Assistant IA
                         </a>
                     </div>
                     
