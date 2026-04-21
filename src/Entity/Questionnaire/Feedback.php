@@ -8,6 +8,7 @@ use App\Entity\Questionnaire\Question;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use App\Service\Questionnaire\ContentModerationService;
 
 #[ORM\Entity]
 #[ORM\Table(name: "feedbacks")]
@@ -50,6 +51,8 @@ class Feedback
     #[ORM\ManyToOne(targetEntity: Question::class)]
     #[ORM\JoinColumn(name: "id_question", referencedColumnName: "id_question", nullable: true, onDelete: "CASCADE")]
     private ?Question $question = null;
+
+    private static ?ContentModerationService $moderationService = null;
 
     // ==================== GETTERS & SETTERS ====================
 
@@ -198,5 +201,17 @@ class Feedback
             $this->id ?? 0,
             $this->etoiles ?? 0
         );
+    }
+
+    // ==================== MODERATION SERVICE ====================
+
+    public static function setModerationService(ContentModerationService $service): void
+    {
+        self::$moderationService = $service;
+    }
+
+    public static function getModerationService(): ?ContentModerationService
+    {
+        return self::$moderationService;
     }
 }

@@ -5,7 +5,6 @@ parameters:
     profile_images_directory: '%kernel.project_dir%/public/uploads/profile_images'
     gemini_api_key: '%env(GEMINI_API_KEY)%'
 
-
 services:
     # configuration par défaut
     _defaults:
@@ -30,6 +29,11 @@ services:
         arguments:
             $requestStack: '@request_stack'
             $logger: '@logger'
+            
+    # 2. On ajoute ton service de génération de questions ici
+    App\Service\Questionnaire\QuestionGenerator:
+        arguments:
+            $geminiApiKey: '%gemini_api_key%'
 
     # ✅ PAS DE LIGNE SUPPLÉMENTAIRE POUR UserSessionService !
     # L'autowiring s'en charge automatiquement

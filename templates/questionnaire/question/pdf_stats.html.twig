@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: DejaVu Sans, sans-serif; color: #1a1a2e; font-size: 12px; padding: 30px; }
+        h1   { font-size: 22px; margin-bottom: 4px; }
+        .sub { color: #8a8898; font-size: 11px; margin-bottom: 24px; }
+        .kpi-row { display: flex; gap: 12px; margin-bottom: 24px; }
+        .kpi { flex: 1; background: #f5f3ee; border-radius: 10px; padding: 14px 16px; border: 1px solid #e8e4dc; }
+        .kpi-label { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: #8a8898; margin-bottom: 4px; }
+        .kpi-value { font-size: 24px; font-weight: bold; }
+        h2 { font-size: 14px; margin: 20px 0 10px; border-bottom: 2px solid #e8e4dc; padding-bottom: 6px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th { background: #f5f3ee; padding: 7px 10px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: #8a8898; border-bottom: 2px solid #e8e4dc; }
+        td { padding: 7px 10px; border-bottom: 1px solid #f0ede6; }
+        tr:nth-child(even) td { background: #fafaf8; }
+        .pts { background: #fef3d0; color: #7a5c00; padding: 2px 8px; border-radius: 20px; font-weight: bold; font-size: 10px; }
+        .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .bar-label { min-width: 120px; font-size: 11px; }
+        .bar-track { flex: 1; height: 8px; background: #e8e4dc; border-radius: 4px; overflow: hidden; }
+        .bar-fill { height: 100%; background: #5b4fcf; border-radius: 4px; }
+        .bar-count { min-width: 24px; text-align: right; font-size: 11px; color: #8a8898; }
+        .footer { margin-top: 32px; font-size: 10px; color: #aaa; text-align: center; border-top: 1px solid #e8e4dc; padding-top: 12px; }
+    </style>
+</head>
+<body>
+
+    <h1>📊 Statistiques — Questions Quiz</h1>
+    <div class="sub">Exporté le {{ date }} &nbsp;·&nbsp; {{ stats.total }} question(s) au total</div>
+
+    <!-- KPIs -->
+    <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+        <tr>
+            <td style="width:25%;background:#edeafc;border-radius:10px;padding:14px 16px;border:1px solid #bdb5f5;">
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#5b4fcf;margin-bottom:4px;">Total</div>
+                <div style="font-size:24px;font-weight:bold;">{{ stats.total }}</div>
+            </td>
+            <td style="width:5%;"></td>
+            <td style="width:25%;background:#d6f0ee;border-radius:10px;padding:14px 16px;border:1px solid #a8ddd9;">
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#0d6b65;margin-bottom:4px;">Pts moyens</div>
+                <div style="font-size:24px;font-weight:bold;">{{ stats.avgPoints }}</div>
+            </td>
+            <td style="width:5%;"></td>
+            <td style="width:25%;background:#fef3d0;border-radius:10px;padding:14px 16px;border:1px solid #e8d080;">
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#a06000;margin-bottom:4px;">Max pts</div>
+                <div style="font-size:24px;font-weight:bold;">{{ stats.maxPoints }}</div>
+            </td>
+            <td style="width:5%;"></td>
+            <td style="width:25%;background:#fde8e0;border-radius:10px;padding:14px 16px;border:1px solid #f5bfa5;">
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#c0392b;margin-bottom:4px;">Avec event</div>
+                <div style="font-size:24px;font-weight:bold;">{{ stats.withEvent }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Bar chart -->
+    {% if stats.byEvent is not empty %}
+        <h2>📅 Questions par événement</h2>
+        {% set maxVal = stats.byEvent|length > 0 ? stats.byEvent|max : 1 %}
+        {% for event, count in stats.byEvent %}
+            {% set pct = maxVal > 0 ? (count / maxVal * 100) : 0 %}
+            <div class="bar-row">
+                <div class="bar-label">{{ event }}</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width:{{ pct }}%;"></div>
+                </div>
+                <div class="bar-count">{{ count }}</div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Top questions table -->
+    <h2>🏆 Top questions (par points)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Question</th>
+                <th>Réponse</th>
+                <th>Points</th>
+                <th>Événement</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for question in stats.topQuestions %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ question.texte }}</td>
+                    <td>{{ question.reponse ?? '-' }}</td>
+                    <td><span class="pts">★ {{ question.points }} pts</span></td>
+                    <td>{{ question.event ? question.event.title : '—' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- All questions -->
+    <h2>📋 Toutes les questions</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Question</th>
+                <th>Réponse</th>
+                <th>Points</th>
+                <th>Options</th>
+                <th>Événement</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for question in questions %}
+                {% set opts = [question.option1, question.option2, question.option3]|filter(v => v is not empty) %}
+                <tr>
+                    <td>{{ question.texte }}</td>
+                    <td>{{ question.reponse ?? '-' }}</td>
+                    <td><span class="pts">★ {{ question.points }}</span></td>
+                    <td>{{ opts|join(' / ') }}</td>
+                    <td>{{ question.event ? question.event.title : '—' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">Questions Quiz — Exporté le {{ date }}</div>
+
+</body>
+</html>

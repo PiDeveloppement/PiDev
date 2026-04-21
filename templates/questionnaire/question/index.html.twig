@@ -145,6 +145,24 @@
 
   .filter-sep { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
 
+  .event-wrap { display: flex; align-items: center; gap: .4rem; }
+  .event-label { font-size: .78rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  #eventSelect {
+    padding: .38rem .9rem;
+    border: 2px solid var(--border);
+    border-radius: 30px;
+    font-family: var(--ff);
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--text);
+    background: #fff;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .2s;
+    min-width: 150px;
+  }
+  #eventSelect:focus { border-color: var(--accent); }
+
   .sort-wrap { display: flex; align-items: center; gap: .4rem; }
   .sort-label { font-size: .78rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
   #sortSelect {
@@ -365,6 +383,18 @@
       <input type="text" id="searchInput" placeholder="Rechercher une question…">
     </div>
     <div class="filter-sep"></div>
+    <div class="event-wrap">
+      <span class="event-label"><i class="fas fa-calendar-alt"></i> Événement :</span>
+      <select id="eventSelect" onchange="filterByEvent()">
+        <option value="">Tous les événements</option>
+        {% for event in events %}
+          <option value="{{ event.id }}" {% if currentEvent == event.id %}selected{% endif %}>
+            {{ event.title }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-sep"></div>
     <div class="sort-wrap">
       <span class="sort-label"><i class="fas fa-sort"></i> Trier :</span>
       <select id="sortSelect">
@@ -386,6 +416,13 @@
       <button onclick="this.parentElement.remove()">✕</button>
     </div>
   {% endfor %}
+
+  {% if currentEvent %}
+    <div class="flash-ok" style="background: var(--sky); border-color: var(--sky-border); color: #1e40af;">
+      <span><i class="fas fa-filter" style="margin-right:.4rem;"></i>Filtrage par événement actif</span>
+      <button onclick="window.location.href='{{ path('app_question_index') }}'">✕</button>
+    </div>
+  {% endif %}
 
   {% set pal = ['cc-mint','cc-green','cc-lavender','cc-peach','cc-sky','cc-yellow'] %}
   <div class="qs-grid" id="questionsGrid">
@@ -451,6 +488,19 @@
 </div>
 
 <script>
+function filterByEvent() {
+  const eventSelect = document.getElementById('eventSelect');
+  const eventId = eventSelect.value;
+  
+  if (eventId) {
+    // Rediriger vers la page avec le filtre d'événement
+    window.location.href = '{{ path('app_question_index') }}?event=' + eventId;
+  } else {
+    // Rediriger vers la page sans filtre
+    window.location.href = '{{ path('app_question_index') }}';
+  }
+}
+
 (function() {
   const searchInput  = document.getElementById('searchInput');
   const sortSelect   = document.getElementById('sortSelect');
