@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Confirmation de réservation</title>
+    <title>Annulation de réservation</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,7 +13,7 @@
             padding: 20px;
         }
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             color: white;
             padding: 30px;
             text-align: center;
@@ -24,12 +24,20 @@
             padding: 30px;
             border-radius: 0 0 10px 10px;
         }
-        .reservation-details {
+        .cancellation-box {
             background: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ff6b6b;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .reservation-details {
+            background: #fff5f5;
             padding: 20px;
             border-radius: 8px;
             margin: 20px 0;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #ee5a24;
         }
         .detail-row {
             margin: 10px 0;
@@ -48,7 +56,7 @@
         .btn {
             display: inline-block;
             padding: 12px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
             text-decoration: none;
             border-radius: 25px;
@@ -61,21 +69,29 @@
             color: #666;
             font-size: 14px;
         }
+        .info-box {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🎉 Confirmation de Réservation</h1>
-        <p>Votre réservation a été confirmée avec succès!</p>
+        <h1>❌ Annulation de Réservation</h1>
+        <p>Votre réservation a été annulée</p>
     </div>
 
     <div class="content">
         <p>Bonjour <strong>{{ user_name }}</strong>,</p>
         
-        <p>Nous vous remercions pour votre réservation. Voici les détails de votre confirmation:</p>
+        <div class="cancellation-box">
+            <p>Nous vous informons que votre réservation a été annulée avec succès.</p>
+        </div>
 
         <div class="reservation-details">
-            <h3>📋 Détails de la Réservation</h3>
+            <h3>📋 Détails de la Réservation Annulée</h3>
             
             {% if reservation.id %}
                 <div class="detail-row">
@@ -120,12 +136,19 @@
             {% endif %}
         </div>
 
-        <p>📧 Veuillez conserver cet email comme preuve de votre réservation.</p>
-        
-        <p>En cas de modification ou d'annulation, vous pouvez nous contacter à tout moment.</p>
+        <div class="info-box">
+            <p><strong>📝 Informations importantes:</strong></p>
+            <ul>
+                <li>Si cette annulation n'était pas de votre fait, veuillez nous contacter immédiatement</li>
+                <li>La salle est maintenant disponible pour une nouvelle réservation</li>
+                <li>Vous pouvez faire une nouvelle réservation à tout moment</li>
+            </ul>
+        </div>
+
+        <p>Nous espérons vous revoir prochainement sur notre plateforme.</p>
 
         <div style="text-align: center;">
-            <a href="#" class="btn">Voir mes réservations</a>
+            <a href="#" class="btn">Faire une nouvelle réservation</a>
         </div>
     </div>
 

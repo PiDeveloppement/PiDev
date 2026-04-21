@@ -415,6 +415,18 @@ document.addEventListener('DOMContentLoaded', function() {
         field.addEventListener('change', loadResources);
     });
 
+    // Validation en temps réel de la date de début
+    startField.addEventListener('change', function() {
+        const startDate = new Date(this.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Ignorer l'heure pour la comparaison
+        
+        if (startDate < today) {
+            showAlert('La date de début ne peut pas être dans le passé');
+            this.value = ''; // Réinitialiser le champ
+        }
+    });
+
     // Mettre à jour l'aperçu de l'événement
     eventField.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
@@ -475,6 +487,15 @@ function validateForm() {
     
     if (!startTime) {
         errors.push('Veuillez sélectionner une date de début');
+    } else {
+        // Validation : la date de début ne peut pas être dans le passé
+        const startDate = new Date(startTime);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Ignorer l'heure pour la comparaison
+        
+        if (startDate < today) {
+            errors.push('La date de début ne peut pas être dans le passé');
+        }
     }
     
     if (!endTime) {

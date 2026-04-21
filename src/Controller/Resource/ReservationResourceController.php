@@ -9,7 +9,7 @@ use App\Form\Resource\ReservationType;
 use App\Repository\Resource\ReservationResourceRepository;
 use App\Repository\Resource\SalleRepository;
 use App\Repository\Resource\EquipementRepository;
-use App\Service\Resource\MailerService;
+use App\Service\Resource\EmailService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -44,9 +44,22 @@ class ReservationResourceController extends AbstractController
     }
 
     #[Route('/new', name: 'app_reservation_resource_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $em, MailerService $mailerService): Response
+    public function new(Request $request, EntityManagerInterface $em, EmailService $emailService): Response
     {
         $reservation = new ReservationResource();
+        
+        // Pré-remplir les dates si elles sont passées en paramètre
+        $dateParam = $request->query->get('date');
+        if ($dateParam) {
+            try {
+                $date = new \DateTime($dateParam);
+                $reservation->setStartTime($date);
+                $reservation->setEndTime((clone $date)->modify('+1 day'));
+            } catch (\Exception $e) {
+                // Ignorer si la date est invalide
+            }
+        }
+        
         $form = $this->createForm(ReservationType::class, $reservation);
         $form->handleRequest($request);
 
@@ -55,27 +68,35 @@ class ReservationResourceController extends AbstractController
             $em->flush();
             
             // Préparer les données pour l'email
+            $userName = $this->getUser()->getFullName() ?? $this->getUser()->getEmail();
+            $userEmail = $this->getUser()->getEmail();
+            
             $reservationData = [
-                'userName' => $this->getUser()->getFullName() ?? $this->getUser()->getEmail(),
-                'email' => $this->getUser()->getEmail(),
+                'id' => $reservation->getId(),
                 'resourceType' => $reservation->getResourceType(),
-                'eventName' => $reservation->getEvent()->getTitle(),
-                'startTime' => $reservation->getStartTime(),
-                'endTime' => $reservation->getEndTime(),
+                'dateReservation' => $reservation->getStartTime(),
+                'heureDebut' => $reservation->getStartTime(),
+                'heureFin' => $reservation->getEndTime(),
+                'motif' => $reservation->getEvent() ? $reservation->getEvent()->getTitle() : 'Réservation de ressource',
                 'quantity' => $reservation->getQuantity()
             ];
             
-            if ($reservation->getResourceType() === 'SALLE') {
-                $reservationData['salleName'] = $reservation->getSalle()->getName();
-            } else {
-                $reservationData['equipementName'] = $reservation->getEquipement()->getName();
+            if ($reservation->getResourceType() === 'SALLE' && $reservation->getSalle()) {
+                $reservationData['salle'] = $reservation->getSalle();
+            } elseif ($reservation->getResourceType() === 'EQUIPEMENT' && $reservation->getEquipement()) {
+                $reservationData['equipement'] = $reservation->getEquipement();
             }
             
             // Envoyer l'email de confirmation à l'utilisateur
-            $mailerService->sendReservationConfirmation($reservationData);
+            $emailService->sendReservationConfirmation($userEmail, $userName, $reservationData);
             
             // Envoyer la notification à l'administrateur
-            $mailerService->sendReservationNotification($reservationData);
+            $emailService->sendNotification(
+                'admin@pidev.com', 
+                'Nouvelle réservation effectuée - ' . ($reservation->getEvent() ? $reservation->getEvent()->getTitle() : 'Réservation'),
+                'Une nouvelle réservation a été effectuée par ' . $userName . ' pour le ' . $reservation->getStartTime()->format('d/m/Y'),
+                ['user_name' => $userName, 'reservation' => $reservationData]
+            );
             
             $this->addFlash('success', 'Réservation créée avec succès ! Un email de confirmation vous a été envoyé.');
             return $this->redirectToRoute('app_reservation_resource_index');
@@ -186,15 +207,94 @@ class ReservationResourceController extends AbstractController
     }
 
     #[Route('/{id}/delete', name: 'app_reservation_resource_delete', methods: ['POST'])]
-    public function delete(Request $request, ReservationResource $reservation, EntityManagerInterface $em): Response
+    public function delete(Request $request, ReservationResource $reservation, EntityManagerInterface $em, EmailService $emailService): Response
     {
         if ($this->isCsrfTokenValid('delete'.$reservation->getId(), $request->request->get('_token'))) {
+            // Préparer les données pour l'email avant suppression
+            $userName = $this->getUser()->getFullName() ?? $this->getUser()->getEmail();
+            $userEmail = $this->getUser()->getEmail();
+            
+            $reservationData = [
+                'id' => $reservation->getId(),
+                'resourceType' => $reservation->getResourceType(),
+                'dateReservation' => $reservation->getStartTime(),
+                'heureDebut' => $reservation->getStartTime(),
+                'heureFin' => $reservation->getEndTime(),
+                'motif' => $reservation->getEvent() ? $reservation->getEvent()->getTitle() : 'Réservation de ressource',
+                'quantity' => $reservation->getQuantity()
+            ];
+            
+            if ($reservation->getResourceType() === 'SALLE' && $reservation->getSalle()) {
+                $reservationData['salle'] = $reservation->getSalle();
+            } elseif ($reservation->getResourceType() === 'EQUIPEMENT' && $reservation->getEquipement()) {
+                $reservationData['equipement'] = $reservation->getEquipement();
+            }
+            
             $em->remove($reservation);
             $em->flush();
-            $this->addFlash('success', 'Réservation supprimée.');
+            
+            // Envoyer l'email d'annulation à l'utilisateur
+            $emailService->sendReservationCancellation($userEmail, $userName, $reservationData);
+            
+            $this->addFlash('success', 'Réservation supprimée. Un email d\'annulation vous a été envoyé.');
         }
 
         return $this->redirectToRoute('app_reservation_resource_index');
+    }
+
+    #[Route('/calendar', name: 'app_reservation_resource_calendar', methods: ['GET'])]
+    public function calendar(): Response
+    {
+        return $this->render('resource/reservation_resource/calendar.html.twig', [
+            'pageInfo' => [
+                'title' => 'Calendrier des Réservations',
+                'subtitle' => 'Visualisez et gérez les réservations de ressources'
+            ]
+        ]);
+    }
+
+    #[Route('/calendar/events', name: 'app_reservation_resource_calendar_events', methods: ['GET'])]
+    public function getCalendarEvents(Request $request, ReservationResourceRepository $repo): JsonResponse
+    {
+        $start = $request->query->get('start');
+        $end = $request->query->get('end');
+        
+        $startDate = new \DateTime($start);
+        $endDate = new \DateTime($end);
+        
+        $reservations = $repo->createQueryBuilder('r')
+            ->where('r.startTime >= :start')
+            ->andWhere('r.endTime <= :end')
+            ->setParameter('start', $startDate)
+            ->setParameter('end', $endDate)
+            ->getQuery()
+            ->getResult();
+        
+        $events = [];
+        foreach ($reservations as $reservation) {
+            $resourceName = '';
+            if ($reservation->getResourceType() === 'SALLE' && $reservation->getSalle()) {
+                $resourceName = 'Salle: ' . $reservation->getSalle()->getName();
+            } elseif ($reservation->getResourceType() === 'EQUIPEMENT' && $reservation->getEquipement()) {
+                $resourceName = 'Équipement: ' . $reservation->getEquipement()->getName() . ' (x' . $reservation->getQuantity() . ')';
+            }
+            
+            $events[] = [
+                'id' => $reservation->getId(),
+                'title' => $resourceName . ' - ' . ($reservation->getEvent() ? $reservation->getEvent()->getTitle() : 'Événement'),
+                'start' => $reservation->getStartTime()->format('Y-m-d'),
+                'end' => $reservation->getEndTime()->format('Y-m-d'),
+                'color' => '#dc3545', // Rouge pour les dates indisponibles
+                'textColor' => '#ffffff',
+                'extendedProps' => [
+                    'resourceType' => $reservation->getResourceType(),
+                    'quantity' => $reservation->getQuantity(),
+                    'eventId' => $reservation->getEvent() ? $reservation->getEvent()->getId() : null
+                ]
+            ];
+        }
+        
+        return new JsonResponse($events);
     }
 
     #[Route('/export-pdf', name: 'app_reservation_resource_pdf', methods: ['GET'])]
