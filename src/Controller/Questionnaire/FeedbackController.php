@@ -5,6 +5,7 @@ namespace App\Controller\Questionnaire;
 use App\Entity\Questionnaire\Feedback;
 use App\Entity\User\UserModel;
 use App\Form\Questionnaire\FeedbackType;
+use App\Service\Questionnaire\ContentModerationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,6 +18,15 @@ use Dompdf\Options;
 #[Route('/questionnaire/feedback')]
 final class FeedbackController extends AbstractController
 {
+    private ContentModerationService $moderationService;
+
+    public function __construct(ContentModerationService $moderationService)
+    {
+        $this->moderationService = $moderationService;
+        // Configurer le service de modération pour l'entité Feedback
+        Feedback::setModerationService($moderationService);
+    }
+
     // ------------------------------------------------------------------ INDEX
     #[Route('', name: 'app_questionnaire_feedback_index', methods: ['GET'])]
     public function index(EntityManagerInterface $entityManager): Response

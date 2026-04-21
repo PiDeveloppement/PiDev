@@ -3,7 +3,7 @@
 namespace App\Entity\Questionnaire;
 use App\Entity\User\UserModel;
 use App\Entity\Questionnaire\Question;
-
+use App\Service\Questionnaire\ContentModerationService;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -14,6 +14,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\HasLifecycleCallbacks]
 class Feedback
 {
+    private static ?ContentModerationService $moderationService = null;
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "IDENTITY")]
     #[ORM\Column(name: "id_feedback", type: "integer")]
@@ -98,8 +100,42 @@ class Feedback
 
     public function setComments(?string $comments): self
     {
-        $this->comments = $comments;
+        if ($comments && self::$moderationService) {
+            $this->comments = self::$moderationService->filterBadWords($comments);
+        } else {
+            $this->comments = $comments;
+        }
         return $this;
+    }
+
+    /**
+     * Définit le service de modération pour la classe
+     */
+    public static function setModerationService(ContentModerationService $service): void
+    {
+        self::$moderationService = $service;
+    }
+
+    /**
+     * Retourne le texte des commentaires filtré (sans bad words)
+     */
+    public function getFilteredComments(): ?string
+    {
+        if ($this->comments && self::$moderationService) {
+            return self::$moderationService->filterBadWords($this->comments);
+        }
+        return $this->comments;
+    }
+
+    /**
+     * Vérifie si les commentaires contiennent des bad words
+     */
+    public function hasBadWords(): bool
+    {
+        if ($this->comments && self::$moderationService) {
+            return self::$moderationService->containsBadWords($this->comments);
+        }
+        return false;
     }
 
     public function getEtoiles(): ?int

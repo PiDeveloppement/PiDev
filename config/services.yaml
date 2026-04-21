@@ -36,5 +36,9 @@ services:
         arguments:
             $geminiApiKey: '%gemini_api_key%'
 
+    # Service de modération de contenu pour questionnaire
+    App\Service\Questionnaire\ContentModerationService:
+        arguments: []
+
     # ✅ PAS DE LIGNE SUPPLÉMENTAIRE POUR UserSessionService !
     # L'autowiring s'en charge automatiquement

@@ -8,6 +8,7 @@ use App\Entity\Questionnaire\QuizAnswer;
 use App\Entity\Event\Event;
 use App\Form\Questionnaire\FeedbackType;
 use App\Form\Questionnaire\QuizAnswerType;
+use App\Service\Questionnaire\ContentModerationService;
 use App\Repository\Questionnaire\QuestionRepository;
 use App\Repository\Event\EventRepository;
 use App\Repository\User\UserRepository;
@@ -27,10 +28,15 @@ class QuizController extends AbstractController
 {
     private UserRepository $userRepository;
     private EventRepository $eventRepository;
+    private ContentModerationService $moderationService;
 
-    public function __construct(EventRepository $eventRepository, UserRepository $userRepository)
+    public function __construct(EventRepository $eventRepository, UserRepository $userRepository, ContentModerationService $moderationService)
     {
         $this->eventRepository = $eventRepository;
+        $this->userRepository = $userRepository;
+        $this->moderationService = $moderationService;
+        // Configurer le service de modération pour l'entité Feedback
+        Feedback::setModerationService($moderationService);
     }
 
     #[Route('/quiz/start', name: 'app_quiz_start')]
