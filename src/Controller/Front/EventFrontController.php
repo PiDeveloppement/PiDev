@@ -31,8 +31,6 @@ class EventFrontController extends AbstractController
             ->createQueryBuilder('e')
             ->leftJoin('e.category', 'c')
             ->addSelect('c')
-            ->leftJoin('e.creator', 'u')
-            ->leftJoin('u.role', 'r')
             ->andWhere('e.endDate >= :now')
             ->andWhere('e.status = :status')
             ->setParameter('now', $now)
@@ -65,8 +63,6 @@ class EventFrontController extends AbstractController
             ->createQueryBuilder('e')
             ->leftJoin('e.category', 'c')
             ->addSelect('c')
-            ->leftJoin('e.creator', 'u')
-            ->leftJoin('u.role', 'r')
             ->andWhere('e.id = :id')
             ->andWhere('e.endDate >= :now')
             ->andWhere('e.status = :status')
@@ -111,8 +107,6 @@ class EventFrontController extends AbstractController
 
         $event = $eventRepository
             ->createQueryBuilder('e')
-            ->leftJoin('e.creator', 'u')
-            ->leftJoin('u.role', 'r')
             ->andWhere('e.id = :id')
             ->andWhere('e.endDate >= :now')
             ->andWhere('e.status = :status')
