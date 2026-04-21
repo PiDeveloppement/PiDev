@@ -431,16 +431,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const eventField = document.querySelector('[name="{{ form.event.vars.full_name }}"]');
 
     generateBtn.addEventListener('click', function() {
+        // Récupérer l'événement sélectionné
+        const eventId = eventField ? eventField.value : null;
+        
+        // Vérifier si un événement est sélectionné
+        if (!eventId || eventId === '' || eventId === '0') {
+            showNotification('Veuillez choisir un événement avant de générer une question.', 'error');
+            return;
+        }
+
         // Afficher l'état de chargement
         const originalText = generateBtn.innerHTML;
         generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Génération...';
         generateBtn.disabled = true;
 
-        // Récupérer l'événement sélectionné
-        const eventId = eventField ? eventField.value : null;
-
         // Préparer les données à envoyer
-        const data = eventId ? { eventId: parseInt(eventId) } : { description: 'Quiz général' };
+        const data = { eventId: parseInt(eventId) };
 
         // Appeler l'API de génération
         fetch('{{ path("app_question_generate_ai") }}', {
