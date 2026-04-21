@@ -58,6 +58,41 @@ class ManagementAssistantController extends AbstractController
         }
     }
 
+    #[Route('/api/ai-chat/send', name: 'app_ai_chat_send', methods: ['POST'])]
+    public function send(Request $request): JsonResponse
+    {
+        $this->denyUnlessAdminOrOrganizer();
+
+        try {
+            $data = $request->toArray();
+        } catch (\Throwable) {
+            return $this->json(['error' => 'Corps JSON invalide.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $question = trim((string) ($data['message'] ?? $data['question'] ?? ''));
+        $history = isset($data['history']) && is_array($data['history']) ? $data['history'] : [];
+
+        if ($question === '') {
+            return $this->json(['error' => 'Le message est obligatoire.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $answer = $this->assistantService->ask($question, $history);
+
+            return $this->json([
+                'response' => $answer,
+                'answer' => $answer,
+                'model' => $this->assistantService->getModelName(),
+                'isSimulated' => false,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->json([
+                'error' => $e->getMessage(),
+                'isSimulated' => false,
+            ], Response::HTTP_BAD_GATEWAY);
+        }
+    }
+
     private function denyUnlessAdminOrOrganizer(): void
     {
         $user = $this->getUser();

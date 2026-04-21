@@ -30,7 +30,7 @@ class DepenseController extends AbstractController
     #[Route('/admin/depenses', name: 'app_depenses_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $search = trim((string) $request->query->get('q', ''));
         $budgetId = (int) $request->query->get('budget_id', 0);
@@ -103,7 +103,7 @@ class DepenseController extends AbstractController
     #[Route('/admin/depenses/new', name: 'app_depenses_new', methods: ['GET', 'POST'])]
     public function new(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $depense = new Depense();
         $depense->setExpenseDate(new \DateTimeImmutable());
@@ -165,7 +165,7 @@ class DepenseController extends AbstractController
     #[Route('/admin/depenses/{id}/edit', name: 'app_depenses_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Depense $depense): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $oldBudget = $depense->getBudget();
         $selectedBudgetId = $oldBudget?->getId();
@@ -228,7 +228,7 @@ class DepenseController extends AbstractController
     #[Route('/admin/depenses/{id}/details', name: 'app_depenses_details', methods: ['GET'])]
     public function details(Depense $depense): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $budget = $depense->getBudget();
         $eventTitle = '-';
@@ -246,7 +246,7 @@ class DepenseController extends AbstractController
     #[Route('/admin/depenses/{id}', name: 'app_depenses_delete', methods: ['POST'])]
     public function delete(Request $request, Depense $depense): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         if ($this->isCsrfTokenValid('delete_depense_' . $depense->getId(), (string) $request->request->get('_token'))) {
             $budget = $depense->getBudget();
@@ -260,26 +260,26 @@ class DepenseController extends AbstractController
         return $this->redirectToRoute('app_depenses_index');
     }
 
-    private function denyUnlessAdminOrOrganizer(): void
+    private function denyUnlessAdmin(): void
     {
         $user = $this->getUser();
         if (!$user instanceof UserModel) {
-            throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+            throw $this->createAccessDeniedException('Acces reserve a l administration.');
         }
 
         // Vérifier via les rôles Symfony (plus fiable)
         $roles = $user->getRoles();
-        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_ORGANISATEUR', $roles, true)) {
+        if (in_array('ROLE_ADMIN', $roles, true)) {
             return;
         }
 
-        // Verification de secours via roleId (Organisateur=2, Administrateur=4)
+        // Verification de secours via roleId (Administrateur=4)
         $roleId = (int) ($user->getRoleId() ?? 0);
-        if ($roleId === 2 || $roleId === 4) {
+        if ($roleId === 4) {
             return;
         }
 
-        throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+        throw $this->createAccessDeniedException('Acces reserve a l administration.');
     }
 
     /**

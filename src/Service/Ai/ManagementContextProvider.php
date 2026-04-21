@@ -58,6 +58,61 @@ class ManagementContextProvider
              LIMIT 5'
         );
 
+        $budgetSnapshots = $this->connection->fetchAllAssociative(
+            'SELECT b.id AS budgetId, b.event_id AS eventId, e.title AS eventTitle,
+                    b.initial_budget AS initialBudget, b.total_expenses AS totalExpenses,
+                    b.total_revenue AS totalRevenue, b.rentabilite AS rentabilite
+             FROM budget b
+             LEFT JOIN event e ON e.id = b.event_id
+             ORDER BY b.id DESC
+             LIMIT 100'
+        );
+
+        $companyContributionRows = $this->connection->fetchAllAssociative(
+            'SELECT company_name AS companyName, COALESCE(SUM(contribution_name), 0) AS total
+             FROM sponsor
+             WHERE company_name IS NOT NULL AND company_name <> ""
+             GROUP BY company_name
+             ORDER BY company_name ASC'
+        );
+
+        $companyEventRows = $this->connection->fetchAllAssociative(
+            'SELECT s.company_name AS companyName, e.title AS eventTitle
+             FROM sponsor s
+             LEFT JOIN event e ON e.id = s.event_id
+             WHERE s.company_name IS NOT NULL AND s.company_name <> ""
+             ORDER BY s.company_name ASC, e.title ASC'
+        );
+
+        $companyContributions = [];
+        foreach ($companyContributionRows as $row) {
+            $companyName = trim((string) ($row['companyName'] ?? ''));
+            if ($companyName === '') {
+                continue;
+            }
+
+            $companyContributions[$companyName] = (float) ($row['total'] ?? 0);
+        }
+
+        $companyEvents = [];
+        foreach ($companyEventRows as $row) {
+            $companyName = trim((string) ($row['companyName'] ?? ''));
+            $eventTitle = trim((string) ($row['eventTitle'] ?? ''));
+            if ($companyName === '' || $eventTitle === '') {
+                continue;
+            }
+
+            if (!isset($companyEvents[$companyName])) {
+                $companyEvents[$companyName] = [];
+            }
+
+            $companyEvents[$companyName][] = $eventTitle;
+        }
+
+        foreach ($companyEvents as $companyName => $events) {
+            $companyEvents[$companyName] = array_values(array_unique($events));
+        }
+
         return [
             'budgets' => [
                 'count' => (int) ($budgetTotals['budgetCount'] ?? 0),
@@ -82,6 +137,8 @@ class ManagementContextProvider
                 'totalContribution' => $this->sponsorRepository->getTotalContribution(),
                 'averageContribution' => $this->sponsorRepository->getAverageContribution(),
                 'topCompanies' => $this->sponsorRepository->getTopCompaniesByContribution(5),
+                'companyContributions' => $companyContributions,
+                'companyEvents' => $companyEvents,
             ],
             'criticalBudgets' => array_map(
                 static fn (array $row): array => [
@@ -94,6 +151,18 @@ class ManagementContextProvider
                     'rentabilite' => (float) ($row['rentabilite'] ?? 0),
                 ],
                 $criticalBudgets
+            ),
+            'budgetSnapshots' => array_map(
+                static fn (array $row): array => [
+                    'budgetId' => (int) ($row['budgetId'] ?? 0),
+                    'eventId' => (int) ($row['eventId'] ?? 0),
+                    'eventTitle' => (string) ($row['eventTitle'] ?? 'Evenement inconnu'),
+                    'initialBudget' => (float) ($row['initialBudget'] ?? 0),
+                    'totalExpenses' => (float) ($row['totalExpenses'] ?? 0),
+                    'totalRevenue' => (float) ($row['totalRevenue'] ?? 0),
+                    'rentabilite' => (float) ($row['rentabilite'] ?? 0),
+                ],
+                $budgetSnapshots
             ),
             'meta' => [
                 'fetchedAt' => (new \DateTimeImmutable())->format(DATE_ATOM),

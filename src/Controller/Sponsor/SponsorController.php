@@ -44,7 +44,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors', name: 'app_sponsors_index', methods: ['GET'])]
     public function adminIndex(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         // 1) Lire les filtres de la liste sponsors depuis l'URL.
         $search = trim((string) $request->query->get('q', ''));
@@ -499,7 +499,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/company', name: 'app_sponsors_company_contributions', methods: ['GET'])]
     public function adminCompanyContributions(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $company = trim((string) $request->query->get('company', ''));
         if ($company === '') {
@@ -544,7 +544,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/new', name: 'app_sponsors_new', methods: ['GET', 'POST'])]
     public function adminNew(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $sponsor = new Sponsor();
         $form = $this->createForm(SponsorType::class, $sponsor, [
@@ -595,7 +595,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/{id}/edit', name: 'app_sponsors_edit', methods: ['GET', 'POST'])]
     public function adminEdit(Request $request, Sponsor $sponsor): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $form = $this->createForm(SponsorType::class, $sponsor, [
             'event_choices' => $this->sponsorService->buildEventChoices(),
@@ -640,7 +640,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/{id}/details', name: 'app_sponsors_details', methods: ['GET'])]
     public function adminDetails(Sponsor $sponsor): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $eventTitle = $this->sponsorService->getEventTitleById((int) $sponsor->getEventId()) ?? '-';
 
@@ -658,7 +658,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/{id}/contract', name: 'app_sponsors_contract', methods: ['GET'])]
     public function adminContract(Sponsor $sponsor): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         return $this->createSponsorContractResponse(
             $sponsor,
@@ -671,7 +671,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/{id}/contract/view', name: 'app_sponsors_contract_view', methods: ['GET'])]
     public function adminContractView(Sponsor $sponsor): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         return $this->createSponsorContractResponse(
             $sponsor,
@@ -684,7 +684,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/{id}', name: 'app_sponsors_delete', methods: ['POST'])]
     public function adminDelete(Request $request, Sponsor $sponsor): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         if ($this->isCsrfTokenValid('delete_sponsor_' . $sponsor->getId(), (string) $request->request->get('_token'))) {
             $this->entityManager->remove($sponsor);
@@ -698,7 +698,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/{id}/send-recommendation-email', name: 'app_sponsors_send_recommendation_email', methods: ['POST'])]
     public function adminSendRecommendationEmail(Request $request, Sponsor $sponsor): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $redirectTo = $request->headers->get('referer') ?: $this->generateUrl('app_sponsors_index');
         $csrfToken = (string) $request->request->get('_token');
@@ -737,7 +737,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/export/csv', name: 'app_sponsors_export_csv', methods: ['GET'])]
     public function adminExportCsv(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $search = trim((string) $request->query->get('q', ''));
         $company = trim((string) $request->query->get('company', ''));
@@ -755,7 +755,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/suggestions', name: 'app_sponsors_suggestions', methods: ['GET'])]
     public function adminSuggestions(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $q = trim((string) $request->query->get('q', ''));
         if (strlen($q) < 1) {
@@ -1446,25 +1446,25 @@ class SponsorController extends AbstractController
         return $response;
     }
 
-    private function denyUnlessAdminOrOrganizer(): void
+    private function denyUnlessAdmin(): void
     {
         $user = $this->getUser();
         if (!$user instanceof UserModel) {
-            throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+            throw $this->createAccessDeniedException('Acces reserve a l administration.');
         }
 
         // Vérifier via les rôles Symfony (plus fiable)
         $roles = $user->getRoles();
-        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_ORGANISATEUR', $roles, true)) {
+        if (in_array('ROLE_ADMIN', $roles, true)) {
             return;
         }
 
-        // Verification de secours via roleId (Organisateur=2, Administrateur=4)
+        // Verification de secours via roleId (Administrateur=4)
         $roleId = (int) ($user->getRoleId() ?? 0);
-        if ($roleId === 2 || $roleId === 4) {
+        if ($roleId === 4) {
             return;
         }
 
-        throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+        throw $this->createAccessDeniedException('Acces reserve a l administration.');
     }
 }

@@ -27,7 +27,7 @@ class BudgetController extends AbstractController
     #[Route('/admin/budget', name: 'app_budget_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $eventId = (int) $request->query->get('event_id', 0);
         $health = (string) $request->query->get('health', 'all');
@@ -140,7 +140,7 @@ class BudgetController extends AbstractController
     #[Route('/admin/budget/suggestions', name: 'app_budget_suggestions', methods: ['GET'])]
     public function suggestions(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $q = (string) $request->query->get('q', '');
         
@@ -178,7 +178,7 @@ class BudgetController extends AbstractController
     #[Route('/admin/budget/new', name: 'app_budget_new', methods: ['GET', 'POST'])]
     public function new(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $budget = new Budget();
         $this->budgetService->initializeBudget($budget);
@@ -224,7 +224,7 @@ class BudgetController extends AbstractController
     #[Route('/admin/budget/{id}/edit', name: 'app_budget_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Budget $budget): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $form = $this->createForm(BudgetType::class, $budget, [
             'event_choices' => $this->budgetService->buildEventChoices(),
@@ -268,7 +268,7 @@ class BudgetController extends AbstractController
     #[Route('/admin/budget/{id}/details', name: 'app_budget_details', methods: ['GET'])]
     public function details(Budget $budget): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $this->budgetService->recomputeBudget($budget);
         $this->entityManager->flush();
@@ -315,7 +315,7 @@ class BudgetController extends AbstractController
     #[Route('/admin/budget/{id}', name: 'app_budget_delete', methods: ['POST'])]
     public function delete(Request $request, Budget $budget): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         if ($this->isCsrfTokenValid('delete_budget_' . $budget->getId(), (string) $request->request->get('_token'))) {
             $this->entityManager->remove($budget);
@@ -326,25 +326,25 @@ class BudgetController extends AbstractController
         return $this->redirectToRoute('app_budget_index');
     }
 
-    private function denyUnlessAdminOrOrganizer(): void
+    private function denyUnlessAdmin(): void
     {
         $user = $this->getUser();
         if (!$user instanceof UserModel) {
-            throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+            throw $this->createAccessDeniedException('Acces reserve a l administration.');
         }
 
         // Vérifier via les rôles Symfony (plus fiable)
         $roles = $user->getRoles();
-        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_ORGANISATEUR', $roles, true)) {
+        if (in_array('ROLE_ADMIN', $roles, true)) {
             return;
         }
 
-        // Verification de secours via roleId (Organisateur=2, Administrateur=4)
+        // Verification de secours via roleId (Administrateur=4)
         $roleId = (int) ($user->getRoleId() ?? 0);
-        if ($roleId === 2 || $roleId === 4) {
+        if ($roleId === 4) {
             return;
         }
 
-        throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+        throw $this->createAccessDeniedException('Acces reserve a l administration.');
     }
 }

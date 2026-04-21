@@ -59,6 +59,11 @@ class OllamaClient
                     'model' => $model,
                     'messages' => $messages,
                     'stream' => false,
+                    'options' => [
+                        'temperature' => 0,
+                        'top_p' => 0.1,
+                        'seed' => 42,
+                    ],
                 ],
                 'timeout' => $this->timeoutSeconds,
             ]);
