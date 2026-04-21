@@ -20,9 +20,14 @@ class ManagementAssistantService
             return 'Pose une question pour commencer.';
         }
 
+        $question = $this->repairCommonMojibake($question);
         $normalizedQuestion = $this->normalizeForMatch($question);
         if ($normalizedQuestion === '') {
             return 'Pose une question pour commencer.';
+        }
+
+        if ($this->containsAny($normalizedQuestion, ['salut', 'bonjour', 'hello', 'bonsoir', 'coucou'])) {
+            return $this->buildHelpAnswer('aide') ?? 'Pose une question claire sur Sponsor, Budget ou Depense.';
         }
 
         if (!$this->isInScopeQuestion($normalizedQuestion)) {
@@ -42,11 +47,12 @@ class ManagementAssistantService
                 'content' => 'Tu es un copilote de gestion EventFlow. Tu reponds uniquement sur Sponsor, Budget et Depense. '
                     . 'Interdiction stricte: inventer des chiffres, des IDs ou des evenements. '
                     . 'Interdiction stricte: inventer des periodes (mois, annee, 2023, 2024, etc.) si elles ne sont pas explicitement dans le contexte. '
+                    . 'N ecris jamais que les donnees sont privees ou confidentielles: ce contexte est autorise pour la reponse. '
                     . 'Si une information manque, dis-le explicitement. '
                     . 'Style obligatoire: utilise des emojis utiles et fais un retour a la ligne apres chaque phrase. '
                     . 'Format obligatoire en francais:\n'
-                    . '1) Constat\n'
-                    . '2) Chiffres exacts\n'
+                    . '1) Constat:\n'
+                    . '2) Chiffres exacts:\n'
                     . '3) Actions recommandees',
             ],
             [
@@ -66,8 +72,12 @@ class ManagementAssistantService
         ];
 
         $answer = $this->ollamaClient->chat($messages);
+        $answer = $this->repairCommonMojibake($answer);
+        $answer = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $answer) ?? $answer;
+
         $answer = $this->enforceNoUnsupportedTimeClaims($answer, $normalizedQuestion, $context);
         $answer = $this->enforceNoRawContextLeak($answer, $normalizedQuestion, $context);
+        $answer = $this->enforceNoOutOfScopeRefusal($answer, $normalizedQuestion, $context);
 
         return $this->normalizeAssistantOutput($answer);
     }
@@ -148,6 +158,16 @@ class ManagementAssistantService
             return $specificBudget;
         }
 
+        $highestBudget = $this->buildHighestBudgetEventAnswer($question, $context);
+        if ($highestBudget !== null) {
+            return $highestBudget;
+        }
+
+        $mostRentable = $this->buildMostRentableEventAnswer($question, $context);
+        if ($mostRentable !== null) {
+            return $mostRentable;
+        }
+
         $losses = $this->buildCriticalBudgetsAnswer($question, $context);
         if ($losses !== null) {
             return $losses;
@@ -156,6 +176,11 @@ class ManagementAssistantService
         $categories = $this->buildTopDepenseCategoriesAnswer($question, $context);
         if ($categories !== null) {
             return $categories;
+        }
+
+        $lowestSponsor = $this->buildLowestSponsorContributionAnswer($question, $context);
+        if ($lowestSponsor !== null) {
+            return $lowestSponsor;
         }
 
         $sponsor = $this->buildSponsorSummaryAnswer($question, $context);
@@ -193,9 +218,9 @@ class ManagementAssistantService
     private function buildGlobalSummaryAnswer(string $question, array $context): ?string
     {
         $isGlobalIntent =
-            $this->containsAny($question, ['resume global', 'vue globale', 'bilan global', 'kpi global'])
+            $this->containsAny($question, ['resume global', 'resum global', 'rsum global', 'vue globale', 'bilan global', 'kpi global'])
             || (
-                $this->containsAny($question, ['resume', 'bilan', 'vue', 'kpi'])
+                $this->containsAny($question, ['resume', 'resum', 'rsum', 'bilan', 'vue', 'kpi'])
                 && $this->containsAny($question, ['global', 'generale', 'general'])
             );
 
@@ -252,7 +277,6 @@ class ManagementAssistantService
             return $answer;
         }
 
-        // If model leaks raw context, always fallback to deterministic global summary.
         $fallback = $this->buildGlobalSummaryAnswer($normalizedQuestion, $context);
         if ($fallback !== null) {
             return $fallback;
@@ -443,6 +467,111 @@ class ManagementAssistantService
     /**
      * @param array<string,mixed> $context
      */
+    private function buildHighestBudgetEventAnswer(string $question, array $context): ?string
+    {
+        $isHighestBudgetQuestion =
+            $this->containsAny($question, ['budget'])
+            && $this->containsAny($question, ['plus haut', 'plus grand', 'max', 'maximum']);
+
+        if (!$isHighestBudgetQuestion) {
+            return null;
+        }
+
+        /** @var array<int,array<string,mixed>> $snapshots */
+        $snapshots = isset($context['budgetSnapshots']) && is_array($context['budgetSnapshots'])
+            ? $context['budgetSnapshots']
+            : [];
+        if ($snapshots === []) {
+            return null;
+        }
+
+        $best = null;
+        $bestValue = null;
+        foreach ($snapshots as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $initial = (float) ($row['initialBudget'] ?? 0.0);
+            if ($bestValue === null || $initial > $bestValue) {
+                $bestValue = $initial;
+                $best = $row;
+            }
+        }
+
+        if (!is_array($best) || $bestValue === null) {
+            return null;
+        }
+
+        return implode("\n", [
+            'Constat:',
+            sprintf('L evenement avec le budget initial le plus eleve est "%s".', (string) ($best['eventTitle'] ?? 'Evenement inconnu')),
+            '',
+            'Chiffres exacts:',
+            sprintf('- Budget initial: %s DT', $this->formatMoney($bestValue)),
+            sprintf('- Depenses: %s DT', $this->formatMoney((float) ($best['totalExpenses'] ?? 0.0))),
+            sprintf('- Revenus: %s DT', $this->formatMoney((float) ($best['totalRevenue'] ?? 0.0))),
+            '',
+            'Actions recommandees:',
+            '- Verifier si ce niveau de budget se traduit par une rentabilite suffisante.',
+        ]);
+    }
+
+    /**
+     * @param array<string,mixed> $context
+     */
+    private function buildMostRentableEventAnswer(string $question, array $context): ?string
+    {
+        $isMostRentableQuestion =
+            $this->containsAny($question, ['evenement', 'event'])
+            && $this->containsAny($question, ['plus rentable', 'rentable', 'meilleure rentabilite', 'rentabilite max']);
+
+        if (!$isMostRentableQuestion) {
+            return null;
+        }
+
+        /** @var array<int,array<string,mixed>> $snapshots */
+        $snapshots = isset($context['budgetSnapshots']) && is_array($context['budgetSnapshots'])
+            ? $context['budgetSnapshots']
+            : [];
+        if ($snapshots === []) {
+            return null;
+        }
+
+        $best = null;
+        $bestRent = null;
+        foreach ($snapshots as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $rent = (float) ($row['rentabilite'] ?? 0.0);
+            if ($bestRent === null || $rent > $bestRent) {
+                $bestRent = $rent;
+                $best = $row;
+            }
+        }
+
+        if (!is_array($best) || $bestRent === null) {
+            return null;
+        }
+
+        return implode("\n", [
+            'Constat:',
+            sprintf('L evenement le plus rentable est "%s".', (string) ($best['eventTitle'] ?? 'Evenement inconnu')),
+            '',
+            'Chiffres exacts:',
+            sprintf('- Rentabilite: %s DT', $this->formatMoney($bestRent)),
+            sprintf('- Budget initial: %s DT', $this->formatMoney((float) ($best['initialBudget'] ?? 0.0))),
+            sprintf('- Depenses: %s DT', $this->formatMoney((float) ($best['totalExpenses'] ?? 0.0))),
+            sprintf('- Revenus: %s DT', $this->formatMoney((float) ($best['totalRevenue'] ?? 0.0))),
+            '',
+            'Actions recommandees:',
+            '- Reproduire les facteurs de performance de cet evenement sur les prochains plans budgetaires.',
+        ]);
+    }
+
+    /**
+     * @param array<string,mixed> $context
+     */
     private function buildSponsorTemporalLimitationAnswer(string $question, array $context): ?string
     {
         $isSponsorCadenceQuestion =
@@ -548,6 +677,67 @@ class ManagementAssistantService
         $lines[] = '- Relancer les sponsors inactifs avec recommandations ciblees.';
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * @param array<string,mixed> $context
+     */
+    private function buildLowestSponsorContributionAnswer(string $question, array $context): ?string
+    {
+        $isLowestIntent =
+            $this->containsAny($question, ['sponsor'])
+            && $this->containsAny($question, ['plus bas', 'plus faible', 'bas'])
+            && $this->containsAny($question, ['contribution', 'contributions']);
+
+        if (!$isLowestIntent) {
+            return null;
+        }
+
+        /** @var array<string,mixed> $sponsors */
+        $sponsors = isset($context['sponsors']) && is_array($context['sponsors']) ? $context['sponsors'] : [];
+        /** @var array<string,float|int|string> $companyMap */
+        $companyMap = isset($sponsors['companyContributions']) && is_array($sponsors['companyContributions'])
+            ? $sponsors['companyContributions']
+            : [];
+
+        if ($companyMap === []) {
+            return implode("\n", [
+                'Constat:',
+                'Je ne trouve pas de contributions par sponsor dans le contexte.',
+                '',
+                'Chiffres exacts:',
+                '- companyContributions est vide.',
+                '',
+                'Actions recommandees:',
+                '- Verifier que des sponsors avec montants existent en base.',
+            ]);
+        }
+
+        $lowestCompany = null;
+        $lowestAmount = null;
+        foreach ($companyMap as $company => $amount) {
+            $value = (float) $amount;
+            if ($lowestAmount === null || $value < $lowestAmount) {
+                $lowestAmount = $value;
+                $lowestCompany = (string) $company;
+            }
+        }
+
+        if ($lowestCompany === null || $lowestAmount === null) {
+            return null;
+        }
+
+        return implode("\n", [
+            'Constat:',
+            sprintf('Le sponsor avec la plus faible contribution totale est "%s".', $lowestCompany),
+            '',
+            'Chiffres exacts:',
+            sprintf('- Contribution totale: %s DT', $this->formatMoney($lowestAmount)),
+            sprintf('- Sponsors analyses: %d', count($companyMap)),
+            '',
+            'Actions recommandees:',
+            '- Comparer ce sponsor aux 3 premiers contributeurs pour identifier un plan de relance adapte.',
+        ]);
     }
 
     /**
@@ -657,7 +847,6 @@ class ManagementAssistantService
             return null;
         }
 
-        // 1) Exact/contains match on normalized company name.
         foreach ($companyNames as $name) {
             $company = trim((string) $name);
             $normalizedCompany = $this->normalizeForMatch($company);
@@ -666,7 +855,6 @@ class ManagementAssistantService
             }
         }
 
-        // 2) Token overlap fallback (handles punctuation or slight typing noise).
         foreach ($companyNames as $name) {
             $company = trim((string) $name);
             $tokens = $this->tokenizeForMatch($company);
@@ -740,45 +928,129 @@ class ManagementAssistantService
         return number_format($amount, 2, ',', ' ');
     }
 
+    /**
+     * Normalise la rÃ©ponse de l'assistant : casse insensible, ajout d'Ã©mojis, gestion UTF-8.
+     */
     private function normalizeAssistantOutput(string $text): string
     {
-        $normalized = str_replace(['€', ' EUR', ' eur', ' Euros', ' euros'], [' DT', ' DT', ' DT', ' DT', ' DT'], $text);
-        $normalized = preg_replace('/\r\n?/', "\n", $normalized) ?? $normalized;
-        // Ensure each sentence starts on a new line for better readability.
-        $normalized = preg_replace('/([.!?])\s+/u', "$1\n", $normalized) ?? $normalized;
-        $normalized = preg_replace('/\n{3,}/', "\n\n", $normalized) ?? $normalized;
-        $normalized = preg_replace('/\s{2,}/', ' ', $normalized) ?? $normalized;
-        $normalized = trim($normalized);
+        $text = $this->repairCommonMojibake($text);
+        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? $text;
+        $text = str_replace(['€', ' EUR', ' eur', ' Euros', ' euros'], [' DT', ' DT', ' DT', ' DT', ' DT'], $text);
+        $text = preg_replace('/\r\n?/', "\n", $text) ?? $text;
+        $text = preg_replace('/\s+(Constat:|Chiffres exacts:|Actions?\s+recommand\w*:)/i', "\n$1", $text) ?? $text;
+        $text = preg_replace('/\n{3,}/', "\n\n", $text) ?? $text;
+        $text = preg_replace('/[ \t]{2,}/', ' ', $text) ?? $text;
+        $text = trim($text);
 
-        if ($normalized === '') {
-            return 'Je n ai pas pu produire une reponse exploitable.';
+        if ($text === '') {
+            return implode("\n", [
+                'Constat:',
+                'Je n ai pas pu produire une reponse exploitable.',
+                '',
+                'Chiffres exacts:',
+                '- Aucune sortie exploitable retournee par le modele.',
+                '',
+                'Actions recommandees:',
+                '- Reposer la question en precisant Sponsor, Budget ou Depense.',
+            ]);
         }
 
-        $lines = array_values(array_filter(array_map('trim', explode("\n", $normalized)), static fn (string $line): bool => $line !== ''));
+        $lines = array_values(array_filter(array_map('trim', explode("\n", $text)), fn ($line) => $line !== ''));
 
         foreach ($lines as $i => $line) {
-            if (str_starts_with($line, 'Constat:')) {
-                $lines[$i] = '🔍 ' . $line;
+            if (preg_match('/^constat\s*:/i', $line) === 1) {
+                $lines[$i] = preg_replace('/^(constat:\s*)+/i', 'Constat: ', $line) ?? $line;
                 continue;
             }
-            if (str_starts_with($line, 'Chiffres exacts:')) {
-                $lines[$i] = '📊 ' . $line;
+            if (preg_match('/^chiffres?\s+exacts?\s*:/i', $line) === 1) {
+                $lines[$i] = preg_replace('/^(chiffres?\s+exacts?\s*:\s*)+/i', 'Chiffres exacts: ', $line) ?? $line;
                 continue;
             }
-            if (str_starts_with($line, 'Actions recommandees:')) {
-                $lines[$i] = '✅ ' . $line;
+            if (preg_match('/^actions?\s+recommand\w*\s*:/i', $line) === 1) {
+                $lines[$i] = preg_replace('/^(actions?\s+recommand\w*\s*:\s*)+/i', 'Actions recommandees: ', $line) ?? $line;
                 continue;
             }
             if (preg_match('/^\-\s/', $line) === 1) {
-                $lines[$i] = '• ' . substr($line, 2);
+                $lines[$i] = '- ' . substr($line, 2);
             }
         }
 
-        if ($lines !== [] && !preg_match('/^[\x{1F300}-\x{1FAFF}]/u', $lines[0])) {
-            $lines[0] = '🤖 ' . $lines[0];
+        $sections = [
+            'constat' => [],
+            'chiffres' => [],
+            'actions' => [],
+        ];
+        $current = 'constat';
+        $foundStructured = false;
+
+        foreach ($lines as $line) {
+            if (preg_match('/^constat\s*:\s*(.*)$/i', $line, $m) === 1) {
+                $foundStructured = true;
+                $current = 'constat';
+                $tail = trim((string) ($m[1] ?? ''));
+                if ($tail !== '') {
+                    $sections[$current][] = $tail;
+                }
+                continue;
+            }
+            if (preg_match('/^chiffres?\s+exacts?\s*:\s*(.*)$/i', $line, $m) === 1) {
+                $foundStructured = true;
+                $current = 'chiffres';
+                $tail = trim((string) ($m[1] ?? ''));
+                if ($tail !== '') {
+                    $sections[$current][] = $tail;
+                }
+                continue;
+            }
+            if (preg_match('/^actions?\s+recommand\w*\s*:\s*(.*)$/i', $line, $m) === 1) {
+                $foundStructured = true;
+                $current = 'actions';
+                $tail = trim((string) ($m[1] ?? ''));
+                if ($tail !== '') {
+                    $sections[$current][] = $tail;
+                }
+                continue;
+            }
+            $sections[$current][] = $line;
         }
 
-        return implode("\n", $lines);
+        if ($foundStructured) {
+            $constat = array_values(array_filter($sections['constat'], static fn (string $v): bool => trim($v) !== ''));
+            $chiffres = array_values(array_filter($sections['chiffres'], static fn (string $v): bool => trim($v) !== ''));
+            $actions = array_values(array_filter($sections['actions'], static fn (string $v): bool => trim($v) !== ''));
+
+            if ($constat === []) {
+                $constat = ['Information disponible mais non formulee clairement.'];
+            }
+            if ($chiffres === []) {
+                $chiffres = ['- Donnees chiffrees non extraites proprement.'];
+            }
+            if ($actions === []) {
+                $actions = ['- Repose la question avec un angle plus precis.'];
+            }
+
+            return implode("\n", array_merge(
+                ['Constat:'],
+                $constat,
+                [''],
+                ['Chiffres exacts:'],
+                $chiffres,
+                [''],
+                ['Actions recommandees:'],
+                $actions
+            ));
+        }
+
+        return implode("\n", [
+            'Constat:',
+            $this->toAsciiText($text),
+            '',
+            'Chiffres exacts:',
+            '- Reponse reformatee automatiquement.',
+            '',
+            'Actions recommandees:',
+            '- Reposer la question si tu veux un detail plus structure.',
+        ]);
     }
 
     /**
@@ -797,7 +1069,6 @@ class ManagementAssistantService
         $answerMentionsYear = (bool) preg_match('/\b20\d{2}\b/', $answer);
         $answerMentionsCadence = $this->containsAny($this->normalizeForMatch($answer), ['par mois', 'mensuel', 'par an', 'annuel']);
 
-        // The current context does not expose monthly/yearly sponsor time series.
         $hasTemporalSponsorSeries = isset($context['sponsors']['monthly']) || isset($context['sponsors']['yearly']);
 
         if (!$hasTemporalSponsorSeries && ($answerMentionsCadence || ($answerMentionsYear && !$questionContainsYear))) {
@@ -815,5 +1086,96 @@ class ManagementAssistantService
         }
 
         return $answer;
+    }
+    /**
+     * @param array<string,mixed> $context
+     */
+    private function enforceNoOutOfScopeRefusal(string $answer, string $normalizedQuestion, array $context): string
+    {
+        $normalizedAnswer = $this->normalizeForMatch($answer);
+        $looksLikeBadRefusal =
+            $this->containsAny($normalizedAnswer, ['je suis desole', 'je ne peux pas', 'hors perimetre', 'informations privees', 'confidenti'])
+            && $this->isInScopeQuestion($normalizedQuestion);
+
+        if (!$looksLikeBadRefusal) {
+            return $answer;
+        }
+
+        $global = $this->buildGlobalSummaryAnswer($normalizedQuestion, $context);
+        if ($global !== null) {
+            return $global;
+        }
+
+        $critical = $this->buildCriticalBudgetsAnswer($normalizedQuestion, $context);
+        if ($critical !== null) {
+            return $critical;
+        }
+
+        $categories = $this->buildTopDepenseCategoriesAnswer($normalizedQuestion, $context);
+        if ($categories !== null) {
+            return $categories;
+        }
+
+        $sponsor = $this->buildSponsorSummaryAnswer($normalizedQuestion, $context);
+        if ($sponsor !== null) {
+            return $sponsor;
+        }
+
+        return implode("\n", [
+            'Constat:',
+            'Question en perimetre Sponsor/Budget/Depense, mais la reponse precedente etait invalide.',
+            '',
+            'Chiffres exacts:',
+            '- Aucune valeur exploitable extraite de la reponse precedente.',
+            '',
+            'Actions recommandees:',
+            '- Reposer la question avec un angle clair: budgets critiques, top depenses, ou sponsors.',
+        ]);
+    }
+
+    private function repairCommonMojibake(string $text): string
+    {
+        $replacements = [
+            '�' => 'e',
+            'Ã©' => 'e',
+            'Ã¨' => 'e',
+            'Ãª' => 'e',
+            'Ã«' => 'e',
+            'Ã ' => 'a',
+            'Ã¢' => 'a',
+            'Ã®' => 'i',
+            'Ã¯' => 'i',
+            'Ã´' => 'o',
+            'Ã¶' => 'o',
+            'Ã¹' => 'u',
+            'Ã»' => 'u',
+            'Ã¼' => 'u',
+            'Ã§' => 'c',
+            'â€™' => "'",
+            'â€˜' => "'",
+            'â€œ' => '"',
+            'â€' => '"',
+            'â€“' => '-',
+            'â€”' => '-',
+            'â€¢' => '-',
+            'Â' => '',
+            'ðŸ' => '',
+        ];
+
+        $clean = strtr($text, $replacements);
+
+        return $this->toAsciiText($clean);
+    }
+
+    private function toAsciiText(string $text): string
+    {
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+        if ($ascii === false) {
+            return $text;
+        }
+
+        $ascii = preg_replace('/[^\x09\x0A\x0D\x20-\x7E]/', '', $ascii) ?? $ascii;
+
+        return trim($ascii);
     }
 }

@@ -301,6 +301,7 @@ function syncDateTimeFields() {
 document.getElementById('gouvernoratSelect').addEventListener('change', function() {
     const gov = this.value;
     const locationSelect = document.getElementById('locationSelect');
+    const weatherContent = document.getElementById('weatherContent');
     locationSelect.innerHTML = '<option value="">Sélectionner une faculté</option>';
 
     if (gov && facultesParGouvernorat[gov]) {
@@ -312,9 +313,30 @@ document.getElementById('gouvernoratSelect').addEventListener('change', function
             locationSelect.appendChild(opt);
         });
         document.getElementById('weatherBox').classList.add('show');
+        weatherContent.textContent = 'Chargement de la meteo...';
+
+        fetch(`{{ path('app_event_weather') }}?governorate=${encodeURIComponent(gov)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data || !data.ok || !data.weather) {
+                    throw new Error((data && data.error) ? data.error : 'Donnees indisponibles');
+                }
+
+                const w = data.weather;
+                weatherContent.innerHTML = `
+                    <strong>${w.icon} ${w.description}</strong><br>
+                    Temperature: ${w.temperature}°C<br>
+                    Humidite: ${w.humidity}%<br>
+                    Vent: ${w.windSpeed} km/h
+                `;
+            })
+            .catch(() => {
+                weatherContent.textContent = 'Meteo indisponible pour le moment.';
+            });
     } else {
         locationSelect.innerHTML = '<option value="">Saisir le lieu manuellement</option>';
         document.getElementById('weatherBox').classList.remove('show');
+        weatherContent.textContent = 'Chargement de la meteo...';
     }
 });
 

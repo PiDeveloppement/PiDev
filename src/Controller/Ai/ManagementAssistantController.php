@@ -20,7 +20,6 @@ class ManagementAssistantController extends AbstractController
     public function index(): Response
     {
         $this->denyUnlessAdminOrOrganizer();
-
         return $this->render('assistant/index.html.twig', [
             'modelName' => $this->assistantService->getModelName(),
         ]);
@@ -34,27 +33,26 @@ class ManagementAssistantController extends AbstractController
         try {
             $data = $request->toArray();
         } catch (\Throwable) {
-            return $this->json(['error' => 'Corps JSON invalide.'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Corps JSON invalide.'], Response::HTTP_BAD_REQUEST, ['Content-Type' => 'application/json; charset=UTF-8']);
         }
 
         $question = trim((string) ($data['question'] ?? ''));
         $history = isset($data['history']) && is_array($data['history']) ? $data['history'] : [];
 
         if ($question === '') {
-            return $this->json(['error' => 'La question est obligatoire.'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'La question est obligatoire.'], Response::HTTP_BAD_REQUEST, ['Content-Type' => 'application/json; charset=UTF-8']);
         }
 
         try {
             $answer = $this->assistantService->ask($question, $history);
-
             return $this->json([
                 'answer' => $answer,
                 'model' => $this->assistantService->getModelName(),
-            ]);
+            ], Response::HTTP_OK, ['Content-Type' => 'application/json; charset=UTF-8']);
         } catch (\Throwable $e) {
             return $this->json([
                 'error' => $e->getMessage(),
-            ], Response::HTTP_BAD_GATEWAY);
+            ], Response::HTTP_BAD_GATEWAY, ['Content-Type' => 'application/json; charset=UTF-8']);
         }
     }
 
@@ -66,30 +64,29 @@ class ManagementAssistantController extends AbstractController
         try {
             $data = $request->toArray();
         } catch (\Throwable) {
-            return $this->json(['error' => 'Corps JSON invalide.'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Corps JSON invalide.'], Response::HTTP_BAD_REQUEST, ['Content-Type' => 'application/json; charset=UTF-8']);
         }
 
         $question = trim((string) ($data['message'] ?? $data['question'] ?? ''));
         $history = isset($data['history']) && is_array($data['history']) ? $data['history'] : [];
 
         if ($question === '') {
-            return $this->json(['error' => 'Le message est obligatoire.'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Le message est obligatoire.'], Response::HTTP_BAD_REQUEST, ['Content-Type' => 'application/json; charset=UTF-8']);
         }
 
         try {
             $answer = $this->assistantService->ask($question, $history);
-
             return $this->json([
                 'response' => $answer,
                 'answer' => $answer,
                 'model' => $this->assistantService->getModelName(),
                 'isSimulated' => false,
-            ]);
+            ], Response::HTTP_OK, ['Content-Type' => 'application/json; charset=UTF-8']);
         } catch (\Throwable $e) {
             return $this->json([
                 'error' => $e->getMessage(),
                 'isSimulated' => false,
-            ], Response::HTTP_BAD_GATEWAY);
+            ], Response::HTTP_BAD_GATEWAY, ['Content-Type' => 'application/json; charset=UTF-8']);
         }
     }
 
@@ -97,7 +94,7 @@ class ManagementAssistantController extends AbstractController
     {
         $user = $this->getUser();
         if (!$user instanceof UserModel) {
-            throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+            throw $this->createAccessDeniedException('Accès réservé à l’administration et aux organisateurs.');
         }
 
         $roles = $user->getRoles();
@@ -110,6 +107,6 @@ class ManagementAssistantController extends AbstractController
             return;
         }
 
-        throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+        throw $this->createAccessDeniedException('Accès réservé à l’administration et aux organisateurs.');
     }
 }

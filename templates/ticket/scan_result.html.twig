@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan billet - EventFlow</title>
+    <style>
+        :root {
+            --ok-bg: #eaf9f0;
+            --ok-bd: #9ad8b0;
+            --ok-tx: #0f6b35;
+            --warn-bg: #fff3e6;
+            --warn-bd: #f2c793;
+            --warn-tx: #8b4e00;
+            --bad-bg: #ffefef;
+            --bad-bd: #f2b8b8;
+            --bad-tx: #992222;
+            --card-bd: #dbe3ee;
+            --surface: #f3f7fc;
+            --text: #17263a;
+            --muted: #5f738c;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Inter", "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 0% 0%, rgba(13, 71, 161, 0.08), transparent 45%),
+                radial-gradient(circle at 100% 0%, rgba(20, 120, 220, 0.1), transparent 45%),
+                var(--surface);
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+        }
+
+        .scan-card {
+            width: min(100%, 660px);
+            background: #ffffff;
+            border: 1px solid var(--card-bd);
+            border-radius: 16px;
+            box-shadow: 0 14px 32px rgba(16, 30, 56, 0.12);
+            padding: 18px;
+        }
+
+        .status-box {
+            border-radius: 12px;
+            border: 1px solid;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+        }
+
+        .status-box h1 {
+            margin: 0 0 6px;
+            font-size: clamp(22px, 5.4vw, 28px);
+        }
+
+        .status-box p {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.45;
+        }
+
+        .status-success {
+            background: var(--ok-bg);
+            border-color: var(--ok-bd);
+            color: var(--ok-tx);
+        }
+
+        .status-already {
+            background: var(--warn-bg);
+            border-color: var(--warn-bd);
+            color: var(--warn-tx);
+        }
+
+        .status-too-early {
+            background: var(--warn-bg);
+            border-color: var(--warn-bd);
+            color: var(--warn-tx);
+        }
+
+        .status-invalid {
+            background: var(--bad-bg);
+            border-color: var(--bad-bd);
+            color: var(--bad-tx);
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .meta-row {
+            border: 1px solid var(--card-bd);
+            border-radius: 10px;
+            padding: 10px 12px;
+            background: #fbfdff;
+        }
+
+        .meta-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--muted);
+            margin-bottom: 2px;
+        }
+
+        .meta-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+            word-break: break-word;
+        }
+
+        .scan-time {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .actions {
+            margin-top: 14px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-validate {
+            border: none;
+            border-radius: 10px;
+            background: #0f6b35;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 15px;
+            height: 44px;
+            padding: 0 16px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(15, 107, 53, 0.28);
+        }
+
+        .btn-validate:hover {
+            filter: brightness(1.06);
+        }
+
+        @media (min-width: 740px) {
+            .meta-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="scan-card">
+    <section class="status-box {% if status == 'success' %}status-success{% elseif status == 'already_used' %}status-already{% elseif status == 'too_early' %}status-too-early{% else %}status-invalid{% endif %}">
+        <h1>{{ title }}</h1>
+        <p>{{ message }}</p>
+    </section>
+
+    {% if ticket %}
+        <section class="meta-grid">
+            <article class="meta-row">
+                <span class="meta-label">Code billet</span>
+                <span class="meta-value">{{ ticket.ticketCode }}</span>
+            </article>
+            <article class="meta-row">
+                <span class="meta-label">Participant</span>
+                <span class="meta-value">
+                    {% if ticket.user %}
+                        {{ ticket.user.firstName }} {{ ticket.user.lastName }}
+                    {% else %}
+                        Participant inconnu
+                    {% endif %}
+                </span>
+            </article>
+            <article class="meta-row">
+                <span class="meta-label">Evenement</span>
+                <span class="meta-value">{{ ticket.event ? ticket.event.title : '-' }}</span>
+            </article>
+            <article class="meta-row">
+                <span class="meta-label">Date evenement</span>
+                <span class="meta-value">{{ ticket.event and ticket.event.startDate ? ticket.event.startDate|date('d/m/Y H:i') : '-' }}</span>
+            </article>
+            <article class="meta-row">
+                <span class="meta-label">Statut</span>
+                <span class="meta-value">{{ ticket.isUsed ? 'USED' : 'VALID' }}</span>
+            </article>
+            <article class="meta-row">
+                <span class="meta-label">Scanne le</span>
+                <span class="meta-value">{{ ticket.usedAt ? ticket.usedAt|date('d/m/Y H:i:s') : '-' }}</span>
+            </article>
+        </section>
+
+        {% if status == 'preview' and token is defined and token is not empty and not ticket.isUsed %}
+            <div class="actions">
+                <form method="post" action="{{ path('app_ticket_scan_validate', { token: token }) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('scan_validate_' ~ token) }}">
+                    <button type="submit" class="btn-validate">Valider l'entree</button>
+                </form>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    <div class="scan-time">Controle effectue le {{ "now"|date('d/m/Y H:i:s') }}</div>
+</main>
+</body>
+</html>

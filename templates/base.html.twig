@@ -820,7 +820,7 @@
             <div class="chat-premium-avatar">&#129302;</div>
             <div style="flex: 1; min-width: 0;">
                 <h3 class="chat-premium-title">Assistant Gestion IA</h3>
-                <p class="chat-premium-subtitle">Sponsor ï Budget ï DÈpense</p>
+                <p class="chat-premium-subtitle">Sponsor | Budget | Depense</p>
             </div>
             <button id="chatCloseButton" type="button" class="chat-premium-close">
                 <i class="fas fa-xmark"></i>
@@ -846,13 +846,13 @@
                 <div id="chatMessages" class="chat-premium-messages"></div>
 
                 <div class="chat-premium-suggestions">
-                    <button type="button" class="chatQuickPrompt chat-quick-btn" data-prompt="Donne-moi un rÈsumÈ global Sponsor/Budget/DÈpense.">&#128202; RÈsumÈ global</button>
+                    <button type="button" class="chatQuickPrompt chat-quick-btn" data-prompt="Donne-moi un resume global Sponsor/Budget/Depense.">&#128202; Resume global</button>
                     <button type="button" class="chatQuickPrompt chat-quick-btn" data-prompt="Quels sont les budgets les plus critiques actuellement ?">&#9888; Budgets critiques</button>
-                    <button type="button" class="chatQuickPrompt chat-quick-btn" data-prompt="Quelles sont les top catÈgories de dÈpenses ?">&#128184; DÈpenses</button>
+                    <button type="button" class="chatQuickPrompt chat-quick-btn" data-prompt="Quelles sont les top categories de depenses ?">&#128184; Depenses</button>
                 </div>
 
                 <form id="chatForm" class="chat-premium-form">
-                    <input type="text" id="chatInput" class="chat-premium-input" placeholder="…cris ta question...">
+                    <input type="text" id="chatInput" class="chat-premium-input" placeholder="Ecris ta question...">
                     <button id="chatSendButton" type="submit" class="chat-premium-send">Envoyer</button>
                 </form>
             </section>
@@ -966,7 +966,6 @@
                     return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] || char;
                 });
             }
-
             function normalizeStoredText(value) {
                 let text = String(value || '');
                 if (text === '') {
@@ -974,20 +973,17 @@
                 }
 
                 return text
-                    .replace(/üîç/g, '??')
-                    .replace(/üìä/g, '??')
-                    .replace(/‚úÖ/g, '?')
-                    .replace(/‚Ä¶/g, '...')
-                    .replace(/D√©connexion/g, 'Deconnexion')
-                    .replace(/Param√®tres/g, 'Parametres')
-                    .replace(/Invit√©/g, 'Invite')
-                    .replace(/connect√©/g, 'connecte');
+                    .replace(/\uFFFD/g, 'e')
+                    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+                    .replace(/[\u00A0\u2000-\u206F]/g, ' ')
+                    .replace(/\s{2,}/g, ' ')
+                    .trim();
             }
 
             function buildDefaultBotMessage() {
                 return {
                     role: 'assistant',
-                    content: '?? Constat:\nJe suis pret a t aider sur Sponsor, Budget et Depense.\n\n?? Chiffres exacts:\nJe reponds a partir des donnees reelles disponibles.\n\n? Actions recommandees:\nPose une question claire (ex: budgets critiques, top depenses, sponsors).',
+                    content: 'Constat:\nJe suis pret a t aider sur Sponsor, Budget et Depense.\n\nChiffres exacts:\nJe reponds a partir des donnees reelles disponibles.\n\nActions recommandees:\nPose une question claire (ex: budgets critiques, top depenses, sponsors).',
                     createdAt: nowIso(),
                 };
             }

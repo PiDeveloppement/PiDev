@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Billet {{ ticket.ticketCode }}</title>
+    <style>
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            color: #1f2937;
+            margin: 0;
+            padding: 24px;
+            background: #f8fafc;
+        }
+
+        .ticket {
+            background: #ffffff;
+            border: 1px solid #dbe3ee;
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .header {
+            display: table;
+            width: 100%;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 12px;
+        }
+
+        .header-left,
+        .header-right {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .subtitle {
+            color: #64748b;
+            margin: 4px 0 0;
+            font-size: 13px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status.used {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .content {
+            display: table;
+            width: 100%;
+        }
+
+        .content-left,
+        .content-right {
+            display: table-cell;
+            vertical-align: top;
+        }
+
+        .content-left {
+            width: 67%;
+            padding-right: 16px;
+        }
+
+        .label {
+            font-size: 12px;
+            color: #64748b;
+            margin: 0 0 4px;
+        }
+
+        .value {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 12px;
+        }
+
+        .value.small {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .qr-box {
+            border: 1px solid #dbe3ee;
+            border-radius: 12px;
+            background: #ffffff;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .qr-box img {
+            width: 170px;
+            height: 170px;
+        }
+
+        .qr-caption {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 8px;
+            word-break: break-all;
+        }
+
+        .footer {
+            margin-top: 16px;
+            font-size: 11px;
+            color: #64748b;
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="ticket">
+    <div class="header">
+        <div class="header-left">
+            <h1 class="title">Billet EventFlow</h1>
+            <p class="subtitle">Présentez ce billet à l'entrée de l'événement</p>
+        </div>
+        <div class="header-right">
+            <span class="status {{ ticket.isUsed ? 'used' : 'active' }}">{{ ticket.isUsed ? 'USED' : 'VALID' }}</span>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="content-left">
+            <p class="label">Code billet</p>
+            <p class="value">{{ ticket.ticketCode }}</p>
+
+            <p class="label">Participant</p>
+            <p class="value small">
+                {% if ticket.user %}
+                    {{ ticket.user.firstName }} {{ ticket.user.lastName }}
+                {% else %}
+                    Participant
+                {% endif %}
+            </p>
+
+            <p class="label">Événement</p>
+            <p class="value small">{{ ticket.event ? ticket.event.title : '-' }}</p>
+
+            <p class="label">Date début</p>
+            <p class="value small">{{ ticket.event and ticket.event.startDate ? ticket.event.startDate|date('d/m/Y H:i') : '-' }}</p>
+
+            <p class="label">Date fin</p>
+            <p class="value small">{{ ticket.event and ticket.event.endDate ? ticket.event.endDate|date('d/m/Y H:i') : '-' }}</p>
+
+            <p class="label">Lieu</p>
+            <p class="value small">{{ ticket.event and ticket.event.location ? ticket.event.location : '-' }}</p>
+        </div>
+
+        <div class="content-right">
+            <div class="qr-box">
+                {% set scanPath = path('app_ticket_scan_auto', { token: ticket.qrCode }) %}
+                {% set scanUrl = appPublicUrl ~ scanPath %}
+                <img src="{{ qr_code_data_uri(scanUrl, 'pdf') }}" alt="QR code billet">
+                <div class="qr-caption">Scan organisateur: ouverture + validation automatique</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Billet généré le {{ "now"|date('d/m/Y H:i') }}. Un billet ne peut être utilisé qu'une seule fois.
+    </div>
+</div>
+</body>
+</html>

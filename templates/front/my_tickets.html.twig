@@ -1,4 +1,4 @@
-{% extends 'auth/landing.html.twig' %}
+﻿{% extends 'auth/landing.html.twig' %}
 
 {% block title %}EventFlow - Mes billets{% endblock %}
 
@@ -129,6 +129,31 @@
             margin-bottom: 6px;
         }
 
+        .ticket-qr {
+            margin-top: 12px;
+            padding: 10px;
+            border: 1px dashed #c7d7ec;
+            border-radius: 12px;
+            background: #f8fbff;
+            text-align: center;
+        }
+
+        .ticket-qr img {
+            width: 132px;
+            height: 132px;
+            border-radius: 8px;
+            background: #fff;
+            border: 1px solid #dbe7f7;
+            padding: 6px;
+        }
+
+        .ticket-qr-note {
+            margin-top: 8px;
+            color: #5f7185;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
         .ticket-actions {
             margin-top: 12px;
             display: flex;
@@ -222,16 +247,24 @@
                                 <span class="ticket-status {{ ticket.isUsed ? 'used' : 'active' }}">{{ ticket.isUsed ? 'Utilisé' : 'Actif' }}</span>
                             </div>
                             <h2 class="ticket-event">{{ eventItem ? eventItem.title : 'Événement supprimé' }}</h2>
-                            <div class="ticket-row">📆 Date: {{ eventItem and eventItem.startDate ? eventItem.startDate|date('d/m/Y') : '-' }}</div>
+                            <div class="ticket-row">📅 Date: {{ eventItem and eventItem.startDate ? eventItem.startDate|date('d/m/Y') : '-' }}</div>
                             <div class="ticket-row">⏰ Heure: {{ eventItem and eventItem.startDate ? eventItem.startDate|date('H:i') : '-' }}</div>
                             <div class="ticket-row">📍 Lieu: {{ eventItem and eventItem.location ? eventItem.location : '-' }}</div>
                             <div class="ticket-row">🏷️ Catégorie: {{ eventItem and eventItem.category ? ((eventItem.category.icon ?? '📁') ~ ' ' ~ eventItem.category.name) : 'Sans catégorie' }}</div>
                             <div class="ticket-row">🕒 Créé le: {{ ticket.createdAt ? ticket.createdAt|date('d/m/Y H:i') : '-' }}</div>
 
+                            {% if ticket.qrCode %}
+                                <div class="ticket-qr">
+                                    <img src="{{ qr_code_data_uri(absolute_url(path('app_ticket_scan_auto', {'token': ticket.qrCode})), 'pdf', {'size': 170, 'margin': 8}) }}" alt="QR billet {{ ticket.ticketCode }}">
+                                    <div class="ticket-qr-note">QR de validation du billet</div>
+                                </div>
+                            {% endif %}
+
                             <div class="ticket-actions">
                                 {% if eventItem %}
                                     <a class="ticket-btn" href="{{ path('app_public_event_show', {'id': eventItem.id}) }}">Voir événement</a>
                                 {% endif %}
+                                <a class="ticket-btn" href="{{ path('app_my_ticket_pdf', {'id': ticket.id}) }}">Télécharger PDF</a>
                             </div>
                         </article>
                     {% endfor %}
@@ -240,4 +273,3 @@
         </div>
     </main>
 {% endblock %}
-
