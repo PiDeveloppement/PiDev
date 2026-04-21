@@ -107,8 +107,3 @@ class DepenseType extends AbstractType
         ]);
     }
 }
-
-
-
-
-

@@ -378,28 +378,24 @@ private function calculateEuclideanDistance(array $descriptor1, array $descripto
         }
     }
 
-    private function resolveHomeRouteForUser(?UserModel $user): string
-    {
-        if (!$user instanceof UserModel) {
-            return 'app_landing';
-        }
-
-        $roleId = $user->getRoleId();
-
-        if ($roleId == 4) {
-            return 'app_sponsor_portal';
-        }
-
-        if ($roleId == 3 || $roleId == 2) {
-            return 'app_dashboard';
-        }
-
-        if ($roleId == 1 || $roleId == 5) {
-            return 'app_my_tickets';
-        }
-
-        return 'app_my_tickets';
+private function resolveHomeRouteForUser(?UserModel $user): string
+{
+    if (!$user instanceof UserModel) {
+        return 'app_landing';
     }
+
+    $roleId = $user->getRoleId();
+
+    if ($roleId == 4) {
+        return 'app_sponsor_portal';
+    }
+
+    if ($roleId == 3 || $roleId == 2) {
+        return 'app_dashboard';
+    }
+
+    return 'app_participation_confirm';
+}
 
     #[Route('/check-auth', name: 'app_check_auth')]
     public function checkAuth(): Response

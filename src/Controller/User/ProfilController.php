@@ -2,6 +2,7 @@
 
 namespace App\Controller\User;
 
+
 use App\Entity\User\UserModel;
 use App\Repository\Role\RoleRepository;
 use App\Repository\User\UserRepository;
@@ -16,10 +17,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
-use Symfony\Component\Notifier\TexterInterface;
-use Symfony\Component\Notifier\Message\SmsMessage;
-use Symfony\Component\Notifier\NotifierInterface;
-use Symfony\Component\Notifier\Notification\Notification;
 
 #[Route('/profile')]
 class ProfilController extends AbstractController
@@ -32,8 +29,7 @@ class ProfilController extends AbstractController
         private RoleRepository $roleRepository,
         private EntityManagerInterface $entityManager,
         private UserPasswordHasherInterface $passwordHasher,
-        private SluggerInterface $slugger,
-        private TexterInterface $texter
+        private SluggerInterface $slugger
     ) {}
 
     #[Route('/', name: 'app_profile')]
@@ -136,33 +132,6 @@ class ProfilController extends AbstractController
         $hashedPassword = $this->passwordHasher->hashPassword($user, $newPassword);
         $user->setPassword($hashedPassword);
         $this->entityManager->flush();
-
-        // Envoyer notification SMS via Infobip
-        $phone = $user->getPhone();
-        error_log('DEBUG: Tentative envoi SMS - Phone: ' . ($phone ? $phone : 'NULL'));
-        error_log('DEBUG: User ID: ' . $user->getId());
-        error_log('DEBUG: User Email: ' . $user->getEmail());
-
-        if ($phone) {
-            try {
-                $sms = new SmsMessage(
-                    $phone,
-                    'Votre mot de passe a été changé avec succès. Si vous n\'êtes pas à l\'origine de cette action, contactez le support immédiatement.'
-                );
-                error_log('DEBUG: SMS Message créé, tentative envoi...');
-                $this->texter->send($sms);
-                error_log('DEBUG: SMS envoyé avec succès à ' . $phone);
-                $this->addFlash('info', '📱 SMS de notification envoyé à ' . $phone);
-            } catch (\Exception $e) {
-                // Log l'erreur mais ne pas bloquer l'action
-                error_log('ERREUR envoi SMS: ' . $e->getMessage());
-                error_log('ERREUR Stack trace: ' . $e->getTraceAsString());
-                $this->addFlash('warning', '⚠️ Erreur lors de l\'envoi du SMS: ' . $e->getMessage());
-            }
-        } else {
-            error_log('DEBUG: Aucun numéro de téléphone enregistré pour l\'utilisateur');
-            $this->addFlash('warning', '⚠️ Aucun numéro de téléphone enregistré. SMS non envoyé.');
-        }
 
         $this->addFlash('success', '✅ Mot de passe changé avec succès');
         return $this->redirectToRoute('app_profile');

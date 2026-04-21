@@ -216,7 +216,7 @@
 </style>
 
 <div class="ev-toolbar">
-    <input class="ev-input" type="text" id="searchInput" placeholder="🔍 Rechercher par titre, lieu..." value="{{ filters.search ?? '' }}"/>
+    <input class="ev-input" type="text" id="searchInput" placeholder="🔍 Rechercher par titre..." value="{{ filters.search ?? '' }}"/>
     <select class="ev-select" id="statusFilter">
         <option value="">📊 Tous les statuts</option>
         <option value="avenir" {{ (filters.status ?? '') == 'avenir' ? 'selected' : '' }}>À venir</option>
@@ -288,7 +288,7 @@
             {% endif %}
 
             <tr class="event-row"
-                data-search="{{ (event.title ~ ' ' ~ (event.location ?? '') ~ ' ' ~ (event.gouvernorat ?? ''))|lower }}"
+                data-title="{{ event.title|lower }}"
                 data-status="{{ temporalStatus }}"
                 data-price="{{ event.isFree ? 'free' : 'paid' }}"
                 data-category="{{ event.category ? event.category.id : '' }}">
@@ -390,6 +390,7 @@
     const kpiRoot = document.getElementById('eventKpiRoot');
     const totalCount = {{ totalEvents }};
     let debounceTimer = null;
+    let latestRequestId = 0;
 
     function buildUrl(page = 1) {
         const url = new URL(window.location.href);
@@ -442,6 +443,7 @@
     }
 
     async function loadEvents(page = 1) {
+        const requestId = ++latestRequestId;
         const url = buildUrl(page);
 
         try {
@@ -452,6 +454,9 @@
             });
 
             const html = await response.text();
+            if (requestId !== latestRequestId) {
+                return;
+            }
             syncFromResponse(html);
         } catch (error) {
             console.error('Erreur lors du chargement des événements', error);
@@ -471,8 +476,16 @@
         const p = price.value;
         let visible = 0;
 
+        const matchesPrefix = (value) => {
+            if (!q) {
+                return true;
+            }
+
+            return String(value || '').toLowerCase().startsWith(q);
+        };
+
         rows.forEach(row => {
-            const okSearch = !q || row.dataset.search.includes(q);
+            const okSearch = matchesPrefix(row.dataset.title || '');
             const okStatus = !s || row.dataset.status === s;
             const okCategory = !c || row.dataset.category === c;
             const okPrice = !p || row.dataset.price === p;
@@ -494,10 +507,17 @@
     if (supportsAjax) {
         const controls = [search, status, category, price];
         controls.forEach(el => {
-            el.addEventListener('input', scheduleLoad);
-            el.addEventListener('change', scheduleLoad);
+            el.addEventListener('input', () => {
+                applyClientFallback();
+                scheduleLoad();
+            });
+            el.addEventListener('change', () => {
+                applyClientFallback();
+                scheduleLoad();
+            });
         });
         updatePaginationLinks(paginationShell);
+        applyClientFallback();
     } else {
         [search, status, category, price].forEach(el => {
             el.addEventListener('input', applyClientFallback);

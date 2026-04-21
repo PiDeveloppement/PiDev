@@ -40,8 +40,8 @@ class EventRepository extends ServiceEntityRepository
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
-            $qb->andWhere('LOWER(e.title) LIKE :search')
-                ->setParameter('search', mb_strtolower($search) . '%');
+            $qb->andWhere("LOWER(COALESCE(e.title, '')) LIKE :searchPrefix")
+                ->setParameter('searchPrefix', mb_strtolower($search) . '%');
         }
 
         $status = (string) ($filters['status'] ?? '');

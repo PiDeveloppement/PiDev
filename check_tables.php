@@ -1,3 +1,4 @@
+
 <?php
 try {
     $pdo = new PDO('mysql:host=localhost;dbname=pidev', 'root', '');
@@ -11,3 +12,4 @@ try {
     echo "Erreur: " . $e->getMessage();
 }
 ?>
+

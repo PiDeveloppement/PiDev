@@ -34,6 +34,27 @@
             margin-bottom: 24px;
         }
 
+        .tickets-back-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 18px;
+        }
+
+        .tickets-back-btn {
+            border-radius: 10px;
+            height: 40px;
+            padding: 0 14px;
+            text-decoration: none;
+            border: 1px solid #c7d7ec;
+            background: #e7f1ff;
+            color: #174a92;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
         .flash-stack {
             display: grid;
             gap: 10px;
@@ -75,6 +96,18 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
             gap: 16px;
+        }
+
+        .tickets-section-title {
+            color: #10345f;
+            font-size: 22px;
+            margin: 8px 0 12px;
+        }
+
+        .tickets-section-subtitle {
+            color: #5b6b7f;
+            font-size: 14px;
+            margin: 0 0 14px;
         }
 
         .ticket-card {
@@ -150,6 +183,13 @@
             justify-content: center;
         }
 
+        .ticket-btn.danger {
+            background: #fff1f1;
+            border-color: #f0c4c4;
+            color: #b3261e;
+            cursor: pointer;
+        }
+
         .empty-tickets {
             text-align: center;
             border: 1px dashed #bfd0e4;
@@ -162,6 +202,7 @@
 {% endblock %}
 
 {% block public_content %}
+    {% set isParticipantUser = app.user and ('ROLE_ADMIN' not in app.user.roles) and ('ROLE_ORGANISATEUR' not in app.user.roles) and ('ROLE_SPONSOR' not in app.user.roles) %}
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo-container">
@@ -177,9 +218,28 @@
             </div>
 
             <div class="nav-buttons">
-                <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
-                <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
-                <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
+                {% if isParticipantUser %}
+                    <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
+                    <details class="participant-chip-menu">
+                        <summary class="participant-chip">
+                            <span class="participant-chip-avatar">{{ app.user.initials }}</span>
+                            <span class="participant-chip-meta">
+                                <span class="participant-chip-name">{{ app.user.fullName }}</span>
+                                <span class="participant-chip-role">Participant</span>
+                            </span>
+                        </summary>
+                        <div class="participant-chip-dropdown">
+                            <a class="participant-chip-action" href="{{ path('app_logout') }}">Déconnexion</a>
+                        </div>
+                    </details>
+                {% elseif app.user %}
+                    <button class="btn-login" onclick="window.location.href='{{ path('app_dashboard') }}'">Back-office</button>
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_logout') }}'">Déconnexion</button>
+                {% else %}
+                    <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
+                    <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -188,6 +248,9 @@
         <div class="tickets-shell">
             <h1 class="tickets-title">Mes billets</h1>
             <p class="tickets-subtitle">Retrouvez ici tous vos billets créés automatiquement après participation.</p>
+            <div class="tickets-back-wrap">
+                <a class="tickets-back-btn" href="{{ path('app_public_events') }}">← Retour aux événements</a>
+            </div>
 
             <div class="flash-stack">
                 {% for message in app.flashes('success') %}
@@ -210,8 +273,11 @@
                     <p>Participez à un événement pour créer votre premier billet.</p>
                 </div>
             {% else %}
-                <section class="tickets-grid">
-                    {% for ticket in tickets %}
+                {% if upcomingTickets is not empty %}
+                <h3 class="tickets-section-title">Billets à venir</h3>
+                <p class="tickets-section-subtitle">Événements à venir avec billets actifs.</p>
+                <section class="tickets-grid" style="margin-bottom: 20px;">
+                    {% for ticket in upcomingTickets %}
                         {% set eventItem = ticket.event %}
                         <article class="ticket-card">
                             <div class="ticket-top">
@@ -226,13 +292,53 @@
                             <div class="ticket-row">🕒 Créé le: {{ ticket.createdAt ? ticket.createdAt|date('d/m/Y H:i') : '-' }}</div>
 
                             <div class="ticket-actions">
+                                <a class="ticket-btn" href="{{ path('app_my_ticket_pdf', {'id': ticket.id}) }}">Télécharger PDF</a>
                                 {% if eventItem %}
                                     <a class="ticket-btn" href="{{ path('app_public_event_show', {'id': eventItem.id}) }}">Voir événement</a>
+                                {% endif %}
+                                {% if not ticket.isUsed and eventItem and eventItem.startDate and eventItem.startDate > now %}
+                                    <form method="post" action="{{ path('app_my_ticket_cancel', {'id': ticket.id}) }}" onsubmit="return confirm('Voulez-vous vraiment annuler ce billet ?');" style="display:inline-flex;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('cancel_ticket_' ~ ticket.id) }}">
+                                        <button type="submit" class="ticket-btn danger">Annuler mon billet</button>
+                                    </form>
                                 {% endif %}
                             </div>
                         </article>
                     {% endfor %}
                 </section>
+                {% endif %}
+
+                {% if historyTickets is not empty %}
+                <h3 class="tickets-section-title">Historique de participation</h3>
+                <p class="tickets-section-subtitle">Événements terminés ou billets déjà utilisés.</p>
+                <section class="tickets-grid">
+                    {% for ticket in historyTickets %}
+                        {% set eventItem = ticket.event %}
+                        <article class="ticket-card">
+                            <div class="ticket-top">
+                                <span class="ticket-code">🎫 {{ ticket.ticketCode }}</span>
+                                <span class="ticket-status {{ ticket.isUsed ? 'used' : 'active' }}">{{ ticket.isUsed ? 'Utilisé' : 'Actif' }}</span>
+                            </div>
+                            <h2 class="ticket-event">{{ eventItem ? eventItem.title : 'Événement supprimé' }}</h2>
+                            <div class="ticket-row">📆 Date: {{ eventItem and eventItem.startDate ? eventItem.startDate|date('d/m/Y') : '-' }}</div>
+                            <div class="ticket-row">⏰ Heure: {{ eventItem and eventItem.startDate ? eventItem.startDate|date('H:i') : '-' }}</div>
+                            <div class="ticket-row">📍 Lieu: {{ eventItem and eventItem.location ? eventItem.location : '-' }}</div>
+                            <div class="ticket-row">🏷️ Catégorie: {{ eventItem and eventItem.category ? ((eventItem.category.icon ?? '📁') ~ ' ' ~ eventItem.category.name) : 'Sans catégorie' }}</div>
+                            <div class="ticket-row">🕒 Créé le: {{ ticket.createdAt ? ticket.createdAt|date('d/m/Y H:i') : '-' }}</div>
+
+                            <div class="ticket-actions">
+                                <a class="ticket-btn" href="{{ path('app_my_ticket_pdf', {'id': ticket.id}) }}">Télécharger PDF</a>
+                                {% if eventItem and eventItem.endDate and eventItem.endDate >= now %}
+                                    <a class="ticket-btn" href="{{ path('app_public_event_show', {'id': eventItem.id}) }}">Voir événement</a>
+                                {% endif %}
+                                {% if eventItem and ticket.isUsed %}
+                                    <a class="ticket-btn" href="{{ path('app_quiz_start', {'event_id': eventItem.id}) }}" style="background: #f3e9ff; color: #6f2dbd; border-color: #d8b4f8;">🎯 Passer le Quiz</a>
+                                {% endif %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </section>
+                {% endif %}
             {% endif %}
         </div>
     </main>

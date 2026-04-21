@@ -1,0 +1,303 @@
+{% extends 'auth/landing.html.twig' %}
+
+{% block title %}EventFlow - Calendrier des événements{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+    <style>
+        .calendar-page {
+            margin-top: 80px;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(13, 71, 161, 0.08), transparent 40%),
+                radial-gradient(circle at 100% 10%, rgba(25, 118, 210, 0.12), transparent 42%),
+                #eef2f6;
+            padding: 34px 16px 48px;
+        }
+
+        .calendar-shell {
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .calendar-title {
+            margin: 0;
+            color: #0f2037;
+            font-size: clamp(30px, 4vw, 46px);
+        }
+
+        .calendar-subtitle {
+            margin: 6px 0 0;
+            color: #5b6b7f;
+            font-size: 16px;
+        }
+
+        .calendar-back {
+            border-radius: 10px;
+            height: 40px;
+            padding: 0 14px;
+            text-decoration: none;
+            border: 1px solid #c7d7ec;
+            background: #e7f1ff;
+            color: #174a92;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .calendar-card {
+            background: #ffffff;
+            border: 1px solid #d9e4f2;
+            border-radius: 16px;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+            padding: 14px;
+        }
+
+        #participantCalendar {
+            min-height: 680px;
+        }
+
+        .fc .fc-toolbar-title {
+            font-size: 1.32rem;
+            color: #0f2c4f;
+            font-weight: 800;
+        }
+
+        .fc .fc-button-primary {
+            background: #1565c0;
+            border-color: #0d47a1;
+        }
+
+        .fc .fc-button-primary:not(:disabled):active,
+        .fc .fc-button-primary:not(:disabled).fc-button-active {
+            background: #0d47a1;
+            border-color: #0b3c8c;
+        }
+
+        .fc .fc-daygrid-day.fc-day-today {
+            background: #e9f3ff;
+        }
+
+        .fc .fc-daygrid-day.category-tinted .fc-daygrid-day-frame {
+            background: var(--category-day-bg, transparent);
+            transition: background-color 0.2s ease;
+        }
+
+        /* Styliser les événements du calendrier */
+        .fc .fc-event {
+            border-radius: 6px !important;
+            padding: 2px 4px !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease;
+        }
+
+        .fc .fc-event:hover {
+            opacity: 0.85;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+        }
+
+        .fc .fc-event-title {
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Mettre le texte en couleur avec la catégorie */
+        .fc .fc-daygrid-block-event .fc-event-title {
+            color: inherit;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 760px) {
+            #participantCalendar {
+                min-height: 620px;
+            }
+
+            .fc .fc-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block public_content %}
+    {% set isParticipantUser = app.user and ('ROLE_ADMIN' not in app.user.roles) and ('ROLE_ORGANISATEUR' not in app.user.roles) and ('ROLE_SPONSOR' not in app.user.roles) %}
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo-container">
+                <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+            </div>
+
+            <div class="nav-links">
+                <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}'">Accueil</button>
+                <button class="nav-link" onclick="window.location.href='{{ path('app_public_events') }}'">Événements</button>
+                <button class="nav-link" style="color:#0D47A1; font-weight:700; text-decoration:underline;" onclick="window.location.href='{{ path('app_public_events_calendar') }}'">Calendrier</button>
+                <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
+                <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}#contact'">Contact</button>
+            </div>
+
+            <div class="nav-buttons">
+                {% if isParticipantUser %}
+                    <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
+                    <details class="participant-chip-menu">
+                        <summary class="participant-chip">
+                            <span class="participant-chip-avatar">{{ app.user.initials }}</span>
+                            <span class="participant-chip-meta">
+                                <span class="participant-chip-name">{{ app.user.fullName }}</span>
+                                <span class="participant-chip-role">Participant</span>
+                            </span>
+                        </summary>
+                        <div class="participant-chip-dropdown">
+                            <a class="participant-chip-action" href="{{ path('app_logout') }}">Déconnexion</a>
+                        </div>
+                    </details>
+                {% elseif app.user %}
+                    <button class="btn-login" onclick="window.location.href='{{ path('app_dashboard') }}'">Back-office</button>
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_logout') }}'">Déconnexion</button>
+                {% else %}
+                    <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
+                    <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="calendar-page">
+        <div class="calendar-shell">
+            <div class="calendar-header">
+                <div>
+                    <h1 class="calendar-title">Calendrier des événements à venir</h1>
+                    <p class="calendar-subtitle">Consulte tous les événements publiés à venir en vue mensuelle, hebdo ou journalière.</p>
+                </div>
+                <a class="calendar-back" href="{{ path('app_public_events') }}">← Retour à la vitrine</a>
+            </div>
+
+            <div class="calendar-card">
+                <div id="participantCalendar"></div>
+            </div>
+        </div>
+    </main>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/fr.global.js"></script>
+    <script>
+        function hexToRgba(color, alpha) {
+            if (!color || typeof color !== 'string') {
+                return `rgba(21, 101, 192, ${alpha})`;
+            }
+
+            const value = color.trim();
+            if (value.startsWith('#')) {
+                const hex = value.slice(1);
+                if (hex.length === 3) {
+                    const r = parseInt(hex[0] + hex[0], 16);
+                    const g = parseInt(hex[1] + hex[1], 16);
+                    const b = parseInt(hex[2] + hex[2], 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+
+                if (hex.length === 6) {
+                    const r = parseInt(hex.slice(0, 2), 16);
+                    const g = parseInt(hex.slice(2, 4), 16);
+                    const b = parseInt(hex.slice(4, 6), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+            }
+
+            return value;
+        }
+
+        function applyDayCellBackgrounds(calendar) {
+            const root = document.getElementById('participantCalendar');
+            if (!root) {
+                return;
+            }
+
+            root.querySelectorAll('.fc-daygrid-day').forEach((dayCell) => {
+                dayCell.classList.remove('category-tinted');
+                dayCell.style.removeProperty('--category-day-bg');
+            });
+
+            const appliedDates = new Set();
+            calendar.getEvents().forEach((event) => {
+                if (!event.startStr) {
+                    return;
+                }
+
+                const dateKey = event.startStr.slice(0, 10);
+                if (!dateKey || appliedDates.has(dateKey)) {
+                    return;
+                }
+
+                const dayCell = root.querySelector(`.fc-daygrid-day[data-date="${dateKey}"]`);
+                if (!dayCell) {
+                    return;
+                }
+
+                const tintedColor = hexToRgba(event.backgroundColor || '#1565c0', 0.16);
+                dayCell.classList.add('category-tinted');
+                dayCell.style.setProperty('--category-day-bg', tintedColor);
+                appliedDates.add(dateKey);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const calendarEl = document.getElementById('participantCalendar');
+            if (!calendarEl) {
+                return;
+            }
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                locale: 'fr',
+                initialView: 'dayGridMonth',
+                eventDisplay: 'block',
+                height: 'auto',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                events: {
+                    url: '{{ path('fc_load_events') }}',
+                    method: 'POST',
+                    extraParams: {
+                        filters: JSON.stringify({ scope: 'participant_upcoming' })
+                    }
+                },
+                eventsSet: function () {
+                    applyDayCellBackgrounds(calendar);
+                },
+                datesSet: function () {
+                    applyDayCellBackgrounds(calendar);
+                },
+                eventClick: function (info) {
+                    if (info.event.url) {
+                        info.jsEvent.preventDefault();
+                        window.location.href = info.event.url;
+                    }
+                }
+            });
+
+            calendar.render();
+        });
+    </script>
+{% endblock %}
