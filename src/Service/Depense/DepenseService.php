@@ -35,8 +35,8 @@ class DepenseService
         $choices = [];
         foreach ($budgets as $budget) {
             $eventId = (int) $budget->getEventId();
-            $eventTitle = $eventTitleMap[$eventId] ?? ('Event #' . $eventId);
-            $label = sprintf('%s (%.2f DT) [#%d]', $eventTitle, (float) $budget->getInitialBudget(), (int) $budget->getId());
+            $eventTitle = $eventTitleMap[$eventId] ?? ('Event ' . $eventId);
+            $label = sprintf('%s (%.2f DT)', $eventTitle, (float) $budget->getInitialBudget());
             $choices[$label] = (int) $budget->getId();
         }
 
@@ -104,7 +104,7 @@ class DepenseService
         $map = [];
         foreach ($budgets as $budget) {
             $eventId = (int) $budget->getEventId();
-            $eventTitle = $eventTitleMap[$eventId] ?? ('Event #' . $eventId);
+            $eventTitle = $eventTitleMap[$eventId] ?? ('Event ' . $eventId);
             $map[(int) $budget->getId()] = sprintf('%s (%.2f DT)', $eventTitle, (float) $budget->getInitialBudget());
         }
 

@@ -284,46 +284,24 @@
             gap: 14px;
             margin-top: 14px;
         }
-        .fx-toolbar {
-            display: flex;
+        .insight-badge {
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .fx-toolbar label {
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 999px;
             font-size: 11px;
             font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            color: var(--slate-500);
+            color: #1d4ed8;
+            background: #dbeafe;
+            border: 1px solid #bfdbfe;
         }
-        .fx-select {
-            min-width: 190px;
-            padding: 7px 34px 7px 12px;
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            background: var(--white);
-            color: var(--slate);
-            font-size: 12px;
-            font-weight: 600;
-            font-family: inherit;
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-        }
-        .fx-select:focus {
-            outline: none;
-            border-color: var(--emerald);
-            box-shadow: 0 0 0 3px rgba(5,150,105,0.12);
-        }
-        .fx-meta {
+        .insight-meta {
             font-size: 12px;
             color: var(--slate-500);
             font-weight: 500;
         }
-        .fx-empty {
+        .insight-empty {
             display: none;
             margin-top: 10px;
             font-size: 12px;
@@ -745,19 +723,12 @@
 
         /* Fixed top actions for Depense page */
         .depense-top-actions {
-            position: fixed !important;
-            top: 80px !important;
-            right: 28px !important;
-            left: auto !important;
-            bottom: auto !important;
+            position: static !important;
             width: auto !important;
-            height: auto !important;
-            min-width: max-content !important;
             display: flex !important;
             align-items: center !important;
             gap: 10px !important;
-            z-index: 1300 !important;
-            pointer-events: auto !important;
+            z-index: auto !important;
             background: transparent !important;
             padding: 0 !important;
             margin: 0 !important;
@@ -766,7 +737,7 @@
         }
 
         .depense-top-actions #translationWidget {
-            position: static !important;
+            position: relative !important;
             margin: 0 !important;
             inset: auto !important;
             z-index: auto !important;
@@ -799,7 +770,7 @@
         /* shared chart defaults */
         Chart.defaults.font.family = "'DM Sans', sans-serif";
 
-        /* ── Distribution donut ── */
+        /* ── Distribution by level ── */
         const distEl = document.getElementById('distChart');
         if (distEl) {
             const low = parseInt(distEl.dataset.low) || 0;
@@ -807,18 +778,18 @@
             const hi  = parseInt(distEl.dataset.hi)  || 0;
             const total = low + med + hi || 1;
             new Chart(distEl, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
-                    labels: ['<100 DT', '100–1K DT', '>1K DT'],
+                    labels: ['Faible (<100 DT)', 'Moyenne (100-1K DT)', 'Elevee (>1K DT)'],
                     datasets: [{
                         data: [low, med, hi],
                         backgroundColor: ['#059669', '#d97706', '#dc2626'],
-                        borderWidth: 0,
-                        hoverOffset: 6
+                        borderRadius: 8,
+                        barThickness: 18
                     }]
                 },
                 options: {
-                    cutout: '68%',
+                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -828,40 +799,65 @@
                                 label: ctx => ` ${ctx.label}: ${ctx.raw} (${((ctx.raw/total)*100).toFixed(1)}%)`
                             }
                         }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#e2e8f0' },
+                            ticks: {
+                                color: '#64748b',
+                                stepSize: 1,
+                                callback: value => Number(value).toLocaleString('fr-FR')
+                            }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#334155', font: { size: 11, weight: '600' } }
+                        }
                     }
                 }
             });
         }
 
-        /* ── Top categories bar ── */
+        /* ── Top categories donut ── */
         const catEl = document.getElementById('catChart');
         if (catEl && catEl.dataset.cats) {
             const cats = JSON.parse(catEl.dataset.cats);
             const labels = Object.keys(cats);
             const values = Object.values(cats);
+            const totalCats = values.reduce((sum, value) => sum + (Number(value) || 0), 0) || 1;
             new Chart(catEl, {
-                type: 'bar',
+                type: 'doughnut',
                 data: {
                     labels,
                     datasets: [{
                         data: values,
                         backgroundColor: labels.map((_, i) =>
-                            ['#059669','#10b981','#34d399','#6ee7b7','#a7f3d0'][i] || '#059669'),
-                        borderRadius: 8,
-                        barPercentage: 0.6
+                            ['#059669', '#10b981', '#d97706', '#2563eb', '#dc2626'][i] || '#64748b'),
+                        borderWidth: 0,
+                        hoverOffset: 7
                     }]
                 },
                 options: {
-                    indexAxis: 'y',
+                    cutout: '64%',
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false },
-                        tooltip: { callbacks: { label: ctx => ` ${ctx.raw.toFixed(2)} DT` } }
-                    },
-                    scales: {
-                        x: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
-                        y: { grid: { display: false }, ticks: { font: { size: 12 } } }
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 10,
+                                boxHeight: 10,
+                                useBorderRadius: true,
+                                borderRadius: 2,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.label}: ${Number(ctx.raw).toLocaleString('fr-FR')} DT (${((ctx.raw / totalCats) * 100).toFixed(1)}%)`
+                            }
+                        }
                     }
                 }
             });
@@ -904,43 +900,26 @@
             });
         }
 
-        /* ── FX vs TND line (7 days) ── */
-        const fxEl = document.getElementById('fxChart');
-        const fxSelect = document.getElementById('fxCurrency');
-        const fxPair = document.getElementById('fxPairLabel');
-        const fxEmpty = document.getElementById('fxChartEmpty');
-        let fxChart = null;
+        /* ── Top budgets consumers ── */
+        const budgetSpendEl = document.getElementById('budgetSpendChart');
+        const budgetSpendEmpty = document.getElementById('budgetSpendEmpty');
 
-        const renderFxChart = (labels, rates, from) => {
-            if (!fxEl) {
+        const renderBudgetSpendChart = (entries) => {
+            if (!budgetSpendEl) {
                 return;
             }
 
-            if (fxChart) {
-                fxChart.destroy();
-            }
-
-            const context = fxEl.getContext('2d');
-            const gradient = context.createLinearGradient(0, 0, 0, 220);
-            gradient.addColorStop(0, 'rgba(37, 99, 235, 0.28)');
-            gradient.addColorStop(1, 'rgba(37, 99, 235, 0.04)');
-
-            fxChart = new Chart(fxEl, {
-                type: 'line',
+            const budgetLabels = entries.map(item => item[0]);
+            new Chart(budgetSpendEl, {
+                type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: budgetLabels,
                     datasets: [{
-                        data: rates,
-                        borderColor: '#2563eb',
-                        backgroundColor: gradient,
-                        fill: true,
-                        borderWidth: 2.3,
-                        tension: 0.32,
-                        pointRadius: 2,
-                        pointHoverRadius: 5,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#2563eb',
-                        pointBorderWidth: 1.6
+                        label: 'Depenses totales',
+                        data: entries.map(item => item[1]),
+                        backgroundColor: ['#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'],
+                        borderRadius: 8,
+                        maxBarThickness: 34
                     }]
                 },
                 options: {
@@ -950,20 +929,30 @@
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
-                                label: ctx => ` 1 ${from} = ${Number(ctx.raw).toFixed(4)} TND`
+                                label: ctx => ` ${Number(ctx.raw).toLocaleString('fr-FR')} DT`
                             }
                         }
                     },
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { color: '#64748b', font: { size: 11 } }
+                            ticks: {
+                                color: '#334155',
+                                font: { size: 10, weight: '600' },
+                                maxRotation: 22,
+                                minRotation: 0,
+                                callback: function (value, index) {
+                                    const label = budgetLabels[index] || '';
+                                    return label.length > 24 ? label.slice(0, 24) + '…' : label;
+                                }
+                            }
                         },
                         y: {
                             grid: { color: '#e2e8f0' },
                             ticks: {
                                 color: '#64748b',
-                                callback: value => Number(value).toFixed(3)
+                                font: { size: 11 },
+                                callback: value => Number(value).toLocaleString('fr-FR') + ' DT'
                             }
                         }
                     }
@@ -971,65 +960,57 @@
             });
         };
 
-        const loadFxHistory = async () => {
-            if (!fxSelect || !fxEl) {
+        const loadBudgetSpendRanking = () => {
+            if (!budgetSpendEl) {
                 return;
             }
 
-            const from = fxSelect.value || 'USD';
-            if (fxPair) {
-                fxPair.textContent = `1 ${from} = ? TND`;
-            }
-            if (fxEmpty) {
-                fxEmpty.style.display = 'none';
-            }
-
             try {
-                const url = `{{ path('app_currency_history') }}?from=${encodeURIComponent(from)}&to=TND&days=7`;
-                const response = await fetch(url);
-                const payload = await response.json();
+                const spendMap = JSON.parse(budgetSpendEl.dataset.budgets || '{}');
+                const entries = Object.entries(spendMap)
+                    .map(([label, value]) => [label, Number(value) || 0])
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 6);
 
-                if (!response.ok || !payload.ok || !Array.isArray(payload.labels) || !Array.isArray(payload.rates)) {
-                    throw new Error('Invalid history payload');
+                if (entries.length === 0) {
+                    if (budgetSpendEmpty) {
+                        budgetSpendEmpty.style.display = 'block';
+                    }
+                    return;
                 }
 
-                renderFxChart(payload.labels, payload.rates, from);
-
-                if (fxPair && payload.rates.length > 0) {
-                    const latestRate = Number(payload.rates[payload.rates.length - 1]);
-                    fxPair.textContent = `1 ${from} = ${latestRate.toFixed(4)} TND`;
+                if (budgetSpendEmpty) {
+                    budgetSpendEmpty.style.display = 'none';
                 }
+
+                renderBudgetSpendChart(entries);
             } catch (error) {
-                if (fxChart) {
-                    fxChart.destroy();
-                    fxChart = null;
-                }
-
-                if (fxEmpty) {
-                    fxEmpty.style.display = 'block';
+                if (budgetSpendEmpty) {
+                    budgetSpendEmpty.style.display = 'block';
                 }
             }
         };
 
-        if (fxSelect) {
-            fxSelect.addEventListener('change', loadFxHistory);
-            loadFxHistory();
-        }
+        loadBudgetSpendRanking();
 
         // Initialize fixed top actions for depense page
         function initDepenseTopActions() {
             const depenseTopActions = document.getElementById('depenseTopActions');
             if (!depenseTopActions) return;
 
-            // Move to body if needed
-            if (depenseTopActions.parentElement !== document.body) {
-                document.body.appendChild(depenseTopActions);
+            // Mount into the shared page-header slot (same behavior as sponsor pages)
+            const translationHeaderSlot = document.getElementById('translationHeaderSlot');
+            if (translationHeaderSlot && depenseTopActions.parentElement !== translationHeaderSlot) {
+                translationHeaderSlot.appendChild(depenseTopActions);
             }
 
-            // Move translation widget into fixed container
+            depenseTopActions.style.position = 'static';
+            depenseTopActions.style.inset = 'auto';
+
+            // Move translation widget into shared actions container
             const translationWidget = document.getElementById('translationWidget');
             if (translationWidget && !depenseTopActions.contains(translationWidget)) {
-                translationWidget.style.position = 'static';
+                translationWidget.style.position = 'relative';
                 translationWidget.style.bottom = 'auto';
                 translationWidget.style.left = 'auto';
                 translationWidget.style.right = 'auto';
@@ -1065,6 +1046,7 @@
     {% set medCount = 0 %}
     {% set hiCount  = 0 %}
     {% set monthlyData = {} %}
+    {% set budgetSpendMap = {} %}
     {% for d in depenses %}
         {% set amt = d.amount + 0 %}
         {% if amt < 100 %}{% set lowCount = lowCount + 1 %}
@@ -1078,7 +1060,24 @@
                 {% set monthlyData = monthlyData|merge({(mk): amt}) %}
             {% endif %}
         {% endif %}
+        {% set budgetLabel = d.budget ? budgetDisplayMap[d.budget.id]|default('Budget ' ~ d.budget.id) : 'Sans budget' %}
+        {% set budgetCurrent = budgetSpendMap[budgetLabel]|default(0) %}
+        {% set budgetSpendMap = budgetSpendMap|merge({ (budgetLabel): budgetCurrent + amt }) %}
     {% endfor %}
+    {% set dominantRange = 'Aucune depense' %}
+    {% set dominantCount = 0 %}
+    {% if lowCount > 0 or medCount > 0 or hiCount > 0 %}
+        {% set dominantRange = 'Faible (<100 DT)' %}
+        {% set dominantCount = lowCount %}
+        {% if medCount > dominantCount %}
+            {% set dominantRange = 'Moyenne (100-1K DT)' %}
+            {% set dominantCount = medCount %}
+        {% endif %}
+        {% if hiCount > dominantCount %}
+            {% set dominantRange = 'Elevee (>1K DT)' %}
+            {% set dominantCount = hiCount %}
+        {% endif %}
+    {% endif %}
 
     {# Flash #}
     <div class="flash-wrap">
@@ -1146,32 +1145,36 @@
     </div>
     <div class="ef-row ef-row-3">
 
-        {# Distribution donut #}
+        {# Distribution by amount levels #}
         <div class="chart-card">
             <div class="cc-header">
-                <div class="cc-title"><i class="fa-solid fa-chart-pie"></i> Distribution</div>
+                <div class="cc-title"><i class="fa-solid fa-chart-pie"></i> Niveau des depenses</div>
                 <div class="cc-badge">{{ depenses|length }} total</div>
             </div>
-            <div class="chart-container" style="height:200px;">
+            <div class="insight-meta" style="margin-bottom: 8px;">
+                Utilite: voir rapidement si vos depenses sont surtout faibles, moyennes ou elevees.
+                Niveau dominant: <strong>{{ dominantRange }}</strong> ({{ dominantCount }}).
+            </div>
+            <div class="chart-container" style="height:190px;">
                 <canvas id="distChart"
                     data-low="{{ lowCount }}"
                     data-med="{{ medCount }}"
                     data-hi="{{ hiCount }}"
                     role="img"
-                    aria-label="Répartition des dépenses par niveau de montant">
+                    aria-label="Niveau des depenses par tranche de montant">
                 </canvas>
             </div>
             <div class="chart-legend">
-                <div class="legend-item"><div class="legend-dot" style="background:#059669;"></div> &lt;100 DT ({{ lowCount }})</div>
-                <div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div> 100–1K DT ({{ medCount }})</div>
-                <div class="legend-item"><div class="legend-dot" style="background:#dc2626;"></div> &gt;1K DT ({{ hiCount }})</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#059669;"></div> Faible &lt;100 DT ({{ lowCount }})</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div> Moyen 100-1K DT ({{ medCount }})</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#dc2626;"></div> Eleve &gt;1K DT ({{ hiCount }})</div>
             </div>
         </div>
 
         {# Top categories #}
         <div class="chart-card">
             <div class="cc-header">
-                <div class="cc-title"><i class="fa-solid fa-chart-simple"></i> Top catégories</div>
+                <div class="cc-title"><i class="fa-solid fa-chart-simple"></i> Top catégories (part du total)</div>
             </div>
             <div class="chart-container" style="height:230px;">
                 {% if stats.byCategory is empty %}
@@ -1203,23 +1206,17 @@
 
     <div class="chart-card" style="margin-bottom: 28px;">
         <div class="cc-header">
-            <div class="cc-title"><i class="fa-solid fa-money-bill-trend-up"></i> Taux du dinar tunisien</div>
-            <div class="fx-toolbar">
-                <label for="fxCurrency">Devise</label>
-                <select id="fxCurrency" class="fx-select" aria-label="Selection devise de reference">
-                    <option value="USD">Dollar americain (USD)</option>
-                    <option value="EUR">Euro (EUR)</option>
-                    <option value="GBP">Livre sterling (GBP)</option>
-                    <option value="CHF">Franc suisse (CHF)</option>
-                    <option value="CAD">Dollar canadien (CAD)</option>
-                </select>
-            </div>
+            <div class="cc-title"><i class="fa-solid fa-sack-dollar"></i> Top budgets consommateurs (classement)</div>
+            <span class="insight-badge"><i class="fa-solid fa-layer-group"></i> {{ budgetSpendMap|length }} budget(s)</span>
         </div>
-        <div class="fx-meta" id="fxPairLabel">1 USD = ? TND</div>
-        <div class="chart-container" style="height:220px; margin-top: 10px;">
-            <canvas id="fxChart" role="img" aria-label="Historique 7 jours du taux contre le TND"></canvas>
+        <div class="insight-meta">Classement des budgets ayant le plus de depenses sur la periode affichee.</div>
+        <div class="chart-container" style="height:240px; margin-top: 10px;">
+            <canvas id="budgetSpendChart"
+                    data-budgets="{{ budgetSpendMap|json_encode|e('html_attr') }}"
+                    role="img"
+                    aria-label="Top budgets les plus consommateurs en depenses"></canvas>
         </div>
-        <div class="fx-empty" id="fxChartEmpty">Impossible de charger le taux de change pour cette devise.</div>
+        <div class="insight-empty" id="budgetSpendEmpty">Pas assez de donnees pour afficher ce classement.</div>
     </div>
 
     {# ── Filters ── #}
@@ -1337,7 +1334,6 @@
                                     <div class="td-icon"><i class="fa-solid fa-receipt"></i></div>
                                     <div>
                                         <div class="td-desc-name">{{ depense.description ?: '—' }}</div>
-                                        <div class="td-desc-id">#{{ depense.id }}</div>
                                     </div>
                                 </div>
                             </td>

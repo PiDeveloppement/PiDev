@@ -168,9 +168,14 @@
                 <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
             </div>
 
+            {% set role_name = app.user and app.user.role ? (app.user.role.roleName|default('')|lower) : '' %}
+            {% set is_sponsor_user = app.user and (('ROLE_SPONSOR' in app.user.roles) or role_name == 'sponsor' or app.user.roleId == 3) %}
             <div class="nav-links">
                 <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}'">Accueil</button>
                 <button class="nav-link" style="color:#0D47A1; font-weight:700; text-decoration:underline;" onclick="window.location.href='{{ path('app_public_events') }}'">Événements</button>
+                {% if is_sponsor_user %}
+                    <button class="nav-link" onclick="window.location.href='{{ path('app_sponsor_portal') }}'">Recommandations sponsor</button>
+                {% endif %}
                 <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}#features'">Fonctionnalités</button>
                 <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
                 <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}#contact'">Contact</button>

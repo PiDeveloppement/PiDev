@@ -263,6 +263,7 @@
         <div class="portal-translate" id="portalTranslateWidget">
             <button type="button" class="portal-translate-btn" id="portalTranslateToggle"><i class="fas fa-language"></i> Traduire</button>
             <div class="portal-translate-menu" id="portalTranslateMenu">
+                <button type="button" class="portal-translate-opt" data-lang="original">Originale (sans traduction)</button>
                 <button type="button" class="portal-translate-opt" data-lang="fr">Francais</button>
                 <button type="button" class="portal-translate-opt" data-lang="en">English</button>
                 <button type="button" class="portal-translate-opt" data-lang="ar">Arabic</button>
@@ -393,6 +394,14 @@
             }
         };
 
+        const clearTranslateCookie = function () {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + host;
+            }
+        };
+
         if (toggle && menu) {
             toggle.addEventListener('click', function () {
                 menu.classList.toggle('open');
@@ -408,7 +417,11 @@
             menu.querySelectorAll('[data-lang]').forEach(function (button) {
                 button.addEventListener('click', function () {
                     const lang = button.getAttribute('data-lang') || 'en';
-                    setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+                    if (lang === 'original') {
+                        clearTranslateCookie();
+                    } else {
+                        setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+                    }
                     window.location.reload();
                 });
             });

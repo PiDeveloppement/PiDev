@@ -739,15 +739,20 @@ class SponsorController extends AbstractController
     {
         $this->denyUnlessAdmin();
 
-        $search = trim((string) $request->query->get('q', ''));
-        $company = trim((string) $request->query->get('company', ''));
-        $eventId = (int) $request->query->get('event_id', 0);
+        $mode = strtolower(trim((string) $request->query->get('mode', 'all')));
+        if ($mode === 'filtered') {
+            $search = trim((string) $request->query->get('q', ''));
+            $company = trim((string) $request->query->get('company', ''));
+            $eventId = (int) $request->query->get('event_id', 0);
 
-        $items = $this->sponsorRepository->searchForAdmin(
-            $search !== '' ? $search : null,
-            $company !== '' ? $company : null,
-            $eventId > 0 ? $eventId : null
-        );
+            $items = $this->sponsorRepository->searchForAdmin(
+                $search !== '' ? $search : null,
+                $company !== '' ? $company : null,
+                $eventId > 0 ? $eventId : null
+            );
+        } else {
+            $items = $this->sponsorRepository->findBy([], ['id' => 'DESC']);
+        }
 
         return $this->buildCsvResponse($items, 'sponsors_admin_export.csv');
     }
@@ -1420,21 +1425,38 @@ class SponsorController extends AbstractController
                 return;
             }
 
-            fputcsv($out, ['id', 'event_id', 'event_title', 'company_name', 'contact_email', 'contribution_tnd', 'industry', 'phone', 'tax_id'], ';');
+            // BOM UTF-8: required for clean accents in Excel.
+            fwrite($out, "\xEF\xBB\xBF");
+
+            fputcsv(
+                $out,
+                ['id', 'event_id', 'event_title', 'company_name', 'contact_email', 'contribution_tnd', 'industry', 'phone', 'tax_id'],
+                ';',
+                '"',
+                '\\',
+                "\r\n"
+            );
 
             foreach ($items as $sponsor) {
                 $eventId = (int) ($sponsor->getEventId() ?? 0);
-                fputcsv($out, [
-                    $sponsor->getId(),
-                    $eventId,
-                    $eventTitleMap[$eventId] ?? '-',
-                    $sponsor->getCompanyName(),
-                    $sponsor->getContactEmail(),
-                    number_format($sponsor->getContributionAmount(), 2, '.', ''),
-                    $sponsor->getIndustry(),
-                    $sponsor->getPhone(),
-                    $sponsor->getTaxId(),
-                ], ';');
+                fputcsv(
+                    $out,
+                    [
+                        (int) ($sponsor->getId() ?? 0),
+                        $eventId,
+                        $this->sanitizeCsvText($eventTitleMap[$eventId] ?? '-'),
+                        $this->sanitizeCsvText($sponsor->getCompanyName()),
+                        $this->sanitizeCsvText($sponsor->getContactEmail()),
+                        number_format((float) ($sponsor->getContributionAmount() ?? 0), 2, ',', ''),
+                        $this->sanitizeCsvText($sponsor->getIndustry()),
+                        $this->asExcelTextLiteral($sponsor->getPhone()),
+                        $this->asExcelTextLiteral($sponsor->getTaxId()),
+                    ],
+                    ';',
+                    '"',
+                    '\\',
+                    "\r\n"
+                );
             }
 
             fclose($out);
@@ -1444,6 +1466,34 @@ class SponsorController extends AbstractController
         $response->headers->set('Content-Disposition', sprintf('attachment; filename="%s"', $filename));
 
         return $response;
+    }
+
+    private function sanitizeCsvText(mixed $value): string
+    {
+        $text = trim((string) ($value ?? ''));
+        if ($text === '') {
+            return '';
+        }
+
+        // Avoid accidental Excel formula execution.
+        if (preg_match('/^[=\-+@]/', $text) === 1) {
+            return "'" . $text;
+        }
+
+        return $text;
+    }
+
+    private function asExcelTextLiteral(mixed $value): string
+    {
+        $text = trim((string) ($value ?? ''));
+        if ($text === '') {
+            return '';
+        }
+
+        $escaped = str_replace('"', '""', $text);
+
+        // Keep values like phone/tax_id as text (no scientific notation, no lost zeros).
+        return '="' . $escaped . '"';
     }
 
     private function denyUnlessAdmin(): void

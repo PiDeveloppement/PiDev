@@ -603,19 +603,12 @@
 
         /* Floating top actions (Translate + Nouveau budget) */
         .budget-top-actions {
-            position: fixed !important;
-            top: 80px !important;
-            right: 28px !important;
-            left: auto !important;
-            bottom: auto !important;
+            position: static !important;
             width: auto !important;
-            height: auto !important;
-            min-width: max-content !important;
             display: flex !important;
             align-items: center !important;
             gap: 10px !important;
-            z-index: 1300 !important;
-            pointer-events: auto !important;
+            z-index: auto !important;
             background: transparent !important;
             padding: 0 !important;
             margin: 0 !important;
@@ -624,7 +617,7 @@
         }
 
         .budget-top-actions #translationWidget {
-            position: static !important;
+            position: relative !important;
             margin: 0 !important;
             inset: auto !important;
             z-index: auto !important;
@@ -898,15 +891,19 @@
         const budgetTopActions = document.getElementById('budgetTopActions');
         if (!budgetTopActions) return;
 
-        // Move to body if needed
-        if (budgetTopActions.parentElement !== document.body) {
-            document.body.appendChild(budgetTopActions);
+        // Mount into the shared page-header slot (same behavior as sponsor pages)
+        const translationHeaderSlot = document.getElementById('translationHeaderSlot');
+        if (translationHeaderSlot && budgetTopActions.parentElement !== translationHeaderSlot) {
+            translationHeaderSlot.appendChild(budgetTopActions);
         }
 
-        // Move translation widget into fixed container
+        budgetTopActions.style.position = 'static';
+        budgetTopActions.style.inset = 'auto';
+
+        // Move translation widget into shared actions container
         const translationWidget = document.getElementById('translationWidget');
         if (translationWidget && !budgetTopActions.contains(translationWidget)) {
-            translationWidget.style.position = 'static';
+            translationWidget.style.position = 'relative';
             translationWidget.style.bottom = 'auto';
             translationWidget.style.left = 'auto';
             translationWidget.style.right = 'auto';

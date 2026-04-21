@@ -195,15 +195,25 @@
 
         <section class="ai-card ai-main">
             <header class="ai-head">
-                <div class="ai-head-left">
-                    <h2>Copilote Gestion Sponsor/Budget/Depense</h2>
-                    <p>Analyse metier en langage naturel avec contexte de la base.</p>
+                <div class="ai-head-left" style="display:flex;align-items:center;gap:10px;">
+                    <img src="{{ asset('images/chatbot.png') }}" alt="Chatbot" style="width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid #e2e8f0;">
+                    <div>
+                        <h2>Copilote Gestion Sponsor/Budget/Dépense</h2>
+                        <p>Analyse métier en langage naturel avec contexte de la base.</p>
+                    </div>
                 </div>
-                <span class="ai-model-badge">Modele: {{ modelName }}</span>
+                <span class="ai-model-badge">Modèle: {{ modelName }}</span>
             </header>
 
             <div id="aiMessages" class="ai-messages">
-                <div class="ai-msg bot">Bonjour. Je suis ton nouveau chat IA dedie a la gestion. Pose-moi une question sur les sponsors, budgets ou depenses.</div>
+                <div class="ai-msg bot">
+                    ✅ Constat :<br>
+                    Je suis prêt à t’aider sur Sponsor, Budget et Dépense.<br><br>
+                    📊 Chiffres exacts :<br>
+                    Je réponds à partir des données réelles disponibles.<br><br>
+                    ⚡ Actions recommandées :<br>
+                    Pose une question claire (ex : budgets critiques, top dépenses, sponsors).
+                </div>
             </div>
 
             <form id="aiForm" class="ai-composer">

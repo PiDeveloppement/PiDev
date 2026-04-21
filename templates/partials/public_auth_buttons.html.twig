@@ -20,13 +20,7 @@
             </span>
         </summary>
         <div class="public-account-dropdown">
-            {% if is_sponsor_user %}
-                <a class="public-account-action" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
-            {% elseif is_admin_or_organizer %}
-                <a class="public-account-action" href="{{ path('app_dashboard') }}">Back-office</a>
-            {% else %}
-                <a class="public-account-action" href="{{ path('app_my_tickets') }}">Mes billets</a>
-            {% endif %}
+            <a class="public-account-action" href="#" onclick="return false;">Profile</a>
             <a class="public-account-action" href="{{ path('app_logout') }}">Deconnexion</a>
         </div>
     </details>

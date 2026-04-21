@@ -53,11 +53,11 @@
         .sp-flash-ok{background:var(--emerald-bg);color:#065f46;}
         .sp-flash-err{background:var(--rose-bg);color:#9f1239;}
 
-        .sp-notif-wrap{position:relative;display:flex;justify-content:flex-end;margin-bottom:14px;}
+        .sp-notif-wrap{position:relative;display:flex;justify-content:flex-end;margin-bottom:14px;z-index:90;}
         .sp-notif-btn{display:inline-flex;align-items:center;gap:8px;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:999px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:var(--sh-xs);}
         .sp-notif-btn:hover{background:#ffedd5;}
         .sp-notif-badge{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#b45309;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;}
-        .sp-notif-panel{position:absolute;right:0;top:44px;width:min(980px,96vw);background:#fff;border:1px solid #fdba74;border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.15);padding:12px;z-index:30;display:none;}
+        .sp-notif-panel{position:absolute;right:0;top:44px;width:min(980px,96vw);background:#fff;border:1px solid #fdba74;border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.15);padding:12px;z-index:95;display:none;}
         .sp-notif-panel.open{display:block;animation:spNotifIn .18s ease-out;}
         .sp-notif-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding:0 2px;}
         .sp-notif-title{font-size:12px;font-weight:800;color:#9a3412;text-transform:uppercase;letter-spacing:.03em;}
@@ -210,6 +210,7 @@
             left: auto !important;
             bottom: auto !important;
             margin: 0 !important;
+            z-index: 20 !important;
         }
 
         #translationWidget #translationToggle {
@@ -472,7 +473,7 @@
     {# topbar #}
     <div class="sp-topbar">
         <div class="sp-topbar-right" style="margin-left: auto;">
-            <a class="sp-btn sp-btn-ghost" href="{{ path('app_sponsors_export_csv', {q: search, company: selectedCompany, event_id: selectedEventId}) }}">
+            <a class="sp-btn sp-btn-ghost" href="{{ path('app_sponsors_export_csv', {mode: 'all'}) }}">
                 <i class="fa-solid fa-arrow-up-from-bracket"></i> Exporter CSV
             </a>
             <a class="sp-btn sp-btn-primary" href="{{ path('app_sponsors_new') }}">

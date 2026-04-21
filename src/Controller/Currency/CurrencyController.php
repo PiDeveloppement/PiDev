@@ -70,4 +70,29 @@ class CurrencyController extends AbstractController
             ], 422);
         }
     }
+
+    #[Route('/currency/rate', name: 'app_currency_rate', methods: ['GET'])]
+    public function rate(Request $request): JsonResponse
+    {
+        $from = strtoupper(trim((string) $request->query->get('from', 'TND')));
+        $to = strtoupper(trim((string) $request->query->get('to', 'TND')));
+
+        try {
+            $rate = $this->currencyConverter->latestRate($from, $to);
+
+            return $this->json([
+                'ok' => true,
+                'from' => $from,
+                'to' => $to,
+                'rate' => $rate,
+                'source' => 'FlorianvSwapBundle',
+                'fetchedAt' => (new \DateTimeImmutable())->format(\DATE_ATOM),
+            ]);
+        } catch (\RuntimeException $exception) {
+            return $this->json([
+                'ok' => false,
+                'message' => $exception->getMessage(),
+            ], 422);
+        }
+    }
 }

@@ -1,4 +1,4 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -244,6 +244,243 @@
         .portal-page {
             margin-top: 80px;
         }
+
+        .portal-fx-premium {
+            margin: 16px 0 18px;
+            border: 1px solid #d4e4fb;
+            border-radius: 20px;
+            padding: 14px;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.14), transparent 34%),
+                radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.12), transparent 32%),
+                linear-gradient(145deg, #f9fcff 0%, #f7fbff 55%, #f4fff8 100%);
+            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.09);
+        }
+
+        .portal-fx-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .portal-fx-head h2 {
+            margin: 0;
+            color: #0f172a;
+            font-size: 20px;
+            letter-spacing: -0.3px;
+        }
+
+        .portal-fx-head p {
+            margin: 4px 0 0;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        .portal-fx-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .portal-fx-controls label {
+            color: #1e3a8a;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .portal-fx-controls select {
+            border: 1px solid #b8cef1;
+            border-radius: 9px;
+            min-height: 36px;
+            padding: 0 9px;
+            color: #0f172a;
+            font-weight: 700;
+            background: #ffffff;
+            outline: none;
+            font-size: 13px;
+        }
+
+        .portal-fx-controls button {
+            border: none;
+            border-radius: 9px;
+            min-height: 36px;
+            padding: 0 11px;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 13px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            cursor: pointer;
+            box-shadow: 0 8px 14px rgba(37, 99, 235, 0.23);
+        }
+
+        .portal-fx-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.38fr) minmax(260px, 0.9fr);
+            gap: 10px;
+        }
+
+        .portal-fx-chart-card,
+        .portal-fx-rates-card {
+            border: 1px solid #d7e5f8;
+            border-radius: 14px;
+            background: #ffffff;
+            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+            padding: 10px;
+        }
+
+        .portal-fx-pair {
+            color: #1d4ed8;
+            font-weight: 800;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .portal-fx-chart-wrap {
+            position: relative;
+            height: 180px;
+        }
+
+        .portal-fx-empty {
+            display: none;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: 1px dashed #f59e0b;
+            background: #fff7ed;
+            color: #9a3412;
+            padding: 9px 10px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .portal-fx-rates-card h3 {
+            margin: 0;
+            color: #0f172a;
+            font-size: 15px;
+        }
+
+        .portal-fx-rates-grid {
+            margin-top: 8px;
+            display: grid;
+            gap: 7px;
+        }
+
+        .portal-fx-rate-item {
+            border: 1px solid #d9e5f8;
+            border-radius: 10px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: linear-gradient(180deg, #ffffff, #f8fbff);
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+            cursor: pointer;
+        }
+
+        .portal-fx-rate-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.10);
+        }
+
+        .portal-fx-rate-item.active {
+            border-color: #3b82f6;
+            background: linear-gradient(180deg, #eff6ff, #ffffff);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.20);
+        }
+
+        .portal-fx-rate-item.error {
+            border-color: #fca5a5;
+            background: linear-gradient(180deg, #fff1f2, #ffffff);
+        }
+
+        .portal-fx-rate-left {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .portal-fx-code {
+            color: #0f172a;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .portal-fx-caption {
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .portal-fx-value {
+            color: #0f172a;
+            font-size: 13px;
+            font-weight: 800;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .portal-fx-value.loading {
+            color: #64748b;
+        }
+
+        .portal-fx-updated {
+            margin: 8px 0 0;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1024px) {
+            .portal-fx-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .portal-fx-chart-wrap {
+                height: 170px;
+            }
+        }
+
+        /* Force compact mode when catalog has only one card */
+        .portal-catalog-grid.single-card-force {
+            display: flex !important;
+            justify-content: flex-start !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+            width: 100%;
+        }
+
+        .portal-catalog-grid.single-card-force .portal-event-card {
+            flex: 0 0 320px !important;
+            width: 320px !important;
+            max-width: 320px !important;
+            min-height: 0 !important;
+        }
+
+        .portal-catalog-grid.single-card-force .portal-event-visual {
+            height: 160px !important;
+        }
+
+        .portal-catalog-grid.single-card-force .portal-card-actions {
+            justify-content: flex-start !important;
+            gap: 8px !important;
+        }
+
+        @media (max-width: 768px) {
+            .portal-catalog-grid.single-card-force {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+            }
+
+            .portal-catalog-grid.single-card-force .portal-event-card {
+                width: 100% !important;
+                max-width: none !important;
+                flex: 1 1 auto !important;
+            }
+        }
     </style>
 </head>
 <body class="portal-body">
@@ -265,6 +502,7 @@
         <div class="portal-translate" id="portalTranslateWidget">
             <button type="button" class="portal-translate-btn" id="portalTranslateToggle"><i class="fas fa-language"></i> Traduire</button>
             <div class="portal-translate-menu" id="portalTranslateMenu">
+                <button type="button" class="portal-translate-opt" data-lang="original">Originale (sans traduction)</button>
                 <button type="button" class="portal-translate-opt" data-lang="fr">Francais</button>
                 <button type="button" class="portal-translate-opt" data-lang="en">English</button>
                 <button type="button" class="portal-translate-opt" data-lang="ar">Arabic</button>
@@ -304,7 +542,7 @@
 
     {% if isSponsorSession and upcomingActionAlerts is not empty %}
         <section class="portal-alert-strip" aria-label="Alertes opportunites 72h">
-            <div class="portal-alert-strip-head">‚ö†Ô∏è Alertes opportunite (72h)</div>
+            <div class="portal-alert-strip-head">?? Alertes opportunite (72h)</div>
             <div class="portal-alert-strip-grid">
                 {% for alert in upcomingActionAlerts %}
                     <article class="portal-alert-card">
@@ -328,7 +566,7 @@
                 <p>Decouvrez les evenements recommandes, trouvez de nouvelles opportunites de partenariat et suivez vos collaborations en un seul endroit.</p>
             </div>
             <div class="portal-hero-actions">
-                <a class="portal-hero-btn" href="{{ path('app_sponsor_portal_history') }}">üìã Historique contributions</a>
+                <a class="portal-hero-btn" href="{{ path('app_sponsor_portal_history') }}">?? Historique contributions</a>
                 {% if isSponsorSession %}
                     <a class="portal-hero-btn soft" href="{{ path('app_sponsor_portal_export_csv') }}">Exporter CSV</a>
                 {% endif %}
@@ -337,25 +575,25 @@
 
         <div class="portal-hero-stats">
             <div class="portal-stat-card">
-                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">üì¶</div>
+                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">??</div>
                 <div class="portal-stat-info">
-                    <div class="portal-stat-label">TOTAL √âV√âNEMENTS</div>
+                    <div class="portal-stat-label">TOTAL …V…NEMENTS</div>
                     <div class="portal-stat-value">{{ eventCounts.total }}</div>
                     <div class="portal-stat-note">Catalogue visible pour votre prospection</div>
                     <div class="portal-stat-meter"><span style="width: 88%;"></span></div>
                 </div>
             </div>
             <div class="portal-stat-card">
-                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">üéØ</div>
+                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">??</div>
                 <div class="portal-stat-info">
-                    <div class="portal-stat-label">√Ä SPONSORISER</div>
+                    <div class="portal-stat-label">¿ SPONSORISER</div>
                     <div class="portal-stat-value">{{ eventCounts.sponsorable }}</div>
                     <div class="portal-stat-note">Opportunites actuellement ouvertes</div>
                     <div class="portal-stat-meter"><span style="width: 72%;"></span></div>
                 </div>
             </div>
             <div class="portal-stat-card">
-                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">‚úì</div>
+                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">?</div>
                 <div class="portal-stat-info">
                     <div class="portal-stat-label">MES CONTRIBUTIONS</div>
                     <div class="portal-stat-value">{{ isSponsorSession ? mySponsors|length : 0 }}</div>
@@ -367,7 +605,78 @@
 
     </section>
 
-    
+    <section class="portal-fx-premium" aria-label="Suivi dynamique des devises">
+        <div class="portal-fx-head">
+            <div>
+                <h2>?? Taux de change en direct</h2>
+                <p>Historique sur 7 jours et mise a jour multi-devises pour mieux planifier vos budgets sponsor.</p>
+            </div>
+            <div class="portal-fx-controls">
+                <label for="portalFxCurrency">Devise:</label>
+                <select id="portalFxCurrency" aria-label="Selection de devise">
+                    <option value="EUR">Euro (EUR)</option>
+                    <option value="USD">Dollar americain (USD)</option>
+                    <option value="GBP">Livre sterling (GBP)</option>
+                    <option value="CHF">Franc suisse (CHF)</option>
+                    <option value="CAD">Dollar canadien (CAD)</option>
+                </select>
+                <button type="button" id="portalFxRefresh">?? Actualiser</button>
+            </div>
+        </div>
+
+        <div class="portal-fx-grid">
+            <article class="portal-fx-chart-card">
+                <div class="portal-fx-pair" id="portalFxPairLabel">1 EUR = ? TND</div>
+                <div class="portal-fx-chart-wrap">
+                    <canvas id="portalFxChart" role="img" aria-label="Historique du taux de change contre le TND"></canvas>
+                </div>
+                <div class="portal-fx-empty" id="portalFxEmpty">Impossible de charger l historique pour la devise selectionnee.</div>
+            </article>
+
+            <article class="portal-fx-rates-card">
+                <h3>?? Panorama devises</h3>
+                <div class="portal-fx-rates-grid" id="portalFxRates">
+                    <div class="portal-fx-rate-item active" data-fx-currency="EUR">
+                        <div class="portal-fx-rate-left">
+                            <span class="portal-fx-code">EUR ? TND</span>
+                            <span class="portal-fx-caption">Euro</span>
+                        </div>
+                        <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
+                    </div>
+                    <div class="portal-fx-rate-item" data-fx-currency="USD">
+                        <div class="portal-fx-rate-left">
+                            <span class="portal-fx-code">USD ? TND</span>
+                            <span class="portal-fx-caption">Dollar</span>
+                        </div>
+                        <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
+                    </div>
+                    <div class="portal-fx-rate-item" data-fx-currency="GBP">
+                        <div class="portal-fx-rate-left">
+                            <span class="portal-fx-code">GBP ? TND</span>
+                            <span class="portal-fx-caption">Livre sterling</span>
+                        </div>
+                        <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
+                    </div>
+                    <div class="portal-fx-rate-item" data-fx-currency="CHF">
+                        <div class="portal-fx-rate-left">
+                            <span class="portal-fx-code">CHF ? TND</span>
+                            <span class="portal-fx-caption">Franc suisse</span>
+                        </div>
+                        <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
+                    </div>
+                    <div class="portal-fx-rate-item" data-fx-currency="CAD">
+                        <div class="portal-fx-rate-left">
+                            <span class="portal-fx-code">CAD ? TND</span>
+                            <span class="portal-fx-caption">Dollar canadien</span>
+                        </div>
+                        <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
+                    </div>
+                </div>
+                <p class="portal-fx-updated" id="portalFxUpdatedAt">Derniere mise a jour: -</p>
+            </article>
+        </div>
+    </section>
+
 
     <!-- Section Graphiques de Distribution -->
     <section class="portal-distribution-showcase">
@@ -525,14 +834,14 @@
         })();
     </script>
 
-    {# Section √âv√©nements recommand√©s - version moderne et prioritaire #}
+    {# Section …vÈnements recommandÈs - version moderne et prioritaire #}
     <section class="portal-box portal-box-recommendations ai-reco-spotlight">
         <div class="reco-header">
             <div class="reco-header-text">
-                <span class="reco-header-icon">‚ú®</span>
+                <span class="reco-header-icon">?</span>
                 <div>
-                    <h2 class="reco-header-title">√âv√©nements recommand√©s</h2>
-                    <p class="reco-header-subtitle">Priorit√© IA bas√©e sur votre secteur et vos habitudes de sponsoring</p>
+                    <h2 class="reco-header-title">…vÈnements recommandÈs</h2>
+                    <p class="reco-header-subtitle">PrioritÈ IA basÈe sur votre secteur et vos habitudes de sponsoring</p>
                 </div>
             </div>
             <div class="reco-priority-badge">Section prioritaire</div>
@@ -548,7 +857,7 @@
         {% else %}
             <div class="reco-grid">
                 {% for event in recommendedEvents %}
-                    {# D√©termination du type et de l'image par d√©faut (inchang√©) #}
+                    {# DÈtermination du type et de l'image par dÈfaut (inchangÈ) #}
                     {% set t = event.title|lower %}
                     {% set contextText = (event.title ~ ' ' ~ (event.description ?: ''))|lower %}
                     {% set type = 'Conference' %}
@@ -560,7 +869,7 @@
                         {% set cls = 'atelier' %}
                         {% set mood = 'Atelier pratique' %}
                         {% set defaultImage = 'atelier.jfif' %}
-                    {% elseif 'seminaire' in t or 's√©minaire' in t %}
+                    {% elseif 'seminaire' in t or 'sÈminaire' in t %}
                         {% set type = 'Seminaire' %}
                         {% set cls = 'seminaire' %}
                         {% set mood = 'Prise de parole' %}
@@ -607,19 +916,19 @@
                                 <span class="reco-mood">{{ mood }}</span>
                             </div>
                             <h3 class="reco-card-title">{{ event.title }}</h3>
-                            <p class="reco-card-description">{{ event.description ?: "Cet √©v√©nement fait partie des rendez-vous les plus suivis et attractifs du moment."|slice(0, 100) ~ '‚Ä¶' }}</p>
+                            <p class="reco-card-description">{{ event.description ?: "Cet ÈvÈnement fait partie des rendez-vous les plus suivis et attractifs du moment."|slice(0, 100) ~ 'Ö' }}</p>
                             <div class="reco-card-meta">
                                 <div class="reco-meta-item">
-                                    <span class="reco-meta-icon">üìÖ</span>
+                                    <span class="reco-meta-icon">??</span>
                                     <span>{{ event.startDate ? event.startDate|date("d-m-Y") : "-" }}</span>
                                 </div>
                                 <div class="reco-meta-item">
-                                    <span class="reco-meta-icon">üìç</span>
+                                    <span class="reco-meta-icon">??</span>
                                     <span>{{ event.location ?: "-" }}</span>
                                 </div>
                             </div>
                             <div class="reco-card-actions">
-                                <a class="reco-btn-outline" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir d√©tails</a>
+                                <a class="reco-btn-outline" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir dÈtails</a>
                                 <a class="reco-btn-primary" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
                             </div>
                         </div>
@@ -630,11 +939,11 @@
     </section>
 
     <section class="portal-box">
-        <div class="portal-box-head portal-box-head-catalog">üéØ Catalogue des evenements a soutenir</div>
+        <div class="portal-box-head portal-box-head-catalog">?? Catalogue des evenements a soutenir</div>
         {% if sponsorableEvents is empty %}
             <div class="portal-box-empty">Aucun evenement disponible pour le moment.</div>
         {% else %}
-            <div class="portal-catalog-grid">
+            <div class="portal-catalog-grid {{ sponsorableEvents|length == 1 ? 'single-card single-card-force' : '' }}">
                 {% for event in sponsorableEvents %}
                     {% set t = event.title|lower %}
                     {% set contextText = (event.title ~ ' ' ~ (event.description ?: ''))|lower %}
@@ -647,7 +956,7 @@
                         {% set cls = 'atelier' %}
                         {% set mood = 'Atelier pratique' %}
                         {% set defaultImage = 'atelier.jfif' %}
-                    {% elseif 'seminaire' in t or 's√©minaire' in t %}
+                    {% elseif 'seminaire' in t or 'sÈminaire' in t %}
                         {% set type = 'Seminaire' %}
                         {% set cls = 'seminaire' %}
                         {% set mood = 'Prise de parole' %}
@@ -696,12 +1005,12 @@
                             <p class="portal-event-description">{{ event.description ?: "Une occasion pour soutenir la vie universitaire, valoriser les talents et renforcer votre presence." }}</p>
 
                             <div class="portal-event-meta-row">
-                                <div class="portal-event-meta"><span class="portal-event-label">üìÖ Date:</span> {{ event.startDate ? event.startDate|date("d-m-Y") : "-" }}</div>
-                                <div class="portal-event-meta"><span class="portal-event-label">üìç Lieu:</span> {{ event.location ?: "-" }}</div>
+                                <div class="portal-event-meta"><span class="portal-event-label">?? Date:</span> {{ event.startDate ? event.startDate|date("d-m-Y") : "-" }}</div>
+                                <div class="portal-event-meta"><span class="portal-event-label">?? Lieu:</span> {{ event.location ?: "-" }}</div>
                             </div>
                             <div class="portal-card-actions">
                                 <a class="portal-btn-secondary" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir details</a>
-                                <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">üíº Sponsoriser cet √©v√©nement</a>
+                                <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">?? Sponsoriser cet ÈvÈnement</a>
                             </div>
                         </div>
                     </article>
@@ -715,25 +1024,25 @@
         <h2 class="portal-section-title">Pourquoi EventFlow?</h2>
         <div class="stats-showcase-grid">
             <div class="stat-showcase-card">
-                <div class="stat-showcase-icon">üåç</div>
-                <h3>Port√©e nationale</h3>
+                <div class="stat-showcase-icon">??</div>
+                <h3>PortÈe nationale</h3>
                 <p>Acces a plus de 100+ evenements dans toute la Tunisie</p>
                 <div class="stat-showcase-number">{{ eventCounts.total }}+</div>
             </div>
             <div class="stat-showcase-card">
-                <div class="stat-showcase-icon">ü§ù</div>
+                <div class="stat-showcase-icon">??</div>
                 <h3>Partenariats solides</h3>
                 <p>Connectez-vous avec des organisateurs fiables et verifies</p>
                 <div class="stat-showcase-number">500+</div>
             </div>
             <div class="stat-showcase-card">
-                <div class="stat-showcase-icon">üíº</div>
+                <div class="stat-showcase-icon">??</div>
                 <h3>Opportunites B2B</h3>
                 <p>Construisez votre reseau professionnel et commercial</p>
                 <div class="stat-showcase-number">1000+</div>
             </div>
             <div class="stat-showcase-card">
-                <div class="stat-showcase-icon">üìä</div>
+                <div class="stat-showcase-icon">??</div>
                 <h3>Suivi en temps reel</h3>
                 <p>Tableau de bord complet pour gerer vos partenariats</p>
                 <div class="stat-showcase-number">100%</div>
@@ -742,6 +1051,250 @@
     </section>
 
 </main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    (function () {
+        const chartCanvas = document.getElementById('portalFxChart');
+        const currencySelect = document.getElementById('portalFxCurrency');
+        const refreshButton = document.getElementById('portalFxRefresh');
+        const pairLabel = document.getElementById('portalFxPairLabel');
+        const emptyState = document.getElementById('portalFxEmpty');
+        const updatedAt = document.getElementById('portalFxUpdatedAt');
+        const rateCards = Array.from(document.querySelectorAll('.portal-fx-rate-item[data-fx-currency]'));
+
+        if (!currencySelect || !updatedAt) {
+            return;
+        }
+
+        let fxChart = null;
+
+        const formatRate = function (value, precision) {
+            return Number(value).toLocaleString('fr-FR', {
+                minimumFractionDigits: precision,
+                maximumFractionDigits: precision
+            });
+        };
+
+        const formatDateTime = function (value) {
+            if (!value) {
+                return '-';
+            }
+
+            const dt = new Date(value);
+            if (Number.isNaN(dt.getTime())) {
+                return '-';
+            }
+
+            return dt.toLocaleString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            });
+        };
+
+        const setActiveCard = function () {
+            const selected = currencySelect.value || 'EUR';
+            rateCards.forEach(function (card) {
+                card.classList.toggle('active', card.dataset.fxCurrency === selected);
+            });
+        };
+
+        const renderFxHistoryChart = function (labels, rates, currency) {
+            if (!chartCanvas || typeof Chart === 'undefined') {
+                return;
+            }
+
+            if (fxChart) {
+                fxChart.destroy();
+            }
+
+            const ctx = chartCanvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 230);
+            gradient.addColorStop(0, 'rgba(37, 99, 235, 0.28)');
+            gradient.addColorStop(1, 'rgba(37, 99, 235, 0.04)');
+
+            fxChart = new Chart(chartCanvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: rates,
+                        borderColor: '#2563eb',
+                        backgroundColor: gradient,
+                        fill: true,
+                        borderWidth: 2.4,
+                        tension: 0.32,
+                        pointRadius: 2.4,
+                        pointHoverRadius: 5,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#2563eb',
+                        pointBorderWidth: 1.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    return ` 1 ${currency} = ${Number(ctx.raw).toFixed(4)} TND`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#64748b', font: { size: 11 } }
+                        },
+                        y: {
+                            grid: { color: '#e2e8f0' },
+                            ticks: {
+                                color: '#64748b',
+                                callback: function (value) {
+                                    return Number(value).toFixed(3);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        const loadHistoryForSelected = async function () {
+            const currency = currencySelect.value || 'EUR';
+
+            if (pairLabel) {
+                pairLabel.textContent = `1 ${currency} = ? TND`;
+            }
+
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
+
+            if (typeof Chart === 'undefined') {
+                if (emptyState) {
+                    emptyState.textContent = 'Bibliotheque graphique indisponible.';
+                    emptyState.style.display = 'block';
+                }
+                return;
+            }
+
+            try {
+                const url = `{{ path('app_currency_history') }}?from=${encodeURIComponent(currency)}&to=TND&days=7`;
+                const response = await fetch(url);
+                const payload = await response.json();
+
+                if (!response.ok || !payload.ok || !Array.isArray(payload.labels) || !Array.isArray(payload.rates)) {
+                    throw new Error('Invalid history payload');
+                }
+
+                renderFxHistoryChart(payload.labels, payload.rates, currency);
+
+                if (pairLabel && payload.rates.length > 0) {
+                    const latestRate = Number(payload.rates[payload.rates.length - 1]);
+                    pairLabel.textContent = `1 ${currency} = ${formatRate(latestRate, 4)} TND`;
+                }
+            } catch (error) {
+                if (fxChart) {
+                    fxChart.destroy();
+                    fxChart = null;
+                }
+                if (emptyState) {
+                    emptyState.textContent = 'Impossible de charger l historique pour la devise selectionnee.';
+                    emptyState.style.display = 'block';
+                }
+            }
+        };
+
+        const loadRateForCard = async function (card) {
+            const code = card.dataset.fxCurrency || 'EUR';
+            const valueNode = card.querySelector('[data-fx-value]');
+            if (!valueNode) {
+                return null;
+            }
+
+            card.classList.remove('error');
+            valueNode.classList.add('loading');
+            valueNode.textContent = 'Chargement...';
+
+            try {
+                const url = `{{ path('app_currency_rate') }}?from=${encodeURIComponent(code)}&to=TND`;
+                const response = await fetch(url);
+                const payload = await response.json();
+
+                if (!response.ok || !payload.ok || !Number.isFinite(Number(payload.rate))) {
+                    throw new Error('Invalid rate payload');
+                }
+
+                valueNode.classList.remove('loading');
+                valueNode.textContent = `${formatRate(payload.rate, 4)} TND`;
+                return payload.fetchedAt || null;
+            } catch (error) {
+                card.classList.add('error');
+                valueNode.classList.remove('loading');
+                valueNode.textContent = '--';
+                return null;
+            }
+        };
+
+        const refreshRateCards = async function () {
+            const timestamps = await Promise.all(rateCards.map(loadRateForCard));
+            setActiveCard();
+
+            const parsedTimes = timestamps
+                .map(function (value) { return value ? Date.parse(value) : NaN; })
+                .filter(function (value) { return !Number.isNaN(value); });
+
+            if (parsedTimes.length > 0) {
+                const maxTs = Math.max.apply(null, parsedTimes);
+                updatedAt.textContent = `Derniere mise a jour: ${formatDateTime(new Date(maxTs).toISOString())}`;
+            } else {
+                updatedAt.textContent = 'Derniere mise a jour: indisponible';
+            }
+        };
+
+        const refreshFxPanel = async function () {
+            if (refreshButton) {
+                refreshButton.disabled = true;
+                refreshButton.textContent = '? Chargement...';
+            }
+
+            await Promise.all([
+                loadHistoryForSelected(),
+                refreshRateCards()
+            ]);
+
+            if (refreshButton) {
+                refreshButton.disabled = false;
+                refreshButton.textContent = '?? Actualiser';
+            }
+        };
+
+        if (currencySelect) {
+            currencySelect.addEventListener('change', refreshFxPanel);
+        }
+
+        if (refreshButton) {
+            refreshButton.addEventListener('click', refreshFxPanel);
+        }
+
+        rateCards.forEach(function (card) {
+            card.addEventListener('click', function () {
+                const code = card.dataset.fxCurrency || 'EUR';
+                currencySelect.value = code;
+                refreshFxPanel();
+            });
+        });
+
+        refreshFxPanel();
+    })();
+</script>
 <div id="google_translate_element" style="display:none;"></div>
 <script>
     (function () {
@@ -754,6 +1307,14 @@
             document.cookie = 'googtrans=' + value + ';path=/';
             if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
                 document.cookie = 'googtrans=' + value + ';path=/;domain=.' + host;
+            }
+        };
+
+        const clearTranslateCookie = function () {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + host;
             }
         };
 
@@ -772,7 +1333,11 @@
             menu.querySelectorAll('[data-lang]').forEach(function (button) {
                 button.addEventListener('click', function () {
                     const lang = button.getAttribute('data-lang') || 'en';
-                    setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+                    if (lang === 'original') {
+                        clearTranslateCookie();
+                    } else {
+                        setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+                    }
                     window.location.reload();
                 });
             });

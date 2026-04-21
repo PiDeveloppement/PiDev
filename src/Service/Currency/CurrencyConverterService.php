@@ -23,24 +23,20 @@ class CurrencyConverterService
             throw new \RuntimeException('Devise invalide pour la conversion.');
         }
 
-        if ($from === $to) {
-            return round($amount, 2);
+        $rate = $this->resolveLatestRate($from, $to);
+        return round($amount * $rate, 2);
+    }
+
+    public function latestRate(string $fromCurrency, string $toCurrency = 'TND'): float
+    {
+        $from = strtoupper(trim($fromCurrency));
+        $to = strtoupper(trim($toCurrency));
+
+        if ($from === '' || $to === '') {
+            throw new \RuntimeException('Devise invalide pour la conversion.');
         }
 
-        try {
-            $rate = $this->swap->latest(sprintf('%s/%s', $from, $to))->getValue();
-        } catch (\Throwable $exception) {
-            // Fallback: calcul croise via EUR lorsque le provider ne supporte pas directement la paire.
-            try {
-                $fromToEur = $from === 'EUR' ? 1.0 : $this->swap->latest(sprintf('%s/%s', $from, 'EUR'))->getValue();
-                $eurToTarget = $to === 'EUR' ? 1.0 : $this->swap->latest(sprintf('%s/%s', 'EUR', $to))->getValue();
-                $rate = (float) $fromToEur * (float) $eurToTarget;
-            } catch (\Throwable $fallbackException) {
-                $rate = $this->fetchRateFromErApi($from, $to, $fallbackException);
-            }
-        }
-
-        return round($amount * (float) $rate, 2);
+        return round($this->resolveLatestRate($from, $to), 6);
     }
 
     /**
@@ -58,7 +54,7 @@ class CurrencyConverterService
 
         $labels = [];
         $rates = [];
-        $currentRate = $this->convert(1.0, $from, $to);
+        $currentRate = $this->latestRate($from, $to);
 
         $startDate = new \DateTimeImmutable(sprintf('-%d days', $days - 1));
         for ($i = 0; $i < $days; $i++) {
@@ -106,6 +102,26 @@ class CurrencyConverterService
             return null;
         } catch (\Throwable $exception) {
             return null;
+        }
+    }
+
+    private function resolveLatestRate(string $from, string $to): float
+    {
+        if ($from === $to) {
+            return 1.0;
+        }
+
+        try {
+            return (float) $this->swap->latest(sprintf('%s/%s', $from, $to))->getValue();
+        } catch (\Throwable $exception) {
+            // Fallback: calcul croise via EUR lorsque le provider ne supporte pas directement la paire.
+            try {
+                $fromToEur = $from === 'EUR' ? 1.0 : $this->swap->latest(sprintf('%s/%s', $from, 'EUR'))->getValue();
+                $eurToTarget = $to === 'EUR' ? 1.0 : $this->swap->latest(sprintf('%s/%s', 'EUR', $to))->getValue();
+                return (float) $fromToEur * (float) $eurToTarget;
+            } catch (\Throwable $fallbackException) {
+                return $this->fetchRateFromErApi($from, $to, $fallbackException);
+            }
         }
     }
 
