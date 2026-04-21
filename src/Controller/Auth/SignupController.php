@@ -6,6 +6,7 @@ use App\Entity\User\UserModel;
 use App\Form\User\RegistrationType;
 use App\Service\User\UserService;
 use App\Service\User\EmailService;
+use App\Service\Role\RoleAssignmentService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,15 +20,18 @@ class SignupController extends AbstractController
     private UserService $userService;
     private EmailService $emailService;
     private UserPasswordHasherInterface $passwordHasher;
+    private RoleAssignmentService $roleAssignmentService;
 
     public function __construct(
         UserService $userService,
         EmailService $emailService,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
+        RoleAssignmentService $roleAssignmentService
     ) {
         $this->userService = $userService;
         $this->emailService = $emailService;
         $this->passwordHasher = $passwordHasher;
+        $this->roleAssignmentService = $roleAssignmentService;
     }
 
     #[Route('/register', name: 'app_register')]
@@ -70,11 +74,13 @@ class SignupController extends AbstractController
         $hashedPassword = $this->passwordHasher->hashPassword($user, $plainPassword);
         $user->setPassword($hashedPassword);
 
-        $user->setRoleId(1); 
+        // Assignation automatique du rôle basée sur le domaine de l'email
+        $roleId = $this->roleAssignmentService->assignRoleByEmail($user->getEmail());
+        $user->setRoleId($roleId);
         
-        $defaultRole = $this->userService->getRoleById(1);
-        if ($defaultRole) {
-            $user->setRole($defaultRole);
+        $role = $this->userService->getRoleById($roleId);
+        if ($role) {
+            $user->setRole($role);
         }
 
         $success = $this->userService->createUser($user, null);
