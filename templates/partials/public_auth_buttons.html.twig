@@ -1,0 +1,36 @@
+{% set role_name = app.user and app.user.role ? (app.user.role.roleName|default('')|lower) : '' %}
+{% set is_sponsor_user = app.user and (('ROLE_SPONSOR' in app.user.roles) or role_name == 'sponsor' or app.user.roleId == 3) %}
+{% set is_admin_or_organizer = app.user and (('ROLE_ADMIN' in app.user.roles) or ('ROLE_ORGANISATEUR' in app.user.roles) or app.user.roleId in [2, 4]) %}
+{% set role_label = 'Participant' %}
+{% if app.user and app.user.role and app.user.role.roleName %}
+    {% set role_label = app.user.role.roleName %}
+{% elseif is_sponsor_user %}
+    {% set role_label = 'Sponsor' %}
+{% elseif is_admin_or_organizer %}
+    {% set role_label = 'Administration' %}
+{% endif %}
+
+{% if app.user %}
+    <details class="public-account-menu">
+        <summary class="public-account-chip">
+            <span class="public-account-avatar">{{ app.user.initials ?: (app.user.fullName ? app.user.fullName|slice(0, 1)|upper : 'U') }}</span>
+            <span class="public-account-meta">
+                <span class="public-account-name">{{ app.user.fullName ?: 'Compte' }}</span>
+                <span class="public-account-role">{{ role_label }}</span>
+            </span>
+        </summary>
+        <div class="public-account-dropdown">
+            {% if is_sponsor_user %}
+                <a class="public-account-action" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
+            {% elseif is_admin_or_organizer %}
+                <a class="public-account-action" href="{{ path('app_dashboard') }}">Back-office</a>
+            {% else %}
+                <a class="public-account-action" href="{{ path('app_my_tickets') }}">Mes billets</a>
+            {% endif %}
+            <a class="public-account-action" href="{{ path('app_logout') }}">Deconnexion</a>
+        </div>
+    </details>
+{% else %}
+    <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
+    <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
+{% endif %}

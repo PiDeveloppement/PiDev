@@ -269,11 +269,7 @@
             </div>
 
             <div class="nav-buttons">
-                {% if app.user and hasTickets %}
-                    <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
-                {% endif %}
-                <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
-                <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
+                {% include 'partials/public_auth_buttons.html.twig' %}
             </div>
         </div>
     </nav>
@@ -359,3 +355,4 @@
         </div>
     </main>
 {% endblock %}
+

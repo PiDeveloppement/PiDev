@@ -56,8 +56,7 @@
             </div>
 
             <div class="nav-buttons">
-                <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
-                <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
+                {% include 'partials/public_auth_buttons.html.twig' %}
             </div>
         </div>
     </nav>
