@@ -174,16 +174,16 @@
         .chat-premium-panel {
             position: fixed;
             top: 0;
-            right: 0;
+            left: 0;
             width: 560px;
             max-width: 96vw;
             height: 100vh;
             display: none;
             flex-direction: column;
             z-index: 5600;
-            border-left: 1px solid rgba(148, 163, 184, 0.28);
+            border-right: 1px solid rgba(148, 163, 184, 0.28);
             background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
-            box-shadow: -20px 0 45px rgba(2, 6, 23, 0.22);
+            box-shadow: 20px 0 45px rgba(2, 6, 23, 0.22);
             backdrop-filter: blur(8px);
         }
 
@@ -212,6 +212,13 @@
             flex-shrink: 0;
         }
 
+
+        .chat-premium-avatar-img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.35));
+        }
         .chat-premium-title {
             margin: 0;
             color: #fff;
@@ -691,11 +698,18 @@
                 <!-- Top Bar avec recherche à gauche, date et profil à l'extrémité droite -->
                 <div style="background: #1565C0; padding: 8px 20px; display: flex; align-items: center; height: 60px;">
                     <!-- Recherche à gauche -->
-                    <div style="max-width: 400px; display: flex; align-items: center;">
-                        <input type="text" id="globalSearch" placeholder="Recherche globale..."
-                               style="width: 100%; padding: 8px 15px; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; color: white; font-size: 13px; outline: none;">
-                        <button onclick="performSearch()" style="background: transparent; border: none; color: white; font-size: 16px; cursor: pointer; margin-left: -30px;">
-                            <i class="fas fa-search"></i>
+                    <div style="max-width: 520px; display: flex; align-items: center; gap: 10px;">
+                        <div style="position: relative; width: 100%; max-width: 400px; display: flex; align-items: center;">
+                            <input type="text" id="globalSearch" placeholder="Recherche globale..."
+                                   style="width: 100%; padding: 8px 15px; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; color: white; font-size: 13px; outline: none;">
+                            <button onclick="performSearch()" style="background: transparent; border: none; color: white; font-size: 16px; cursor: pointer; margin-left: -30px;">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <button id="chatFloatingButtonCustom" type="button"
+                                style="width: 50px; height: 50px; border: 1px solid rgba(255,255,255,0.70); border-radius: 14px; background: linear-gradient(145deg, rgba(255,255,255,0.28), rgba(255,255,255,0.12)); cursor: pointer; box-shadow: 0 12px 22px rgba(2,6,23,0.30); display: flex; align-items: center; justify-content: center; padding: 0;"
+                                title="Ouvrir le chatbot">
+                            <img src="{{ asset('images/chatbot.png') }}" alt="Chatbot" style="width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(15,23,42,0.35));">
                         </button>
                     </div>
                     
@@ -703,13 +717,7 @@
                     <div style="flex: 1;"></div>
                     
                     <!-- Date/heure et profil utilisateur collés à l'extrémité droite -->
-                    <div style="display: flex; align-items: center; gap: 20px;">
-                        <button id="chatFloatingButtonCustom" type="button"
-                                style="width: 42px; height: 42px; border: 1px solid rgba(255,255,255,0.28); border-radius: 12px; background: radial-gradient(circle at 22% 20%, rgba(125, 211, 252, 0.45), transparent 42%), linear-gradient(145deg, #0f172a 0%, #1e40af 58%, #0284c7 100%); color: white; font-size: 15px; cursor: pointer; box-shadow: 0 10px 20px rgba(2,6,23,0.28); display: flex; align-items: center; justify-content: center;"
-                                title="Ouvrir le chatbot (second bouton)">
-                            <i class="fas fa-robot"></i>
-                        </button>
-                        <!-- Date et heure -->
+                    <div style="display: flex; align-items: center; gap: 20px;"><!-- Date et heure -->
                         <div style="text-align: right;">
                             <p style="color: white; font-size: 13px; font-weight: bold; margin: 0;" id="currentDate"></p>
                             <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 2px 0 0 0;" id="currentTime"></p>
@@ -817,7 +825,7 @@
     {% if not is_public %}
     <div id="chatPanel" class="chat-premium-panel">
         <div class="chat-premium-header">
-            <div class="chat-premium-avatar">&#129302;</div>
+            <div class="chat-premium-avatar"><img src="{{ asset('images/chatbot.png') }}" alt="Chatbot" class="chat-premium-avatar-img"></div>
             <div style="flex: 1; min-width: 0;">
                 <h3 class="chat-premium-title">Assistant Gestion IA</h3>
                 <p class="chat-premium-subtitle">Sponsor | Budget | Depense</p>
@@ -976,6 +984,11 @@
                     .replace(/\uFFFD/g, 'e')
                     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
                     .replace(/[\u00A0\u2000-\u206F]/g, ' ')
+                    .replace(/^\?+\s*Constat\s*:/i, 'Constat:')
+                    .replace(/^\?+\s*Chiffres\s+exacts\s*:/i, 'Chiffres exacts:')
+                    .replace(/^\?+\s*Actions?\s+recommand\w*\s*:/i, 'Actions recommandees:')
+                    .replace(/\s+\?+\s*Chiffres\s+exacts\s*:/gi, '\n\nChiffres exacts:')
+                    .replace(/\s+\?+\s*Actions?\s+recommand\w*\s*:/gi, '\n\nActions recommandees:')
                     .replace(/\s{2,}/g, ' ')
                     .trim();
             }
