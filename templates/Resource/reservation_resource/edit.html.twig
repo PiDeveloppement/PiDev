@@ -41,6 +41,20 @@
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                         <div>
+                            {{ form_label(form.event, "Événement", {
+                                'label_attr': {
+                                    'style': 'display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;'
+                                }
+                            }) }}
+                            {{ form_errors(form.event) }}
+                            {{ form_widget(form.event, {
+                                'attr': {
+                                    'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;'
+                                }
+                            }) }}
+                        </div>
+                        
+                        <div>
                             {{ form_label(form.resourceType, "Type", {
                                 'label_attr': {
                                     'style': 'display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;'
@@ -144,6 +158,10 @@
                     </h4>
                     
                     <div id="previewContent" style="color: #64748b; font-size: 14px; line-height: 1.6;">
+                        <div style="margin-bottom: 15px;">
+                            <strong>Événement:</strong> 
+                            <span id="previewEvent" style="color: #374151;">{{ form.event.vars.data.title ?? 'Non sélectionné' }}</span>
+                        </div>
                         <div style="margin-bottom: 15px;">
                             <strong>Type:</strong> 
                             <span id="previewType" style="color: #374151;">{{ form.resourceType.vars.value }}</span>
@@ -327,9 +345,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const typeField = document.getElementById('{{ form.resourceType.vars.id }}');
     const startField = document.getElementById('{{ form.startTime.vars.id }}');
     const endField = document.getElementById('{{ form.endTime.vars.id }}');
+    const eventField = document.getElementById('{{ form.event.vars.id }}');
 
     [typeField, startField, endField].forEach(field => {
         field.addEventListener('change', loadResources);
+    });
+
+    // Mettre à jour l'aperçu de l'événement
+    eventField.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        document.getElementById('previewEvent').textContent = selectedOption.text || 'Non sélectionné';
     });
 
     const form = document.getElementById('reservationForm');

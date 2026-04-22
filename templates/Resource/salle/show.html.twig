@@ -47,7 +47,7 @@
             <div>
                 {# Image de la salle #}
                 <div style="position: relative; border-radius: 16px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-                    <img src="{{ salle.imagePath|default('https://via.placeholder.com/800x400?text=Salle') }}" 
+                    <img src="{{ salle.imagePath ? asset('images/salles/' ~ salle.imagePath) : 'https://via.placeholder.com/800x400?text=Salle' }}" 
                          style="width: 100%; height: 300px; object-fit: cover;">
                     <div style="position: absolute; top: 15px; right: 15px; background: {{ salle.status == 'DISPONIBLE' ? '#10b981' : (salle.status == 'MAINTENANCE' ? '#f59e0b' : '#ef4444') }}; 
                                 color: white; padding: 8px 16px; border-radius: 25px; font-size: 12px; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">

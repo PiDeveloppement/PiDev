@@ -49,7 +49,9 @@ class ReservationResourceRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('r')
             ->leftJoin('r.salle', 's')
-            ->leftJoin('r.equipement', 'e');
+            ->leftJoin('r.equipement', 'e')
+            ->leftJoin('r.event', 'ev')
+            ->addSelect('s', 'e', 'ev');
 
         if (!empty($filters['name'])) {
             $qb->andWhere('s.name LIKE :name OR e.name LIKE :name')
@@ -59,6 +61,16 @@ class ReservationResourceRepository extends ServiceEntityRepository
         if (!empty($filters['resourceType'])) {
             $qb->andWhere('r.resourceType = :resourceType')
                ->setParameter('resourceType', $filters['resourceType']);
+        }
+
+        if (!empty($filters['event'])) {
+            $qb->andWhere('ev.id = :eventId')
+               ->setParameter('eventId', $filters['event']);
+        }
+
+        if (!empty($filters['eventName'])) {
+            $qb->andWhere('ev.title LIKE :eventName')
+               ->setParameter('eventName', '%' . $filters['eventName'] . '%');
         }
 
         $qb->orderBy('r.' . $sortBy, $direction);

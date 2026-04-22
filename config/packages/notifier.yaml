@@ -3,6 +3,7 @@ framework:
         chatter_transports: ~
 
         texter_transports:
+            sendgrid: '%env(MAILER_DSN)%'
             infobip: '%env(INFOBIP_DSN)%'
             twilio: '%env(TWILIO_DSN)%'
 

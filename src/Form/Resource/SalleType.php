@@ -41,27 +41,12 @@ class SalleType extends AbstractType
                 'label' => 'Statut',
                 'required' => false,
             ])
-            // Champ pour l'URL (Unsplash)
-            ->add('imagePath', TextType::class, [
+            ->add('imageFile', FileType::class, [
+                'label' => 'Image de la salle',
                 'required' => false,
-                'label' => 'URL Image',
-            ])
-            // Champ pour l'upload physique (non mappé à l'entité)
-            ->add('imageUpload', FileType::class, [
-                'label' => 'Importer une image',
-                'mapped' => false,
-                'required' => false,
-                'constraints' => [
-                    new File([
-                        'maxSize' => '2M',
-                        'mimeTypes' => [
-                            'image/jpeg',
-                            'image/png',
-                            'image/webp',
-                        ],
-                        'mimeTypesMessage' => 'Veuillez uploader une image valide (JPG, PNG, WEBP)',
-                    ])
-                ],
+                'attr' => [
+                    'accept' => 'image/jpeg,image/png,image/webp'
+                ]
             ])
         ;
     }
