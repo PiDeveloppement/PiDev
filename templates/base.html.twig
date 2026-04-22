@@ -46,6 +46,7 @@
     </style>
     
     {% block stylesheets %}{% endblock %}
+    {{ importmap('app') }}
 </head>
 <body>
     {# ✅ Liste des routes publiques (sans sidebar) #}
@@ -297,6 +298,19 @@
                                     <i class="fas fa-user" style="width: 16px;"></i>
                                     Mon Profil
                                 </a>
+                                <button type="button" class="dropdown-item translation-account-toggle" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">
+                                    <i class="fas fa-language" style="width: 16px;"></i>
+                                    Traduire
+                                </button>
+                                <div class="translation-account-panel" style="display: none; padding: 0 8px 6px;">
+                                    <button type="button" class="dropdown-item translation-option" data-lang="original" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">Originale</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="fr" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">Francais</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="en" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">English</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="ar" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">Arabic</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="es" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">Espanol</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="de" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">Deutsch</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="it" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">Italiano</button>
+                                </div>
                                 <a {#href="{{ path('app_settings') }}"#} class="dropdown-item" style="padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none;">
                                     <i class="fas fa-cog" style="width: 16px;"></i>
                                     Paramètres
@@ -352,20 +366,6 @@
         </div>
     {% endif %}
     
-    <div id="translationWidget" style="position: fixed; bottom: 92px; right: 20px; z-index: 98; display: inline-flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-        <button id="translationToggle" type="button" style="border: none; border-radius: 999px; padding: 10px 16px; background: linear-gradient(135deg, #16a34a, #22c55e); color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 22px rgba(22, 163, 74, 0.28); display: inline-flex; align-items: center; gap: 8px;">
-            <i class="fas fa-language"></i> Traduire
-        </button>
-        <div id="translationMenu" style="display: none; min-width: 190px; background: #ffffff; border: 1px solid #d9e2ef; border-radius: 12px; box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16); padding: 8px;">
-            <button type="button" class="translation-option" data-lang="original" style="width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 8px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer; margin-bottom: 6px;">Originale</button>
-            <button type="button" class="translation-option" data-lang="fr" style="width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 8px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer; margin-bottom: 6px;">Francais</button>
-            <button type="button" class="translation-option" data-lang="en" style="width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 8px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer; margin-bottom: 6px;">English</button>
-            <button type="button" class="translation-option" data-lang="ar" style="width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 8px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer; margin-bottom: 6px;">Arabic</button>
-            <button type="button" class="translation-option" data-lang="es" style="width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 8px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer; margin-bottom: 6px;">Espanol</button>
-            <button type="button" class="translation-option" data-lang="de" style="width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 8px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer; margin-bottom: 6px;">Deutsch</button>
-            <button type="button" class="translation-option" data-lang="it" style="width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; border-radius: 8px; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer;">Italiano</button>
-        </div>
-    </div>
     <div id="google_translate_element" style="display:none;"></div>
 
     <!-- Chat Panel (uniquement pour les pages admin) -->
@@ -666,11 +666,6 @@
             }, 4500 + (index * 120));
         });
 
-        // Translation widget shared across admin pages.
-        const translationWidget = document.getElementById('translationWidget');
-        const translationToggle = document.getElementById('translationToggle');
-        const translationMenu = document.getElementById('translationMenu');
-
         function setTranslateCookie(value) {
             const host = window.location.hostname;
             document.cookie = 'googtrans=' + value + ';path=/';
@@ -687,29 +682,49 @@
             }
         }
 
-        if (translationToggle && translationMenu && translationWidget) {
-            translationToggle.addEventListener('click', function () {
-                translationMenu.style.display = translationMenu.style.display === 'block' ? 'none' : 'block';
-            });
+        document.querySelectorAll('.translation-account-toggle').forEach(function (toggle) {
+            toggle.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
 
-            document.addEventListener('click', function (event) {
-                if (!translationWidget.contains(event.target)) {
-                    translationMenu.style.display = 'none';
+                const container = toggle.parentElement;
+                const panel = container ? container.querySelector('.translation-account-panel') : null;
+                if (!panel) {
+                    return;
+                }
+
+                document.querySelectorAll('.translation-account-panel').forEach(function (otherPanel) {
+                    if (otherPanel !== panel) {
+                        otherPanel.style.display = 'none';
+                    }
+                });
+
+                panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+            });
+        });
+
+        document.addEventListener('click', function (event) {
+            document.querySelectorAll('.translation-account-panel').forEach(function (panel) {
+                if (!panel.contains(event.target)) {
+                    const container = panel.parentElement;
+                    if (!container || !container.contains(event.target) || !event.target.classList.contains('translation-account-toggle')) {
+                        panel.style.display = 'none';
+                    }
                 }
             });
+        });
 
-            translationMenu.querySelectorAll('[data-lang]').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    const lang = button.getAttribute('data-lang') || 'en';
-                    if (lang === 'original') {
-                        clearTranslateCookie();
-                    } else {
-                        setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
-                    }
-                    window.location.reload();
-                });
+        document.querySelectorAll('.translation-option').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const lang = button.getAttribute('data-lang') || 'en';
+                if (lang === 'original') {
+                    clearTranslateCookie();
+                } else {
+                    setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+                }
+                window.location.reload();
             });
-        }
+        });
     </script>
 
     <script>
