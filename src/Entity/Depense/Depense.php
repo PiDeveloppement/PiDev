@@ -1,8 +1,12 @@
 <?php
 
+
+
 namespace App\Entity\Depense;
 
 use App\Entity\Budget\Budget;
+
+
 use App\Repository\Depense\DepenseRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -152,8 +156,3 @@ class Depense
         return $this;
     }
 }
-
-
-
-
-

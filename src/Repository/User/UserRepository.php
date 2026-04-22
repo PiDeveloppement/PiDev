@@ -262,7 +262,7 @@ public function findAllFacultes(): array
             ->getQuery()
             ->getSingleColumnResult();
 
-        return !empty($result) ? $result : ['sellamiarij7@gmail.com']; // Email par défaut
+        return !empty($result) ? $result : [];
     }
 
     // ==================== MÉTHODES POUR LE TÉLÉPHONE ====================
@@ -274,15 +274,19 @@ public function findAllFacultes(): array
     public function findByPhone(string $phone): ?UserModel
     {
         $normalizedPhone = $this->normalizePhoneNumber($phone);
+        $phoneWithoutPlus = str_replace('+', '', $normalizedPhone);
+        $phoneWithoutSpaces = str_replace(' ', '', $normalizedPhone);
+        $phoneWithoutPlusAndSpaces = str_replace(['+', ' '], '', $normalizedPhone);
 
         return $this->createQueryBuilder('u')
             ->leftJoin('u.role', 'r')
             ->addSelect('r')
-            ->andWhere('u.phone = :phone1 OR REPLACE(u.phone, :plus, :empty) = :phone2')
+            ->andWhere('u.phone = :phone1 OR u.phone = :phone2 OR u.phone = :phone3 OR u.phone = :phone4 OR u.phone LIKE :phone5')
             ->setParameter('phone1', $normalizedPhone)
-            ->setParameter('phone2', str_replace('+', '', $normalizedPhone))
-            ->setParameter('plus', '+')
-            ->setParameter('empty', '')
+            ->setParameter('phone2', $phoneWithoutPlus)
+            ->setParameter('phone3', $phoneWithoutSpaces)
+            ->setParameter('phone4', $phoneWithoutPlusAndSpaces)
+            ->setParameter('phone5', '%' . $phoneWithoutPlusAndSpaces . '%')
             ->getQuery()
             ->getOneOrNullResult();
     }
@@ -293,13 +297,13 @@ public function findAllFacultes(): array
      */
     public function isPhoneExists(string $phone): bool
     {
+        $phoneWithoutPlus = str_replace('+', '', $phone);
+
         $qb = $this->createQueryBuilder('u')
             ->select('COUNT(u.id)')
-            ->andWhere('u.phone = :phone1 OR REPLACE(u.phone, :plus, :empty) = :phone2')
+            ->andWhere('u.phone = :phone1 OR u.phone = :phone2')
             ->setParameter('phone1', $phone)
-            ->setParameter('phone2', str_replace('+', '', $phone))
-            ->setParameter('plus', '+')
-            ->setParameter('empty', '');
+            ->setParameter('phone2', $phoneWithoutPlus);
 
         return (int) $qb->getQuery()->getSingleScalarResult() > 0;
     }

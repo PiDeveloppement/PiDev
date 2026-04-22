@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouvelle inscription - EventFlow</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .content h2 {
+            color: #f5576c;
+            margin-top: 0;
+        }
+        .user-info {
+            background: #fff0f3;
+            border-left: 4px solid #f5576c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .user-info p {
+            margin: 5px 0;
+            font-weight: 500;
+        }
+        .stats {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .stats h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+        .alert {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📢 Nouvelle Inscription</h1>
+        </div>
+        
+        <div class="content">
+            <h2>Un nouvel utilisateur vient de s'inscrire sur EventFlow</h2>
+            
+            <div class="user-info">
+                <p><strong>👤 Nom complet :</strong> {{ user.firstName }} {{ user.lastName }}</p>
+                <p><strong>📧 Email :</strong> {{ user.email }}</p>
+                <p><strong>🏫 Faculté :</strong> {{ user.faculte }}</p>
+                <p><strong>📱 Téléphone :</strong> {{ user.phone|default('Non renseigné') }}</p>
+                <p><strong>📅 Date d'inscription :</strong> {{ user.registrationDate|date('d/m/Y à H:i') }}</p>
+            </div>
+            
+            <div class="stats">
+                <h3>📊 Statistiques</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number">{{ stats.total_users }}</div>
+                        <div class="stat-label">Total utilisateurs</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ stats.new_users_this_month }}</div>
+                        <div class="stat-label">Nouveaux ce mois</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert">
+                <strong>⚠️ Action requise :</strong> Veuillez vérifier le profil du nouvel utilisateur et confirmer son inscription si nécessaire.
+            </div>
+            
+           
+            
+            <p>Cordialement,<br><strong>L'équipe EventFlow</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>© {{ "now"|date("Y") }} EventFlow. Tous droits réservés.</p>
+            <p>Cet email a été envoyé automatiquement suite à une nouvelle inscription.</p>
+        </div>
+    </div>
+</body>
+</html>

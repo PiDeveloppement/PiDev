@@ -3,7 +3,6 @@ parameters:
     database_url: '%env(DATABASE_URL)%'
 
     profile_images_directory: '%kernel.project_dir%/public/uploads/profile_images'
-    # 1. On ajoute le paramètre Gemini ici
     gemini_api_key: '%env(GEMINI_API_KEY)%'
 
 services:
@@ -35,10 +34,6 @@ services:
     App\Service\Questionnaire\QuestionGenerator:
         arguments:
             $geminiApiKey: '%gemini_api_key%'
-
-    # Service de modération de contenu pour questionnaire
-    App\Service\Questionnaire\ContentModerationService:
-        arguments: []
 
     # ✅ PAS DE LIGNE SUPPLÉMENTAIRE POUR UserSessionService !
     # L'autowiring s'en charge automatiquement

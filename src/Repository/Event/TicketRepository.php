@@ -40,8 +40,22 @@ class TicketRepository extends ServiceEntityRepository
             ->orderBy('t.createdAt', 'DESC');
 
         if ($search !== '') {
-            $qb->andWhere('t.ticketCode LIKE :search')
-                ->setParameter('search', '%' . $search . '%');
+            $tokens = array_values(array_filter(preg_split('/\s+/', mb_strtolower(trim($search)) ?: '') ?: []));
+
+            foreach ($tokens as $index => $token) {
+                $containsParam = 'search_contains_' . $index;
+
+                $orX = $qb->expr()->orX(
+                    "LOWER(COALESCE(t.ticketCode, '')) LIKE :{$containsParam}",
+                    "LOWER(COALESCE(t.qrCode, '')) LIKE :{$containsParam}",
+                    "LOWER(COALESCE(e.title, '')) LIKE :{$containsParam}",
+                    "LOWER(COALESCE(u.firstName, '')) LIKE :{$containsParam}",
+                    "LOWER(COALESCE(u.lastName, '')) LIKE :{$containsParam}"
+                );
+
+                $qb->andWhere($orX)
+                    ->setParameter($containsParam, '%' . $token . '%');
+            }
         }
 
         if ($eventFilter !== null && $eventFilter !== '') {

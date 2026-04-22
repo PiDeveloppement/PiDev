@@ -1,0 +1,16 @@
+framework:
+    notifier:
+        chatter_transports: ~
+
+        texter_transports:
+            infobip: '%env(INFOBIP_DSN)%'
+            twilio: '%env(TWILIO_DSN)%'
+
+        channel_policy:
+            urgent: ['sms/infobip']
+            high: ['sms/infobip']
+            medium: ['email']
+            low: ['email']
+
+        admin_recipients:
+            - { email: admin@example.com }

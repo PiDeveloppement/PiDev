@@ -20,8 +20,21 @@ class CategoryRepository extends ServiceEntityRepository
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
-            $qb->andWhere('LOWER(c.name) LIKE :search')
-                ->setParameter('search', mb_strtolower($search) . '%');
+            $tokens = array_values(array_filter(preg_split('/\s+/', mb_strtolower($search) ?: '') ?: []));
+
+            foreach ($tokens as $index => $token) {
+                $startParam = 'search_start_' . $index;
+                $wordParam = 'search_word_' . $index;
+
+                $orX = $qb->expr()->orX(
+                    "LOWER(COALESCE(c.name, '')) LIKE :{$startParam}",
+                    "LOWER(COALESCE(c.name, '')) LIKE :{$wordParam}"
+                );
+
+                $qb->andWhere($orX)
+                    ->setParameter($startParam, $token . '%')
+                    ->setParameter($wordParam, '% ' . $token . '%');
+            }
         }
 
         $status = (string) ($filters['status'] ?? '');

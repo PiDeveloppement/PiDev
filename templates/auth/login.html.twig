@@ -4,15 +4,15 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/design-system.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
-        * {
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            overflow-x: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
         
         .login-page {
@@ -22,7 +22,6 @@
             flex-direction: column;
         }
         
-        /* Bouton retour */
         .back-button {
             padding: 20px 0 0 40px;
         }
@@ -45,7 +44,6 @@
             color: white;
         }
         
-        /* Grille principale */
         .main-grid {
             flex: 1;
             display: flex;
@@ -63,7 +61,6 @@
             align-items: center;
         }
         
-        /* Partie gauche */
         .left-panel {
             padding: 40px 60px 40px 40px;
         }
@@ -115,7 +112,6 @@
             margin: 0;
         }
         
-        /* Partie droite */
         .right-panel {
             padding: 60px;
             display: flex;
@@ -181,7 +177,6 @@
             box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.15);
         }
         
-        /* Container pour le mot de passe avec œil */
         .password-container {
             position: relative;
             width: 100%;
@@ -217,7 +212,6 @@
             padding: 0 10px;
         }
         
-        /* Options */
         .options-container {
             display: flex;
             flex-direction: column;
@@ -276,7 +270,6 @@
             box-shadow: 0 6px 15px rgba(33, 150, 243, 0.4);
         }
         
-        /* Bouton de connexion faciale */
         .facial-container {
             display: flex;
             flex-direction: column;
@@ -346,7 +339,6 @@
             margin-top: 20px;
         }
         
-        /* Messages flash */
         .flash-message {
             padding: 12px 16px;
             border-radius: 8px;
@@ -380,7 +372,6 @@
             font-weight: 500;
         }
         
-        /* Liens de navigation */
         .nav-links {
             margin-top: 10px;
             display: flex;
@@ -411,7 +402,6 @@
             text-decoration: underline;
         }
         
-        /* Footer */
         .footer {
             background: rgba(33, 150, 243, 0.05);
             padding: 20px;
@@ -439,27 +429,226 @@
         .footer-links a:hover {
             text-decoration: underline;
         }
+
+        /* Modal Face ID Styles */
+        .face-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .face-modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 650px;
+            width: 90%;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .face-modal-header {
+            padding: 25px 30px;
+            background: linear-gradient(135deg, #6c5ce7, #a463f5);
+            color: white;
+            text-align: center;
+        }
+
+        .face-modal-header h3 {
+            margin: 0 0 8px 0;
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        .face-modal-header p {
+            margin: 0;
+            opacity: 0.95;
+            font-size: 14px;
+        }
+
+        .face-modal-body {
+            padding: 30px;
+            background: #f8f9fa;
+            position: relative;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            min-height: 360px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .face-video {
+            width: 100%;
+            height: auto;
+            display: block;
+            transform: scaleX(-1);
+        }
+
+        .video-placeholder {
+            position: absolute;
+            color: white;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .face-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .face-frame {
+            width: 200px;
+            height: 200px;
+            border: 3px solid #6c5ce7;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); border-color: #6c5ce7; }
+            50% { transform: scale(1.05); border-color: #a463f5; }
+            100% { transform: scale(1); border-color: #6c5ce7; }
+        }
+
+        .face-status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .face-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .face-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .face-status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .face-status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .face-modal-footer {
+            padding: 20px 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .btn-capture, .btn-cancel {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+        }
+
+        .btn-capture {
+            background: linear-gradient(135deg, #6c5ce7, #a463f5);
+            color: white;
+        }
+
+        .btn-capture:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+        }
+
+        .btn-capture:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .btn-cancel {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 {% endblock %}
 
 {% block public_content %}
 <div class="login-page">
-    <!-- BOUTON RETOUR -->
     <div class="back-button">
         <a href="{{ path('app_landing') }}">← Retour à l'accueil</a>
     </div>
 
-    <!-- CONTENU PRINCIPAL -->
     <div class="main-grid">
         <div class="grid-container">
-            <!-- Partie gauche : Présentation avec logo -->
             <div class="left-panel">
                 <div class="logo-container">
                     <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
                 </div>
 
                 <div class="features">
-                    <!-- Point 1 -->
                     <div class="feature-item">
                         <div class="feature-icon">📅</div>
                         <div class="feature-text">
@@ -468,7 +657,6 @@
                         </div>
                     </div>
 
-                    <!-- Point 2 -->
                     <div class="feature-item">
                         <div class="feature-icon">👥</div>
                         <div class="feature-text">
@@ -477,7 +665,6 @@
                         </div>
                     </div>
 
-                    <!-- Point 3 -->
                     <div class="feature-item">
                         <div class="feature-icon">💰</div>
                         <div class="feature-text">
@@ -488,22 +675,17 @@
                 </div>
             </div>
 
-            <!-- Partie droite : Carte de connexion -->
             <div class="right-panel">
-                <!-- Carte de connexion -->
                 <div class="login-card">
-                    <!-- En-tête -->
                     <div class="card-header">
                         <h2>Connexion</h2>
                         <p>Accédez à votre espace de gestion</p>
                     </div>
 
-                    <!-- Message d'erreur (équivalent à loginMessageLabel) -->
                     {% if error %}
                         <div class="login-message">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
                     {% endif %}
 
-                    <!-- Messages flash -->
                     {% for message in app.flashes('error') %}
                         <div class="flash-message error">{{ message }}</div>
                     {% endfor %}
@@ -512,12 +694,10 @@
                         <div class="flash-message success">{{ message }}</div>
                     {% endfor %}
 
-                    <!-- Formulaire de connexion -->
                     <form method="post" action="{{ path('app_login_check') }}" style="width: 100%;" id="loginForm" onsubmit="return validateLoginForm()">
                         <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
                         <div class="form-container">
-                            <!-- Email -->
                             <div class="form-group">
                                 <input type="email" 
                                        id="emailField"
@@ -528,7 +708,6 @@
                                        required>
                             </div>
 
-                            <!-- Mot de passe avec toggle (comme dans JavaFX) -->
                             <div class="password-container">
                                 <input type="password" 
                                        id="passwordField" 
@@ -545,30 +724,24 @@
                             </div>
                         </div>
 
-                        <!-- Options et boutons -->
                         <div class="options-container">
-                            <!-- Se souvenir de moi -->
                             <label class="checkbox-label">
                                 <input type="checkbox" name="_remember_me">
                                 <span>Se souvenir de moi</span>
                             </label>
 
-                            <!-- Mot de passe oublié -->
                             <a href="{{ path('app_forgot_password') }}" class="forgot-link">
                                 Mot de passe oublié ?
                             </a>
 
-                            <!-- Bouton Se connecter -->
                             <button type="submit" class="btn-primary">
                                 Se connecter
                             </button>
 
-                            <!-- Bouton Annuler -->
-                            <button type="reset" class="btn-primary">
+                            <button type="reset" class="btn-primary" onclick="resetForm()">
                                 Annuler
                             </button>
 
-                            <!-- Lien d'inscription -->
                             <div class="nav-links">
                                 <div class="signup-link">
                                     <span>Nouveau sur EventFlow?</span>
@@ -579,9 +752,8 @@
                     </form>
                 </div>
 
-                <!-- BOUTON DE CONNEXION FACIALE -->
                 <div class="facial-container">
-                    <button class="facial-btn" onclick="window.location.href='{{ path('app_facial_login') }}'">
+                    <button class="facial-btn" onclick="openFacialLogin()">
                         <span class="facial-icon">👤</span>
                         <div class="facial-badge">🔓</div>
                         <div class="facial-ring"></div>
@@ -592,7 +764,6 @@
         </div>
     </div>
 
-    <!-- FOOTER -->
     <footer class="footer">
         <p>© 2026 EventFlow - Tous droits réservés</p>
         <div class="footer-links">
@@ -603,20 +774,258 @@
     </footer>
 </div>
 
+<!-- Modal Face ID -->
+<div id="faceModal" class="face-modal">
+    <div class="face-modal-content">
+        <div class="face-modal-header">
+            <h3> Connexion Face ID</h3>
+            <p>Regardez la caméra pour vous connecter</p>
+        </div>
+        <div class="face-modal-body">
+            <div class="video-container">
+                <video id="video" autoplay playsinline class="face-video" style="display: none;"></video>
+                <div id="videoPlaceholder" class="video-placeholder">
+                    <div style="font-size: 48px;">📷</div>
+                    <p>Demande d'accès à la caméra...</p>
+                </div>
+                <div class="face-overlay" style="display: none;" id="faceOverlay">
+                    <div class="face-frame"></div>
+                </div>
+            </div>
+            <canvas id="canvas" style="display: none;"></canvas>
+            <div id="faceStatus" class="face-status warning">
+                ⚠️ Initialisation de la caméra...
+            </div>
+        </div>
+        <div class="face-modal-footer">
+            <button id="captureBtn" class="btn-capture" disabled>
+                🔍 Scanner mon visage
+            </button>
+            <button id="cancelFaceBtn" class="btn-cancel">
+                ❌ Annuler
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
+let mediaStream = null;
+let isScanning = false;
+
+function openFacialLogin() {
+    const modal = document.getElementById('faceModal');
+    modal.style.display = 'flex';
+    initializeFaceRecognition();
+}
+
+function closeFacialLogin() {
+    const modal = document.getElementById('faceModal');
+    if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+    }
+    modal.style.display = 'none';
+}
+
+async function initializeFaceRecognition() {
+    const video = document.getElementById('video');
+    const videoPlaceholder = document.getElementById('videoPlaceholder');
+    const faceOverlay = document.getElementById('faceOverlay');
+    const canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('captureBtn');
+    const faceStatus = document.getElementById('faceStatus');
+
+    try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('Votre navigateur ne supporte pas l\'accès à la caméra');
+        }
+
+        if (typeof faceapi === 'undefined') {
+            throw new Error('La bibliothèque face-api.js n\'est pas chargée. Veuillez actualiser la page.');
+        }
+
+        faceStatus.innerHTML = '📷 Chargement des modèles de reconnaissance faciale...';
+        faceStatus.className = 'face-status info';
+
+        const MODEL_URL = '/models';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+
+        faceStatus.innerHTML = '📷 Demande d\'accès à la caméra...';
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: 'user'
+            }
+        });
+
+        mediaStream = stream;
+
+        videoPlaceholder.style.display = 'none';
+        video.style.display = 'block';
+        faceOverlay.style.display = 'flex';
+
+        video.srcObject = stream;
+
+        await new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+                video.play();
+                resolve();
+            };
+        });
+
+        faceStatus.innerHTML = '✅ Caméra prête ! Regardez la caméra';
+        faceStatus.className = 'face-status success';
+        captureBtn.disabled = false;
+
+        captureBtn.onclick = () => {
+            if (!captureBtn.disabled && !isScanning) {
+                scanFace();
+            }
+        };
+
+        document.getElementById('cancelFaceBtn').onclick = closeFacialLogin;
+
+        async function scanFace() {
+            if (isScanning) return;
+            isScanning = true;
+
+            try {
+                captureBtn.disabled = true;
+                captureBtn.innerHTML = '<span class="loading-spinner"></span> Vérification...';
+
+                faceStatus.innerHTML = '🔍 Détection du visage en cours...';
+                faceStatus.className = 'face-status info';
+
+                console.log('Début détection visage...');
+
+                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptors();
+
+                console.log('Visages détectés:', detections.length);
+
+                if (detections.length === 0) {
+                    faceStatus.innerHTML = '❌ Aucun visage détecté. Veuillez réessayer.';
+                    faceStatus.className = 'face-status error';
+                    captureBtn.disabled = false;
+                    captureBtn.innerHTML = '🔍 Réessayer';
+                    isScanning = false;
+                    return;
+                }
+
+                // Prendre le premier visage détecté
+                const descriptor = Array.from(detections[0].descriptor);
+                console.log('Descripteur généré, taille:', descriptor.length);
+
+                faceStatus.innerHTML = '📡 Vérification auprès du serveur...';
+
+                const response = await fetch('{{ path('app_verify_face') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        descriptor: descriptor
+                    })
+                });
+
+                console.log('Réponse serveur reçue, status:', response.status);
+
+                // Vérifier d'abord le code HTTP avant de traiter le JSON
+                if (response.status !== 200) {
+                    const result = await response.json();
+                    console.error('Erreur HTTP:', response.status, result);
+                    faceStatus.innerHTML = '❌ ' + (result.message || 'Visage non reconnu. Veuillez réessayer.');
+                    faceStatus.className = 'face-status error';
+                    captureBtn.disabled = false;
+                    captureBtn.innerHTML = '🔍 Réessayer';
+                    isScanning = false;
+                    return;
+                }
+
+                const result = await response.json();
+
+                console.log('Résultat serveur:', result);
+
+                if (result.success === true) {
+    faceStatus.innerHTML = '✅ Connexion réussie ! Redirection...';
+    faceStatus.className = 'face-status success';
+    captureBtn.innerHTML = '✅ Succès !';
+
+    if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+    }
+
+    setTimeout(() => {
+        // ✅ result.redirect est maintenant une URL directe (ex: /dashboard)
+        window.location.href = result.redirect;
+    }, 1500);
+} else {
+                    // Afficher le message d'erreur détaillé
+                    let errorMessage = result.message || 'Visage non reconnu. Veuillez réessayer.';
+                    if (result.similarity && result.threshold) {
+                        errorMessage += ` (Similarité: ${result.similarity}, Seuil: ${result.threshold})`;
+                    }
+                    faceStatus.innerHTML = '❌ ' + errorMessage;
+                    faceStatus.className = 'face-status error';
+                    captureBtn.disabled = false;
+                    captureBtn.innerHTML = '🔍 Réessayer';
+                    isScanning = false;
+                    console.error('Face recognition failed:', result);
+                }
+
+            } catch (error) {
+                console.error('Erreur scan:', error);
+                faceStatus.innerHTML = '❌ Erreur lors de la vérification. Veuillez réessayer.';
+                faceStatus.className = 'face-status error';
+                captureBtn.disabled = false;
+                captureBtn.innerHTML = '🔍 Réessayer';
+                isScanning = false;
+            }
+        }
+
+    } catch (error) {
+        console.error('Erreur caméra:', error);
+
+        let errorMessage = '❌ Impossible d\'accéder à la caméra. ';
+        if (error.name === 'NotAllowedError') {
+            errorMessage += 'Veuillez autoriser l\'accès à la caméra.';
+        } else if (error.name === 'NotFoundError') {
+            errorMessage += 'Aucune caméra trouvée sur votre appareil.';
+        } else if (error.name === 'NotReadableError') {
+            errorMessage += 'La caméra est déjà utilisée par une autre application.';
+        } else {
+            errorMessage += error.message || 'Vérifiez vos permissions et réessayez.';
+        }
+
+        faceStatus.innerHTML = errorMessage;
+        faceStatus.className = 'face-status error';
+        captureBtn.disabled = true;
+
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        videoPlaceholder.innerHTML = `
+            <div style="font-size: 48px;">📷</div>
+            <p>${errorMessage}</p>
+            <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #6c5ce7; color: white; border: none; border-radius: 5px; cursor: pointer;">Réessayer</button>
+        `;
+    }
+}
+
 function togglePassword() {
     const passwordField = document.getElementById('passwordField');
     const visiblePasswordField = document.getElementById('visiblePasswordField');
     const eyeIcon = document.getElementById('eyeIcon');
-    
+
     if (passwordField.style.display !== 'none') {
-        // Cacher le champ password, montrer le champ text
         passwordField.style.display = 'none';
         visiblePasswordField.style.display = 'block';
         visiblePasswordField.value = passwordField.value;
         eyeIcon.textContent = '👁️‍🗨️';
     } else {
-        // Montrer le champ password, cacher le champ text
         passwordField.style.display = 'block';
         visiblePasswordField.style.display = 'none';
         passwordField.value = visiblePasswordField.value;
@@ -624,7 +1033,6 @@ function togglePassword() {
     }
 }
 
-// Synchroniser les champs
 document.getElementById('visiblePasswordField').addEventListener('input', function(e) {
     document.getElementById('passwordField').value = e.target.value;
 });
@@ -635,31 +1043,26 @@ document.getElementById('passwordField').addEventListener('input', function(e) {
     }
 });
 
-// Validation du formulaire avant soumission
 function validateLoginForm() {
     const emailField = document.getElementById('emailField');
     const passwordField = document.getElementById('passwordField');
     const visiblePasswordField = document.getElementById('visiblePasswordField');
-    
-    // Récupérer la valeur du mot de passe (du champ visible ou caché)
+
     const passwordValue = passwordField.style.display !== 'none' ? passwordField.value : visiblePasswordField.value;
-    
-    // Validation de l'email
+
     if (!emailField.value || emailField.value.trim() === '') {
         showInlineError('Veuillez saisir votre email');
         emailField.focus();
         return false;
     }
-    
-    // Validation du format de l'email
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailField.value)) {
         showInlineError('Veuillez saisir un email valide');
         emailField.focus();
         return false;
     }
-    
-    // Validation du mot de passe
+
     if (!passwordValue || passwordValue.trim() === '') {
         showInlineError('Veuillez saisir votre mot de passe');
         if (passwordField.style.display !== 'none') {
@@ -669,29 +1072,30 @@ function validateLoginForm() {
         }
         return false;
     }
-    
+
     return true;
 }
 
-// Afficher une erreur inline dans le formulaire
+function resetForm() {
+    document.getElementById('emailField').value = '';
+    document.getElementById('passwordField').value = '';
+    document.getElementById('visiblePasswordField').value = '';
+}
+
 function showInlineError(message) {
-    // Supprimer les anciennes alertes d'erreur inline
     const existingAlert = document.getElementById('inlineErrorAlert');
     if (existingAlert) {
         existingAlert.remove();
     }
-    
-    // Créer une nouvelle alerte
+
     const formContainer = document.querySelector('.form-container');
     const alertDiv = document.createElement('div');
     alertDiv.id = 'inlineErrorAlert';
     alertDiv.className = 'login-message';
     alertDiv.textContent = message;
-    
-    // Insérer l'alerte avant le formulaire
+
     formContainer.parentNode.insertBefore(alertDiv, formContainer);
-    
-    // Supprimer l'alerte après 5 secondes
+
     setTimeout(() => {
         const alert = document.getElementById('inlineErrorAlert');
         if (alert) {

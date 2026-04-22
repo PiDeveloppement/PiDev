@@ -27,16 +27,26 @@ class QuestionController extends AbstractController
         $eventId = $request->query->get('event');
         
         if ($eventId) {
-            // Filtrer par événement spécifique
-            $questions = $questionRepository->findBy(['event' => $eventId]);
+            $event = $entityManager->getRepository(Event::class)->find($eventId);
+            if (!$event) {
+                $this->addFlash('error', 'Événement non trouvé.');
+                return $this->redirectToRoute('app_question_index');
+            }
+            $questions = $questionRepository->createQueryBuilder('q')
+                ->where('q.event = :event')
+                ->setParameter('event', $event)
+                ->orderBy('q.points', 'DESC')
+                ->getQuery()
+                ->getResult();
+            $events = $entityManager->getRepository(Event::class)->findAll();
         } else {
-            // Afficher toutes les questions
-            $questions = $questionRepository->findAll();
+            $questions = $questionRepository->createQueryBuilder('q')
+                ->orderBy('q.points', 'DESC')
+                ->getQuery()
+                ->getResult();
+            $events = $entityManager->getRepository(Event::class)->findAll();
         }
-
-        // Récupérer tous les événements pour le filtre
-        $events = $entityManager->getRepository(Event::class)->findAll();
-
+        
         return $this->render('questionnaire/question/index.html.twig', [
             'questions' => $questions,
             'events' => $events,

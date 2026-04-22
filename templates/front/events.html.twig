@@ -4,6 +4,7 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
     <style>
         .events-vitrine {
             margin-top: 80px;
@@ -46,6 +47,106 @@
             background: rgba(13, 71, 161, 0.12);
             font-weight: 700;
             font-size: 13px;
+        }
+
+        .events-header-actions {
+            margin-top: 14px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .calendar-open-btn {
+            border: 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0d47a1, #1565c0 55%, #1976d2);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 0.2px;
+            padding: 11px 18px;
+            cursor: pointer;
+            box-shadow: 0 12px 24px rgba(21, 101, 192, 0.3);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+        }
+
+        .calendar-open-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(21, 101, 192, 0.36);
+            filter: brightness(1.04);
+        }
+
+        .calendar-open-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(21, 101, 192, 0.24), 0 12px 24px rgba(21, 101, 192, 0.3);
+        }
+
+        .calendar-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 24, 44, 0.42);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1200;
+            padding: 18px;
+        }
+
+        .calendar-modal.open {
+            display: flex;
+        }
+
+        .calendar-modal-panel {
+            width: min(1100px, 100%);
+            max-height: 90vh;
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #d7e2f0;
+            box-shadow: 0 20px 44px rgba(15, 23, 42, 0.26);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .calendar-modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e2eaf4;
+        }
+
+        .calendar-modal-title {
+            margin: 0;
+            font-size: 20px;
+            color: #0f2037;
+        }
+
+        .calendar-close-btn {
+            border: 1px solid #c7d5e8;
+            border-radius: 10px;
+            background: #f6f9fd;
+            color: #23406f;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 7px 11px;
+            cursor: pointer;
+        }
+
+        .calendar-modal-body {
+            padding: 12px;
+            overflow: auto;
+        }
+
+        #eventsCalendarInModal {
+            min-height: 640px;
+        }
+
+        .fc .fc-daygrid-day.category-tinted .fc-daygrid-day-frame {
+            background: var(--category-day-bg, transparent);
+            transition: background-color 0.2s ease;
         }
 
         .events-toolbar-wrap {
@@ -131,9 +232,30 @@
         }
 
         .event-cover {
-            height: 188px;
             background: linear-gradient(120deg, #d7e5f9, #c4daf7 55%, #b6d1f2);
             position: relative;
+            overflow: hidden;
+        }
+
+        .event-cover.no-image {
+            min-height: 188px;
+        }
+
+        .event-cover.has-image {
+            background: transparent;
+        }
+
+        .event-cover::after {
+            content: none;
+        }
+
+        .event-cover-image {
+            position: relative;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            object-position: center;
+            display: block;
         }
 
         .event-status {
@@ -144,6 +266,7 @@
             padding: 6px 12px;
             font-size: 12px;
             font-weight: 700;
+            z-index: 2;
         }
 
         .event-status.live {
@@ -170,6 +293,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            z-index: 2;
         }
 
         .event-body {
@@ -324,6 +448,7 @@
 {% endblock %}
 
 {% block public_content %}
+    {% set isParticipantUser = app.user and ('ROLE_ADMIN' not in app.user.roles) and ('ROLE_ORGANISATEUR' not in app.user.roles) and ('ROLE_SPONSOR' not in app.user.roles) %}
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo-container">
@@ -339,11 +464,27 @@
             </div>
 
             <div class="nav-buttons">
-                {% if app.user and hasTickets %}
+                {% if isParticipantUser %}
                     <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
+                    <details class="participant-chip-menu">
+                        <summary class="participant-chip">
+                            <span class="participant-chip-avatar">{{ app.user.initials }}</span>
+                            <span class="participant-chip-meta">
+                                <span class="participant-chip-name">{{ app.user.fullName }}</span>
+                                <span class="participant-chip-role">Participant</span>
+                            </span>
+                        </summary>
+                        <div class="participant-chip-dropdown">
+                            <a class="participant-chip-action" href="{{ path('app_logout') }}">Déconnexion</a>
+                        </div>
+                    </details>
+                {% elseif app.user %}
+                    <button class="btn-login" onclick="window.location.href='{{ path('app_dashboard') }}'">Back-office</button>
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_logout') }}'">Déconnexion</button>
+                {% else %}
+                    <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
                 {% endif %}
-                <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
-                <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
             </div>
         </div>
     </nav>
@@ -353,6 +494,9 @@
             <h1 class="events-title">Tous les événements</h1>
             <p class="events-subtitle">Découvrez et participez aux événements qui vous intéressent</p>
             <span class="events-kpi" id="eventsCountPill">{{ events|length }} événement(s)</span>
+            <div class="events-header-actions">
+                <button type="button" class="calendar-open-btn" id="openCalendarBtn">Voir le calendrier</button>
+            </div>
         </header>
 
         <section class="events-toolbar-wrap">
@@ -392,12 +536,19 @@
                     <article class="event-card"
                              data-title="{{ event.title|lower }}"
                              data-location="{{ (event.location ?? '')|lower }}"
+                             data-category-name="{{ (event.category ? event.category.name : '')|lower }}"
                              data-category="{{ event.category ? event.category.id : '' }}"
                              data-price="{{ event.isFree ? 'free' : 'paid' }}"
                              data-start="{{ event.startDate ? event.startDate|date('U') : 0 }}">
-                        <div class="event-cover">
+                        <div class="event-cover {{ event.imageUrl ? 'has-image' : 'no-image' }}">
+                            {% if event.imageUrl %}
+                                <img class="event-cover-image" src="{{ asset(event.imageUrl) }}" alt="Affiche de {{ event.title }}">
+                            {% endif %}
                             <span class="event-status {{ statusType }}">{{ statusType == 'upcoming' ? 'À venir' : 'En cours' }}</span>
-                            <span class="event-badge">{{ event.category ? ((event.category.icon ?? '📁') ~ ' ' ~ event.category.name) : 'Sans catégorie' }}</span>
+                            <span
+                                class="event-badge"
+                                style="background: {{ event.category and event.category.color ? event.category.color : '#4caf50' }}; color: #ffffff;"
+                            >{{ event.category ? ((event.category.icon ?? '📁') ~ ' ' ~ event.category.name) : 'Sans catégorie' }}</span>
                         </div>
                         <div class="event-body">
                             <h2 class="event-title">{{ event.title }}</h2>
@@ -432,6 +583,21 @@
         <div class="footer-lite">© 2026 EventFlow - Tous droits réservés</div>
     </main>
 
+    <div class="calendar-modal" id="calendarModal" aria-hidden="true">
+        <div class="calendar-modal-panel" role="dialog" aria-modal="true" aria-label="Calendrier des événements">
+            <div class="calendar-modal-head">
+                <h2 class="calendar-modal-title">Calendrier des événements</h2>
+                <button type="button" class="calendar-close-btn" id="closeCalendarBtn">Fermer</button>
+            </div>
+            <div class="calendar-modal-body">
+                <div id="eventsCalendarInModal"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/fr.global.js"></script>
+
     <script>
         (() => {
             const searchInput = document.getElementById('searchInput');
@@ -447,6 +613,123 @@
             const total = cards.length;
             const perPage = 6;
             let currentPage = 1;
+
+            const openCalendarBtn = document.getElementById('openCalendarBtn');
+            const calendarModal = document.getElementById('calendarModal');
+            const closeCalendarBtn = document.getElementById('closeCalendarBtn');
+            const calendarEl = document.getElementById('eventsCalendarInModal');
+            let modalCalendar = null;
+
+            const hexToRgba = (color, alpha) => {
+                if (!color || typeof color !== 'string') {
+                    return `rgba(21, 101, 192, ${alpha})`;
+                }
+
+                const value = color.trim();
+                if (value.startsWith('#')) {
+                    const hex = value.slice(1);
+                    if (hex.length === 3) {
+                        const r = parseInt(hex[0] + hex[0], 16);
+                        const g = parseInt(hex[1] + hex[1], 16);
+                        const b = parseInt(hex[2] + hex[2], 16);
+                        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                    }
+                    if (hex.length === 6) {
+                        const r = parseInt(hex.slice(0, 2), 16);
+                        const g = parseInt(hex.slice(2, 4), 16);
+                        const b = parseInt(hex.slice(4, 6), 16);
+                        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                    }
+                }
+
+                return value;
+            };
+
+            const applyDayCellBackgrounds = (calendar) => {
+                if (!calendarEl) {
+                    return;
+                }
+
+                calendarEl.querySelectorAll('.fc-daygrid-day').forEach((dayCell) => {
+                    dayCell.classList.remove('category-tinted');
+                    dayCell.style.removeProperty('--category-day-bg');
+                });
+
+                const appliedDates = new Set();
+                calendar.getEvents().forEach((event) => {
+                    if (!event.startStr) {
+                        return;
+                    }
+
+                    const dateKey = event.startStr.slice(0, 10);
+                    if (!dateKey || appliedDates.has(dateKey)) {
+                        return;
+                    }
+
+                    const dayCell = calendarEl.querySelector(`.fc-daygrid-day[data-date="${dateKey}"]`);
+                    if (!dayCell) {
+                        return;
+                    }
+
+                    const tintedColor = hexToRgba(event.backgroundColor || '#1565c0', 0.16);
+                    dayCell.classList.add('category-tinted');
+                    dayCell.style.setProperty('--category-day-bg', tintedColor);
+                    appliedDates.add(dateKey);
+                });
+            };
+
+            const ensureCalendar = () => {
+                if (modalCalendar || !calendarEl) {
+                    return;
+                }
+
+                modalCalendar = new FullCalendar.Calendar(calendarEl, {
+                    locale: 'fr',
+                    initialView: 'dayGridMonth',
+                    eventDisplay: 'block',
+                    height: 'auto',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                    events: {
+                        url: '{{ path('fc_load_events') }}',
+                        method: 'POST',
+                        extraParams: {
+                            filters: JSON.stringify({ scope: 'participant_upcoming' })
+                        }
+                    },
+                    eventsSet: function () {
+                        applyDayCellBackgrounds(modalCalendar);
+                    },
+                    datesSet: function () {
+                        applyDayCellBackgrounds(modalCalendar);
+                    },
+                    eventClick: function (info) {
+                        if (info.event.url) {
+                            info.jsEvent.preventDefault();
+                            window.location.href = info.event.url;
+                        }
+                    }
+                });
+
+                modalCalendar.render();
+            };
+
+            const openCalendarModal = () => {
+                ensureCalendar();
+                calendarModal.classList.add('open');
+                calendarModal.setAttribute('aria-hidden', 'false');
+                if (modalCalendar) {
+                    modalCalendar.updateSize();
+                }
+            };
+
+            const closeCalendarModal = () => {
+                calendarModal.classList.remove('open');
+                calendarModal.setAttribute('aria-hidden', 'true');
+            };
 
             const getDateBucket = (timestamp) => {
                 const now = new Date();
@@ -525,8 +808,36 @@
                 paginationWrap.appendChild(nextBtn);
             };
 
+            const normalizeText = (value) => {
+                return String(value || '')
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9\s-]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            };
+
+            const matchesPrefixSearch = (query, ...fields) => {
+                const normalizedQuery = normalizeText(query);
+                if (!normalizedQuery) {
+                    return true;
+                }
+
+                const searchable = normalizeText(fields.join(' '));
+                if (!searchable) {
+                    return false;
+                }
+
+                const queryTokens = normalizedQuery.split(' ').filter(Boolean);
+                const words = searchable.split(' ').filter(Boolean);
+
+                // Advanced behavior: each typed token must match the prefix of at least one word.
+                return queryTokens.every((token) => words.some((word) => word.startsWith(token)));
+            };
+
             const applyFilters = () => {
-                const q = (searchInput.value || '').toLowerCase().trim();
+                const q = (searchInput.value || '').trim();
                 const category = categoryFilter.value;
                 const price = priceFilter.value;
                 const date = dateFilter.value;
@@ -534,12 +845,13 @@
                 const filtered = cards.filter((card) => {
                     const title = card.dataset.title || '';
                     const location = card.dataset.location || '';
+                    const categoryName = card.dataset.categoryName || '';
                     const cardCategory = card.dataset.category || '';
                     const cardPrice = card.dataset.price || '';
                     const startTimestamp = Number(card.dataset.start || 0);
                     const cardDateBucket = getDateBucket(startTimestamp);
 
-                    const matchSearch = !q || title.includes(q) || location.includes(q);
+                    const matchSearch = matchesPrefixSearch(q, title, location, categoryName);
                     const matchCategory = !category || category === cardCategory;
                     const matchPrice = !price || price === cardPrice;
                     const matchDate = !date || cardDateBucket === date;
@@ -584,6 +896,21 @@
                 dateFilter.value = '';
                 currentPage = 1;
                 applyFilters();
+            });
+
+            openCalendarBtn.addEventListener('click', openCalendarModal);
+            closeCalendarBtn.addEventListener('click', closeCalendarModal);
+
+            calendarModal.addEventListener('click', (event) => {
+                if (event.target === calendarModal) {
+                    closeCalendarModal();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && calendarModal.classList.contains('open')) {
+                    closeCalendarModal();
+                }
             });
 
             applyFilters();

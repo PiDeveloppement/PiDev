@@ -95,6 +95,32 @@
             white-space: pre-line;
         }
 
+        .show-poster-wrap {
+            border: 1px solid #dbe5f2;
+            border-radius: 14px;
+            background: #f8fbff;
+            min-height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .show-poster-wrap img {
+            display: block;
+            width: 100%;
+            max-height: 560px;
+            object-fit: contain;
+        }
+
+        .show-poster-empty {
+            color: #5f738c;
+            font-size: 14px;
+            text-align: center;
+            padding: 16px;
+        }
+
         .show-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -130,6 +156,64 @@
             font-size: 28px;
             font-weight: 800;
             margin-bottom: 18px;
+        }
+
+        .weather-panel {
+            border: 1px solid #fbbf24;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #fff8e1, #fff3c4);
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .weather-panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .weather-panel-title {
+            margin: 0;
+            color: #92400e;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .weather-panel-icon {
+            font-size: 30px;
+            line-height: 1;
+        }
+
+        .weather-panel-temp {
+            color: #0f172a;
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: -0.4px;
+        }
+
+        .weather-panel-desc {
+            margin-top: 4px;
+            color: #334155;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .weather-panel-meta {
+            margin-top: 10px;
+            display: grid;
+            gap: 4px;
+            color: #475569;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .weather-panel-error {
+            color: #b45309;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.5;
         }
 
         .experience-box {
@@ -253,6 +337,9 @@
     {% set nowTs = 'now'|date('U') %}
     {% set startTs = event.startDate ? event.startDate|date('U') : 0 %}
     {% set statusType = startTs > nowTs ? 'upcoming' : 'live' %}
+    {% set pendingEventId = app.session ? app.session.get('pending_event') : null %}
+    {% set isPendingParticipationForThisEvent = pendingEventId is not null and pendingEventId == event.id %}
+    {% set isParticipantUser = app.user and ('ROLE_ADMIN' not in app.user.roles) and ('ROLE_ORGANISATEUR' not in app.user.roles) and ('ROLE_SPONSOR' not in app.user.roles) %}
 
     <nav class="navbar">
         <div class="nav-container">
@@ -269,11 +356,27 @@
             </div>
 
             <div class="nav-buttons">
-                {% if app.user and hasTickets %}
+                {% if isParticipantUser %}
                     <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
+                    <details class="participant-chip-menu">
+                        <summary class="participant-chip">
+                            <span class="participant-chip-avatar">{{ app.user.initials }}</span>
+                            <span class="participant-chip-meta">
+                                <span class="participant-chip-name">{{ app.user.fullName }}</span>
+                                <span class="participant-chip-role">Participant</span>
+                            </span>
+                        </summary>
+                        <div class="participant-chip-dropdown">
+                            <a class="participant-chip-action" href="{{ path('app_logout') }}">Déconnexion</a>
+                        </div>
+                    </details>
+                {% elseif app.user %}
+                    <button class="btn-login" onclick="window.location.href='{{ path('app_dashboard') }}'">Back-office</button>
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_logout') }}'">Déconnexion</button>
+                {% else %}
+                    <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
                 {% endif %}
-                <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
-                <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
             </div>
         </div>
     </nav>
@@ -305,6 +408,15 @@
 
                 <div class="show-body">
                     <h1 class="show-title">{{ event.title }}</h1>
+
+                    <div class="show-poster-wrap">
+                        {% if event.imageUrl %}
+                            <img src="{{ asset(event.imageUrl) }}" alt="Affiche de {{ event.title }}">
+                        {% else %}
+                            <div class="show-poster-empty">Aucune affiche disponible pour cet événement.</div>
+                        {% endif %}
+                    </div>
+
                     <p class="show-description">{{ event.description ?: 'Description non disponible.' }}</p>
 
                     <div class="show-grid">
@@ -338,6 +450,26 @@
                         </div>
                     </div>
 
+                    <section class="weather-panel">
+                        <div class="weather-panel-head">
+                            <h2 class="weather-panel-title">Météo actuelle</h2>
+                            <div class="weather-panel-icon">{{ eventWeather ? eventWeather.icon : '🌤️' }}</div>
+                        </div>
+                        {% if eventWeather %}
+                            <div class="weather-panel-temp">{{ eventWeather.temperature|number_format(1, '.', ' ') }}°C</div>
+                            <div class="weather-panel-desc">{{ eventWeather.description }}</div>
+                            <div class="weather-panel-meta">
+                                <div>📍 {{ eventWeather.governorate }}</div>
+                                <div>💨 {{ eventWeather.windSpeed }} km/h</div>
+                                <div>💧 {{ eventWeather.humidity }} %</div>
+                            </div>
+                        {% elseif weatherError %}
+                            <div class="weather-panel-error">{{ weatherError }}</div>
+                        {% else %}
+                            <div class="weather-panel-error">Aucune météo disponible pour cet événement.</div>
+                        {% endif %}
+                    </section>
+
                     <div class="show-price">{{ event.isFree ? 'Gratuit' : (event.ticketPrice|number_format(2, '.', ' ') ~ ' TND') }}</div>
 
                     <section class="experience-box">
@@ -351,8 +483,14 @@
 
                     <div class="show-actions">
                         <a class="show-btn secondary" href="{{ path('app_public_events') }}">Voir les autres événements</a>
-                        <a class="show-btn primary" href="{{ path('app_login', {'pending_event': event.id}) }}">Participer</a>
-                        <a class="show-btn primary" href="{{ path('app_quiz_start', {'event_id': event.id}) }}" style="background: #9c27b0;">🎯 Quiz</a>
+                        {% if hasEventTicket|default(false) %}
+                            <a class="show-btn primary" href="{{ path('app_my_tickets') }}">Voir mon billet</a>
+                        {% else %}
+                            <form method="post" action="{{ path('app_public_event_participate', {'id': event.id}) }}" style="display:inline-flex;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('participate_event_' ~ event.id) }}">
+                                <button type="submit" class="show-btn primary">{{ isPendingParticipationForThisEvent ? 'Confirmer ma participation' : 'Participer' }}</button>
+                            </form>
+                        {% endif %}
                     </div>
                 </div>
             </article>

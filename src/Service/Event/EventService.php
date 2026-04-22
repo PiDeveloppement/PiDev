@@ -152,7 +152,7 @@ class EventService
                 continue;
             }
 
-            $remoteResult = $this->googleCalendarWriteService->fetchRemoteEventByLocalId($event->getId());
+            $remoteResult = $this->googleCalendarWriteService->fetchRemoteEventByLocalId($event->getId(), $event);
 
             if (!(bool) ($remoteResult['ok'] ?? false)) {
                 $stats['failed']++;

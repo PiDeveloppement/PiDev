@@ -69,17 +69,16 @@ class PasswordResetService
      */
     private function deactivateExistingTokens(UserModel $user): void
     {
-        $activeTokens = $this->tokenRepository->findActiveByUser($user->getId());
+        $activeTokens = $this->tokenRepository->findValidByUser($user);
         
         foreach ($activeTokens as $token) {
-            $token->setUsed(true);
-            $this->entityManager->persist($token);
+            $this->entityManager->remove($token);
         }
         
         $this->entityManager->flush();
         
         if (count($activeTokens) > 0) {
-            $this->logger->info('🔄 ' . count($activeTokens) . ' anciens tokens désactivés');
+            $this->logger->info('🔄 ' . count($activeTokens) . ' anciens tokens supprimés');
         }
     }
 
@@ -113,13 +112,7 @@ class PasswordResetService
         }
     }
 
-    /**
-     * Récupère l'entité token à partir du token string
-     */
-    private function getTokenEntity(string $token): ?PasswordResetToken
-    {
-        return $this->tokenRepository->findOneBy(['token' => $token]);
-    }
+    
 
     /**
      * Marque un token comme utilisé
@@ -392,4 +385,13 @@ class PasswordResetService
         $this->currentUserId = $userId;
         return $this;
     }
+    // Ajoutez cette méthode dans PasswordResetService.php
+
+/**
+ * Récupère l'entité token à partir du token string
+ */
+public function getTokenEntity(string $token): ?PasswordResetToken
+{
+    return $this->tokenRepository->findOneBy(['token' => $token]);
+}
 }
