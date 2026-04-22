@@ -4,8 +4,8 @@
 
 /.env
 
-
-
+/.env.example
+/.env.dev
 /.env.local
 /.env.local.php
 /.env.*.local
