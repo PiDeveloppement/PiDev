@@ -19,6 +19,9 @@
             const phoneInput = document.getElementById('{{ form.phone.vars.id }}');
             const taxInput = document.getElementById('{{ form.taxId.vars.id }}');
             const industryInput = document.getElementById('{{ form.industry.vars.id }}');
+            const contributionInput = document.getElementById('{{ form.contributionName.vars.id }}');
+            const contributionCurrencyInput = document.getElementById('{{ form.contributionCurrency.vars.id }}');
+            const contributionPreview = document.getElementById('admin-contribution-tnd');
 
             if (!input || !previewImg || !previewPlaceholder || !fileName) {
                 return;
@@ -88,6 +91,66 @@
                     industryInput.value = industryInput.value.replace(/[^A-Za-zÀ-ÿ\s\-\&,]/g, '');
                 });
             }
+
+            const renderContribution = (value) => {
+                if (!contributionPreview) {
+                    return;
+                }
+
+                if (value === null) {
+                    contributionPreview.textContent = '-';
+                    return;
+                }
+
+                contributionPreview.textContent = Number(value).toLocaleString('fr-FR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }) + ' DT';
+            };
+
+            const updateContributionPreview = async () => {
+                if (!contributionInput || !contributionCurrencyInput) {
+                    return;
+                }
+
+                const amount = parseFloat(String(contributionInput.value || '').replace(',', '.'));
+                const currency = contributionCurrencyInput.value || 'TND';
+
+                if (!Number.isFinite(amount) || amount <= 0) {
+                    renderContribution(null);
+                    return;
+                }
+
+                if (currency === 'TND') {
+                    renderContribution(amount);
+                    return;
+                }
+
+                try {
+                    const url = `{{ path('app_currency_convert') }}?amount=${encodeURIComponent(String(amount))}&from=${encodeURIComponent(currency)}&to=TND`;
+                    const response = await fetch(url);
+                    const payload = await response.json();
+
+                    if (!response.ok || !payload.ok) {
+                        renderContribution(null);
+                        return;
+                    }
+
+                    renderContribution(payload.converted);
+                } catch (error) {
+                    renderContribution(null);
+                }
+            };
+
+            if (contributionInput) {
+                contributionInput.addEventListener('input', updateContributionPreview);
+            }
+
+            if (contributionCurrencyInput) {
+                contributionCurrencyInput.addEventListener('change', updateContributionPreview);
+            }
+
+            updateContributionPreview();
         });
     </script>
 {% endblock %}
@@ -130,6 +193,10 @@
                         <label class="sponsor-rich-label" for="{{ form.contributionName.vars.id }}"><span class="sponsor-inline-icon">&#128184;</span> Contribution (TND)</label>
                         {{ form_widget(form.contributionName) }}
                         {{ form_errors(form.contributionName) }}
+                        <label class="sponsor-rich-label" for="{{ form.contributionCurrency.vars.id }}" style="margin-top:10px;"><span class="sponsor-inline-icon">&#128177;</span> Devise contribution</label>
+                        {{ form_widget(form.contributionCurrency) }}
+                        {{ form_errors(form.contributionCurrency) }}
+                        <div class="field-help" style="margin-top:8px;">Equivalent TND: <strong id="admin-contribution-tnd">-</strong></div>
                     </div>
                 </div>
             </section>

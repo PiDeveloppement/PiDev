@@ -75,6 +75,14 @@ class AIChatController extends AbstractController
         $this->roleRepository = $roleRepository;
     }
 
+    #[Route('/ai-assistant', name: 'app_ai_assistant_index')]
+    public function index(): Response
+    {
+        return $this->render('ai_assistant/index.html.twig', [
+            'modelName' => 'Llama 3.1-8b'
+        ]);
+    }
+
    #[Route('/send', name: 'app_ai_chat_send', methods: ['POST'])]
 public function sendMessage(Request $request): JsonResponse
 {

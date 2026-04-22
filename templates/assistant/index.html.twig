@@ -1,0 +1,304 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Assistant IA Gestion - EventFlow{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .ai-shell {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 18px;
+        }
+
+        .ai-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        }
+
+        .ai-side {
+            padding: 14px;
+            height: fit-content;
+        }
+
+        .ai-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .ai-sub {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 14px;
+        }
+
+        .ai-chip {
+            width: 100%;
+            border: 1px solid #dbeafe;
+            background: #eff6ff;
+            color: #1e3a8a;
+            border-radius: 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 10px;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .ai-main {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            min-height: 72vh;
+        }
+
+        .ai-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ai-head-left h2 {
+            margin: 0;
+            font-size: 16px;
+            color: #0f172a;
+        }
+
+        .ai-head-left p {
+            margin: 2px 0 0;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .ai-model-badge {
+            background: #ecfeff;
+            color: #155e75;
+            border: 1px solid #a5f3fc;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .ai-messages {
+            padding: 14px;
+            overflow-y: auto;
+            background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        }
+
+        .ai-msg {
+            max-width: 82%;
+            padding: 11px 13px;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .ai-msg.user {
+            margin-left: auto;
+            background: #1d4ed8;
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-msg.bot {
+            margin-right: auto;
+            background: #fff;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+        }
+
+        .ai-composer {
+            border-top: 1px solid #e2e8f0;
+            background: #fff;
+            padding: 12px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+        }
+
+        .ai-input {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 11px 12px;
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .ai-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .ai-send {
+            border: none;
+            border-radius: 12px;
+            padding: 0 16px;
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .ai-send:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 1024px) {
+            .ai-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .ai-main {
+                min-height: 68vh;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block admin_content %}
+    <div class="ai-shell">
+        <aside class="ai-card ai-side">
+            <div class="ai-title">Assistant IA</div>
+            <div class="ai-sub">Nouveau module Ollama, separe du chat existant.</div>
+
+            <button class="ai-chip" type="button" data-prompt="Quels sont les budgets les plus critiques actuellement et pourquoi ?">
+                Budgets critiques
+            </button>
+            <button class="ai-chip" type="button" data-prompt="Resume les depenses par categorie et propose 3 optimisations.">
+                Optimiser depenses
+            </button>
+            <button class="ai-chip" type="button" data-prompt="Donne un diagnostic rapide des sponsors: volume, moyenne, top entreprises.">
+                Diagnostic sponsors
+            </button>
+            <button class="ai-chip" type="button" data-prompt="Compare depenses et budget global, puis propose un plan d action en 5 points.">
+                Plan d action global
+            </button>
+        </aside>
+
+        <section class="ai-card ai-main">
+            <header class="ai-head">
+                <div class="ai-head-left" style="display:flex;align-items:center;gap:10px;">
+                    <img src="{{ asset('images/chatbot.png') }}" alt="Chatbot" style="width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid #e2e8f0;">
+                    <div>
+                        <h2>Copilote Gestion Sponsor/Budget/Depense</h2>
+                        <p>Analyse metier en langage naturel avec contexte de la base.</p>
+                    </div>
+                </div>
+                <span class="ai-model-badge">Modele: {{ modelName }}</span>
+            </header>
+
+            <div id="aiMessages" class="ai-messages">
+                <div class="ai-msg bot">
+                    Constat :<br>
+                    Je suis pret a t aider sur Sponsor, Budget et Depense.<br><br>
+                    Chiffres exacts :<br>
+                    Je reponds a partir des donnees reelles disponibles.<br><br>
+                    ⚡ Actions recommandées :<br>
+                    Pose une question claire (ex : budgets critiques, top depenses, sponsors).
+                </div>
+            </div>
+
+            <form id="aiForm" class="ai-composer">
+                <input id="aiInput" class="ai-input" type="text" placeholder="Ex: Quelles sont les categories de depenses qui coutent le plus ce mois ?" autocomplete="off">
+                <button id="aiSend" class="ai-send" type="submit">Envoyer</button>
+            </form>
+        </section>
+    </div>
+
+    <script>
+        (function () {
+            const form = document.getElementById('aiForm');
+            const input = document.getElementById('aiInput');
+            const sendBtn = document.getElementById('aiSend');
+            const messages = document.getElementById('aiMessages');
+            const chips = document.querySelectorAll('.ai-chip');
+            const history = [];
+
+            function appendMessage(role, content) {
+                const div = document.createElement('div');
+                div.className = 'ai-msg ' + (role === 'user' ? 'user' : 'bot');
+                div.textContent = content;
+                messages.appendChild(div);
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            function setLoading(loading) {
+                sendBtn.disabled = loading;
+                input.disabled = loading;
+                sendBtn.textContent = loading ? '...' : 'Envoyer';
+            }
+
+            async function askAssistant(question) {
+                appendMessage('user', question);
+                history.push({ role: 'user', content: question });
+                setLoading(true);
+
+                try {
+                    const response = await fetch('{{ path('app_ai_assistant_ask') }}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            question: question,
+                            history: history,
+                        }),
+                    });
+
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.error || 'Erreur serveur');
+                    }
+
+                    const answer = String(payload.answer || '').trim() || 'Pas de reponse retournee.';
+                    appendMessage('assistant', answer);
+                    history.push({ role: 'assistant', content: answer });
+                } catch (e) {
+                    appendMessage('assistant', 'Erreur: ' + (e.message || 'Impossible de contacter le service IA.'));
+                } finally {
+                    setLoading(false);
+                    input.focus();
+                }
+            }
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const question = input.value.trim();
+                if (!question) {
+                    return;
+                }
+
+                input.value = '';
+                askAssistant(question);
+            });
+
+            chips.forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    const prompt = chip.getAttribute('data-prompt') || '';
+                    if (!prompt) {
+                        return;
+                    }
+
+                    input.value = '';
+                    askAssistant(prompt);
+                });
+            });
+        })();
+    </script>
+{% endblock %}

@@ -58,9 +58,9 @@ class Budget
         return $this->initialBudget;
     }
 
-    public function setInitialBudget(float|string $initialBudget): self
+    public function setInitialBudget(float|string|null $initialBudget): self
     {
-        if ($initialBudget === '') {
+        if ($initialBudget === null || $initialBudget === '') {
             $this->initialBudget = '';
 
             return $this;

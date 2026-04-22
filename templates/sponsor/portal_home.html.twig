@@ -1,11 +1,487 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recommandations partenaire - EventFlow</title>
-    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
-    <script src="{{ asset('js/admin-live-search.js') }}" defer></script>
+    <title>Recommandations sponsor - EventFlow</title>
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}?v=20260416-ia-focus">
+    <style>
+        /* Navbar aligned with landing dimensions */
+        .portal-navbar {
+            height: 80px;
+            padding: 0 60px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #ffffff;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .portal-logo-wrap img {
+            width: auto;
+            height: 56px;
+            max-width: 180px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .portal-nav-links {
+            display: flex;
+            gap: 40px;
+            position: relative;
+            top: -4px;
+        }
+
+        .portal-nav-link {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .portal-account-menu {
+            position: relative;
+            top: -4px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .portal-account-menu summary {
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .portal-account-menu summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .portal-account-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #7fb2ea;
+            background: linear-gradient(180deg, #3f8fe2 0%, #2d79ca 100%);
+            border-radius: 20px;
+            padding: 4px 10px 4px 6px;
+            color: #ffffff;
+            min-height: 42px;
+        }
+
+        .portal-account-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #0f4d90;
+            border: 2px solid rgba(255, 255, 255, 0.75);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .portal-account-meta {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .portal-account-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .portal-account-role {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.84);
+        }
+
+        .portal-account-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 180px;
+            background: #ffffff;
+            border: 1px solid #d9e2ef;
+            border-radius: 12px;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
+            padding: 8px;
+            z-index: 1200;
+        }
+
+        .portal-account-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            background: transparent;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .portal-account-action:hover {
+            background: #f3f7fd;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            position: relative;
+            top: -4px;
+        }
+
+        .btn-login {
+            background: transparent;
+            color: #0D47A1;
+            font-weight: 700;
+            border: 1.5px solid #0D47A1;
+            border-radius: 8px;
+            padding: 8px 24px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-login:hover {
+            background: rgba(13, 71, 161, 0.05);
+        }
+
+        .btn-signup {
+            background: #0D47A1;
+            color: white;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 24px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 4px 8px rgba(13, 71, 161, 0.3);
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-signup:hover {
+            background: #0A3A80;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(13, 71, 161, 0.4);
+        }
+
+        .portal-translate {
+            position: relative;
+            top: -4px;
+            margin-right: 12px;
+        }
+
+        .portal-translate-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 8px 14px;
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(22, 163, 74, 0.3);
+        }
+
+        .portal-translate-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 180px;
+            background: #fff;
+            border: 1px solid #d9e2ef;
+            border-radius: 12px;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
+            padding: 8px;
+            display: none;
+            z-index: 1400;
+        }
+
+        .portal-translate-menu.open {
+            display: block;
+        }
+
+        .portal-translate-opt {
+            width: 100%;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #0f172a;
+            border-radius: 8px;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 6px;
+        }
+
+        .portal-translate-opt:last-child {
+            margin-bottom: 0;
+        }
+
+        .portal-page {
+            margin-top: 80px;
+        }
+
+        .portal-fx-premium {
+            margin: 16px 0 18px;
+            border: 1px solid #d4e4fb;
+            border-radius: 20px;
+            padding: 14px;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.14), transparent 34%),
+                radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.12), transparent 32%),
+                linear-gradient(145deg, #f9fcff 0%, #f7fbff 55%, #f4fff8 100%);
+            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.09);
+        }
+
+        .portal-fx-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .portal-fx-head h2 {
+            margin: 0;
+            color: #0f172a;
+            font-size: 20px;
+            letter-spacing: -0.3px;
+        }
+
+        .portal-fx-head p {
+            margin: 4px 0 0;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        .portal-fx-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .portal-fx-controls label {
+            color: #1e3a8a;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .portal-fx-controls select {
+            border: 1px solid #b8cef1;
+            border-radius: 9px;
+            min-height: 36px;
+            padding: 0 9px;
+            color: #0f172a;
+            font-weight: 700;
+            background: #ffffff;
+            outline: none;
+            font-size: 13px;
+        }
+
+        .portal-fx-controls button {
+            border: none;
+            border-radius: 9px;
+            min-height: 36px;
+            padding: 0 11px;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 13px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            cursor: pointer;
+            box-shadow: 0 8px 14px rgba(37, 99, 235, 0.23);
+        }
+
+        .portal-fx-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.38fr) minmax(260px, 0.9fr);
+            gap: 10px;
+        }
+
+        .portal-fx-chart-card,
+        .portal-fx-rates-card {
+            border: 1px solid #d7e5f8;
+            border-radius: 14px;
+            background: #ffffff;
+            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+            padding: 10px;
+        }
+
+        .portal-fx-pair {
+            color: #1d4ed8;
+            font-weight: 800;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .portal-fx-chart-wrap {
+            position: relative;
+            height: 180px;
+        }
+
+        .portal-fx-empty {
+            display: none;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: 1px dashed #f59e0b;
+            background: #fff7ed;
+            color: #9a3412;
+            padding: 9px 10px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .portal-fx-rates-card h3 {
+            margin: 0;
+            color: #0f172a;
+            font-size: 15px;
+        }
+
+        .portal-fx-rates-grid {
+            margin-top: 8px;
+            display: grid;
+            gap: 7px;
+        }
+
+        .portal-fx-rate-item {
+            border: 1px solid #d9e5f8;
+            border-radius: 10px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: linear-gradient(180deg, #ffffff, #f8fbff);
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+            cursor: pointer;
+        }
+
+        .portal-fx-rate-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.10);
+        }
+
+        .portal-fx-rate-item.active {
+            border-color: #3b82f6;
+            background: linear-gradient(180deg, #eff6ff, #ffffff);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.20);
+        }
+
+        .portal-fx-rate-item.error {
+            border-color: #fca5a5;
+            background: linear-gradient(180deg, #fff1f2, #ffffff);
+        }
+
+        .portal-fx-rate-left {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .portal-fx-code {
+            color: #0f172a;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .portal-fx-caption {
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .portal-fx-value {
+            color: #0f172a;
+            font-size: 13px;
+            font-weight: 800;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .portal-fx-value.loading {
+            color: #64748b;
+        }
+
+        .portal-fx-updated {
+            margin: 8px 0 0;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1024px) {
+            .portal-fx-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .portal-fx-chart-wrap {
+                height: 170px;
+            }
+        }
+
+        /* Force compact mode when catalog has only one card */
+        .portal-catalog-grid.single-card-force {
+            display: flex !important;
+            justify-content: flex-start !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+            width: 100%;
+        }
+
+        .portal-catalog-grid.single-card-force .portal-event-card {
+            flex: 0 0 320px !important;
+            width: 320px !important;
+            max-width: 320px !important;
+            min-height: 0 !important;
+        }
+
+        .portal-catalog-grid.single-card-force .portal-event-visual {
+            height: 160px !important;
+        }
+
+        .portal-catalog-grid.single-card-force .portal-card-actions {
+            justify-content: flex-start !important;
+            gap: 8px !important;
+        }
+
+        @media (max-width: 768px) {
+            .portal-catalog-grid.single-card-force {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+            }
+
+            .portal-catalog-grid.single-card-force .portal-event-card {
+                width: 100% !important;
+                max-width: none !important;
+                flex: 1 1 auto !important;
+            }
+        }
+    </style>
 </head>
 <body class="portal-body">
 <nav class="portal-navbar">
@@ -16,26 +492,72 @@
     <div class="portal-nav-links">
         <a class="portal-nav-link" href="{{ path('app_landing') }}">Accueil</a>
         <a class="portal-nav-link" href="{{ path('app_public_events') }}">Evenements</a>
-        <a class="portal-nav-link active" href="{{ path('app_sponsor_portal') }}">Recommandations partenaire</a>
+        <a class="portal-nav-link active" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
         <a class="portal-nav-link" href="{{ path('app_landing') }}#features">Fonctionnalites</a>
         <a class="portal-nav-link" href="{{ path('app_feedback_view') }}">Feedback</a>
         <a class="portal-nav-link" href="{{ path('app_landing') }}#contact">Contact</a>
     </div>
 
-    <div>
+    <div style="display:flex; align-items:center;">
+        <div class="portal-translate" id="portalTranslateWidget">
+            <button type="button" class="portal-translate-btn" id="portalTranslateToggle"><i class="fas fa-language"></i> Traduire</button>
+            <div class="portal-translate-menu" id="portalTranslateMenu">
+                <button type="button" class="portal-translate-opt" data-lang="original">Originale (sans traduction)</button>
+                <button type="button" class="portal-translate-opt" data-lang="fr">Francais</button>
+                <button type="button" class="portal-translate-opt" data-lang="en">English</button>
+                <button type="button" class="portal-translate-opt" data-lang="ar">Arabic</button>
+                <button type="button" class="portal-translate-opt" data-lang="es">Espanol</button>
+                <button type="button" class="portal-translate-opt" data-lang="de">Deutsch</button>
+                <button type="button" class="portal-translate-opt" data-lang="it">Italiano</button>
+            </div>
+        </div>
         {% if app.user %}
-            <a class="portal-user-btn" href="{{ path('app_logout') }}">{{ app.user.fullName ?: 'Compte' }} ▾</a>
+            <details class="portal-account-menu">
+                <summary class="portal-account-chip">
+                    <span class="portal-account-avatar">{{ app.user.initials ?: (app.user.fullName ? app.user.fullName|slice(0, 1)|upper : 'C') }}</span>
+                    <span class="portal-account-meta">
+                        <span class="portal-account-name">{{ app.user.fullName ?: 'Compte' }}</span>
+                        <span class="portal-account-role">Sponsor</span>
+                    </span>
+                </summary>
+                <div class="portal-account-dropdown">
+                    <button type="button" class="portal-account-action">Profile</button>
+                    <a class="portal-account-action" href="{{ path('app_logout') }}">Deconnexion</a>
+                </div>
+            </details>
         {% else %}
-            <a class="portal-user-btn" href="{{ path('app_login') }}">Connexion</a>
+            <div class="nav-buttons">
+                <a class="btn-login" href="{{ path('app_login') }}">Connexion</a>
+                <a class="btn-signup" href="{{ path('app_register') }}">Inscription</a>
+            </div>
         {% endif %}
     </div>
 </nav>
 
-<main class="portal-page" data-live-search-root>
+<main class="portal-page">
     <div class="flash-wrap" style="margin-bottom: 10px;">
         {% for message in app.flashes('success') %}<div class="flash-success">{{ message }}</div>{% endfor %}
         {% for message in app.flashes('error') %}<div class="flash-error">{{ message }}</div>{% endfor %}
     </div>
+
+    {% if isSponsorSession and upcomingActionAlerts is not empty %}
+        <section class="portal-alert-strip" aria-label="Alertes opportunites 72h">
+            <div class="portal-alert-strip-head">?? Alertes opportunite (72h)</div>
+            <div class="portal-alert-strip-grid">
+                {% for alert in upcomingActionAlerts %}
+                    <article class="portal-alert-card">
+                        <div class="portal-alert-top">
+                            <span class="portal-alert-level">Urgent</span>
+                            <span class="portal-alert-time">{{ alert.hoursLeft }}h restantes</span>
+                        </div>
+                        <h3>{{ alert.title }}</h3>
+                        <p>{{ alert.message }}</p>
+                        <a href="{{ path('app_sponsor_portal_sponsorize', {id: alert.eventId}) }}">Sponsoriser maintenant</a>
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
 
     <section class="portal-hero">
         <div class="portal-hero-top">
@@ -44,7 +566,7 @@
                 <p>Decouvrez les evenements recommandes, trouvez de nouvelles opportunites de partenariat et suivez vos collaborations en un seul endroit.</p>
             </div>
             <div class="portal-hero-actions">
-                <a class="portal-hero-btn" href="{{ path('app_sponsor_portal_history') }}">📋 Mes contributions</a>
+                <a class="portal-hero-btn" href="{{ path('app_sponsor_portal_history') }}">?? Historique contributions</a>
                 {% if isSponsorSession %}
                     <a class="portal-hero-btn soft" href="{{ path('app_sponsor_portal_export_csv') }}">Exporter CSV</a>
                 {% endif %}
@@ -53,36 +575,27 @@
 
         <div class="portal-hero-stats">
             <div class="portal-stat-card">
-                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">📦</div>
+                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">??</div>
                 <div class="portal-stat-info">
-                    <div class="portal-stat-label">TOTAL ÉVÉNEMENTS</div>
+                    <div class="portal-stat-label">TOTAL �V�NEMENTS</div>
                     <div class="portal-stat-value">{{ eventCounts.total }}</div>
                     <div class="portal-stat-note">Catalogue visible pour votre prospection</div>
                     <div class="portal-stat-meter"><span style="width: 88%;"></span></div>
                 </div>
             </div>
             <div class="portal-stat-card">
-                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">🎯</div>
+                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">??</div>
                 <div class="portal-stat-info">
-                    <div class="portal-stat-label">À SPONSORISER</div>
+                    <div class="portal-stat-label">� SPONSORISER</div>
                     <div class="portal-stat-value">{{ eventCounts.sponsorable }}</div>
                     <div class="portal-stat-note">Opportunites actuellement ouvertes</div>
                     <div class="portal-stat-meter"><span style="width: 72%;"></span></div>
                 </div>
             </div>
             <div class="portal-stat-card">
-                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">⚡</div>
+                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">?</div>
                 <div class="portal-stat-info">
-                    <div class="portal-stat-label">EN COURS</div>
-                    <div class="portal-stat-value">0</div>
-                    <div class="portal-stat-note">Partenariats actifs sur le terrain</div>
-                    <div class="portal-stat-meter"><span style="width: 24%;"></span></div>
-                </div>
-            </div>
-            <div class="portal-stat-card">
-                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">✓</div>
-                <div class="portal-stat-info">
-                    <div class="portal-stat-label">HISTORIQUE</div>
+                    <div class="portal-stat-label">MES CONTRIBUTIONS</div>
                     <div class="portal-stat-value">{{ isSponsorSession ? mySponsors|length : 0 }}</div>
                     <div class="portal-stat-note">Vos collaborations deja enregistrees</div>
                     <div class="portal-stat-meter"><span style="width: {{ isSponsorSession and mySponsors|length > 0 ? 62 : 18 }}%;"></span></div>
@@ -90,31 +603,80 @@
             </div>
         </div>
 
-        <form class="portal-search" method="get" action="{{ path('app_sponsor_portal') }}">
-            <div class="portal-search-main">
-                <input type="text" name="q" value="{{ search|default('') }}" placeholder="Rechercher un evenement..." autocomplete="off" data-live-search-input>
-                <select name="sort" onchange="this.form.requestSubmit()">
-                <option value="date_asc" {{ sort == 'date_asc' ? 'selected' : '' }}>Tri: Date proche</option>
-                <option value="date_desc" {{ sort == 'date_desc' ? 'selected' : '' }}>Tri: Date lointaine</option>
-                <option value="title_asc" {{ sort == 'title_asc' ? 'selected' : '' }}>Tri: Titre A-Z</option>
-                <option value="title_desc" {{ sort == 'title_desc' ? 'selected' : '' }}>Tri: Titre Z-A</option>
-                <option value="location_asc" {{ sort == 'location_asc' ? 'selected' : '' }}>Tri: Lieu</option>
-                </select>
-            </div>
-            {% if isSponsorSession %}
-                <select name="my_sort" onchange="this.form.requestSubmit()">
-                    <option value="recent" {{ mySort == 'recent' ? 'selected' : '' }}>Mes partenariats: recents</option>
-                    <option value="amount_desc" {{ mySort == 'amount_desc' ? 'selected' : '' }}>Montant decroissant</option>
-                    <option value="amount_asc" {{ mySort == 'amount_asc' ? 'selected' : '' }}>Montant croissant</option>
-                    <option value="company_asc" {{ mySort == 'company_asc' ? 'selected' : '' }}>Entreprise A-Z</option>
-                </select>
-            {% endif %}
-            <button type="submit">Rechercher</button>
-            {% if search is defined and search is not empty %}
-                <a href="{{ path('app_sponsor_portal') }}">Reinitialiser</a>
-            {% endif %}
-        </form>
     </section>
+
+    <section class="portal-fx-premium" aria-label="Suivi dynamique des devises">
+        <div class="portal-fx-head">
+            <div>
+                <h2>?? Taux de change en direct</h2>
+                <p>Historique sur 7 jours et mise a jour multi-devises pour mieux planifier vos budgets sponsor.</p>
+            </div>
+            <div class="portal-fx-controls">
+                <label for="portalFxCurrency">Devise:</label>
+                <select id="portalFxCurrency" aria-label="Selection de devise">
+                    <option value="EUR">Euro (EUR)</option>
+                    <option value="USD">Dollar americain (USD)</option>
+                    <option value="GBP">Livre sterling (GBP)</option>
+                    <option value="CHF">Franc suisse (CHF)</option>
+                    <option value="CAD">Dollar canadien (CAD)</option>
+                </select>
+                <button type="button" id="portalFxRefresh">?? Actualiser</button>
+            </div>
+        </div>
+
+        <div class="portal-fx-grid">
+            <article class="portal-fx-chart-card">
+                <div class="portal-fx-pair" id="portalFxPairLabel">1 EUR = ? TND</div>
+                <div class="portal-fx-chart-wrap">
+                    <canvas id="portalFxChart" role="img" aria-label="Historique du taux de change contre le TND"></canvas>
+                </div>
+                <div class="portal-fx-empty" id="portalFxEmpty">Impossible de charger l historique pour la devise selectionnee.</div>
+            </article>
+
+            <article class="portal-fx-rates-card">
+                <h3>?? Panorama devises</h3>
+                <div class="portal-fx-rates-grid" id="portalFxRates">
+                    <div class="portal-fx-rate-item active" data-fx-currency="EUR">
+                        <div class="portal-fx-rate-left">
+                            <span class="portal-fx-code">EUR ? TND</span>
+                            <span class="portal-fx-caption">Euro</span>
+                        </div>
+                        <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
+                    </div>
+                    <div class="portal-fx-rate-item" data-fx-currency="USD">
+                        <div class="portal-fx-rate-left">
+                            <span class="portal-fx-code">USD ? TND</span>
+                            <span class="portal-fx-caption">Dollar</span>
+                        </div>
+                        <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
+                    </div>
+                    <div class="portal-fx-rate-item" data-fx-currency="GBP">
+                        <div class="portal-fx-rate-left">
+                            <span class="portal-fx-code">GBP ? TND</span>
+                            <span class="portal-fx-caption">Livre sterling</span>
+                        </div>
+                        <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
+                    </div>
+                    <div class="portal-fx-rate-item" data-fx-currency="CHF">
+                        <div class="portal-fx-rate-left">
+                            <span class="portal-fx-code">CHF ? TND</span>
+                            <span class="portal-fx-caption">Franc suisse</span>
+                        </div>
+                        <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
+                    </div>
+                    <div class="portal-fx-rate-item" data-fx-currency="CAD">
+                        <div class="portal-fx-rate-left">
+                            <span class="portal-fx-code">CAD ? TND</span>
+                            <span class="portal-fx-caption">Dollar canadien</span>
+                        </div>
+                        <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
+                    </div>
+                </div>
+                <p class="portal-fx-updated" id="portalFxUpdatedAt">Derniere mise a jour: -</p>
+            </article>
+        </div>
+    </section>
+
 
     <!-- Section Graphiques de Distribution -->
     <section class="portal-distribution-showcase">
@@ -138,7 +700,7 @@
                     </svg>
                 </div>
                 <div class="distribution-info">
-                    <div class="distribution-chip atelier">Segment principal</div>
+                    <div class="distribution-chip atelier">Tendance dominante</div>
                     <h3>Ateliers</h3>
                     <p>Les ateliers representent la majorite des evenements a soutenir</p>
                     <div class="distribution-bar"><span class="atelier" style="width: 35%;"></span></div>
@@ -163,7 +725,7 @@
                     </svg>
                 </div>
                 <div class="distribution-info">
-                    <div class="distribution-chip conference">Visibilite forte</div>
+                    <div class="distribution-chip conference">Impact premium</div>
                     <h3>Conferences</h3>
                     <p>Opportunites de networking et de B2B a forte visibilite</p>
                     <div class="distribution-bar"><span class="conference" style="width: 25%;"></span></div>
@@ -188,7 +750,7 @@
                     </svg>
                 </div>
                 <div class="distribution-info">
-                    <div class="distribution-chip autres">Mix etendu</div>
+                    <div class="distribution-chip autres">Diversite active</div>
                     <h3>Autres</h3>
                     <p>Seminaires, formations et evenements specialises</p>
                     <div class="distribution-bar"><span class="autres" style="width: 40%;"></span></div>
@@ -198,55 +760,176 @@
         </div>
     </section>
 
-    <section class="portal-box">
-        <div class="portal-box-head">Evenements recommandes</div>
+        <form class="portal-search" method="get" action="{{ path('app_sponsor_portal') }}">
+            <div class="portal-search-main">
+                <input type="text" name="q" value="{{ search|default('') }}" placeholder="Rechercher un evenement..." autocomplete="off" list="events-list" data-sponsor-suggest>
+                <datalist id="events-list"></datalist>
+            <select name="sort" onchange="this.form.requestSubmit()">
+            <option value="date_asc" {{ sort == 'date_asc' ? 'selected' : '' }}>Tri: Date proche</option>
+            <option value="date_desc" {{ sort == 'date_desc' ? 'selected' : '' }}>Tri: Date lointaine</option>
+            <option value="title_asc" {{ sort == 'title_asc' ? 'selected' : '' }}>Tri: Titre A-Z</option>
+            <option value="title_desc" {{ sort == 'title_desc' ? 'selected' : '' }}>Tri: Titre Z-A</option>
+            <option value="location_asc" {{ sort == 'location_asc' ? 'selected' : '' }}>Tri: Lieu</option>
+            </select>
+        </div>
+        {% if isSponsorSession %}
+            <select name="my_sort" onchange="this.form.requestSubmit()">
+                <option value="recent" {{ mySort == 'recent' ? 'selected' : '' }}>Mes partenariats: recents</option>
+                <option value="amount_desc" {{ mySort == 'amount_desc' ? 'selected' : '' }}>Montant decroissant</option>
+                <option value="amount_asc" {{ mySort == 'amount_asc' ? 'selected' : '' }}>Montant croissant</option>
+                <option value="company_asc" {{ mySort == 'company_asc' ? 'selected' : '' }}>Entreprise A-Z</option>
+            </select>
+        {% endif %}
+        <button type="submit">Rechercher</button>
+        {% if search is defined and search is not empty %}
+            <a href="{{ path('app_sponsor_portal') }}">Reinitialiser</a>
+        {% endif %}
+    </form>
+
+    <script>
+        (function () {
+            const input = document.querySelector('[data-sponsor-suggest]');
+            const list = document.getElementById('events-list');
+            if (!input || !list) return;
+
+            let controller = null;
+            const minChars = 1;
+
+            const clearList = () => {
+                list.innerHTML = '';
+            };
+
+            const fetchSuggestions = async (value) => {
+                if (controller) {
+                    controller.abort();
+                }
+                controller = new AbortController();
+
+                const url = `{{ path('app_sponsor_portal_suggestions') }}?q=${encodeURIComponent(value)}`;
+                const response = await fetch(url, { signal: controller.signal });
+                if (!response.ok) return [];
+                return response.json();
+            };
+
+            input.addEventListener('input', async (event) => {
+                const value = event.target.value.trim();
+                if (value.length < minChars) {
+                    clearList();
+                    return;
+                }
+
+                try {
+                    const items = await fetchSuggestions(value);
+                    clearList();
+                    items.forEach((item) => {
+                        const option = document.createElement('option');
+                        option.value = item.title || '';
+                        option.textContent = item.location ? `${item.title} - ${item.location}` : item.title;
+                        list.appendChild(option);
+                    });
+                } catch (error) {
+                    clearList();
+                }
+            });
+        })();
+    </script>
+
+    {# Section �v�nements recommand�s - version moderne et prioritaire #}
+    <section class="portal-box portal-box-recommendations ai-reco-spotlight">
+        <div class="reco-header">
+            <div class="reco-header-text">
+                <span class="reco-header-icon">?</span>
+                <div>
+                    <h2 class="reco-header-title">�v�nements recommand�s</h2>
+                    <p class="reco-header-subtitle">Priorit� IA bas�e sur votre secteur et vos habitudes de sponsoring</p>
+                </div>
+            </div>
+            <div class="reco-priority-badge">Section prioritaire</div>
+        </div>
+
+        <div class="reco-focus-bar">
+            <span class="reco-focus-chip">Moteur IA actif</span>
+            <span class="reco-focus-chip light">{{ recommendedEvents|length }} recommandations triees</span>
+        </div>
+
         {% if recommendedEvents is empty %}
-            <div class="portal-box-empty">Renseignez votre biographie (secteur) dans votre profil pour activer les recommandations.</div>
+            <div class="portal-box-empty">Aucune recommandation disponible pour le moment.</div>
         {% else %}
-            <div class="portal-catalog-grid">
+            <div class="reco-grid">
                 {% for event in recommendedEvents %}
+                    {# D�termination du type et de l'image par d�faut (inchang�) #}
                     {% set t = event.title|lower %}
+                    {% set contextText = (event.title ~ ' ' ~ (event.description ?: ''))|lower %}
                     {% set type = 'Conference' %}
                     {% set cls = 'conference' %}
-                    {% set mood = 'Echange academique' %}
+                    {% set mood = event.title|split(' ')|slice(0, 4)|join(' ') %}
+                    {% set defaultImage = 'conference.jfif' %}
                     {% if 'atelier' in t %}
                         {% set type = 'Atelier' %}
                         {% set cls = 'atelier' %}
-                        {% set mood = 'Pratique collaborative' %}
-                    {% elseif 'seminaire' in t or 'séminaire' in t %}
+                        {% set mood = 'Atelier pratique' %}
+                        {% set defaultImage = 'atelier.jfif' %}
+                    {% elseif 'seminaire' in t or 's�minaire' in t %}
                         {% set type = 'Seminaire' %}
                         {% set cls = 'seminaire' %}
-                        {% set mood = 'Prise de parole inspiree' %}
+                        {% set mood = 'Prise de parole' %}
+                        {% set defaultImage = 'formation.jfif' %}
                     {% elseif 'formation' in t %}
                         {% set type = 'Formation' %}
                         {% set cls = 'formation' %}
                         {% set mood = 'Montee en competences' %}
+                        {% set defaultImage = 'formation.jfif' %}
                     {% elseif 'workshop' in t %}
                         {% set type = 'Workshop' %}
                         {% set cls = 'workshop' %}
-                        {% set mood = 'Laboratoire d idees' %}
+                        {% set mood = 'Session workshop' %}
+                        {% set defaultImage = 'atelier.jfif' %}
                     {% elseif 'carriere' in t or 'career' in t or 'emploi' in t %}
                         {% set type = 'Carriere' %}
                         {% set cls = 'carriere' %}
                         {% set mood = 'Projection professionnelle' %}
+                        {% set defaultImage = 'conference.jfif' %}
                     {% endif %}
 
-                    <article class="portal-event-card {{ cls }} {{ loop.index == 3 ? 'highlight' : '' }}" data-live-search-item data-search="{{ event.title }}" data-live-suggest="{{ event.title }}">
-                        <div class="portal-event-visual"></div>
-                        <div class="portal-event-content">
-                            <div class="portal-event-topline">
-                                <span class="portal-badge {{ cls }}">{{ type }}</span>
-                                <span class="portal-event-mood">{{ mood }}</span>
+                    {% if 'ia' in contextText or 'ai' in contextText %}
+                        {% set mood = 'Contexte IA' %}
+                    {% elseif 'cyber' in contextText or 'securite' in contextText %}
+                        {% set mood = 'Contexte cybersecurite' %}
+                    {% elseif 'data' in contextText %}
+                        {% set mood = 'Contexte data science' %}
+                    {% elseif 'fintech' in contextText or 'finance' in contextText %}
+                        {% set mood = 'Contexte fintech' %}
+                    {% elseif 'java' in contextText %}
+                        {% set mood = 'Contexte developpement Java' %}
+                    {% elseif 'robot' in contextText %}
+                        {% set mood = 'Contexte robotique' %}
+                    {% elseif 'hackathon' in contextText %}
+                        {% set mood = 'Contexte innovation terrain' %}
+                    {% endif %}
+
+                    <article class="reco-card {{ cls }}">
+                        <div class="reco-rank-badge">Top {{ loop.index }}</div>
+                        <img class="reco-card-image" src="{{ asset('images/' ~ event.title ~ '.jpg') }}" alt="{{ event.title }}" onerror="this.src=&quot;{{ asset('images/sponsor-cards/' ~ defaultImage) }}&quot;">
+                        <div class="reco-card-content">
+                            <div class="reco-card-top">
+                                <span class="reco-type-badge {{ cls }}">{{ type }}</span>
+                                <span class="reco-mood">{{ mood }}</span>
                             </div>
-                            <h3 class="portal-event-title">{{ event.title }}</h3>
-                            <p class="portal-event-description">{{ event.description ?: 'Une experience universitaire soigneusement pensee pour reunir apprentissage, rencontres et nouvelles opportunites.' }}</p>
-                            <div class="portal-event-meta-row">
-                                <div class="portal-event-meta">Date: {{ event.startDate ? event.startDate|date('Y-m-d H:i') : '-' }}</div>
-                                <div class="portal-event-meta">Lieu: {{ event.location ?: '-' }}</div>
+                            <h3 class="reco-card-title">{{ event.title }}</h3>
+                            <p class="reco-card-description">{{ event.description ?: "Cet �v�nement fait partie des rendez-vous les plus suivis et attractifs du moment."|slice(0, 100) ~ '�' }}</p>
+                            <div class="reco-card-meta">
+                                <div class="reco-meta-item">
+                                    <span class="reco-meta-icon">??</span>
+                                    <span>{{ event.startDate ? event.startDate|date("d-m-Y") : "-" }}</span>
+                                </div>
+                                <div class="reco-meta-item">
+                                    <span class="reco-meta-icon">??</span>
+                                    <span>{{ event.location ?: "-" }}</span>
+                                </div>
                             </div>
-                            <div class="portal-card-actions">
-                                <a class="portal-btn-secondary" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir details</a>
-                                <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
+                            <div class="reco-card-actions">
+                                <a class="reco-btn-outline" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir d�tails</a>
+                                <a class="reco-btn-primary" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
                             </div>
                         </div>
                     </article>
@@ -256,54 +939,78 @@
     </section>
 
     <section class="portal-box">
-        <div class="portal-box-head">Catalogue des evenements a soutenir</div>
+        <div class="portal-box-head portal-box-head-catalog">?? Catalogue des evenements a soutenir</div>
         {% if sponsorableEvents is empty %}
             <div class="portal-box-empty">Aucun evenement disponible pour le moment.</div>
         {% else %}
-            <div class="portal-catalog-grid">
+            <div class="portal-catalog-grid {{ sponsorableEvents|length == 1 ? 'single-card single-card-force' : '' }}">
                 {% for event in sponsorableEvents %}
                     {% set t = event.title|lower %}
+                    {% set contextText = (event.title ~ ' ' ~ (event.description ?: ''))|lower %}
                     {% set type = 'Conference' %}
                     {% set cls = 'conference' %}
-                    {% set mood = 'Scene institutionnelle' %}
+                    {% set mood = event.title|split(' ')|slice(0, 4)|join(' ') %}
+                    {% set defaultImage = 'conference.jfif' %}
                     {% if 'atelier' in t %}
                         {% set type = 'Atelier' %}
                         {% set cls = 'atelier' %}
-                        {% set mood = 'Experimentation concrete' %}
-                    {% elseif 'seminaire' in t or 'séminaire' in t %}
+                        {% set mood = 'Atelier pratique' %}
+                        {% set defaultImage = 'atelier.jfif' %}
+                    {% elseif 'seminaire' in t or 's�minaire' in t %}
                         {% set type = 'Seminaire' %}
                         {% set cls = 'seminaire' %}
-                        {% set mood = 'Temps fort academique' %}
+                        {% set mood = 'Prise de parole' %}
+                        {% set defaultImage = 'formation.jfif' %}
                     {% elseif 'formation' in t %}
                         {% set type = 'Formation' %}
                         {% set cls = 'formation' %}
-                        {% set mood = 'Apprentissage guide' %}
+                        {% set mood = 'Montee en competences' %}
+                        {% set defaultImage = 'formation.jfif' %}
                     {% elseif 'workshop' in t %}
                         {% set type = 'Workshop' %}
                         {% set cls = 'workshop' %}
-                        {% set mood = 'Co-creation active' %}
+                        {% set mood = 'Session workshop' %}
+                        {% set defaultImage = 'atelier.jfif' %}
                     {% elseif 'carriere' in t or 'career' in t or 'emploi' in t %}
                         {% set type = 'Carriere' %}
                         {% set cls = 'carriere' %}
                         {% set mood = 'Orientation et avenir' %}
+                        {% set defaultImage = 'conference.jfif' %}
+                    {% endif %}
+
+                    {% if 'ia' in contextText or 'ai' in contextText %}
+                        {% set mood = 'Contexte IA' %}
+                    {% elseif 'cyber' in contextText or 'securite' in contextText %}
+                        {% set mood = 'Contexte cybersecurite' %}
+                    {% elseif 'data' in contextText %}
+                        {% set mood = 'Contexte data science' %}
+                    {% elseif 'fintech' in contextText or 'finance' in contextText %}
+                        {% set mood = 'Contexte fintech' %}
+                    {% elseif 'java' in contextText %}
+                        {% set mood = 'Contexte developpement Java' %}
+                    {% elseif 'robot' in contextText %}
+                        {% set mood = 'Contexte robotique' %}
+                    {% elseif 'hackathon' in contextText %}
+                        {% set mood = 'Contexte innovation terrain' %}
                     {% endif %}
 
                     <article class="portal-event-card {{ cls }} {{ loop.index == 3 ? 'highlight' : '' }}" data-live-search-item data-search="{{ event.title }}" data-live-suggest="{{ event.title }}">
-                        <div class="portal-event-visual"></div>
+                        <img class="portal-event-visual" src="{{ asset('images/' ~ event.title ~ '.jpg') }}" alt="{{ event.title }}" onerror="this.src=&quot;{{ asset('images/sponsor-cards/' ~ defaultImage) }}&quot;">
                         <div class="portal-event-content">
                             <div class="portal-event-topline">
                                 <span class="portal-badge {{ cls }}">{{ type }}</span>
                                 <span class="portal-event-mood">{{ mood }}</span>
                             </div>
                             <h3 class="portal-event-title">{{ event.title }}</h3>
-                            <p class="portal-event-description">{{ event.description ?: 'Une occasion soigneusement cadree pour soutenir la vie universitaire, valoriser les talents et renforcer votre presence.' }}</p>
+                            <p class="portal-event-description">{{ event.description ?: "Une occasion pour soutenir la vie universitaire, valoriser les talents et renforcer votre presence." }}</p>
+
                             <div class="portal-event-meta-row">
-                                <div class="portal-event-meta">Date: {{ event.startDate ? event.startDate|date('Y-m-d H:i') : '-' }}</div>
-                                <div class="portal-event-meta">Lieu: {{ event.location ?: '-' }}</div>
+                                <div class="portal-event-meta"><span class="portal-event-label">?? Date:</span> {{ event.startDate ? event.startDate|date("d-m-Y") : "-" }}</div>
+                                <div class="portal-event-meta"><span class="portal-event-label">?? Lieu:</span> {{ event.location ?: "-" }}</div>
                             </div>
                             <div class="portal-card-actions">
                                 <a class="portal-btn-secondary" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir details</a>
-                                <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
+                                <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">?? Sponsoriser cet �v�nement</a>
                             </div>
                         </div>
                     </article>
@@ -317,25 +1024,25 @@
         <h2 class="portal-section-title">Pourquoi EventFlow?</h2>
         <div class="stats-showcase-grid">
             <div class="stat-showcase-card">
-                <div class="stat-showcase-icon">🌍</div>
-                <h3>Portée nationale</h3>
+                <div class="stat-showcase-icon">??</div>
+                <h3>Port�e nationale</h3>
                 <p>Acces a plus de 100+ evenements dans toute la Tunisie</p>
                 <div class="stat-showcase-number">{{ eventCounts.total }}+</div>
             </div>
             <div class="stat-showcase-card">
-                <div class="stat-showcase-icon">🤝</div>
+                <div class="stat-showcase-icon">??</div>
                 <h3>Partenariats solides</h3>
                 <p>Connectez-vous avec des organisateurs fiables et verifies</p>
                 <div class="stat-showcase-number">500+</div>
             </div>
             <div class="stat-showcase-card">
-                <div class="stat-showcase-icon">💼</div>
+                <div class="stat-showcase-icon">??</div>
                 <h3>Opportunites B2B</h3>
                 <p>Construisez votre reseau professionnel et commercial</p>
                 <div class="stat-showcase-number">1000+</div>
             </div>
             <div class="stat-showcase-card">
-                <div class="stat-showcase-icon">📊</div>
+                <div class="stat-showcase-icon">??</div>
                 <h3>Suivi en temps reel</h3>
                 <p>Tableau de bord complet pour gerer vos partenariats</p>
                 <div class="stat-showcase-number">100%</div>
@@ -344,5 +1051,312 @@
     </section>
 
 </main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    (function () {
+        const chartCanvas = document.getElementById('portalFxChart');
+        const currencySelect = document.getElementById('portalFxCurrency');
+        const refreshButton = document.getElementById('portalFxRefresh');
+        const pairLabel = document.getElementById('portalFxPairLabel');
+        const emptyState = document.getElementById('portalFxEmpty');
+        const updatedAt = document.getElementById('portalFxUpdatedAt');
+        const rateCards = Array.from(document.querySelectorAll('.portal-fx-rate-item[data-fx-currency]'));
+
+        if (!currencySelect || !updatedAt) {
+            return;
+        }
+
+        let fxChart = null;
+
+        const formatRate = function (value, precision) {
+            return Number(value).toLocaleString('fr-FR', {
+                minimumFractionDigits: precision,
+                maximumFractionDigits: precision
+            });
+        };
+
+        const formatDateTime = function (value) {
+            if (!value) {
+                return '-';
+            }
+
+            const dt = new Date(value);
+            if (Number.isNaN(dt.getTime())) {
+                return '-';
+            }
+
+            return dt.toLocaleString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            });
+        };
+
+        const setActiveCard = function () {
+            const selected = currencySelect.value || 'EUR';
+            rateCards.forEach(function (card) {
+                card.classList.toggle('active', card.dataset.fxCurrency === selected);
+            });
+        };
+
+        const renderFxHistoryChart = function (labels, rates, currency) {
+            if (!chartCanvas || typeof Chart === 'undefined') {
+                return;
+            }
+
+            if (fxChart) {
+                fxChart.destroy();
+            }
+
+            const ctx = chartCanvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 230);
+            gradient.addColorStop(0, 'rgba(37, 99, 235, 0.28)');
+            gradient.addColorStop(1, 'rgba(37, 99, 235, 0.04)');
+
+            fxChart = new Chart(chartCanvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: rates,
+                        borderColor: '#2563eb',
+                        backgroundColor: gradient,
+                        fill: true,
+                        borderWidth: 2.4,
+                        tension: 0.32,
+                        pointRadius: 2.4,
+                        pointHoverRadius: 5,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#2563eb',
+                        pointBorderWidth: 1.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    return ` 1 ${currency} = ${Number(ctx.raw).toFixed(4)} TND`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#64748b', font: { size: 11 } }
+                        },
+                        y: {
+                            grid: { color: '#e2e8f0' },
+                            ticks: {
+                                color: '#64748b',
+                                callback: function (value) {
+                                    return Number(value).toFixed(3);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        const loadHistoryForSelected = async function () {
+            const currency = currencySelect.value || 'EUR';
+
+            if (pairLabel) {
+                pairLabel.textContent = `1 ${currency} = ? TND`;
+            }
+
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
+
+            if (typeof Chart === 'undefined') {
+                if (emptyState) {
+                    emptyState.textContent = 'Bibliotheque graphique indisponible.';
+                    emptyState.style.display = 'block';
+                }
+                return;
+            }
+
+            try {
+                const url = `{{ path('app_currency_history') }}?from=${encodeURIComponent(currency)}&to=TND&days=7`;
+                const response = await fetch(url);
+                const payload = await response.json();
+
+                if (!response.ok || !payload.ok || !Array.isArray(payload.labels) || !Array.isArray(payload.rates)) {
+                    throw new Error('Invalid history payload');
+                }
+
+                renderFxHistoryChart(payload.labels, payload.rates, currency);
+
+                if (pairLabel && payload.rates.length > 0) {
+                    const latestRate = Number(payload.rates[payload.rates.length - 1]);
+                    pairLabel.textContent = `1 ${currency} = ${formatRate(latestRate, 4)} TND`;
+                }
+            } catch (error) {
+                if (fxChart) {
+                    fxChart.destroy();
+                    fxChart = null;
+                }
+                if (emptyState) {
+                    emptyState.textContent = 'Impossible de charger l historique pour la devise selectionnee.';
+                    emptyState.style.display = 'block';
+                }
+            }
+        };
+
+        const loadRateForCard = async function (card) {
+            const code = card.dataset.fxCurrency || 'EUR';
+            const valueNode = card.querySelector('[data-fx-value]');
+            if (!valueNode) {
+                return null;
+            }
+
+            card.classList.remove('error');
+            valueNode.classList.add('loading');
+            valueNode.textContent = 'Chargement...';
+
+            try {
+                const url = `{{ path('app_currency_rate') }}?from=${encodeURIComponent(code)}&to=TND`;
+                const response = await fetch(url);
+                const payload = await response.json();
+
+                if (!response.ok || !payload.ok || !Number.isFinite(Number(payload.rate))) {
+                    throw new Error('Invalid rate payload');
+                }
+
+                valueNode.classList.remove('loading');
+                valueNode.textContent = `${formatRate(payload.rate, 4)} TND`;
+                return payload.fetchedAt || null;
+            } catch (error) {
+                card.classList.add('error');
+                valueNode.classList.remove('loading');
+                valueNode.textContent = '--';
+                return null;
+            }
+        };
+
+        const refreshRateCards = async function () {
+            const timestamps = await Promise.all(rateCards.map(loadRateForCard));
+            setActiveCard();
+
+            const parsedTimes = timestamps
+                .map(function (value) { return value ? Date.parse(value) : NaN; })
+                .filter(function (value) { return !Number.isNaN(value); });
+
+            if (parsedTimes.length > 0) {
+                const maxTs = Math.max.apply(null, parsedTimes);
+                updatedAt.textContent = `Derniere mise a jour: ${formatDateTime(new Date(maxTs).toISOString())}`;
+            } else {
+                updatedAt.textContent = 'Derniere mise a jour: indisponible';
+            }
+        };
+
+        const refreshFxPanel = async function () {
+            if (refreshButton) {
+                refreshButton.disabled = true;
+                refreshButton.textContent = '? Chargement...';
+            }
+
+            await Promise.all([
+                loadHistoryForSelected(),
+                refreshRateCards()
+            ]);
+
+            if (refreshButton) {
+                refreshButton.disabled = false;
+                refreshButton.textContent = '?? Actualiser';
+            }
+        };
+
+        if (currencySelect) {
+            currencySelect.addEventListener('change', refreshFxPanel);
+        }
+
+        if (refreshButton) {
+            refreshButton.addEventListener('click', refreshFxPanel);
+        }
+
+        rateCards.forEach(function (card) {
+            card.addEventListener('click', function () {
+                const code = card.dataset.fxCurrency || 'EUR';
+                currencySelect.value = code;
+                refreshFxPanel();
+            });
+        });
+
+        refreshFxPanel();
+    })();
+</script>
+<div id="google_translate_element" style="display:none;"></div>
+<script>
+    (function () {
+        const toggle = document.getElementById('portalTranslateToggle');
+        const menu = document.getElementById('portalTranslateMenu');
+        const widget = document.getElementById('portalTranslateWidget');
+
+        const setTranslateCookie = function (value) {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=' + value + ';path=/';
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=' + value + ';path=/;domain=.' + host;
+            }
+        };
+
+        const clearTranslateCookie = function () {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + host;
+            }
+        };
+
+        if (toggle && menu) {
+            toggle.addEventListener('click', function () {
+                menu.classList.toggle('open');
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!widget || widget.contains(event.target)) {
+                    return;
+                }
+                menu.classList.remove('open');
+            });
+
+            menu.querySelectorAll('[data-lang]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const lang = button.getAttribute('data-lang') || 'en';
+                    if (lang === 'original') {
+                        clearTranslateCookie();
+                    } else {
+                        setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+                    }
+                    window.location.reload();
+                });
+            });
+        }
+    })();
+
+    function googleTranslateElementInit() {
+        if (!window.google || !window.google.translate || !window.google.translate.TranslateElement) {
+            return;
+        }
+
+        new window.google.translate.TranslateElement({
+            pageLanguage: 'fr',
+            includedLanguages: 'fr,en,ar,es,de,it',
+            autoDisplay: false,
+            multilanguagePage: true
+        }, 'google_translate_element');
+    }
+</script>
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>

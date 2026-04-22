@@ -6,6 +6,7 @@ use App\Entity\Budget\Budget;
 use App\Entity\Depense\Depense;
 use App\Repository\Budget\BudgetRepository;
 use App\Service\Budget\BudgetService;
+use App\Service\Currency\CurrencyConverterService;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -14,7 +15,8 @@ class DepenseService
     public function __construct(
         private EntityManagerInterface $entityManager,
         private BudgetRepository $budgetRepository,
-        private BudgetService $budgetService
+        private BudgetService $budgetService,
+        private CurrencyConverterService $currencyConverter
     ) {
     }
 
@@ -33,8 +35,8 @@ class DepenseService
         $choices = [];
         foreach ($budgets as $budget) {
             $eventId = (int) $budget->getEventId();
-            $eventTitle = $eventTitleMap[$eventId] ?? ('Event #' . $eventId);
-            $label = sprintf('%s (%.2f DT) [#%d]', $eventTitle, (float) $budget->getInitialBudget(), (int) $budget->getId());
+            $eventTitle = $eventTitleMap[$eventId] ?? ('Event ' . $eventId);
+            $label = sprintf('%s (%.2f DT)', $eventTitle, (float) $budget->getInitialBudget());
             $choices[$label] = (int) $budget->getId();
         }
 
@@ -102,7 +104,7 @@ class DepenseService
         $map = [];
         foreach ($budgets as $budget) {
             $eventId = (int) $budget->getEventId();
-            $eventTitle = $eventTitleMap[$eventId] ?? ('Event #' . $eventId);
+            $eventTitle = $eventTitleMap[$eventId] ?? ('Event ' . $eventId);
             $map[(int) $budget->getId()] = sprintf('%s (%.2f DT)', $eventTitle, (float) $budget->getInitialBudget());
         }
 
@@ -187,7 +189,7 @@ class DepenseService
 
         $depense->setOriginalCurrency($currency);
         $depense->setOriginalAmount($inputAmount);
-        $depense->setAmount($this->convertToTnd($inputAmount, $currency));
+        $depense->setAmount($this->currencyConverter->convert($inputAmount, $currency, 'TND'));
     }
 
     public function recomputeBudget(?Budget $budget): void
@@ -207,11 +209,4 @@ class DepenseService
         return ['from' => $from, 'to' => $to];
     }
 
-    private function convertToTnd(float $amount, string $fromCurrency): float
-    {
-        $rates = ['TND' => 1.0, 'USD' => 3.10, 'EUR' => 3.35, 'GBP' => 3.95, 'CHF' => 3.45, 'CAD' => 2.30];
-        $rate = $rates[strtoupper($fromCurrency)] ?? 1.0;
-
-        return round($amount * $rate, 2);
-    }
 }

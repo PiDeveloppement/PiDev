@@ -41,12 +41,20 @@
                     {{ form_label(form.initialBudget) }}
                     {{ form_widget(form.initialBudget) }}
                     {{ form_errors(form.initialBudget) }}
+                    {{ form_label(form.initialBudgetCurrency) }}
+                    {{ form_widget(form.initialBudgetCurrency) }}
+                    {{ form_errors(form.initialBudgetCurrency) }}
+                    <small class="field-help">Equivalent TND: <span id="initial-budget-tnd">-</span></small>
                 </div>
 
                 <div class="budget-field">
                     {{ form_label(form.totalRevenue) }}
                     {{ form_widget(form.totalRevenue) }}
                     {{ form_errors(form.totalRevenue) }}
+                    {{ form_label(form.totalRevenueCurrency) }}
+                    {{ form_widget(form.totalRevenueCurrency) }}
+                    {{ form_errors(form.totalRevenueCurrency) }}
+                    <small class="field-help">Equivalent TND: <span id="total-revenue-tnd">-</span></small>
                 </div>
             </div>
 
@@ -58,4 +66,83 @@
         </div>
     </section>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const initialAmount = document.getElementById('{{ form.initialBudget.vars.id }}');
+    const initialCurrency = document.getElementById('{{ form.initialBudgetCurrency.vars.id }}');
+    const initialOut = document.getElementById('initial-budget-tnd');
+
+    const revenueAmount = document.getElementById('{{ form.totalRevenue.vars.id }}');
+    const revenueCurrency = document.getElementById('{{ form.totalRevenueCurrency.vars.id }}');
+    const revenueOut = document.getElementById('total-revenue-tnd');
+
+    const renderAmount = function (target, value) {
+        if (!target) {
+            return;
+        }
+
+        if (value === null) {
+            target.textContent = '-';
+            return;
+        }
+
+        target.textContent = Number(value).toLocaleString('fr-FR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' DT';
+    };
+
+    const updatePreview = async function (amountInput, currencyInput, outputTarget) {
+        if (!amountInput || !currencyInput || !outputTarget) {
+            return;
+        }
+
+        const amount = parseFloat(String(amountInput.value || '').replace(',', '.'));
+        const from = currencyInput.value || 'TND';
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            renderAmount(outputTarget, null);
+            return;
+        }
+
+        if (from === 'TND') {
+            renderAmount(outputTarget, amount);
+            return;
+        }
+
+        try {
+            const url = `{{ path('app_currency_convert') }}?amount=${encodeURIComponent(String(amount))}&from=${encodeURIComponent(from)}&to=TND`;
+            const response = await fetch(url);
+            const payload = await response.json();
+
+            if (!response.ok || !payload.ok) {
+                renderAmount(outputTarget, null);
+                return;
+            }
+
+            renderAmount(outputTarget, payload.converted);
+        } catch (error) {
+            renderAmount(outputTarget, null);
+        }
+    };
+
+    const bind = function (amountInput, currencyInput, outputTarget) {
+        if (!amountInput || !currencyInput) {
+            return;
+        }
+
+        const handler = function () {
+            updatePreview(amountInput, currencyInput, outputTarget);
+        };
+
+        amountInput.addEventListener('input', handler);
+        currencyInput.addEventListener('change', handler);
+        handler();
+    };
+
+    bind(initialAmount, initialCurrency, initialOut);
+    bind(revenueAmount, revenueCurrency, revenueOut);
+});
+</script>
 {% endblock %}

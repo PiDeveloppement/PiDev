@@ -1,291 +1,1408 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Depenses - EventFlow{% endblock %}
+{% block title %}Dépenses - EventFlow{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
+    <style>
+        :root {
+            --emerald: #059669;
+            --emerald-light: #10b981;
+            --emerald-dark: #047857;
+            --emerald-pale: #d1fae5;
+            --emerald-faint: #ecfdf5;
+            --slate: #0f172a;
+            --slate-700: #334155;
+            --slate-500: #64748b;
+            --slate-300: #cbd5e1;
+            --slate-100: #f1f5f9;
+            --slate-50: #f8fafc;
+            --white: #ffffff;
+            --amber: #d97706;
+            --amber-light: #fef3c7;
+            --red: #dc2626;
+            --red-light: #fef2f2;
+            --blue: #2563eb;
+            --blue-light: #eff6ff;
+            --purple: #7c3aed;
+            --border: rgba(15,23,42,0.08);
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+            --shadow-lg: 0 16px 48px rgba(0,0,0,0.12);
+            --radius-sm: 10px;
+            --radius: 16px;
+            --radius-lg: 20px;
+            --radius-xl: 28px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #f0f4f8;
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--slate);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── PAGE WRAPPER ── */
+        .ef-page {
+            max-width: 1520px;
+            margin: 0 auto;
+            padding: 12px 32px 28px;
+        }
+
+        /* ── PAGE HEADER ── */
+        .ef-page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .ef-page-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--slate);
+            letter-spacing: -0.6px;
+            line-height: 1.2;
+        }
+        .ef-page-subtitle {
+            font-size: 13px;
+            color: var(--slate-500);
+            margin-top: 4px;
+            font-weight: 400;
+        }
+        .ef-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-export {
+            padding: 9px 18px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1.5px solid var(--border);
+            background: var(--white);
+            color: var(--slate-700);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-export:hover { background: var(--slate-100); border-color: var(--slate-300); }
+        .btn-primary-action {
+            padding: 9px 20px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 700;
+            border: none;
+            background: linear-gradient(135deg, var(--emerald-dark), var(--emerald-light));
+            color: #fff;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            text-decoration: none;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px rgba(5,150,105,0.35);
+        }
+        .btn-primary-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(5,150,105,0.45);
+        }
+
+        /* ── FLASH ── */
+        .flash-wrap { margin-bottom: 24px; }
+        .flash-msg {
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            margin-bottom: 10px;
+            font-weight: 500;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeSlide 0.3s ease;
+        }
+        .flash-success { background: var(--emerald-faint); color: #065f46; border: 1px solid rgba(5,150,105,0.2); }
+        .flash-error { background: var(--red-light); color: #7f1d1d; border: 1px solid rgba(220,38,38,0.2); }
+        @keyframes fadeSlide { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+        /* ── METRIC CARDS ── */
+        .ef-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+        .metric-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 22px 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.25s, box-shadow 0.25s;
+            box-shadow: var(--shadow-xs);
+        }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 3px 3px 0 0;
+        }
+        .metric-card.m-green::before { background: linear-gradient(90deg, var(--emerald-dark), var(--emerald-light)); }
+        .metric-card.m-amber::before { background: linear-gradient(90deg, #b45309, var(--amber)); }
+        .metric-card.m-blue::before { background: linear-gradient(90deg, #1d4ed8, var(--blue)); }
+        .metric-card.m-purple::before { background: linear-gradient(90deg, #5b21b6, var(--purple)); }
+        .metric-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+
+        .metric-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .metric-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--slate-500);
+        }
+        .metric-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .m-green .metric-icon { background: var(--emerald-faint); color: var(--emerald); }
+        .m-amber .metric-icon { background: var(--amber-light); color: var(--amber); }
+        .m-blue .metric-icon { background: var(--blue-light); color: var(--blue); }
+        .m-purple .metric-icon { background: #f5f3ff; color: var(--purple); }
+
+        .metric-value {
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--slate);
+            letter-spacing: -1px;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .metric-value sup {
+            font-size: 16px;
+            font-weight: 500;
+            vertical-align: super;
+            color: var(--slate-500);
+            letter-spacing: 0;
+        }
+        .metric-sub {
+            font-size: 12px;
+            color: var(--slate-500);
+            font-weight: 400;
+        }
+        .metric-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 30px;
+            margin-top: 8px;
+        }
+        .badge-up { background: var(--emerald-faint); color: var(--emerald-dark); }
+        .badge-down { background: var(--red-light); color: var(--red); }
+
+        /* ── TWO-COL LAYOUT ── */
+        .ef-row {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+        .ef-row-3 { grid-template-columns: repeat(3, 1fr); }
+        .ef-row-2-1 { grid-template-columns: 2fr 1fr; }
+
+        /* ── CHART CARD ── */
+        .chart-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 22px 24px;
+            box-shadow: var(--shadow-xs);
+            transition: box-shadow 0.25s;
+        }
+        .chart-card:hover { box-shadow: var(--shadow-sm); }
+        .cc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .cc-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .cc-title i { color: var(--emerald); font-size: 13px; }
+        .cc-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 30px;
+            background: var(--emerald-faint);
+            color: var(--emerald-dark);
+        }
+        .chart-container { position: relative; }
+        .chart-container canvas { width: 100% !important; }
+
+        /* ── LEGEND ── */
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 14px;
+        }
+        .insight-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #1d4ed8;
+            background: #dbeafe;
+            border: 1px solid #bfdbfe;
+        }
+        .insight-meta {
+            font-size: 12px;
+            color: var(--slate-500);
+            font-weight: 500;
+        }
+        .insight-empty {
+            display: none;
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--slate-500);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--slate-500);
+            font-weight: 500;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        /* ── FILTERS ── */
+        .ef-filters {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            box-shadow: var(--shadow-xs);
+        }
+        .filters-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .filters-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--slate-500);
+        }
+        .btn-reset {
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            background: var(--slate-50);
+            color: var(--slate-500);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .btn-reset:hover { background: var(--slate-100); color: var(--slate); }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 2fr repeat(4, 1fr);
+            gap: 14px;
+            align-items: flex-end;
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 6px; }
+        .filter-group label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--slate-500);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .filter-group input, .filter-group select {
+            padding: 9px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-family: inherit;
+            background: var(--white);
+            color: var(--slate);
+            transition: all 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        .filter-group select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 32px;
+        }
+        .filter-group input:focus, .filter-group select:focus {
+            outline: none;
+            border-color: var(--emerald);
+            box-shadow: 0 0 0 3px rgba(5,150,105,0.1);
+        }
+
+        /* ── TABLE SECTION ── */
+        .ef-table-section {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(15,23,42,0.14);
+            overflow: hidden;
+            box-shadow: 0 10px 28px rgba(15,23,42,0.08);
+        }
+        .table-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            border-bottom: 1px solid rgba(15,23,42,0.06);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .table-topbar-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .table-topbar-title i { color: var(--emerald); }
+        .count-badge {
+            background: var(--emerald-faint);
+            color: var(--emerald-dark);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 30px;
+        }
+
+        /* Expenses table */
+        .ef-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 13px;
+        }
+
+        .ef-table thead th:nth-child(1),
+        .ef-table tbody td:nth-child(1) { width: 19%; }
+        .ef-table thead th:nth-child(2),
+        .ef-table tbody td:nth-child(2) { width: 13%; }
+        .ef-table thead th:nth-child(3),
+        .ef-table tbody td:nth-child(3) { width: 12%; }
+        .ef-table thead th:nth-child(4),
+        .ef-table tbody td:nth-child(4) { width: 11%; }
+        .ef-table thead th:nth-child(5),
+        .ef-table tbody td:nth-child(5) { width: 13%; }
+        .ef-table thead th:nth-child(6),
+        .ef-table tbody td:nth-child(6) { width: 9%; }
+        .ef-table thead th:nth-child(7),
+        .ef-table tbody td:nth-child(7) { width: 13%; }
+        .ef-table thead th:nth-child(8),
+        .ef-table tbody td:nth-child(8) { width: 10%; }
+
+        .ef-table thead th:last-child,
+        .ef-table tbody td:last-child {
+            min-width: 110px;
+            padding-left: 8px;
+            padding-right: 8px;
+        }
+        .ef-table thead th {
+            padding: 12px 20px;
+            background: #e8eef6;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #334155;
+            text-align: left;
+            border-bottom: 1px solid rgba(15,23,42,0.16);
+            white-space: nowrap;
+        }
+        .ef-table tbody td {
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(15,23,42,0.10);
+            vertical-align: middle;
+            color: #0f172a;
+        }
+        .ef-table tbody tr:last-child td { border-bottom: none; }
+        .ef-table tbody tr {
+            transition: background 0.15s;
+        }
+        .ef-table tbody tr:nth-child(even) { background: #f8fbff; }
+        .ef-table tbody tr:hover { background: rgba(37,99,235,0.08); }
+
+        /* desc cell */
+        .td-desc {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+        .td-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--emerald-faint);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--emerald);
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .td-desc-name {
+            font-weight: 600;
+            color: var(--slate);
+            font-size: 13.5px;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+        }
+        .td-desc-id {
+            font-size: 11px;
+            color: #475569;
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* category pill */
+        .cat-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 11px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #d9f5e8;
+            color: #065f46;
+            border: 1px solid rgba(5,150,105,0.24);
+        }
+
+        /* budget chip */
+        .budget-chip {
+            font-size: 12.5px;
+            color: #1e293b;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        /* date */
+        .td-date {
+            font-size: 12px;
+            color: #475569;
+            white-space: normal;
+        }
+
+        .td-origin {
+            font-size: 11.5px;
+            color: #334155;
+            line-height: 1.35;
+        }
+
+        .origin-main {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .origin-sub {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .level-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .level-low {
+            background: #dcfce7;
+            color: #166534;
+            border-color: #86efac;
+        }
+
+        .level-medium {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #fcd34d;
+        }
+
+        .level-high {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fca5a5;
+        }
+
+        /* amount */
+        .td-amount {
+            text-align: right;
+        }
+        .amount-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0b1324;
+            font-feature-settings: 'tnum';
+        }
+        .amount-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 5px;
+            justify-content: flex-end;
+        }
+        .amount-bar {
+            width: 70px;
+            height: 4px;
+            background: var(--slate-100);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .amount-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--emerald-dark), var(--emerald-light));
+        }
+        .amount-fill.warn { background: linear-gradient(90deg, #b45309, var(--amber)); }
+        .amount-fill.danger { background: linear-gradient(90deg, #b91c1c, var(--red)); }
+        .amount-pct {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--slate-500);
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* actions */
+        .td-actions { text-align: center; }
+        .btn-grp { display: flex; align-items: center; gap: 4px; justify-content: center; flex-wrap: nowrap; }
+        .ef-btn-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
+            border: 1px solid rgba(15,23,42,0.18);
+            background: var(--white);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.18s;
+            text-decoration: none;
+            color: #334155;
+        }
+        .ef-btn-icon:hover { transform: translateY(-2px); }
+        .ef-btn-icon.view:hover { background: var(--blue-light); color: var(--blue); border-color: var(--blue); }
+        .ef-btn-icon.edit:hover { background: var(--amber-light); color: var(--amber); border-color: var(--amber); }
+        .ef-btn-icon.del:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
+        .ef-btn-icon.del { font-family: inherit; }
+
+        /* empty & no-result */
+        .ef-empty {
+            text-align: center;
+            padding: 56px 20px;
+        }
+        .ef-empty-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: var(--emerald-faint);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: var(--emerald);
+            margin-bottom: 16px;
+        }
+        .ef-empty-title { font-size: 16px; font-weight: 700; color: var(--slate); margin-bottom: 6px; }
+        .ef-empty-sub { font-size: 13px; color: var(--slate-500); }
+        .ef-no-result {
+            text-align: center;
+            padding: 16px;
+            font-size: 13px;
+            color: var(--slate-500);
+        }
+
+        /* section label */
+        .ef-section-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .ef-section-label span {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--slate);
+            letter-spacing: -0.3px;
+        }
+        .ef-section-label i { color: var(--emerald); font-size: 16px; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1200px) {
+            .ef-metrics { grid-template-columns: repeat(2, 1fr); }
+            .ef-row-3 { grid-template-columns: 1fr; }
+            .ef-row-2-1 { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 900px) {
+            .ef-page { padding: 18px 16px; }
+            .filters-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 640px) {
+            .ef-metrics { grid-template-columns: 1fr; }
+            .filters-grid { grid-template-columns: 1fr; }
+            .ef-table { font-size: 12px; }
+            .ef-table thead th, .ef-table tbody td { padding: 10px 14px; }
+        }
+
+        /* Fixed top actions for Depense page */
+        .depense-top-actions {
+            position: static !important;
+            width: auto !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            z-index: auto !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .depense-top-actions #translationWidget {
+            position: relative !important;
+            margin: 0 !important;
+            inset: auto !important;
+            z-index: auto !important;
+        }
+    </style>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="{{ asset('js/admin-live-search.js') }}" defer></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        /* auto-submit selects */
+        document.querySelectorAll('.ef-filters select').forEach(s => {
+            s.addEventListener('change', () => s.closest('form').submit());
+        });
+
+        /* reset */
+        const resetBtn = document.getElementById('resetFiltersBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', e => {
+                e.preventDefault();
+                const f = resetBtn.closest('form');
+                if (f) { f.reset(); f.submit(); }
+            });
+        }
+
+        /* shared chart defaults */
+        Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+        /* ── Distribution by level ── */
+        const distEl = document.getElementById('distChart');
+        if (distEl) {
+            const low = parseInt(distEl.dataset.low) || 0;
+            const med = parseInt(distEl.dataset.med) || 0;
+            const hi  = parseInt(distEl.dataset.hi)  || 0;
+            const total = low + med + hi || 1;
+            new Chart(distEl, {
+                type: 'bar',
+                data: {
+                    labels: ['Faible (<100 DT)', 'Moyenne (100-1K DT)', 'Elevee (>1K DT)'],
+                    datasets: [{
+                        data: [low, med, hi],
+                        backgroundColor: ['#059669', '#d97706', '#dc2626'],
+                        borderRadius: 8,
+                        barThickness: 18
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.label}: ${ctx.raw} (${((ctx.raw/total)*100).toFixed(1)}%)`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#e2e8f0' },
+                            ticks: {
+                                color: '#64748b',
+                                stepSize: 1,
+                                callback: value => Number(value).toLocaleString('fr-FR')
+                            }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#334155', font: { size: 11, weight: '600' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* ── Top categories donut ── */
+        const catEl = document.getElementById('catChart');
+        if (catEl && catEl.dataset.cats) {
+            const cats = JSON.parse(catEl.dataset.cats);
+            const labels = Object.keys(cats);
+            const values = Object.values(cats);
+            const totalCats = values.reduce((sum, value) => sum + (Number(value) || 0), 0) || 1;
+            new Chart(catEl, {
+                type: 'doughnut',
+                data: {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: labels.map((_, i) =>
+                            ['#059669', '#10b981', '#d97706', '#2563eb', '#dc2626'][i] || '#64748b'),
+                        borderWidth: 0,
+                        hoverOffset: 7
+                    }]
+                },
+                options: {
+                    cutout: '64%',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 10,
+                                boxHeight: 10,
+                                useBorderRadius: true,
+                                borderRadius: 2,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.label}: ${Number(ctx.raw).toLocaleString('fr-FR')} DT (${((ctx.raw / totalCats) * 100).toFixed(1)}%)`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* ── Monthly evolution line ── */
+        const evEl = document.getElementById('evChart');
+        if (evEl && evEl.dataset.monthly) {
+            const monthly = JSON.parse(evEl.dataset.monthly);
+            new Chart(evEl, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(monthly),
+                    datasets: [{
+                        data: Object.values(monthly),
+                        borderColor: '#059669',
+                        backgroundColor: 'rgba(5,150,105,0.06)',
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#059669',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => ` ${ctx.raw.toFixed(2)} DT` } }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 }, callback: v => v.toLocaleString() + ' DT' } }
+                    }
+                }
+            });
+        }
+
+        /* ── Top budgets consumers ── */
+        const budgetSpendEl = document.getElementById('budgetSpendChart');
+        const budgetSpendEmpty = document.getElementById('budgetSpendEmpty');
+
+        const renderBudgetSpendChart = (entries) => {
+            if (!budgetSpendEl) {
+                return;
+            }
+
+            const budgetLabels = entries.map(item => item[0]);
+            new Chart(budgetSpendEl, {
+                type: 'bar',
+                data: {
+                    labels: budgetLabels,
+                    datasets: [{
+                        label: 'Depenses totales',
+                        data: entries.map(item => item[1]),
+                        backgroundColor: ['#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'],
+                        borderRadius: 8,
+                        maxBarThickness: 34
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${Number(ctx.raw).toLocaleString('fr-FR')} DT`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#334155',
+                                font: { size: 10, weight: '600' },
+                                maxRotation: 22,
+                                minRotation: 0,
+                                callback: function (value, index) {
+                                    const label = budgetLabels[index] || '';
+                                    return label.length > 24 ? label.slice(0, 24) + '…' : label;
+                                }
+                            }
+                        },
+                        y: {
+                            grid: { color: '#e2e8f0' },
+                            ticks: {
+                                color: '#64748b',
+                                font: { size: 11 },
+                                callback: value => Number(value).toLocaleString('fr-FR') + ' DT'
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        const loadBudgetSpendRanking = () => {
+            if (!budgetSpendEl) {
+                return;
+            }
+
+            try {
+                const spendMap = JSON.parse(budgetSpendEl.dataset.budgets || '{}');
+                const entries = Object.entries(spendMap)
+                    .map(([label, value]) => [label, Number(value) || 0])
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 6);
+
+                if (entries.length === 0) {
+                    if (budgetSpendEmpty) {
+                        budgetSpendEmpty.style.display = 'block';
+                    }
+                    return;
+                }
+
+                if (budgetSpendEmpty) {
+                    budgetSpendEmpty.style.display = 'none';
+                }
+
+                renderBudgetSpendChart(entries);
+            } catch (error) {
+                if (budgetSpendEmpty) {
+                    budgetSpendEmpty.style.display = 'block';
+                }
+            }
+        };
+
+        loadBudgetSpendRanking();
+
+        // Initialize fixed top actions for depense page
+        function initDepenseTopActions() {
+            const depenseTopActions = document.getElementById('depenseTopActions');
+            if (!depenseTopActions) return;
+
+            // Mount into the shared page-header slot (same behavior as sponsor pages)
+            const translationHeaderSlot = document.getElementById('translationHeaderSlot');
+            if (translationHeaderSlot && depenseTopActions.parentElement !== translationHeaderSlot) {
+                translationHeaderSlot.appendChild(depenseTopActions);
+            }
+
+            depenseTopActions.style.position = 'static';
+            depenseTopActions.style.inset = 'auto';
+
+            // Move translation widget into shared actions container
+            const translationWidget = document.getElementById('translationWidget');
+            if (translationWidget && !depenseTopActions.contains(translationWidget)) {
+                translationWidget.style.position = 'relative';
+                translationWidget.style.bottom = 'auto';
+                translationWidget.style.left = 'auto';
+                translationWidget.style.right = 'auto';
+                translationWidget.style.margin = '0';
+                depenseTopActions.appendChild(translationWidget);
+            }
+        }
+
+        // Call on DOMContentLoaded (already inside DOMContentLoaded handler)
+        initDepenseTopActions();
+        
+        // Watch for translation widget appearing later
+        const observer = new MutationObserver(function(mutations) {
+            const translationWidget = document.getElementById('translationWidget');
+            const depenseTopActions = document.getElementById('depenseTopActions');
+            if (translationWidget && depenseTopActions && !depenseTopActions.contains(translationWidget)) {
+                initDepenseTopActions();
+                observer.disconnect();
+            }
+        });
+        
+        observer.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => observer.disconnect(), 3000);
+    });
+    </script>
 {% endblock %}
 
 {% block admin_content %}
-<div class="sponsor-page depense-page" data-live-search-root>
-    {% set lowCount = 0 %}
-    {% set mediumCount = 0 %}
-    {% set highCount = 0 %}
-    {% set latestDate = null %}
-    {% for depense in depenses %}
-        {% set amountLoop = depense.amount + 0 %}
-        {% if amountLoop < 100 %}
-            {% set lowCount = lowCount + 1 %}
-        {% elseif amountLoop <= 1000 %}
-            {% set mediumCount = mediumCount + 1 %}
-        {% else %}
-            {% set highCount = highCount + 1 %}
-        {% endif %}
-        {% if depense.expenseDate %}
-            {% set latestDate = latestDate is null or depense.expenseDate > latestDate ? depense.expenseDate : latestDate %}
-        {% endif %}
-    {% endfor %}
+<div class="ef-page" data-live-search-root>
 
+    {# ── pre-compute distribution + monthly ── #}
+    {% set lowCount = 0 %}
+    {% set medCount = 0 %}
+    {% set hiCount  = 0 %}
+    {% set monthlyData = {} %}
+    {% set budgetSpendMap = {} %}
+    {% for d in depenses %}
+        {% set amt = d.amount + 0 %}
+        {% if amt < 100 %}{% set lowCount = lowCount + 1 %}
+        {% elseif amt <= 1000 %}{% set medCount = medCount + 1 %}
+        {% else %}{% set hiCount = hiCount + 1 %}{% endif %}
+        {% set mk = d.expenseDate ? d.expenseDate|date('M Y') : null %}
+        {% if mk %}
+            {% if monthlyData[mk] is defined %}
+                {% set monthlyData = monthlyData|merge({(mk): monthlyData[mk] + amt}) %}
+            {% else %}
+                {% set monthlyData = monthlyData|merge({(mk): amt}) %}
+            {% endif %}
+        {% endif %}
+        {% set budgetLabel = d.budget ? budgetDisplayMap[d.budget.id]|default('Budget ' ~ d.budget.id) : 'Sans budget' %}
+        {% set budgetCurrent = budgetSpendMap[budgetLabel]|default(0) %}
+        {% set budgetSpendMap = budgetSpendMap|merge({ (budgetLabel): budgetCurrent + amt }) %}
+    {% endfor %}
+    {% set dominantRange = 'Aucune depense' %}
+    {% set dominantCount = 0 %}
+    {% if lowCount > 0 or medCount > 0 or hiCount > 0 %}
+        {% set dominantRange = 'Faible (<100 DT)' %}
+        {% set dominantCount = lowCount %}
+        {% if medCount > dominantCount %}
+            {% set dominantRange = 'Moyenne (100-1K DT)' %}
+            {% set dominantCount = medCount %}
+        {% endif %}
+        {% if hiCount > dominantCount %}
+            {% set dominantRange = 'Elevee (>1K DT)' %}
+            {% set dominantCount = hiCount %}
+        {% endif %}
+    {% endif %}
+
+    {# Flash #}
     <div class="flash-wrap">
-        {% for message in app.flashes('success') %}
-            <div class="flash-success">{{ message }}</div>
+        {% for msg in app.flashes('success') %}
+            <div class="flash-msg flash-success"><i class="fa-solid fa-circle-check"></i> {{ msg }}</div>
         {% endfor %}
-        {% for message in app.flashes('error') %}
-            <div class="flash-error">{{ message }}</div>
+        {% for msg in app.flashes('error') %}
+            <div class="flash-msg flash-error"><i class="fa-solid fa-circle-exclamation"></i> {{ msg }}</div>
         {% endfor %}
     </div>
 
-    <section class="depense-overview">
-        <article class="depense-overview-main">
-            <span class="depense-overview-kicker">Pilotage des depenses</span>
-            <h2>Lecture rapide des sorties financieres</h2>
-            <p>Suivez les montants, reperez les categories les plus actives et gardez une vue nette sur chaque depense sans passer par un tableau lourd.</p>
-            <div class="depense-overview-meta">
-                <span>{{ depenses|length }} depense(s) affichee(s)</span>
-                <span>{{ latestDate ? 'Derniere mise a jour: ' ~ latestDate|date('d/m/Y') : 'Aucune date disponible' }}</span>
-            </div>
-        </article>
+    <div class="ef-header-actions" id="depenseHeaderActions" style="justify-content: flex-end; margin-bottom: 14px; display: none;">
+        <button class="btn-export" onclick="window.print()">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i> Exporter
+        </button>
+        <a class="btn-primary-action" href="{{ path('app_depenses_new') }}">
+            <i class="fa-solid fa-plus"></i> Nouvelle dépense
+        </a>
+    </div>
 
-        <div class="depense-stat-stack">
-            <article class="depense-stat-card coral">
-                <span class="depense-stat-label">Volume total</span>
-                <strong>{{ stats.total|number_format(2, ',', ' ') }} DT</strong>
-                <small>Somme de toutes les depenses visibles</small>
-            </article>
-            <article class="depense-stat-card navy">
-                <span class="depense-stat-label">Ticket moyen</span>
-                <strong>{{ stats.average|number_format(2, ',', ' ') }} DT</strong>
-                <small>{{ stats.count }} operation(s) sur {{ stats.categories }} categorie(s)</small>
-            </article>
-            <article class="depense-stat-card mint">
-                <span class="depense-stat-label">Rythme</span>
-                <strong>{{ highCount }}</strong>
-                <small>depense(s) elevee(s) actuellement</small>
-            </article>
+    {# ── Metrics ── #}
+    <div class="ef-section-label">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Vue d'ensemble</span>
+    </div>
+    <div class="ef-metrics">
+        <div class="metric-card m-green">
+            <div class="metric-top">
+                <div class="metric-label">Total dépenses</div>
+                <div class="metric-icon"><i class="fa-solid fa-wallet"></i></div>
+            </div>
+            <div class="metric-value">{{ stats.total|number_format(2, ',', ' ') }}<sup> DT</sup></div>
+            <div class="metric-sub">toutes périodes confondues</div>
         </div>
-    </section>
-
-    <section class="depense-filter-shell">
-        <form method="get" action="{{ path('app_depenses_index') }}" class="depense-filter-form">
-            <div class="depense-field wide">
-                <label for="depense-search">Recherche</label>
-                <input id="depense-search" type="text" name="q" value="{{ search }}" placeholder="Nom de l evenement..." autocomplete="off" data-live-search-input>
+        <div class="metric-card m-amber">
+            <div class="metric-top">
+                <div class="metric-label">Nombre</div>
+                <div class="metric-icon"><i class="fa-solid fa-receipt"></i></div>
             </div>
-
-            <div class="depense-field">
-                <label for="depense-budget-filter">Budget</label>
-                <select id="depense-budget-filter" name="budget_id">
-                    <option value="">Tous les budgets</option>
-                    {% for budget in budgets %}
-                        <option value="{{ budget.id }}" {{ selectedBudgetId == budget.id ? 'selected' : '' }}>
-                            {{ budgetDisplayMap[budget.id]|default('Event ' ~ budget.eventId) }}
-                        </option>
-                    {% endfor %}
-                </select>
+            <div class="metric-value">{{ depenses|length }}</div>
+            <div class="metric-sub">entrées enregistrées</div>
+        </div>
+        <div class="metric-card m-blue">
+            <div class="metric-top">
+                <div class="metric-label">Moyenne</div>
+                <div class="metric-icon"><i class="fa-solid fa-chart-line"></i></div>
             </div>
-
-            <div class="depense-field">
-                <label for="depense-category-filter">Categorie</label>
-                <select id="depense-category-filter" name="category">
-                    <option value="">Toutes les categories</option>
-                    {% for cat in categories %}
-                        <option value="{{ cat }}" {{ selectedCategory == cat ? 'selected' : '' }}>{{ cat }}</option>
-                    {% endfor %}
-                </select>
+            <div class="metric-value">{{ stats.average|number_format(2, ',', ' ') }}<sup> DT</sup></div>
+            <div class="metric-sub">par dépense</div>
+        </div>
+        <div class="metric-card m-purple">
+            <div class="metric-top">
+                <div class="metric-label">Budget restant</div>
+                <div class="metric-icon"><i class="fa-solid fa-piggy-bank"></i></div>
             </div>
+            <div class="metric-value">100 000<sup> DT</sup></div>
+            <div class="metric-badge badge-up"><i class="fa-solid fa-arrow-trend-up"></i> +12% ce mois</div>
+        </div>
+    </div>
 
-            <div class="depense-field">
-                <label for="depense-period-filter">Periode</label>
-                <select id="depense-period-filter" name="period">
-                    <option value="all" {{ selectedPeriod == 'all' ? 'selected' : '' }}>Toutes</option>
-                    <option value="month" {{ selectedPeriod == 'month' ? 'selected' : '' }}>Ce mois</option>
-                    <option value="quarter" {{ selectedPeriod == 'quarter' ? 'selected' : '' }}>Ce trimestre</option>
-                    <option value="year" {{ selectedPeriod == 'year' ? 'selected' : '' }}>Cette annee</option>
-                </select>
+    {# ── Charts ── #}
+    <div class="ef-section-label">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Analyses</span>
+    </div>
+    <div class="ef-row ef-row-3">
+
+        {# Distribution by amount levels #}
+        <div class="chart-card">
+            <div class="cc-header">
+                <div class="cc-title"><i class="fa-solid fa-chart-pie"></i> Niveau des depenses</div>
+                <div class="cc-badge">{{ depenses|length }} total</div>
             </div>
-
-            <div class="depense-field">
-                <label for="depense-state-filter">Niveau</label>
-                <select id="depense-state-filter" name="state">
-                    <option value="all" {{ selectedState == 'all' ? 'selected' : '' }}>Tous</option>
-                    <option value="low" {{ selectedState == 'low' ? 'selected' : '' }}>Faible</option>
-                    <option value="medium" {{ selectedState == 'medium' ? 'selected' : '' }}>Moyen</option>
-                    <option value="high" {{ selectedState == 'high' ? 'selected' : '' }}>Eleve</option>
-                </select>
+            <div class="insight-meta" style="margin-bottom: 8px;">
+                Utilite: voir rapidement si vos depenses sont surtout faibles, moyennes ou elevees.
+                Niveau dominant: <strong>{{ dominantRange }}</strong> ({{ dominantCount }}).
             </div>
+            <div class="chart-container" style="height:190px;">
+                <canvas id="distChart"
+                    data-low="{{ lowCount }}"
+                    data-med="{{ medCount }}"
+                    data-hi="{{ hiCount }}"
+                    role="img"
+                    aria-label="Niveau des depenses par tranche de montant">
+                </canvas>
+            </div>
+            <div class="chart-legend">
+                <div class="legend-item"><div class="legend-dot" style="background:#059669;"></div> Faible &lt;100 DT ({{ lowCount }})</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div> Moyen 100-1K DT ({{ medCount }})</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#dc2626;"></div> Eleve &gt;1K DT ({{ hiCount }})</div>
+            </div>
+        </div>
 
-            <div class="depense-filter-actions">
-                <button class="btn-sponsor outline" type="submit">Filtrer</button>
-                <a class="btn-sponsor success" href="{{ path('app_depenses_new') }}">Nouvelle depense</a>
+        {# Top categories #}
+        <div class="chart-card">
+            <div class="cc-header">
+                <div class="cc-title"><i class="fa-solid fa-chart-simple"></i> Top catégories (part du total)</div>
+            </div>
+            <div class="chart-container" style="height:230px;">
+                {% if stats.byCategory is empty %}
+                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--slate-500);font-size:13px;">Aucune donnée</div>
+                {% else %}
+                    <canvas id="catChart"
+                        data-cats="{{ stats.byCategory|slice(0,5)|json_encode() }}"
+                        role="img"
+                        aria-label="Top catégories de dépenses">
+                    </canvas>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Evolution line #}
+        <div class="chart-card">
+            <div class="cc-header">
+                <div class="cc-title"><i class="fa-solid fa-calendar-week"></i> Évolution mensuelle</div>
+            </div>
+            <div class="chart-container" style="height:230px;">
+                <canvas id="evChart"
+                    data-monthly="{{ monthlyData|json_encode() }}"
+                    role="img"
+                    aria-label="Évolution mensuelle des dépenses">
+                </canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom: 28px;">
+        <div class="cc-header">
+            <div class="cc-title"><i class="fa-solid fa-sack-dollar"></i> Top budgets consommateurs (classement)</div>
+            <span class="insight-badge"><i class="fa-solid fa-layer-group"></i> {{ budgetSpendMap|length }} budget(s)</span>
+        </div>
+        <div class="insight-meta">Classement des budgets ayant le plus de depenses sur la periode affichee.</div>
+        <div class="chart-container" style="height:240px; margin-top: 10px;">
+            <canvas id="budgetSpendChart"
+                    data-budgets="{{ budgetSpendMap|json_encode|e('html_attr') }}"
+                    role="img"
+                    aria-label="Top budgets les plus consommateurs en depenses"></canvas>
+        </div>
+        <div class="insight-empty" id="budgetSpendEmpty">Pas assez de donnees pour afficher ce classement.</div>
+    </div>
+
+    {# ── Filters ── #}
+    <div class="ef-section-label">
+        <i class="fa-solid fa-sliders"></i>
+        <span>Filtres</span>
+    </div>
+    <div class="ef-filters">
+        <form method="get" action="{{ path('app_depenses_index') }}">
+            <div class="filters-top">
+                <div class="filters-label">Affiner les résultats</div>
+                <button type="button" id="resetFiltersBtn" class="btn-reset">
+                    <i class="fa-solid fa-rotate-left"></i> Réinitialiser
+                </button>
+            </div>
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label><i class="fa-solid fa-magnifying-glass"></i> Recherche</label>
+                    <input type="text" name="q" value="{{ search }}" placeholder="Rechercher une dépense..." data-live-search-input>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fa-solid fa-tag"></i> Budget</label>
+                    <select name="budget_id">
+                        <option value="">Tous</option>
+                        {% for budget in budgets %}
+                            <option value="{{ budget.id }}" {{ selectedBudgetId == budget.id ? 'selected' : '' }}>
+                                {{ budgetDisplayMap[budget.id]|default('Budget '~budget.id) }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fa-solid fa-layer-group"></i> Catégorie</label>
+                    <select name="category">
+                        <option value="">Toutes</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat }}" {{ selectedCategory == cat ? 'selected' : '' }}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fa-regular fa-calendar"></i> Période</label>
+                    <select name="period">
+                        <option value="all">Toutes</option>
+                        <option value="month" {{ selectedPeriod == 'month' ? 'selected' : '' }}>Ce mois</option>
+                        <option value="quarter" {{ selectedPeriod == 'quarter' ? 'selected' : '' }}>Ce trimestre</option>
+                        <option value="year" {{ selectedPeriod == 'year' ? 'selected' : '' }}>Cette année</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fa-solid fa-signal"></i> Niveau</label>
+                    <select name="state">
+                        <option value="all">Tous</option>
+                        <option value="low" {{ selectedState == 'low' ? 'selected' : '' }}>Faible</option>
+                        <option value="medium" {{ selectedState == 'medium' ? 'selected' : '' }}>Moyen</option>
+                        <option value="high" {{ selectedState == 'high' ? 'selected' : '' }}>Élevé</option>
+                    </select>
+                </div>
             </div>
         </form>
-    </section>
+    </div>
 
-    <section class="depense-visual-grid">
-        <article class="depense-visual-card">
-            <div class="depense-section-head">
-                <div>
-                    <h3>Categories les plus actives</h3>
-                    <p>Les categories qui consomment le plus de budget.</p>
-                </div>
-            </div>
-
-            {% if stats.byCategory is empty %}
-                <p class="sponsor-muted">Aucune depense pour le moment.</p>
-            {% else %}
-                {% set maxValue = 0 %}
-                {% for amount in stats.byCategory %}
-                    {% if amount > maxValue %}{% set maxValue = amount %}{% endif %}
-                {% endfor %}
-                <div class="depense-lane-list">
-                    {% for cat, amount in stats.byCategory|slice(0, 5) %}
-                        <div class="depense-lane-item">
-                            <div class="depense-lane-top">
-                                <span>{{ cat }}</span>
-                                <strong>{{ amount|number_format(2, ',', ' ') }} DT</strong>
-                            </div>
-                            <div class="depense-lane-track">
-                                <i style="width: {{ maxValue > 0 ? (amount * 100 / maxValue) : 0 }}%"></i>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        </article>
-
-        <article class="depense-visual-card tone-soft">
-            <div class="depense-section-head">
-                <div>
-                    <h3>Repartition des montants</h3>
-                    <p>Comprenez vite si les depenses sont faibles, moyennes ou elevees.</p>
-                </div>
-            </div>
-
-            {% set totalRange = lowCount + mediumCount + highCount %}
-            {% set lowPct = totalRange > 0 ? (lowCount * 100 / totalRange) : 0 %}
-            {% set mediumPct = totalRange > 0 ? (mediumCount * 100 / totalRange) : 0 %}
-            {% set highPct = totalRange > 0 ? (highCount * 100 / totalRange) : 0 %}
-            {% set circ = 282.74 %}
-            {% set lowDash = circ * lowPct / 100 %}
-            {% set mediumDash = circ * mediumPct / 100 %}
-            {% set highDash = circ * highPct / 100 %}
-            {% set mediumOffset = -(lowDash) %}
-            {% set highOffset = -(lowDash + mediumDash) %}
-
-            <div class="depense-donut-card">
-                <div class="depense-donut-chart">
-                    <svg viewBox="0 0 120 120" class="depense-donut-svg">
-                        <circle cx="60" cy="60" r="45" class="depense-donut-bg"></circle>
-                        <circle cx="60" cy="60" r="45" class="depense-donut-segment low" style="stroke-dasharray: {{ lowDash }} {{ circ - lowDash }}; stroke-dashoffset: 0;"></circle>
-                        <circle cx="60" cy="60" r="45" class="depense-donut-segment medium" style="stroke-dasharray: {{ mediumDash }} {{ circ - mediumDash }}; stroke-dashoffset: {{ mediumOffset }};"></circle>
-                        <circle cx="60" cy="60" r="45" class="depense-donut-segment high" style="stroke-dasharray: {{ highDash }} {{ circ - highDash }}; stroke-dashoffset: {{ highOffset }};"></circle>
-                        <circle cx="60" cy="60" r="31" class="depense-donut-inner"></circle>
-                        <text x="60" y="56" class="depense-donut-total">{{ totalRange }}</text>
-                        <text x="60" y="71" class="depense-donut-caption">depenses</text>
-                    </svg>
-                </div>
-                <div class="depense-donut-legend">
-                    <div class="depense-donut-item">
-                        <span class="swatch low"></span>
-                        <div>
-                            <strong>Faible</strong>
-                            <small>{{ lowCount }} depense(s) · {{ lowPct|round }}%</small>
-                        </div>
-                    </div>
-                    <div class="depense-donut-item">
-                        <span class="swatch medium"></span>
-                        <div>
-                            <strong>Moyen</strong>
-                            <small>{{ mediumCount }} depense(s) · {{ mediumPct|round }}%</small>
-                        </div>
-                    </div>
-                    <div class="depense-donut-item">
-                        <span class="swatch high"></span>
-                        <div>
-                            <strong>Eleve</strong>
-                            <small>{{ highCount }} depense(s) · {{ highPct|round }}%</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </article>
-    </section>
-
-    <section class="depense-list-shell">
-        <div class="depense-section-head">
-            <div>
-                <h3>Depenses recentes</h3>
-                <p>{{ depenses|length }} element(s) avec une lecture carte plus fluide.</p>
+    {# ── Table ── #}
+    <div class="ef-section-label">
+        <i class="fa-solid fa-list-ul"></i>
+        <span>Dépenses</span>
+    </div>
+    <div class="ef-table-section">
+        <div class="table-topbar">
+            <div class="table-topbar-title">
+                <i class="fa-solid fa-table-list"></i>
+                Liste des dépenses
+                <span class="count-badge">{{ depenses|length }}</span>
             </div>
         </div>
 
         {% if depenses is empty %}
-            <p class="sponsor-muted">Aucune depense trouvee.</p>
-        {% else %}
-            <div class="depense-card-grid">
-                {% for depense in depenses %}
-                    {% set amount = depense.amount + 0 %}
-                    {% set level = 'low' %}
-                    {% set levelText = 'Faible' %}
-                    {% if amount > 1000 %}
-                        {% set level = 'high' %}
-                        {% set levelText = 'Eleve' %}
-                    {% elseif amount >= 100 %}
-                        {% set level = 'medium' %}
-                        {% set levelText = 'Moyen' %}
-                    {% endif %}
-                    {% set budgetLabel = depense.budget ? budgetDisplayMap[depense.budget.id]|default('Budget') : '-' %}
-                    {% set eventLabel = budgetLabel|split(' (')|first %}
-
-                    <article class="depense-card-modern {{ level }}" data-live-search-item data-search="{{ eventLabel }}" data-live-suggest="{{ eventLabel }}">
-                        <div class="depense-card-head">
-                            <div>
-                                <span class="depense-card-category">{{ depense.category ?: 'Sans categorie' }}</span>
-                                <h4>{{ depense.description ?: 'Depense sans description' }}</h4>
-                            </div>
-                            <span class="depense-level-badge {{ level }}">{{ levelText }}</span>
-                        </div>
-
-                        <div class="depense-card-amount">
-                            <strong>{{ depense.amount|number_format(2, ',', ' ') }} DT</strong>
-                            <span>{{ depense.expenseDate ? depense.expenseDate|date('d/m/Y') : 'Date non definie' }}</span>
-                        </div>
-
-                        <div class="depense-card-meta">
-                            <div>
-                                <span>Budget</span>
-                                <strong>{{ budgetLabel }}</strong>
-                            </div>
-                            <div>
-                                <span>Devise source</span>
-                                <strong>
-                                    {{ depense.originalCurrency ?: 'TND' }}
-                                    {% if depense.originalAmount is not null %}
-                                        ({{ depense.originalAmount|number_format(2, ',', ' ') }})
-                                    {% endif %}
-                                </strong>
-                            </div>
-                        </div>
-
-                        <div class="depense-card-actions">
-                            <a class="btn-sponsor light" href="{{ path('app_depenses_details', {id: depense.id}) }}">Details</a>
-                            <a class="btn-sponsor warning" href="{{ path('app_depenses_edit', {id: depense.id}) }}">Modifier</a>
-                            <form method="post" action="{{ path('app_depenses_delete', {id: depense.id}) }}" onsubmit="return confirm('Supprimer cette depense ?');">
-                                <input type="hidden" name="_token" value="{{ csrf_token('delete_depense_' ~ depense.id) }}">
-                                <button class="btn-sponsor danger" type="submit">Supprimer</button>
-                            </form>
-                        </div>
-                    </article>
-                {% endfor %}
+            <div class="ef-empty">
+                <div class="ef-empty-icon"><i class="fa-regular fa-folder-open"></i></div>
+                <div class="ef-empty-title">Aucune dépense trouvée</div>
+                <div class="ef-empty-sub">Commencez par créer une nouvelle dépense.</div>
             </div>
-            <p class="sponsor-muted" data-live-search-empty hidden>Aucune depense ne correspond a votre recherche.</p>
+        {% else %}
+            <table class="ef-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Catégorie</th>
+                        <th>Budget</th>
+                        <th>Date</th>
+                        <th>Devise source</th>
+                        <th>Niveau</th>
+                        <th style="text-align:right;">Montant</th>
+                        <th style="text-align:center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for depense in depenses %}
+                        {% set pct = ((depense.amount / 10000) * 100)|round %}
+                        {% if pct > 100 %}{% set pct = 100 %}{% endif %}
+                        {% set amountFloat = depense.amount + 0 %}
+                        {% if amountFloat < 100 %}
+                            {% set levelClass = 'level-low' %}
+                            {% set levelLabel = 'Faible' %}
+                        {% elseif amountFloat <= 1000 %}
+                            {% set levelClass = 'level-medium' %}
+                            {% set levelLabel = 'Moyen' %}
+                        {% else %}
+                            {% set levelClass = 'level-high' %}
+                            {% set levelLabel = 'Eleve' %}
+                        {% endif %}
+                        <tr data-live-search-item data-search="{{ depense.description }}">
+                            <td>
+                                <div class="td-desc">
+                                    <div class="td-icon"><i class="fa-solid fa-receipt"></i></div>
+                                    <div>
+                                        <div class="td-desc-name">{{ depense.description ?: '—' }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="cat-pill">{{ depense.category ?: 'Sans catégorie' }}</span>
+                            </td>
+                            <td class="budget-chip">
+                                {{ depense.budget ? budgetDisplayMap[depense.budget.id]|default('N/A') : '—' }}
+                            </td>
+                            <td class="td-date">
+                                {{ depense.expenseDate ? depense.expenseDate|date('d M Y') : '—' }}
+                            </td>
+                            <td class="td-origin">
+                                {% if depense.originalCurrency is defined and depense.originalCurrency != 'TND' and depense.originalAmount is not null %}
+                                    <div class="origin-main">{{ depense.originalAmount|number_format(2, ',', ' ') }} {{ depense.originalCurrency }}</div>
+                                    <div class="origin-sub">Converti en TND</div>
+                                {% else %}
+                                    <div class="origin-main">{{ depense.amount|number_format(2, ',', ' ') }} TND</div>
+                                    <div class="origin-sub">Montant natif</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="level-pill {{ levelClass }}">{{ levelLabel }}</span>
+                            </td>
+                            <td class="td-amount">
+                                <div class="amount-value">{{ depense.amount|number_format(2, ',', ' ') }} DT</div>
+                                <div class="amount-bar-wrap">
+                                    <div class="amount-bar">
+                                        <div class="amount-fill {% if pct >= 80 %}danger{% elseif pct >= 60 %}warn{% endif %}"
+                                             style="width:{{ pct }}%;"></div>
+                                    </div>
+                                    <span class="amount-pct">{{ pct }}%</span>
+                                </div>
+                            </td>
+                            <td class="td-actions">
+                                <div class="btn-grp">
+                                    <a href="{{ path('app_depenses_details', {id: depense.id}) }}" class="ef-btn-icon view" title="Voir">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </a>
+                                    <a href="{{ path('app_depenses_edit', {id: depense.id}) }}" class="ef-btn-icon edit" title="Modifier">
+                                        <i class="fa-regular fa-pen-to-square"></i>
+                                    </a>
+                                    <form method="post" action="{{ path('app_depenses_delete', {id: depense.id}) }}"
+                                          onsubmit="return confirm('Supprimer cette dépense ?');" style="display:inline;">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_depense_' ~ depense.id) }}">
+                                        <button type="submit" class="ef-btn-icon del" title="Supprimer">
+                                            <i class="fa-regular fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p class="ef-no-result" data-live-search-empty hidden>
+                <i class="fa-regular fa-face-frown"></i> Aucune correspondance trouvée.
+            </p>
         {% endif %}
-    </section>
+    </div>
+</div>
+
+{# ── Top fixed actions for Depense page ── #}
+<div id="depenseTopActions" class="depense-top-actions">
+    <button class="btn-export" onclick="window.print()" style="position: static;">
+        <i class="fa-solid fa-arrow-up-from-bracket"></i> Exporter
+    </button>
+    <a class="btn-primary-action" href="{{ path('app_depenses_new') }}" style="position: static;">
+        <i class="fa-solid fa-plus"></i> Nouvelle dépense
+    </a>
 </div>
 {% endblock %}

@@ -155,9 +155,9 @@ class Sponsor
         return $this->contributionName;
     }
 
-    public function setContributionName(float|string $contributionName): self
+    public function setContributionName(float|string|null $contributionName): self
     {
-        if (trim((string) $contributionName) === '') {
+        if ($contributionName === null || trim((string) $contributionName) === '') {
             $this->contributionName = '';
 
             return $this;

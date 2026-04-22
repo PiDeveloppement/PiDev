@@ -6,6 +6,7 @@ use App\Entity\Sponsor\Sponsor;
 use App\Entity\User\UserModel;
 use App\Repository\Sponsor\SponsorRepository;
 use App\Repository\User\UserRepository;
+use App\Service\Sponsor\ExternalAiRecommendationService;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -15,6 +16,7 @@ class SponsorService
         private EntityManagerInterface $entityManager,
         private SponsorRepository $sponsorRepository,
         private UserRepository $userRepository,
+        private ExternalAiRecommendationService $externalAiRecommendationService,
     ) {
     }
 
@@ -23,15 +25,17 @@ class SponsorService
      */
     public function fetchEventsCatalog(bool $activeOnly = false): array
     {
-        $sql = 'SELECT id, title, description, location, start_date, end_date FROM event';
+        $sql = 'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity,
+                      COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
+                FROM event e';
         $params = [];
 
         if ($activeOnly) {
-            $sql .= ' WHERE end_date IS NULL OR end_date >= :now';
+            $sql .= ' WHERE e.end_date IS NULL OR e.end_date >= :now';
             $params['now'] = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
         }
 
-        $sql .= ' ORDER BY start_date ASC';
+        $sql .= ' ORDER BY e.start_date ASC';
         $rows = $this->entityManager->getConnection()->fetchAllAssociative($sql, $params);
 
         return array_map(static fn (array $row): array => self::mapEventRow($row), $rows);
@@ -55,6 +59,19 @@ class SponsorService
         $choices = [];
 
         foreach ($source as $event) {
+            // Exclude specific events from sponsorization list
+            $excludeKeywords = ['validation', 'test', 'demo', 'conférence ia'];
+            $shouldExclude = false;
+            foreach ($excludeKeywords as $keyword) {
+                if (stripos($event['title'], $keyword) !== false) {
+                    $shouldExclude = true;
+                    break;
+                }
+            }
+            if ($shouldExclude) {
+                continue;
+            }
+            
             $label = sprintf(
                 '%s (%s)',
                 $event['title'],
@@ -76,7 +93,11 @@ class SponsorService
         }
 
         $rows = $this->entityManager->getConnection()->fetchAllAssociative(
-            'SELECT id, title, description, location, start_date, end_date FROM event WHERE id = :id LIMIT 1',
+            'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity,
+                          COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
+             FROM event e
+             WHERE e.id = :id
+             LIMIT 1',
             ['id' => $eventId]
         );
 
@@ -117,51 +138,96 @@ class SponsorService
      */
     public function buildRecommendedEvents(array $events, UserModel $user, string $email): array
     {
-        $industry = trim((string) ($user->getBio() ?? ''));
-        if ($industry === '') {
-            $industry = trim((string) ($this->sponsorRepository->findLastIndustryByEmail($email) ?? ''));
-        }
+        $contributionsByEvent = $this->sponsorRepository->getMyContributionsByEvent($email);
+        $ranked = $this->rankEventsForSponsor($events, $contributionsByEvent);
 
-        if ($industry === '') {
-            return array_slice($events, 0, 6);
-        }
+        return array_slice($ranked, 0, 6);
+    }
 
-        $tokens = array_values(array_filter(
-            preg_split('/\s+/', mb_strtolower($industry)) ?: [],
-            static fn (string $value): bool => mb_strlen($value) >= 3
-        ));
-
-        if ($tokens === []) {
-            return array_slice($events, 0, 6);
-        }
-
+    /**
+     * @param array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
+     * @param array<string,float> $contributionsByEvent
+     * @return array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
+     */
+    private function rankEventsForSponsor(array $events, array $contributionsByEvent): array
+    {
         $scored = [];
         foreach ($events as $event) {
-            $haystack = mb_strtolower(
-                (string) ($event['title'] ?? '') . ' ' .
-                (string) ($event['description'] ?? '') . ' ' .
-                (string) ($event['location'] ?? '')
-            );
+            $score = 0.0;
 
-            $score = 0;
-            foreach ($tokens as $token) {
-                if (str_contains($haystack, $token)) {
-                    ++$score;
+            // New business rule: prioritize visibility by participant volume.
+            $participantsCount = max(0, (int) ($event['participantsCount'] ?? 0));
+            $capacity = max(0, (int) ($event['capacity'] ?? 0));
+            $fillRate = $capacity > 0 ? min(1, $participantsCount / $capacity) : 0;
+
+            $score += $participantsCount * 100;
+            $score += $fillRate * 20;
+
+            // Small continuity bonus if event title overlaps with previously sponsored titles.
+            $title = mb_strtolower((string) ($event['title'] ?? ''));
+            foreach ($contributionsByEvent as $eventTitle => $amount) {
+                if ((float) $amount <= 0) {
+                    continue;
+                }
+
+                $token = mb_strtolower(trim((string) $eventTitle));
+                if ($token !== '' && str_contains($title, $token)) {
+                    $score += 5;
+                    break;
                 }
             }
 
-            if ($score > 0) {
-                $scored[] = ['event' => $event, 'score' => $score];
+            // Prefer upcoming events that are not too far in time.
+            $startDate = $event['startDate'] ?? null;
+            if ($startDate instanceof \DateTimeInterface) {
+                $days = (int) ((int) $startDate->format('U') - time()) / 86400;
+                if ($days >= 0 && $days <= 90) {
+                    $score += 2;
+                } elseif ($days > 90) {
+                    $score += 1;
+                }
             }
+
+            $scored[] = ['event' => $event, 'score' => $score];
         }
 
-        if ($scored === []) {
-            return array_slice($events, 0, 6);
+        usort($scored, static function (array $a, array $b): int {
+            if ((float) $a['score'] === (float) $b['score']) {
+                $aDate = $a['event']['startDate'] instanceof \DateTimeInterface ? $a['event']['startDate']->getTimestamp() : \PHP_INT_MAX;
+                $bDate = $b['event']['startDate'] instanceof \DateTimeInterface ? $b['event']['startDate']->getTimestamp() : \PHP_INT_MAX;
+                return $aDate <=> $bDate;
+            }
+            return ((float) $b['score']) <=> ((float) $a['score']);
+        });
+
+        return array_values(array_map(static fn (array $row): array => $row['event'], $scored));
+    }
+
+    /**
+     * @return string[]
+     */
+    private function tokenizeText(string $value): array
+    {
+        $normalized = $this->normalizeForMatch($value);
+        if ($normalized === '') {
+            return [];
         }
 
-        usort($scored, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
+        $tokens = preg_split('/[^a-z0-9]+/', $normalized) ?: [];
+        $tokens = array_values(array_filter($tokens, static fn (string $token): bool => strlen($token) >= 3));
 
-        return array_map(static fn (array $row): array => $row['event'], array_slice($scored, 0, 6));
+        return array_values(array_unique($tokens));
+    }
+
+    private function normalizeForMatch(string $value): string
+    {
+        $lower = mb_strtolower(trim($value));
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $lower);
+        if ($ascii === false) {
+            return $lower;
+        }
+
+        return $ascii;
     }
 
     /**
@@ -404,7 +470,10 @@ class SponsorService
         }
 
         $rows = $this->entityManager->getConnection()->fetchAllAssociative(
-            'SELECT id, title, description, location, start_date, end_date FROM event WHERE id IN (?)',
+            'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity,
+                          COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
+             FROM event e
+             WHERE e.id IN (?)',
             [$ids],
             [ArrayParameterType::INTEGER]
         );
@@ -514,6 +583,8 @@ class SponsorService
             'title' => (string) ($row['title'] ?? ''),
             'description' => (string) ($row['description'] ?? ''),
             'location' => (string) ($row['location'] ?? ''),
+            'capacity' => isset($row['capacity']) ? (int) $row['capacity'] : 0,
+            'participantsCount' => isset($row['participants_count']) ? (int) $row['participants_count'] : 0,
             'startDate' => !empty($row['start_date']) ? new \DateTimeImmutable((string) $row['start_date']) : null,
             'endDate' => !empty($row['end_date']) ? new \DateTimeImmutable((string) $row['end_date']) : null,
         ];

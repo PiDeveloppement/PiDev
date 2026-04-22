@@ -100,9 +100,6 @@
         padding: 16px;
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
     .qr-preview {
         width: 100%;
         min-height: 320px;
@@ -124,9 +121,6 @@
         display: block;
     }
 
->>>>>>> origin/event
-=======
->>>>>>> origin/feedbacks
     .ticket-code-box {
         margin-top: 12px;
         background: #f8fafc;
@@ -243,16 +237,6 @@
     <div class="ticket-main-grid">
         <div>
             <h3 class="verify-label">Code de Vérification</h3>
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> origin/feedbacks
-            <div class="verify-placeholder">
-                Emplacement réservé au QR Code<br>
-                (à intégrer plus tard)
-            </div>
-<<<<<<< HEAD
-=======
             {% if ticket.qrCode %}
                 <div class="qr-preview">
                     {% set scanUrl = url('app_ticket_scan_auto', { token: ticket.qrCode }) %}
@@ -260,12 +244,10 @@
                 </div>
             {% else %}
                 <div class="verify-placeholder">
-                    QR Code indisponible pour ce billet.
+                    Emplacement réservé au QR Code<br>
+                    (à intégrer plus tard)
                 </div>
             {% endif %}
->>>>>>> origin/event
-=======
->>>>>>> origin/feedbacks
 
             <div class="ticket-code-box">
                 <div class="ticket-code-label">Numéro du Billet</div>

@@ -14,6 +14,8 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Notifier\Message\SmsMessage;
+use Symfony\Component\Notifier\TexterInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
@@ -29,7 +31,8 @@ class ProfilController extends AbstractController
         private RoleRepository $roleRepository,
         private EntityManagerInterface $entityManager,
         private UserPasswordHasherInterface $passwordHasher,
-        private SluggerInterface $slugger
+        private SluggerInterface $slugger,
+        private TexterInterface $texter
     ) {}
 
     #[Route('/', name: 'app_profile')]
@@ -132,6 +135,19 @@ class ProfilController extends AbstractController
         $hashedPassword = $this->passwordHasher->hashPassword($user, $newPassword);
         $user->setPassword($hashedPassword);
         $this->entityManager->flush();
+
+        // Envoyer notification SMS via Infobip
+        try {
+            if ($user->getPhone()) {
+                $sms = new SmsMessage(
+                    $user->getPhone(),
+                    'EventFlow: Votre mot de passe a été modifié avec succès. Si vous n\'avez pas effectué cette action, contactez le support.'
+                );
+                $this->texter->send($sms);
+            }
+        } catch (\Exception $e) {
+            error_log('Erreur envoi SMS: ' . $e->getMessage());
+        }
 
         $this->addFlash('success', '✅ Mot de passe changé avec succès');
         return $this->redirectToRoute('app_profile');

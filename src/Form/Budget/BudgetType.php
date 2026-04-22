@@ -26,7 +26,7 @@ class BudgetType extends AbstractType
                 ],
             ])
             ->add('initialBudget', NumberType::class, [
-                'label' => 'Budget initial (TND)',
+                'label' => 'Budget initial',
                 'scale' => 2,
                 'html5' => false,
                 'invalid_message' => 'Veuillez saisir un budget initial valide.',
@@ -42,8 +42,26 @@ class BudgetType extends AbstractType
                     new Assert\GreaterThan(value: 0, message: 'Le budget initial doit etre strictement positif.'),
                 ],
             ])
+            ->add('initialBudgetCurrency', ChoiceType::class, [
+                'label' => 'Devise budget initial',
+                'mapped' => false,
+                'data' => 'TND',
+                'choices' => [
+                    'TND' => 'TND',
+                    'USD' => 'USD',
+                    'EUR' => 'EUR',
+                    'GBP' => 'GBP',
+                    'CHF' => 'CHF',
+                    'CAD' => 'CAD',
+                ],
+                'attr' => ['class' => 'form-control'],
+                'constraints' => [
+                    new Assert\NotBlank(message: 'La devise du budget initial est obligatoire.'),
+                    new Assert\Choice(choices: ['TND', 'USD', 'EUR', 'GBP', 'CHF', 'CAD'], message: 'Devise invalide.'),
+                ],
+            ])
             ->add('totalRevenue', NumberType::class, [
-                'label' => 'Revenu total (TND)',
+                'label' => 'Revenu total',
                 'scale' => 2,
                 'html5' => false,
                 'invalid_message' => 'Veuillez saisir un revenu total valide.',
@@ -57,6 +75,24 @@ class BudgetType extends AbstractType
                 'constraints' => [
                     new Assert\NotBlank(message: 'Le revenu total est obligatoire.'),
                     new Assert\PositiveOrZero(message: 'Le revenu total doit etre positif ou nul.'),
+                ],
+            ])
+            ->add('totalRevenueCurrency', ChoiceType::class, [
+                'label' => 'Devise revenu total',
+                'mapped' => false,
+                'data' => 'TND',
+                'choices' => [
+                    'TND' => 'TND',
+                    'USD' => 'USD',
+                    'EUR' => 'EUR',
+                    'GBP' => 'GBP',
+                    'CHF' => 'CHF',
+                    'CAD' => 'CAD',
+                ],
+                'attr' => ['class' => 'form-control'],
+                'constraints' => [
+                    new Assert\NotBlank(message: 'La devise du revenu total est obligatoire.'),
+                    new Assert\Choice(choices: ['TND', 'USD', 'EUR', 'GBP', 'CHF', 'CAD'], message: 'Devise invalide.'),
                 ],
             ]);
     }

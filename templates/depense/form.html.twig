@@ -68,6 +68,7 @@
                     {{ form_label(form.originalCurrency) }}
                     {{ form_widget(form.originalCurrency) }}
                     {{ form_errors(form.originalCurrency) }}
+                    <small class="field-help">Equivalent TND: <span id="depense-amount-tnd">-</span></small>
                 </div>
                 <div class="depense-field">
                     {{ form_label(form.expenseDate) }}
@@ -93,18 +94,78 @@
 document.addEventListener('DOMContentLoaded', function () {
     const field = document.querySelector('[data-char-count]');
     const target = document.querySelector('[data-char-count-value]');
+    const amountInput = document.getElementById('{{ form.amount.vars.id }}');
+    const currencyInput = document.getElementById('{{ form.originalCurrency.vars.id }}');
+    const tndOutput = document.getElementById('depense-amount-tnd');
 
-    if (!field || !target) {
-        return;
+    if (field && target) {
+        const updateCounter = () => {
+            target.textContent = field.value.length;
+        };
+
+        updateCounter();
+        field.addEventListener('input', updateCounter);
     }
 
-    const updateCounter = () => {
-        target.textContent = field.value.length;
+    const renderAmount = function (value) {
+        if (!tndOutput) {
+            return;
+        }
+
+        if (value === null) {
+            tndOutput.textContent = '-';
+            return;
+        }
+
+        tndOutput.textContent = Number(value).toLocaleString('fr-FR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' DT';
     };
 
-    updateCounter();
-    field.addEventListener('input', updateCounter);
+    const refreshConversion = async function () {
+        if (!amountInput || !currencyInput) {
+            return;
+        }
+
+        const amount = parseFloat(String(amountInput.value || '').replace(',', '.'));
+        const from = currencyInput.value || 'TND';
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            renderAmount(null);
+            return;
+        }
+
+        if (from === 'TND') {
+            renderAmount(amount);
+            return;
+        }
+
+        try {
+            const url = `{{ path('app_currency_convert') }}?amount=${encodeURIComponent(String(amount))}&from=${encodeURIComponent(from)}&to=TND`;
+            const response = await fetch(url);
+            const payload = await response.json();
+
+            if (!response.ok || !payload.ok) {
+                renderAmount(null);
+                return;
+            }
+
+            renderAmount(payload.converted);
+        } catch (error) {
+            renderAmount(null);
+        }
+    };
+
+    if (amountInput) {
+        amountInput.addEventListener('input', refreshConversion);
+    }
+
+    if (currencyInput) {
+        currencyInput.addEventListener('change', refreshConversion);
+    }
+
+    refreshConversion();
 });
 </script>
 {% endblock %}
-

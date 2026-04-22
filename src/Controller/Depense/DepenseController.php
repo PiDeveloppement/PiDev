@@ -11,6 +11,8 @@ use App\Repository\Depense\DepenseRepository;
 use App\Service\Depense\DepenseService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -28,7 +30,7 @@ class DepenseController extends AbstractController
     #[Route('/admin/depenses', name: 'app_depenses_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $search = trim((string) $request->query->get('q', ''));
         $budgetId = (int) $request->query->get('budget_id', 0);
@@ -84,7 +86,7 @@ class DepenseController extends AbstractController
         $stats = $this->depenseService->buildStats($depenses);
 
         return $this->render('depense/index.html.twig', [
-            'pageInfo' => ['title' => 'Gestion des depenses', 'subtitle' => 'CRUD, filtres et indicateurs'],
+            'pageInfo' => ['title' => 'Gestion des depenses', 'subtitle' => 'Suivez les depenses, comparez les montants et gardez une vision claire des sorties financieres.'],
             'depenses' => $depenses,
             'budgets' => $budgets,
             'budgetDisplayMap' => $this->depenseService->buildBudgetDisplayMap($budgets),
@@ -101,7 +103,7 @@ class DepenseController extends AbstractController
     #[Route('/admin/depenses/new', name: 'app_depenses_new', methods: ['GET', 'POST'])]
     public function new(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $depense = new Depense();
         $depense->setExpenseDate(new \DateTimeImmutable());
@@ -113,28 +115,48 @@ class DepenseController extends AbstractController
         ]);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        if ($form->isSubmitted()) {
             $budgetId = (int) $form->get('budgetId')->getData();
-            $budget = $this->budgetRepository->find($budgetId);
+            $budget = $budgetId > 0 ? $this->budgetRepository->find($budgetId) : null;
+
+            if ($budget instanceof Budget) {
+                $depense->setBudget($budget);
+            } else {
+                $depense->setBudget(null);
+                $form->get('budgetId')->addError(new FormError('Budget invalide.'));
+            }
+        }
+
+        if ($form->isSubmitted() && !$form->isValid()) {
+            foreach ($this->collectFormErrors($form) as $message) {
+                $this->addFlash('error', $message);
+            }
+        }
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $budget = $depense->getBudget();
 
             if (!$budget instanceof Budget) {
                 $this->addFlash('error', 'Budget invalide.');
             } else {
-                $depense->setBudget($budget);
-                $this->depenseService->normalizeDepenseCurrency($depense);
+                try {
+                    $this->depenseService->normalizeDepenseCurrency($depense);
 
-                $this->entityManager->persist($depense);
-                $this->entityManager->flush();
-                $this->depenseService->recomputeBudget($budget);
-                $this->entityManager->flush();
+                    $this->entityManager->persist($depense);
+                    $this->entityManager->flush();
+                    $this->depenseService->recomputeBudget($budget);
+                    $this->entityManager->flush();
 
-                $this->addFlash('success', 'Depense ajoutee avec succes.');
-                return $this->redirectToRoute('app_depenses_index');
+                    $this->addFlash('success', 'Depense ajoutee avec succes.');
+                    return $this->redirectToRoute('app_depenses_index');
+                } catch (\RuntimeException $exception) {
+                    $this->addFlash('error', $exception->getMessage());
+                }
             }
         }
 
         return $this->render('depense/form.html.twig', [
-            'pageInfo' => ['title' => 'Nouvelle depense', 'subtitle' => 'Creation depense'],
+            'pageInfo' => ['title' => 'Nouvelle depense', 'subtitle' => 'Ajoutez une depense avec sa categorie, sa date et sa conversion en dinar tunisien.'],
             'form' => $form->createView(),
             'isEdit' => false,
         ]);
@@ -143,7 +165,7 @@ class DepenseController extends AbstractController
     #[Route('/admin/depenses/{id}/edit', name: 'app_depenses_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Depense $depense): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $oldBudget = $depense->getBudget();
         $selectedBudgetId = $oldBudget?->getId();
@@ -155,28 +177,48 @@ class DepenseController extends AbstractController
         ]);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        if ($form->isSubmitted()) {
             $budgetId = (int) $form->get('budgetId')->getData();
-            $budget = $this->budgetRepository->find($budgetId);
+            $budget = $budgetId > 0 ? $this->budgetRepository->find($budgetId) : null;
+
+            if ($budget instanceof Budget) {
+                $depense->setBudget($budget);
+            } else {
+                $depense->setBudget(null);
+                $form->get('budgetId')->addError(new FormError('Budget invalide.'));
+            }
+        }
+
+        if ($form->isSubmitted() && !$form->isValid()) {
+            foreach ($this->collectFormErrors($form) as $message) {
+                $this->addFlash('error', $message);
+            }
+        }
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $budget = $depense->getBudget();
 
             if (!$budget instanceof Budget) {
                 $this->addFlash('error', 'Budget invalide.');
             } else {
-                $depense->setBudget($budget);
-                $this->depenseService->normalizeDepenseCurrency($depense);
+                try {
+                    $this->depenseService->normalizeDepenseCurrency($depense);
 
-                $this->entityManager->flush();
-                $this->depenseService->recomputeBudget($oldBudget);
-                $this->depenseService->recomputeBudget($depense->getBudget());
-                $this->entityManager->flush();
+                    $this->entityManager->flush();
+                    $this->depenseService->recomputeBudget($oldBudget);
+                    $this->depenseService->recomputeBudget($depense->getBudget());
+                    $this->entityManager->flush();
 
-                $this->addFlash('success', 'Depense modifiee avec succes.');
-                return $this->redirectToRoute('app_depenses_index');
+                    $this->addFlash('success', 'Depense modifiee avec succes.');
+                    return $this->redirectToRoute('app_depenses_index');
+                } catch (\RuntimeException $exception) {
+                    $this->addFlash('error', $exception->getMessage());
+                }
             }
         }
 
         return $this->render('depense/form.html.twig', [
-            'pageInfo' => ['title' => 'Modifier depense', 'subtitle' => 'Mise a jour depense'],
+            'pageInfo' => ['title' => 'Modifier depense', 'subtitle' => 'Mettez a jour les informations d une depense pour conserver un suivi financier fiable.'],
             'form' => $form->createView(),
             'isEdit' => true,
             'depense' => $depense,
@@ -186,7 +228,7 @@ class DepenseController extends AbstractController
     #[Route('/admin/depenses/{id}/details', name: 'app_depenses_details', methods: ['GET'])]
     public function details(Depense $depense): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $budget = $depense->getBudget();
         $eventTitle = '-';
@@ -195,7 +237,7 @@ class DepenseController extends AbstractController
         }
 
         return $this->render('depense/details.html.twig', [
-            'pageInfo' => ['title' => 'Details depense', 'subtitle' => 'Informations depense'],
+            'pageInfo' => ['title' => 'Details depense', 'subtitle' => 'Consultez toutes les informations de la depense et son contexte budgetaire.'],
             'depense' => $depense,
             'eventTitle' => $eventTitle,
         ]);
@@ -204,7 +246,7 @@ class DepenseController extends AbstractController
     #[Route('/admin/depenses/{id}', name: 'app_depenses_delete', methods: ['POST'])]
     public function delete(Request $request, Depense $depense): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         if ($this->isCsrfTokenValid('delete_depense_' . $depense->getId(), (string) $request->request->get('_token'))) {
             $budget = $depense->getBudget();
@@ -218,25 +260,45 @@ class DepenseController extends AbstractController
         return $this->redirectToRoute('app_depenses_index');
     }
 
-    private function denyUnlessAdminOrOrganizer(): void
+    private function denyUnlessAdmin(): void
     {
         $user = $this->getUser();
         if (!$user instanceof UserModel) {
-            throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+            throw $this->createAccessDeniedException('Acces reserve a l administration.');
         }
 
         // Vérifier via les rôles Symfony (plus fiable)
         $roles = $user->getRoles();
-        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_ORGANISATEUR', $roles, true)) {
+        if (in_array('ROLE_ADMIN', $roles, true)) {
             return;
         }
 
-        // Vérification de secours via roleId (Admin=2, Organisateur=3)
+        // Verification de secours via roleId (Administrateur=4)
         $roleId = (int) ($user->getRoleId() ?? 0);
-        if ($roleId === 2 || $roleId === 3) {
+        if ($roleId === 4) {
             return;
         }
 
-        throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+        throw $this->createAccessDeniedException('Acces reserve a l administration.');
+    }
+
+    /**
+     * @return string[]
+     */
+    private function collectFormErrors(FormInterface $form): array
+    {
+        $messages = [];
+
+        foreach ($form->getErrors(true, true) as $error) {
+            $origin = $error->getOrigin();
+            $fieldName = $origin instanceof FormInterface ? $origin->getName() : 'form';
+            $messages[] = sprintf('Champ "%s": %s', $fieldName, $error->getMessage());
+        }
+
+        if ($messages === []) {
+            return ['Creation impossible: un ou plusieurs champs sont invalides.'];
+        }
+
+        return array_values(array_unique($messages));
     }
 }

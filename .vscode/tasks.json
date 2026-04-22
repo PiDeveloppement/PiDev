@@ -1,0 +1,60 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "noop",
+			"type": "shell",
+			"command": "echo noop"
+		},
+		{
+			"label": "noop2",
+			"type": "shell",
+			"command": "echo ready"
+		},
+		{
+			"label": "noop3",
+			"type": "shell",
+			"command": "echo patching"
+		},
+		{
+			"label": "noop4",
+			"type": "shell",
+			"command": "echo patching2"
+		},
+		{
+			"label": "noop5",
+			"type": "shell",
+			"command": "echo patching3"
+		},
+		{
+			"label": "noop6",
+			"type": "shell",
+			"command": "echo patching4"
+		},
+		{
+			"label": "noop7",
+			"type": "shell",
+			"command": "echo patching5"
+		},
+		{
+			"label": "noop8",
+			"type": "shell",
+			"command": "echo apply edits"
+		},
+		{
+			"label": "noop9",
+			"type": "shell",
+			"command": "echo done"
+		},
+		{
+			"label": "noop10",
+			"type": "shell",
+			"command": "echo editing css"
+		},
+		{
+			"label": "noop11",
+			"type": "shell",
+			"command": "echo"
+		}
+	]
+}

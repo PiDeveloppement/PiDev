@@ -21,12 +21,9 @@ final class Version20260401192146 extends AbstractMigration
     {
         // this up() migration is auto-generated, please modify it to your needs
         $this->addSql('ALTER TABLE event CHANGE ticket_price ticket_price NUMERIC(10, 2) DEFAULT \'0\' NOT NULL');
-        // Foreign key constraint FK_3BAE0AA7DE12AB56 already exists, skipping
-        // $this->addSql('ALTER TABLE event ADD CONSTRAINT FK_3BAE0AA7DE12AB56 FOREIGN KEY (created_by) REFERENCES user_model (Id_User)');
-        // Index IDX_3BAE0AA7DE12AB56 already exists, skipping
-        // $this->addSql('CREATE INDEX IDX_3BAE0AA7DE12AB56 ON event (created_by)');
-        // Index fk_3bae0aa712469de2 doesn't exist, skipping rename
-        // $this->addSql('ALTER TABLE event RENAME INDEX fk_3bae0aa712469de2 TO IDX_3BAE0AA712469DE2');
+        $this->addSql('ALTER TABLE event ADD CONSTRAINT FK_3BAE0AA7DE12AB56 FOREIGN KEY (created_by) REFERENCES user_model (Id_User)');
+        $this->addSql('CREATE INDEX IDX_3BAE0AA7DE12AB56 ON event (created_by)');
+        $this->addSql('ALTER TABLE event RENAME INDEX fk_3bae0aa712469de2 TO IDX_3BAE0AA712469DE2');
         $this->addSql('ALTER TABLE event_category CHANGE description description LONGTEXT DEFAULT NULL, CHANGE color color VARCHAR(20) DEFAULT NULL, CHANGE created_at created_at DATETIME DEFAULT NULL, CHANGE icon icon VARCHAR(50) DEFAULT NULL, CHANGE is_active is_active TINYINT(1) DEFAULT 1 NOT NULL');
         $this->addSql('ALTER TABLE event_ticket DROP FOREIGN KEY event_ticket_ibfk_1');
         $this->addSql('ALTER TABLE event_ticket DROP FOREIGN KEY event_ticket_ibfk_2');

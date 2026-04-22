@@ -1,12 +1,8 @@
 <?php
 
-
-
 namespace App\Entity\Depense;
 
 use App\Entity\Budget\Budget;
-
-
 use App\Repository\Depense\DepenseRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -23,7 +19,6 @@ class Depense
 
     #[ORM\ManyToOne(targetEntity: Budget::class)]
     #[ORM\JoinColumn(name: 'budget_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
-    #[Assert\NotNull(message: 'Le budget est obligatoire.')]
     private ?Budget $budget = null;
 
     #[ORM\Column(length: 1000)]
@@ -95,9 +90,9 @@ class Depense
         return $this->amount;
     }
 
-    public function setAmount(float|string $amount): self
+    public function setAmount(float|string|null $amount): self
     {
-        if ($amount === '') {
+        if ($amount === null || $amount === '') {
             $this->amount = '';
 
             return $this;

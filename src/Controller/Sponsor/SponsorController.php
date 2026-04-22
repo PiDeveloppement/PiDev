@@ -6,8 +6,11 @@ use App\Entity\Sponsor\Sponsor;
 use App\Entity\User\UserModel;
 use App\Form\Sponsor\SponsorType;
 use App\Repository\Sponsor\SponsorRepository;
+use App\Service\Currency\CurrencyConverterService;
+use App\Service\Sponsor\SponsorAlertEmailService;
 use App\Service\Sponsor\SponsorService;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Snappy\Pdf;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -15,28 +18,39 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\UX\Chartjs\Builder\ChartBuilderInterface;
+use Symfony\UX\Chartjs\Model\Chart;
 
 class SponsorController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
         private SponsorRepository $sponsorRepository,
+        private CurrencyConverterService $currencyConverter,
         private SponsorService $sponsorService,
-        private SluggerInterface $slugger
+        private SponsorAlertEmailService $sponsorAlertEmailService,
+        private MailerInterface $mailer,
+        private Pdf $pdfGenerator,
+        private SluggerInterface $slugger,
+        private ChartBuilderInterface $chartBuilder
     ) {
     }
 
     #[Route('/admin/sponsors', name: 'app_sponsors_index', methods: ['GET'])]
     public function adminIndex(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
+        // 1) Lire les filtres de la liste sponsors depuis l'URL.
         $search = trim((string) $request->query->get('q', ''));
         $company = trim((string) $request->query->get('company', ''));
         $eventId = (int) $request->query->get('event_id', 0);
+        $sort = (string) $request->query->get('sort', 'default');
 
         $sponsors = $this->sponsorRepository->searchForAdmin(
             $search !== '' ? $search : null,
@@ -44,13 +58,423 @@ class SponsorController extends AbstractController
             $eventId > 0 ? $eventId : null
         );
 
+        // Server-side sorting
+        usort($sponsors, function (Sponsor $a, Sponsor $b) use ($sort): int {
+            switch ($sort) {
+                case 'name-asc':
+                    return strcasecmp($a->getCompanyName() ?? '', $b->getCompanyName() ?? '');
+                case 'name-desc':
+                    return strcasecmp($b->getCompanyName() ?? '', $a->getCompanyName() ?? '');
+                case 'contribution-asc':
+                    return ((float) ($a->getContributionAmount() ?? 0)) <=> ((float) ($b->getContributionAmount() ?? 0));
+                case 'contribution-desc':
+                    return ((float) ($b->getContributionAmount() ?? 0)) <=> ((float) ($a->getContributionAmount() ?? 0));
+                case 'date-asc':
+                    return ((int) ($a->getId() ?? 0)) <=> ((int) ($b->getId() ?? 0));
+                case 'date-desc':
+                    return ((int) ($b->getId() ?? 0)) <=> ((int) ($a->getId() ?? 0));
+                default:
+                    return 0;
+            }
+        });
+
         $events = $this->sponsorService->fetchEventsCatalog();
         $eventTitleMap = $this->sponsorService->buildEventTitleMapForSponsors($sponsors);
 
+        // Grouper les contributions par entreprise pour afficher une seule carte par societe.
+        $companyCardsMap = [];
+        foreach ($sponsors as $sponsor) {
+            $companyName = trim((string) ($sponsor->getCompanyName() ?: '-'));
+            $companyKey = mb_strtolower($companyName);
+
+            if (!isset($companyCardsMap[$companyKey])) {
+                $companyCardsMap[$companyKey] = [
+                    'companyName' => $companyName,
+                    'contactEmail' => (string) ($sponsor->getContactEmail() ?: '-'),
+                    'logoUrl' => (string) ($sponsor->getLogoUrl() ?: ''),
+                    'contributionTotal' => 0.0,
+                    'contributionsCount' => 0,
+                    'eventIds' => [],
+                    'representativeSponsorId' => (int) ($sponsor->getId() ?? 0),
+                ];
+            }
+
+            $companyCardsMap[$companyKey]['contributionTotal'] += (float) ($sponsor->getContributionAmount() ?? 0.0);
+            $companyCardsMap[$companyKey]['contributionsCount']++;
+
+            $eventId = (int) ($sponsor->getEventId() ?? 0);
+            if ($eventId > 0) {
+                $companyCardsMap[$companyKey]['eventIds'][$eventId] = true;
+            }
+
+            if ($companyCardsMap[$companyKey]['logoUrl'] === '' && (string) ($sponsor->getLogoUrl() ?? '') !== '') {
+                $companyCardsMap[$companyKey]['logoUrl'] = (string) $sponsor->getLogoUrl();
+            }
+
+            if ((int) ($sponsor->getId() ?? 0) > (int) ($companyCardsMap[$companyKey]['representativeSponsorId'] ?? 0)) {
+                $companyCardsMap[$companyKey]['representativeSponsorId'] = (int) $sponsor->getId();
+                if ((string) ($sponsor->getContactEmail() ?? '') !== '') {
+                    $companyCardsMap[$companyKey]['contactEmail'] = (string) $sponsor->getContactEmail();
+                }
+            }
+        }
+
+        $companyCards = array_values(array_map(static function (array $row): array {
+            $row['eventsCount'] = count((array) ($row['eventIds'] ?? []));
+            unset($row['eventIds']);
+
+            return $row;
+        }, $companyCardsMap));
+
+        usort($companyCards, static function (array $a, array $b) use ($sort): int {
+            return match ($sort) {
+                'name-asc' => strcasecmp((string) ($a['companyName'] ?? ''), (string) ($b['companyName'] ?? '')),
+                'name-desc' => strcasecmp((string) ($b['companyName'] ?? ''), (string) ($a['companyName'] ?? '')),
+                'contribution-asc' => ((float) ($a['contributionTotal'] ?? 0)) <=> ((float) ($b['contributionTotal'] ?? 0)),
+                'contribution-desc' => ((float) ($b['contributionTotal'] ?? 0)) <=> ((float) ($a['contributionTotal'] ?? 0)),
+                'date-asc' => ((int) ($a['representativeSponsorId'] ?? 0)) <=> ((int) ($b['representativeSponsorId'] ?? 0)),
+                'date-desc' => ((int) ($b['representativeSponsorId'] ?? 0)) <=> ((int) ($a['representativeSponsorId'] ?? 0)),
+                default => ((float) ($b['contributionTotal'] ?? 0)) <=> ((float) ($a['contributionTotal'] ?? 0)),
+            };
+        });
+
+        $latestByContact = [];
+        $latestContributionId = 0;
+
+        // 2) Construire un indicateur d'inactivite par contact base sur la derniere contribution sponsor.
+        foreach ($sponsors as $item) {
+            $contactKey = mb_strtolower(trim((string) ($item->getContactEmail() ?: $item->getCompanyName() ?: ('sponsor_' . $item->getId()))));
+            $contributionId = (int) ($item->getId() ?? 0);
+            $latestContributionId = max($latestContributionId, $contributionId);
+
+            if (!isset($latestByContact[$contactKey])) {
+                $latestByContact[$contactKey] = [
+                    'companyName' => (string) ($item->getCompanyName() ?: '-'),
+                    'contactEmail' => (string) ($item->getContactEmail() ?: '-'),
+                    'representativeSponsorId' => (int) ($item->getId() ?? 0),
+                    'lastContributionId' => $contributionId,
+                    'lastContributionAmount' => (float) ($item->getContributionAmount() ?? 0.0),
+                    'contributionTotal' => 0.0,
+                    'sponsorshipCount' => 0,
+                ];
+            }
+
+            $latestByContact[$contactKey]['contributionTotal'] += (float) ($item->getContributionAmount() ?? 0.0);
+            $latestByContact[$contactKey]['sponsorshipCount']++;
+
+            if (!isset($latestByContact[$contactKey]) || $contributionId > (int) ($latestByContact[$contactKey]['lastContributionId'] ?? 0)) {
+                $latestByContact[$contactKey] = [
+                    'companyName' => (string) ($item->getCompanyName() ?: '-'),
+                    'contactEmail' => (string) ($item->getContactEmail() ?: '-'),
+                    'representativeSponsorId' => (int) ($item->getId() ?? 0),
+                    'lastContributionId' => $contributionId,
+                    'lastContributionAmount' => (float) ($item->getContributionAmount() ?? 0.0),
+                    'contributionTotal' => (float) ($latestByContact[$contactKey]['contributionTotal'] ?? 0.0),
+                    'sponsorshipCount' => (int) ($latestByContact[$contactKey]['sponsorshipCount'] ?? 0),
+                ];
+            }
+        }
+
+        // Inactivite detectee par l'ecart entre la derniere contribution du sponsor et la contribution la plus recente du systeme.
+        $inactiveSponsorAlerts = array_values(array_filter($latestByContact, static function (array $row) use ($latestContributionId): bool {
+            $contributionsSinceLast = max(0, $latestContributionId - (int) ($row['lastContributionId'] ?? 0));
+
+            return $contributionsSinceLast >= 3;
+        }));
+
+        $inactiveSponsorAlerts = array_map(static function (array $row) use ($latestContributionId): array {
+            $contributionsSinceLast = max(0, $latestContributionId - (int) ($row['lastContributionId'] ?? 0));
+            $contributionTotal = (float) ($row['contributionTotal'] ?? 0.0);
+            $sponsorshipCount = (int) ($row['sponsorshipCount'] ?? 0);
+
+            // Scoring metier: combine recence contribution, engagement financier et profondeur de sponsoring.
+            $riskScore = (int) round(
+                min(
+                    100,
+                    ($contributionsSinceLast * 11.0)
+                    + ($contributionTotal < 1500 ? 18 : 0)
+                    + ($sponsorshipCount <= 1 ? 12 : 0)
+                )
+            );
+
+            $severity = 'medium';
+            $severityLabel = 'Modere';
+            $recommendedAction = 'Suivi automatique';
+
+            if ($riskScore >= 80 || $contributionsSinceLast >= 8) {
+                $severity = 'critical';
+                $severityLabel = 'Critique';
+                $recommendedAction = 'Relance immediate + appel';
+            } elseif ($riskScore >= 55 || $contributionsSinceLast >= 5) {
+                $severity = 'high';
+                $severityLabel = 'Eleve';
+                $recommendedAction = 'Relance email prioritaire';
+            }
+
+            $row['contributionsSinceLast'] = $contributionsSinceLast;
+            $row['riskScore'] = $riskScore;
+            $row['severity'] = $severity;
+            $row['severityLabel'] = $severityLabel;
+            $row['recommendedAction'] = $recommendedAction;
+
+            return $row;
+        }, $inactiveSponsorAlerts);
+
+        usort($inactiveSponsorAlerts, static function (array $a, array $b): int {
+            $scoreOrder = ((int) ($b['riskScore'] ?? 0)) <=> ((int) ($a['riskScore'] ?? 0));
+            if ($scoreOrder !== 0) {
+                return $scoreOrder;
+            }
+
+            return ((int) ($b['contributionsSinceLast'] ?? 0)) <=> ((int) ($a['contributionsSinceLast'] ?? 0));
+        });
+        $inactiveSponsorAlerts = array_slice($inactiveSponsorAlerts, 0, 8);
+
+        // 3) Charger les statistiques principales qui alimentent les KPI et graphiques.
+        $stats = [
+            'total' => $this->sponsorRepository->getTotalSponsors(),
+            'totalContribution' => $this->sponsorRepository->getTotalContribution(),
+            'averageContribution' => $this->sponsorRepository->getAverageContribution(),
+            'byEvent' => $this->sponsorRepository->getContributionsByEvent(),
+            'topCompanies' => $this->sponsorRepository->getTopCompaniesByContribution(),
+        ];
+
+        // Palette commune pour garder une identite visuelle coherente sur tous les graphes.
+        $palette = ['#7c3aed', '#2563eb', '#059669', '#d97706', '#e11d48', '#0891b2', '#ec4899', '#6366f1'];
+
+        // 4) Graphe barre: comparaison des montants de contribution par evenement (top 5).
+        $topEventContributionMap = array_slice($stats['byEvent'], 0, 5, true);
+        $eventLabels = array_values(array_map(static fn (mixed $value): string => (string) $value, array_keys($topEventContributionMap)));
+        $eventValues = array_values(array_map(static fn (mixed $value): float => (float) $value, array_values($topEventContributionMap)));
+
+        $eventsByContributionChart = $this->chartBuilder->createChart(Chart::TYPE_BAR);
+        $eventsByContributionChart->setData([
+            'labels' => $eventLabels,
+            'datasets' => [[
+                'label' => 'Contributions par evenement (DT)',
+                'data' => $eventValues,
+                'backgroundColor' => array_slice($palette, 0, max(1, count($eventValues))),
+                'borderRadius' => 10,
+                'borderWidth' => 0,
+            ]],
+        ]);
+        $eventsByContributionChart->setOptions([
+            'responsive' => true,
+            'maintainAspectRatio' => false,
+            'plugins' => [
+                'legend' => ['display' => false],
+                'title' => [
+                    'display' => true,
+                    'text' => 'Evenements les plus sponsorises',
+                ],
+            ],
+            'scales' => [
+                'y' => [
+                    'beginAtZero' => true,
+                ],
+            ],
+        ]);
+
+        // 4.b) Graphe droite (vue evenements): volume de sponsors par evenement (top 5, plus lisible).
+        $eventSponsorCountMap = [];
+        foreach ($sponsors as $item) {
+            $title = (string) ($eventTitleMap[$item->getEventId()] ?? ('Evenement #' . (int) $item->getEventId()));
+            $eventSponsorCountMap[$title] = (int) ($eventSponsorCountMap[$title] ?? 0) + 1;
+        }
+        arsort($eventSponsorCountMap);
+
+        $eventSponsorCountMap = array_slice($eventSponsorCountMap, 0, 5, true);
+
+        $eventVolumeLabels = array_values(array_map(static fn (mixed $value): string => (string) $value, array_keys($eventSponsorCountMap)));
+        $eventVolumeValues = array_values(array_map(static fn (mixed $value): int => (int) $value, array_values($eventSponsorCountMap)));
+
+        $eventsShareChart = $this->chartBuilder->createChart(Chart::TYPE_BAR);
+        $eventsShareChart->setData([
+            'labels' => $eventVolumeLabels,
+            'datasets' => [[
+                'label' => 'Nombre de sponsors par evenement',
+                'data' => $eventVolumeValues,
+                'backgroundColor' => array_slice($palette, 0, max(1, count($eventVolumeValues))),
+                'borderRadius' => 9,
+                'borderWidth' => 0,
+            ]],
+        ]);
+        $eventsShareChart->setOptions([
+            'responsive' => true,
+            'maintainAspectRatio' => false,
+            'indexAxis' => 'y',
+            'plugins' => [
+                'legend' => ['display' => false],
+                'title' => [
+                    'display' => true,
+                    'text' => 'Top 5 volume sponsors par evenement',
+                ],
+            ],
+            'scales' => [
+                'x' => [
+                    'beginAtZero' => true,
+                    'ticks' => [
+                        'stepSize' => 1,
+                        'precision' => 0,
+                    ],
+                ],
+            ],
+        ]);
+
+        // 5) Graphe donut: repartition des top sponsors par contribution totale.
+        $topCompanyLabels = array_values(array_map(static fn (mixed $value): string => (string) $value, array_keys($stats['topCompanies'])));
+        $topCompanyValues = array_values(array_map(static fn (mixed $value): float => (float) $value, array_values($stats['topCompanies'])));
+
+        $topSponsorsChart = $this->chartBuilder->createChart(Chart::TYPE_DOUGHNUT);
+        $topSponsorsChart->setData([
+            'labels' => $topCompanyLabels,
+            'datasets' => [[
+                'label' => 'Top sponsors (DT)',
+                'data' => $topCompanyValues,
+                'backgroundColor' => array_slice($palette, 0, max(1, count($topCompanyValues))),
+                'borderColor' => '#ffffff',
+                'borderWidth' => 3,
+            ]],
+        ]);
+        $topSponsorsChart->setOptions([
+            'responsive' => true,
+            'maintainAspectRatio' => false,
+            'plugins' => [
+                'title' => [
+                    'display' => true,
+                    'text' => 'Meilleurs sponsors par contribution',
+                ],
+                'legend' => [
+                    'display' => true,
+                    'position' => 'bottom',
+                ],
+            ],
+            'cutout' => '62%',
+        ]);
+
+        // 5.b) Graphe droite (vue top): nombre de partenariats par sponsor (metrique differente du montant).
+        $companyPartnershipCountMap = [];
+        foreach ($sponsors as $item) {
+            $companyName = (string) ($item->getCompanyName() ?: '-');
+            $companyPartnershipCountMap[$companyName] = (int) ($companyPartnershipCountMap[$companyName] ?? 0) + 1;
+        }
+
+        $topCompanyPartnershipValues = [];
+        foreach ($topCompanyLabels as $companyLabel) {
+            $topCompanyPartnershipValues[] = (int) ($companyPartnershipCountMap[$companyLabel] ?? 0);
+        }
+
+        $topSponsorsComparisonChart = $this->chartBuilder->createChart(Chart::TYPE_BAR);
+        $topSponsorsComparisonChart->setData([
+            'labels' => $topCompanyLabels,
+            'datasets' => [[
+                'label' => 'Nombre de partenariats',
+                'data' => $topCompanyPartnershipValues,
+                'backgroundColor' => array_slice($palette, 0, max(1, count($topCompanyValues))),
+                'borderRadius' => 9,
+                'borderWidth' => 0,
+            ]],
+        ]);
+        $topSponsorsComparisonChart->setOptions([
+            'responsive' => true,
+            'maintainAspectRatio' => false,
+            'indexAxis' => 'y',
+            'plugins' => [
+                'legend' => ['display' => false],
+                'title' => [
+                    'display' => true,
+                    'text' => 'Frequence partenariats Top sponsors',
+                ],
+            ],
+            'scales' => [
+                'x' => [
+                    'beginAtZero' => true,
+                ],
+            ],
+        ]);
+
+        // 6) Graphe radar: vue synthetique (volume sponsors, total, moyenne, evenements couverts).
+        $overviewChart = $this->chartBuilder->createChart(Chart::TYPE_RADAR);
+        $overviewChart->setData([
+            'labels' => ['Sponsors', 'Contribution totale (kDT)', 'Moyenne (kDT)', 'Evenements couverts'],
+            'datasets' => [[
+                'label' => 'Vue globale sponsor',
+                'data' => [
+                    (float) $stats['total'],
+                    round(((float) $stats['totalContribution']) / 1000, 2),
+                    round(((float) $stats['averageContribution']) / 1000, 2),
+                    (float) count($stats['byEvent']),
+                ],
+                'fill' => true,
+                'backgroundColor' => 'rgba(124,58,237,0.18)',
+                'borderColor' => '#7c3aed',
+                'pointBackgroundColor' => '#7c3aed',
+                'pointBorderColor' => '#ffffff',
+            ]],
+        ]);
+        $overviewChart->setOptions([
+            'responsive' => true,
+            'maintainAspectRatio' => false,
+            'plugins' => [
+                'legend' => ['display' => false],
+                'title' => [
+                    'display' => true,
+                    'text' => 'Vue globale dashboard sponsor',
+                ],
+            ],
+            'scales' => [
+                'r' => [
+                    'beginAtZero' => true,
+                ],
+            ],
+        ]);
+
+        // 6.b) Graphe droite (vue globale): repartition des alertes par niveau de risque.
+        $alertDistributionMap = [
+            'Modere' => 0,
+            'Eleve' => 0,
+            'Critique' => 0,
+        ];
+        foreach ($inactiveSponsorAlerts as $alertRow) {
+            $severityLabel = (string) ($alertRow['severityLabel'] ?? 'Modere');
+            if (!array_key_exists($severityLabel, $alertDistributionMap)) {
+                $alertDistributionMap[$severityLabel] = 0;
+            }
+            $alertDistributionMap[$severityLabel]++;
+        }
+
+        $overviewKpiChart = $this->chartBuilder->createChart(Chart::TYPE_DOUGHNUT);
+        $overviewKpiChart->setData([
+            'labels' => array_keys($alertDistributionMap),
+            'datasets' => [[
+                'label' => 'Alertes par niveau',
+                'data' => array_values($alertDistributionMap),
+                'backgroundColor' => ['#f59e0b', '#ea580c', '#dc2626'],
+                'borderColor' => '#ffffff',
+                'borderWidth' => 2,
+            ]],
+        ]);
+        $overviewKpiChart->setOptions([
+            'responsive' => true,
+            'maintainAspectRatio' => false,
+            'plugins' => [
+                'legend' => [
+                    'display' => true,
+                    'position' => 'bottom',
+                ],
+                'title' => [
+                    'display' => true,
+                    'text' => 'Distribution des alertes risque',
+                ],
+            ],
+            'cutout' => '56%',
+        ]);
+
+        // 7) Rendu final: toutes les donnees de liste + dashboard sont envoyees au template.
         return $this->render('sponsor/admin.html.twig', [
             'pageInfo' => [
                 'title' => 'Liste des entreprises',
-                'subtitle' => '',
+                'subtitle' => 'Consultez les entreprises partenaires, comparez leurs contributions et suivez les alertes de sponsoring.',
             ],
             'sponsors' => $sponsors,
             'events' => $events,
@@ -59,20 +483,68 @@ class SponsorController extends AbstractController
             'search' => $search,
             'selectedCompany' => $company,
             'selectedEventId' => $eventId > 0 ? $eventId : null,
-            'stats' => [
-                'total' => $this->sponsorRepository->getTotalSponsors(),
-                'totalContribution' => $this->sponsorRepository->getTotalContribution(),
-                'averageContribution' => $this->sponsorRepository->getAverageContribution(),
-                'byEvent' => $this->sponsorRepository->getContributionsByEvent(),
-                'topCompanies' => $this->sponsorRepository->getTopCompaniesByContribution(),
+            'sort' => $sort,
+            'stats' => $stats,
+            'eventsByContributionChart' => $eventsByContributionChart,
+            'eventsShareChart' => $eventsShareChart,
+            'topSponsorsChart' => $topSponsorsChart,
+            'topSponsorsComparisonChart' => $topSponsorsComparisonChart,
+            'overviewChart' => $overviewChart,
+            'overviewKpiChart' => $overviewKpiChart,
+            'inactiveSponsorAlerts' => $inactiveSponsorAlerts,
+            'companyCards' => $companyCards,
+        ]);
+    }
+
+    #[Route('/admin/sponsors/company', name: 'app_sponsors_company_contributions', methods: ['GET'])]
+    public function adminCompanyContributions(Request $request): Response
+    {
+        $this->denyUnlessAdmin();
+
+        $company = trim((string) $request->query->get('company', ''));
+        if ($company === '') {
+            $this->addFlash('error', 'Entreprise introuvable.');
+            return $this->redirectToRoute('app_sponsors_index');
+        }
+
+        $sponsors = $this->sponsorRepository->searchForAdmin(null, $company, null);
+        if ($sponsors === []) {
+            $this->addFlash('error', 'Aucune contribution trouvee pour cette entreprise.');
+            return $this->redirectToRoute('app_sponsors_index');
+        }
+
+        usort($sponsors, static fn (Sponsor $a, Sponsor $b): int => ((int) ($b->getId() ?? 0)) <=> ((int) ($a->getId() ?? 0)));
+
+        $eventTitleMap = $this->sponsorService->buildEventTitleMapForSponsors($sponsors);
+
+        $contributionTotal = array_reduce(
+            $sponsors,
+            static fn (float $sum, Sponsor $item): float => $sum + (float) ($item->getContributionAmount() ?? 0.0),
+            0.0
+        );
+
+        $eventsCount = count(array_unique(array_filter(
+            array_map(static fn (Sponsor $item): int => (int) ($item->getEventId() ?? 0), $sponsors),
+            static fn (int $eventId): bool => $eventId > 0
+        )));
+
+        return $this->render('sponsor/company_contributions.html.twig', [
+            'pageInfo' => [
+                'title' => 'Contributions entreprise',
+                'subtitle' => 'Visualisez toutes les contributions de cette entreprise et les evenements qu elle soutient.',
             ],
+            'companyName' => $company,
+            'sponsors' => $sponsors,
+            'eventTitleMap' => $eventTitleMap,
+            'contributionTotal' => $contributionTotal,
+            'eventsCount' => $eventsCount,
         ]);
     }
 
     #[Route('/admin/sponsors/new', name: 'app_sponsors_new', methods: ['GET', 'POST'])]
     public function adminNew(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $sponsor = new Sponsor();
         $form = $this->createForm(SponsorType::class, $sponsor, [
@@ -80,17 +552,31 @@ class SponsorController extends AbstractController
         ]);
         $form->handleRequest($request);
 
+        if ($form->isSubmitted()) {
+            // Server-side validation: check contribution field and display red error
+            $contributionValue = trim((string) ($sponsor->getContributionName() ?? ''));
+            if ($contributionValue === '' || $contributionValue === '0' || $contributionValue === '0.00') {
+                $form->get('contributionName')->addError(new \Symfony\Component\Form\FormError('La contribution est obligatoire.'));
+            }
+        }
+
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 if ($this->sponsorService->hasDuplicateSponsor($sponsor)) {
                     $this->addFlash('error', 'Une entreprise avec le meme email existe deja pour cet evenement.');
                 } else {
                 $this->sponsorService->hydrateSponsorUserRelation($sponsor);
+                $this->applySponsorContributionCurrencyConversion($sponsor, $form);
                 $this->handleSponsorUploads($request, $form, $sponsor);
                 $this->entityManager->persist($sponsor);
                 $this->entityManager->flush();
 
+                $emailSent = $this->sendContributionContractEmail($sponsor);
+
                 $this->addFlash('success', 'Sponsor ajoute avec succes.');
+                if (!$emailSent) {
+                    $this->addFlash('error', 'Contribution enregistree, mais email contrat non envoye.');
+                }
                 return $this->redirectToRoute('app_sponsors_index');
                 }
             } catch (\RuntimeException $e) {
@@ -99,7 +585,7 @@ class SponsorController extends AbstractController
         }
 
         return $this->render('sponsor/form.html.twig', [
-            'pageInfo' => ['title' => 'Ajouter Entreprise Partenaire', 'subtitle' => ''],
+            'pageInfo' => ['title' => 'Ajouter Entreprise Partenaire', 'subtitle' => 'Enregistrez une entreprise sponsor avec ses informations, son evenement et sa contribution.'],
             'form' => $form->createView(),
             'isEdit' => false,
             'backRoute' => 'app_sponsors_index',
@@ -109,12 +595,20 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/{id}/edit', name: 'app_sponsors_edit', methods: ['GET', 'POST'])]
     public function adminEdit(Request $request, Sponsor $sponsor): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $form = $this->createForm(SponsorType::class, $sponsor, [
             'event_choices' => $this->sponsorService->buildEventChoices(),
         ]);
         $form->handleRequest($request);
+
+        if ($form->isSubmitted()) {
+            // Server-side validation: check contribution field and display red error
+            $contributionValue = trim((string) ($sponsor->getContributionName() ?? ''));
+            if ($contributionValue === '' || $contributionValue === '0' || $contributionValue === '0.00') {
+                $form->get('contributionName')->addError(new \Symfony\Component\Form\FormError('La contribution est obligatoire.'));
+            }
+        }
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
@@ -122,6 +616,7 @@ class SponsorController extends AbstractController
                     $this->addFlash('error', 'Une autre entreprise avec le meme email existe deja pour cet evenement.');
                 } else {
                 $this->sponsorService->hydrateSponsorUserRelation($sponsor);
+                $this->applySponsorContributionCurrencyConversion($sponsor, $form);
                 $this->handleSponsorUploads($request, $form, $sponsor);
                 $this->entityManager->flush();
 
@@ -134,7 +629,7 @@ class SponsorController extends AbstractController
         }
 
         return $this->render('sponsor/form.html.twig', [
-            'pageInfo' => ['title' => 'Ajouter Entreprise Partenaire', 'subtitle' => ''],
+            'pageInfo' => ['title' => 'Ajouter Entreprise Partenaire', 'subtitle' => 'Mettez a jour les informations du sponsor pour garder des donnees propres et coherentes.'],
             'form' => $form->createView(),
             'isEdit' => true,
             'sponsor' => $sponsor,
@@ -145,7 +640,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/{id}/details', name: 'app_sponsors_details', methods: ['GET'])]
     public function adminDetails(Sponsor $sponsor): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $eventTitle = $this->sponsorService->getEventTitleById((int) $sponsor->getEventId()) ?? '-';
 
@@ -163,7 +658,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/{id}/contract', name: 'app_sponsors_contract', methods: ['GET'])]
     public function adminContract(Sponsor $sponsor): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         return $this->createSponsorContractResponse(
             $sponsor,
@@ -176,7 +671,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/{id}/contract/view', name: 'app_sponsors_contract_view', methods: ['GET'])]
     public function adminContractView(Sponsor $sponsor): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         return $this->createSponsorContractResponse(
             $sponsor,
@@ -189,7 +684,7 @@ class SponsorController extends AbstractController
     #[Route('/admin/sponsors/{id}', name: 'app_sponsors_delete', methods: ['POST'])]
     public function adminDelete(Request $request, Sponsor $sponsor): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         if ($this->isCsrfTokenValid('delete_sponsor_' . $sponsor->getId(), (string) $request->request->get('_token'))) {
             $this->entityManager->remove($sponsor);
@@ -200,22 +695,93 @@ class SponsorController extends AbstractController
         return $this->redirectToRoute('app_sponsors_index');
     }
 
+    #[Route('/admin/sponsors/{id}/send-recommendation-email', name: 'app_sponsors_send_recommendation_email', methods: ['POST'])]
+    public function adminSendRecommendationEmail(Request $request, Sponsor $sponsor): Response
+    {
+        $this->denyUnlessAdmin();
+
+        $redirectTo = $request->headers->get('referer') ?: $this->generateUrl('app_sponsors_index');
+        $csrfToken = (string) $request->request->get('_token');
+
+        if (!$this->isCsrfTokenValid('send_reco_mail_' . $sponsor->getId(), $csrfToken)) {
+            $this->addFlash('error', 'Action refusee: token CSRF invalide.');
+            return $this->redirect($redirectTo);
+        }
+
+        $email = trim((string) $sponsor->getContactEmail());
+        if ($email === '') {
+            $this->addFlash('error', 'Aucun email de contact pour cette entreprise.');
+            return $this->redirect($redirectTo);
+        }
+
+        $result = $this->sponsorAlertEmailService->sendRecommendationEmailForContact($email);
+        if (($result['sent'] ?? false) === true) {
+            $this->addFlash('success', 'Email de recommandations envoye a ' . $email . '.');
+            return $this->redirect($redirectTo);
+        }
+
+        $reason = (string) ($result['reason'] ?? '');
+        if ($reason === 'no_recommendations') {
+            $this->addFlash('error', 'Aucune recommandation disponible pour ' . $email . '.');
+        } elseif ($reason === 'missing_email') {
+            $this->addFlash('error', 'Email de contact manquant.');
+        } else {
+            $transportError = trim((string) ($result['error'] ?? ''));
+            $suffix = $transportError !== '' ? (' Details SMTP: ' . $transportError) : '';
+            $this->addFlash('error', 'Echec envoi email vers ' . $email . '.' . $suffix);
+        }
+
+        return $this->redirect($redirectTo);
+    }
+
     #[Route('/admin/sponsors/export/csv', name: 'app_sponsors_export_csv', methods: ['GET'])]
     public function adminExportCsv(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
-        $search = trim((string) $request->query->get('q', ''));
-        $company = trim((string) $request->query->get('company', ''));
-        $eventId = (int) $request->query->get('event_id', 0);
+        $mode = strtolower(trim((string) $request->query->get('mode', 'all')));
+        if ($mode === 'filtered') {
+            $search = trim((string) $request->query->get('q', ''));
+            $company = trim((string) $request->query->get('company', ''));
+            $eventId = (int) $request->query->get('event_id', 0);
 
-        $items = $this->sponsorRepository->searchForAdmin(
-            $search !== '' ? $search : null,
-            $company !== '' ? $company : null,
-            $eventId > 0 ? $eventId : null
-        );
+            $items = $this->sponsorRepository->searchForAdmin(
+                $search !== '' ? $search : null,
+                $company !== '' ? $company : null,
+                $eventId > 0 ? $eventId : null
+            );
+        } else {
+            $items = $this->sponsorRepository->findBy([], ['id' => 'DESC']);
+        }
 
         return $this->buildCsvResponse($items, 'sponsors_admin_export.csv');
+    }
+
+    #[Route('/admin/sponsors/suggestions', name: 'app_sponsors_suggestions', methods: ['GET'])]
+    public function adminSuggestions(Request $request): Response
+    {
+        $this->denyUnlessAdmin();
+
+        $q = trim((string) $request->query->get('q', ''));
+        if (strlen($q) < 1) {
+            return $this->json([]);
+        }
+
+        $sponsors = $this->sponsorRepository->findAll();
+        $searchLower = mb_strtolower($q);
+        $suggestions = [];
+        $seen = [];
+
+        foreach ($sponsors as $sponsor) {
+            $companyName = $sponsor->getCompanyName() ?? '';
+            if (!empty($companyName) && mb_stripos($companyName, $searchLower) !== false && !in_array($companyName, $seen)) {
+                $suggestions[] = $companyName;
+                $seen[] = $companyName;
+            }
+            if (count($suggestions) >= 10) break;
+        }
+
+        return $this->json($suggestions);
     }
 
     #[Route('/sponsor/portal', name: 'app_sponsor_portal', methods: ['GET'])]
@@ -231,10 +797,35 @@ class SponsorController extends AbstractController
         $mySponsors = $isSponsorSession
             ? $this->sponsorRepository->findByContactEmailWithEvent($email)
             : [];
+        $sponsoredEventIds = array_values(array_unique(array_filter(
+            array_map(static fn (Sponsor $sponsor): int => (int) $sponsor->getEventId(), $mySponsors),
+            static fn (int $eventId): bool => $eventId > 0
+        )));
+
         $allEvents = $this->sponsorService->fetchEventsCatalog();
         $recommendedEvents = $isSponsorSession
             ? $this->sponsorService->buildRecommendedEvents($allEvents, $user, $email)
             : array_slice($allEvents, 0, 6);
+
+        if ($isSponsorSession && $sponsoredEventIds !== []) {
+            $recommendedEvents = array_values(array_filter(
+                $recommendedEvents,
+                static fn (array $event): bool => !in_array((int) ($event['id'] ?? 0), $sponsoredEventIds, true)
+            ));
+        }
+
+        if ($isSponsorSession && $request->hasSession()) {
+            $today = (new \DateTimeImmutable())->format('Y-m-d');
+            $sessionKey = 'sponsor_reco_mail_last_sent_' . md5(mb_strtolower(trim($email)));
+            $lastSentAt = (string) $request->getSession()->get($sessionKey, '');
+
+            if ($lastSentAt !== $today) {
+                $sent = $this->sponsorAlertEmailService->sendRecommendationEmailForSponsor($user, $email, $recommendedEvents, $mySponsors);
+                if ($sent) {
+                    $request->getSession()->set($sessionKey, $today);
+                }
+            }
+        }
 
         if ($query !== '') {
             $needle = mb_strtolower($query);
@@ -258,6 +849,12 @@ class SponsorController extends AbstractController
 
         $eventBuckets = $this->sponsorService->splitEventsByStatus($allEvents);
         $sponsorableEvents = $this->sponsorService->sortEvents($eventBuckets['sponsorable'], $sort);
+        if ($isSponsorSession && $sponsoredEventIds !== []) {
+            $sponsorableEvents = array_values(array_filter(
+                $sponsorableEvents,
+                static fn (array $event): bool => !in_array((int) ($event['id'] ?? 0), $sponsoredEventIds, true)
+            ));
+        }
         $archivedEvents = $this->sponsorService->sortEvents($eventBuckets['archived'], $sort);
         $recommendedEvents = $this->sponsorService->sortEvents(array_values(array_filter(
             $recommendedEvents,
@@ -270,6 +867,8 @@ class SponsorController extends AbstractController
         $contributionsByEvent = $isSponsorSession
             ? $this->sponsorRepository->getMyContributionsByEvent($email)
             : [];
+
+        $upcomingActionAlerts = [];
 
         return $this->render('sponsor/portal_home.html.twig', [
             'pageInfo' => ['title' => 'Portail Sponsoring', 'subtitle' => 'Evenements a sponsoriser'],
@@ -298,8 +897,41 @@ class SponsorController extends AbstractController
             'typeBars' => $this->sponsorService->toBarRows($eventTypeStats, 6),
             'monthBars' => $this->sponsorService->toBarRows($eventMonthStats, 6),
             'contributionBars' => $this->sponsorService->toBarRows($contributionsByEvent, 6),
+            'upcomingActionAlerts' => $upcomingActionAlerts,
         ]);
     }
+
+    #[Route('/sponsor/portal/suggestions', name: 'app_sponsor_portal_suggestions', methods: ['GET'])]
+    public function portalSuggestions(Request $request): Response
+    {
+        $q = trim((string) $request->query->get('q', ''));
+        if (mb_strlen($q) < 1) {
+            return $this->json([]);
+        }
+
+        $allEvents = $this->sponsorService->fetchEventsCatalog();
+        $needle = mb_strtolower($q);
+        $suggestions = [];
+        $seen = [];
+
+        foreach ($allEvents as $event) {
+            $title = (string) ($event['title'] ?? '');
+            $titleLower = mb_strtolower($title);
+            if ($title !== '' && str_contains($titleLower, $needle) && !in_array($title, $seen, true)) {
+                $suggestions[] = [
+                    'title' => $title,
+                    'location' => (string) ($event['location'] ?? ''),
+                ];
+                $seen[] = $title;
+            }
+            if (count($suggestions) >= 8) {
+                break;
+            }
+        }
+
+        return $this->json($suggestions);
+    }
+
 
     #[Route('/sponsor/portal/history', name: 'app_sponsor_portal_history', methods: ['GET'])]
     public function portalHistory(Request $request): Response
@@ -386,22 +1018,60 @@ class SponsorController extends AbstractController
             throw $this->createNotFoundException('Evenement introuvable.');
         }
 
-        $activeEvents = $this->sponsorService->fetchActiveEvents();
         $sponsor = new Sponsor();
         $sponsor->setEventId($id);
+        
+        // Pre-fill company name from user name
+        if ($user instanceof UserModel) {
+            $fullName = trim(($user->getFirstName() ?? '') . ' ' . ($user->getLastName() ?? ''));
+            if ($fullName !== '') {
+                $sponsor->setCompanyName($fullName);
+            }
+            
+            // Pre-fill logo from profile picture
+            $profilePic = trim((string) ($user->getProfilePictureUrl() ?? ''));
+            if ($profilePic !== '') {
+                $sponsor->setLogoUrl($profilePic);
+            }
+            
+            $sponsor->setContactEmail((string) $user->getEmail());
+            $sponsor->setUser($user);
+        }
+        
         if ($fixedEmail !== null && $fixedEmail !== '') {
             $sponsor->setContactEmail($fixedEmail);
-        }
-        if ($user instanceof UserModel) {
-            $sponsor->setUser($user);
         }
 
         $form = $this->createForm(SponsorType::class, $sponsor, [
             'fixed_email' => $fixedEmail,
-            'fixed_event_id' => null,
-            'event_choices' => $this->sponsorService->buildEventChoices($activeEvents),
+            'fixed_event_id' => $id,
+            'event_choices' => [$event['title'] => $id],
         ]);
         $form->handleRequest($request);
+
+        if ($form->isSubmitted()) {
+            // Server-side validation: check required fields and display red errors
+            $hasErrors = false;
+            
+            // Validate contribution
+            $contributionValue = trim((string) ($sponsor->getContributionName() ?? ''));
+            if ($contributionValue === '' || $contributionValue === '0' || $contributionValue === '0.00') {
+                $form->get('contributionName')->addError(new \Symfony\Component\Form\FormError('La contribution est obligatoire.'));
+                $hasErrors = true;
+            }
+            
+            // Validate company name
+            if ($sponsor->getCompanyName() === null || trim((string) $sponsor->getCompanyName()) === '') {
+                $form->get('companyName')->addError(new \Symfony\Component\Form\FormError('Le nom de l\'entreprise est obligatoire.'));
+                $hasErrors = true;
+            }
+            
+            // Validate email
+            if ($sponsor->getContactEmail() === null || trim((string) $sponsor->getContactEmail()) === '') {
+                $form->get('contactEmail')->addError(new \Symfony\Component\Form\FormError('L\'email de contact est obligatoire.'));
+                $hasErrors = true;
+            }
+        }
 
         if ($form->isSubmitted() && $form->isValid()) {
             $selectedEventId = (int) $sponsor->getEventId();
@@ -422,10 +1092,16 @@ class SponsorController extends AbstractController
                 $this->addFlash('error', 'Cette entreprise a deja sponsorise cet evenement avec le meme email.');
             } else {
                 try {
+                    $this->applySponsorContributionCurrencyConversion($sponsor, $form);
                     $this->handleSponsorUploads($request, $form, $sponsor);
                     $this->entityManager->persist($sponsor);
                     $this->entityManager->flush();
+
+                    $emailSent = $this->sendContributionContractEmail($sponsor);
                     $this->addFlash('success', 'Sponsoring enregistre avec succes.');
+                    if (!$emailSent) {
+                        $this->addFlash('error', 'Sponsoring enregistre, mais email contrat non envoye.');
+                    }
 
                     return $this->redirectToRoute('app_sponsor_portal');
                 } catch (\RuntimeException $e) {
@@ -436,6 +1112,7 @@ class SponsorController extends AbstractController
 
         return $this->render('sponsor/portal_form.html.twig', [
             'pageInfo' => ['title' => 'Sponsoriser un evenement', 'subtitle' => (string) ($event['title'] ?? '')],
+            'event' => $event,
             'form' => $form->createView(),
             'isEdit' => false,
             'backRoute' => 'app_sponsor_portal',
@@ -460,10 +1137,30 @@ class SponsorController extends AbstractController
         ]);
         $form->handleRequest($request);
 
+        if ($form->isSubmitted()) {
+            // Server-side validation: check required fields and display red errors
+            // Validate contribution
+            $contributionValue = trim((string) ($sponsor->getContributionName() ?? ''));
+            if ($contributionValue === '' || $contributionValue === '0' || $contributionValue === '0.00') {
+                $form->get('contributionName')->addError(new \Symfony\Component\Form\FormError('La contribution est obligatoire.'));
+            }
+            
+            // Validate company name
+            if ($sponsor->getCompanyName() === null || trim((string) $sponsor->getCompanyName()) === '') {
+                $form->get('companyName')->addError(new \Symfony\Component\Form\FormError('Le nom de l\'entreprise est obligatoire.'));
+            }
+            
+            // Validate email
+            if ($sponsor->getContactEmail() === null || trim((string) $sponsor->getContactEmail()) === '') {
+                $form->get('contactEmail')->addError(new \Symfony\Component\Form\FormError('L\'email de contact est obligatoire.'));
+            }
+        }
+
         if ($form->isSubmitted() && $form->isValid()) {
             $sponsor->setContactEmail((string) $user->getEmail());
             $sponsor->setUser($user);
             try {
+                $this->applySponsorContributionCurrencyConversion($sponsor, $form);
                 $this->handleSponsorUploads($request, $form, $sponsor);
                 $this->entityManager->flush();
 
@@ -476,6 +1173,7 @@ class SponsorController extends AbstractController
 
         return $this->render('sponsor/portal_form.html.twig', [
             'pageInfo' => ['title' => 'Modifier sponsoring', 'subtitle' => 'Mise a jour'],
+            'event' => $event,
             'form' => $form->createView(),
             'isEdit' => true,
             'sponsor' => $sponsor,
@@ -583,6 +1281,22 @@ class SponsorController extends AbstractController
         }
     }
 
+    private function applySponsorContributionCurrencyConversion(Sponsor $sponsor, FormInterface $form): void
+    {
+        if (!$form->has('contributionCurrency')) {
+            return;
+        }
+
+        $currency = strtoupper(trim((string) $form->get('contributionCurrency')->getData()));
+        if ($currency === '' || $currency === 'TND') {
+            return;
+        }
+
+        $amount = (float) $sponsor->getContributionName();
+        $converted = $this->currencyConverter->convert($amount, $currency, 'TND');
+        $sponsor->setContributionName($converted);
+    }
+
     private function storeUploadedFile(Request $request, UploadedFile $file, string $bucket): string
     {
         $projectDir = (string) $this->getParameter('kernel.project_dir');
@@ -609,8 +1323,12 @@ class SponsorController extends AbstractController
 
     private function createSponsorContractResponse(Sponsor $sponsor, bool $inline, string $backRoute, array $backRouteParams = []): Response
     {
-        $event = $this->sponsorService->findEventById((int) $sponsor->getEventId());
-        $pdf = $this->buildSponsorContractPdf($sponsor, $event);
+        $pdf = $this->generateContractPdfBytes($sponsor);
+        if ($pdf === null) {
+            $this->addFlash('error', 'Generation du PDF impossible.');
+            return $this->redirectToRoute($backRoute, $backRouteParams);
+        }
+
         $filename = 'contrat-sponsor-' . $this->slugifyFilename((string) ($sponsor->getCompanyName() ?? 'eventflow')) . '.pdf';
 
         $response = new Response($pdf);
@@ -623,485 +1341,76 @@ class SponsorController extends AbstractController
         return $response;
     }
 
-    /**
-     * @param array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}|null $event
-     */
-    private function buildSponsorContractPdf(Sponsor $sponsor, ?array $event): string
+    private function generateContractPdfBytes(Sponsor $sponsor): ?string
     {
+        $event = $this->sponsorService->findEventById((int) $sponsor->getEventId());
         $eventTitle = $event['title'] ?? ($this->sponsorService->getEventTitleById((int) $sponsor->getEventId()) ?? '-');
-        $eventflowLogo = $this->createPdfImageObject(
-            (string) $this->getParameter('kernel.project_dir') . '/public/images/logo.png',
-            'ImEventFlow',
-            60,
-            60
-        );
-        $sponsorLogo = $this->createPdfImageObject(
-            $this->resolveLocalPublicFileFromUrl($sponsor->getLogoUrl()),
-            'ImSponsor',
-            82,
-            68
-        );
-        $lines = [];
-        $images = [];
-        $y = 800;
 
-        if ($eventflowLogo !== null) {
-            $images[] = $eventflowLogo;
-            $lines[] = $this->pdfDrawImage('ImEventFlow', 52, 752, $eventflowLogo['drawWidth'], $eventflowLogo['drawHeight']);
+        $html = $this->renderView('sponsor/contract_pdf.html.twig', [
+            'sponsor' => $sponsor,
+            'event' => $event,
+            'eventTitle' => $eventTitle,
+            'generatedAt' => new \DateTimeImmutable(),
+        ]);
+
+        try {
+            return $this->pdfGenerator->getOutputFromHtml($html, [
+                'encoding' => 'utf-8',
+                'enable-local-file-access' => true,
+            ]);
+        } catch (\Throwable) {
+            return null;
         }
-        if ($sponsorLogo !== null) {
-            $images[] = $sponsorLogo;
-            $lines[] = $this->pdfDrawImage('ImSponsor', 450, 752, $sponsorLogo['drawWidth'], $sponsorLogo['drawHeight']);
-        }
-
-        $lines[] = $this->pdfText('EventFlow', 120, $y - 2, 15, true);
-        $lines[] = $this->pdfText('CONTRAT SPONSOR', 120, $y - 24, 24, true);
-        if ($sponsorLogo === null) {
-            $lines[] = $this->pdfText((string) ($sponsor->getCompanyName() ?? 'Sponsor'), 420, $y - 8, 18, true);
-        }
-        $lines[] = "52 724 m 543 724 l S";
-        $y = 698;
-
-        $meta = [
-            'Date: ' . (new \DateTimeImmutable())->format('d/m/Y'),
-            'Evenement: ' . $eventTitle,
-        ];
-        if (!empty($event['location'])) {
-            $meta[] = 'Lieu: ' . (string) $event['location'];
-        }
-        if (($event['startDate'] ?? null) instanceof \DateTimeInterface) {
-            $meta[] = 'Debut: ' . $event['startDate']->format('d/m/Y H:i');
-        }
-
-        foreach ($meta as $metaLine) {
-            $lines[] = $this->pdfText($metaLine, 52, $y, 12, false);
-            $y -= 18;
-        }
-
-        $y -= 10;
-        $lines[] = $this->pdfText('Informations:', 52, $y, 16, true);
-        $y -= 24;
-
-        $info = [
-            'Entreprise: ' . (string) ($sponsor->getCompanyName() ?? '-'),
-            'Email: ' . (string) ($sponsor->getContactEmail() ?? '-'),
-            'Contribution: ' . number_format($sponsor->getContributionAmount(), 2, ',', ' ') . ' DT',
-            'Numero fiscal: ' . (string) ($sponsor->getTaxId() ?? '-'),
-            'Secteur: ' . (string) ($sponsor->getIndustry() ?? '-'),
-            'Telephone: ' . (string) ($sponsor->getPhone() ?? '-'),
-        ];
-
-        foreach ($info as $infoLine) {
-            $lines[] = $this->pdfText($infoLine, 52, $y, 12, false);
-            $y -= 18;
-        }
-
-        $y -= 12;
-        $lines[] = $this->pdfText('Contrat Sponsor:', 52, $y, 16, true);
-        $y -= 24;
-
-        $paragraphs = [
-            "Le sponsor confirme sa contribution a l'evenement mentionne ci-dessus.",
-            "La contribution sera utilisee pour les besoins organisationnels, la communication et les ressources liees a cet evenement.",
-            "Ce document resume l'accord de sponsoring valide entre l'organisateur et le sponsor.",
-        ];
-
-        foreach ($paragraphs as $paragraph) {
-            foreach ($this->wrapPdfText($paragraph, 82) as $wrappedLine) {
-                $lines[] = $this->pdfText($wrappedLine, 52, $y, 12, false);
-                $y -= 16;
-            }
-            $y -= 6;
-        }
-
-        $y -= 14;
-        $lines[] = $this->pdfText('Signature Organisateur:', 52, $y, 12, true);
-        $lines[] = $this->pdfText('Signature Sponsor:', 340, $y, 12, true);
-        $y -= 20;
-        $lines[] = "52 {$y} m 250 {$y} l S";
-        $lines[] = "340 {$y} m 538 {$y} l S";
-
-        $stream = "0 0 0 rg\n";
-        $stream .= "0.25 w\n";
-        $stream .= implode("\n", $lines) . "\n";
-
-        return $this->buildSinglePagePdf($stream, $images);
     }
 
-    /**
-     * @param array<int,array{name:string,width:int,height:int,drawWidth:float,drawHeight:float,data:string,filter:string,colorSpace:string,bits:int,decodeParms:?string,smaskData:?string,smaskDecodeParms:?string}> $images
-     */
-    private function buildSinglePagePdf(string $content, array $images = []): string
+    private function sendContributionContractEmail(Sponsor $sponsor): bool
     {
-        $objects = [
-            1 => "<< /Type /Catalog /Pages 2 0 R >>",
-            2 => "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-            4 => "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-            5 => "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
-        ];
-
-        $nextId = 6;
-        $xObjectParts = [];
-        foreach ($images as $image) {
-            $smaskId = null;
-            if (!empty($image['smaskData'])) {
-                $smaskId = $nextId++;
-                $smaskDecode = $image['smaskDecodeParms'] ? ' /DecodeParms ' . $image['smaskDecodeParms'] : '';
-                $objects[$smaskId] = "<< /Type /XObject /Subtype /Image /Width {$image['width']} /Height {$image['height']} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode{$smaskDecode} /Length " . strlen((string) $image['smaskData']) . " >>\nstream\n" . $image['smaskData'] . "endstream";
-            }
-
-            $decodeParms = $image['decodeParms'] ? ' /DecodeParms ' . $image['decodeParms'] : '';
-            $smask = $smaskId !== null ? ' /SMask ' . $smaskId . ' 0 R' : '';
-            $objects[$nextId] = "<< /Type /XObject /Subtype /Image /Width {$image['width']} /Height {$image['height']} /ColorSpace {$image['colorSpace']} /BitsPerComponent {$image['bits']} /Filter /{$image['filter']}{$decodeParms}{$smask} /Length " . strlen($image['data']) . " >>\nstream\n" . $image['data'] . "endstream";
-            $xObjectParts[] = '/' . $image['name'] . ' ' . $nextId . ' 0 R';
-            ++$nextId;
+        $to = trim((string) $sponsor->getContactEmail());
+        if ($to === '') {
+            return false;
         }
 
-        $contentId = $nextId;
-        $xObjectDict = $xObjectParts === [] ? '' : ' /XObject << ' . implode(' ', $xObjectParts) . ' >>';
-        $objects[3] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >>{$xObjectDict} >> /Contents {$contentId} 0 R >>";
-        $objects[$contentId] = "<< /Length " . strlen($content) . " >>\nstream\n" . $content . "endstream";
-
-        ksort($objects);
-
-        $pdf = "%PDF-1.4\n";
-        $offsets = [0];
-
-        foreach ($objects as $id => $object) {
-            $offsets[] = strlen($pdf);
-            $pdf .= $id . " 0 obj\n" . $object . "\nendobj\n";
+        $pdf = $this->generateContractPdfBytes($sponsor);
+        if ($pdf === null) {
+            return false;
         }
 
-        $xrefOffset = strlen($pdf);
-        $pdf .= "xref\n0 " . (count($objects) + 1) . "\n";
-        $pdf .= "0000000000 65535 f \n";
+        $event = $this->sponsorService->findEventById((int) $sponsor->getEventId());
+        $eventTitle = (string) ($event['title'] ?? ($this->sponsorService->getEventTitleById((int) $sponsor->getEventId()) ?? 'Evenement'));
+        $company = trim((string) ($sponsor->getCompanyName() ?? 'Entreprise'));
+        $filename = 'contrat-sponsor-' . $this->slugifyFilename($company !== '' ? $company : 'eventflow') . '.pdf';
+        $from = (string) (getenv('MAILER_FROM') ?: ($_ENV['MAILER_FROM'] ?? 'no-reply@eventflow.local'));
 
-        for ($i = 1; $i <= count($objects); $i++) {
-            $pdf .= sprintf("%010d 00000 n \n", $offsets[$i]);
+        $email = (new Email())
+            ->from($from)
+            ->to($to)
+            ->subject('EventFlow: confirmation de contribution et contrat')
+            ->text(
+                "Bonjour {$company},\n\n" .
+                "Votre contribution pour l'evenement {$eventTitle} a bien ete enregistree.\n" .
+                "Le contrat sponsor est joint a ce message en PDF.\n\n" .
+                "EventFlow"
+            )
+            ->html(
+                '<p>Bonjour <strong>' . htmlspecialchars($company, ENT_QUOTES) . '</strong>,</p>' .
+                '<p>Votre contribution pour l\'evenement <strong>' . htmlspecialchars($eventTitle, ENT_QUOTES) . '</strong> a bien ete enregistree.</p>' .
+                '<p>Le contrat sponsor est joint a ce message en PDF.</p>' .
+                '<p>EventFlow</p>'
+            )
+            ->attach($pdf, $filename, 'application/pdf');
+
+        try {
+            $this->mailer->send($email);
+            return true;
+        } catch (\Throwable) {
+            return false;
         }
-
-        $pdf .= "trailer\n<< /Size " . (count($objects) + 1) . " /Root 1 0 R >>\n";
-        $pdf .= "startxref\n" . $xrefOffset . "\n%%EOF";
-
-        return $pdf;
-    }
-
-    private function pdfText(string $text, int $x, int $y, int $size, bool $bold): string
-    {
-        $font = $bold ? 'F2' : 'F1';
-        $safe = $this->escapePdfText($text);
-
-        return sprintf("BT /%s %d Tf 1 0 0 1 %d %d Tm (%s) Tj ET", $font, $size, $x, $y, $safe);
-    }
-
-    private function pdfDrawImage(string $name, float $x, float $y, float $width, float $height): string
-    {
-        return sprintf(
-            "q %s 0 0 %s %s %s cm /%s Do Q",
-            number_format($width, 2, '.', ''),
-            number_format($height, 2, '.', ''),
-            number_format($x, 2, '.', ''),
-            number_format($y, 2, '.', ''),
-            $name
-        );
-    }
-
-    private function escapePdfText(string $text): string
-    {
-        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
-        $ascii = $ascii === false ? $text : $ascii;
-        $ascii = str_replace(["\r", "\n"], ' ', $ascii);
-
-        return str_replace(
-            ['\\', '(', ')'],
-            ['\\\\', '\\(', '\\)'],
-            $ascii
-        );
-    }
-
-    /**
-     * @return string[]
-     */
-    private function wrapPdfText(string $text, int $maxChars): array
-    {
-        $words = preg_split('/\s+/', trim($text)) ?: [];
-        $lines = [];
-        $current = '';
-
-        foreach ($words as $word) {
-            $candidate = $current === '' ? $word : $current . ' ' . $word;
-            if (strlen($candidate) > $maxChars) {
-                if ($current !== '') {
-                    $lines[] = $current;
-                }
-                $current = $word;
-            } else {
-                $current = $candidate;
-            }
-        }
-
-        if ($current !== '') {
-            $lines[] = $current;
-        }
-
-        return $lines;
     }
 
     private function slugifyFilename(string $value): string
     {
         $safe = (string) $this->slugger->slug($value);
         return $safe !== '' ? strtolower($safe) : 'document';
-    }
-
-    private function resolveLocalPublicFileFromUrl(?string $url): ?string
-    {
-        if ($url === null || trim($url) === '') {
-            return null;
-        }
-
-        $path = parse_url($url, PHP_URL_PATH);
-        if (!is_string($path) || $path === '') {
-            return null;
-        }
-
-        $projectDir = (string) $this->getParameter('kernel.project_dir');
-        $publicDir = realpath($projectDir . '/public');
-        $candidate = realpath($projectDir . '/public' . $path);
-
-        if ($publicDir === false || $candidate === false || !str_starts_with($candidate, $publicDir) || !is_file($candidate)) {
-            return null;
-        }
-
-        return $candidate;
-    }
-
-    /**
-     * @return array{name:string,width:int,height:int,drawWidth:float,drawHeight:float,data:string,filter:string,colorSpace:string,bits:int,decodeParms:?string,smaskData:?string,smaskDecodeParms:?string}|null
-     */
-    private function createPdfImageObject(?string $path, string $name, float $maxWidth, float $maxHeight): ?array
-    {
-        if ($path === null || !is_file($path)) {
-            return null;
-        }
-
-        $raw = @file_get_contents($path);
-        if ($raw === false) {
-            return null;
-        }
-
-        $size = @getimagesize($path);
-        if (!is_array($size) || empty($size[0]) || empty($size[1])) {
-            return null;
-        }
-
-        $width = (int) $size[0];
-        $height = (int) $size[1];
-        $ratio = min($maxWidth / $width, $maxHeight / $height, 1.0);
-
-        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-
-        if (in_array($extension, ['jpg', 'jpeg'], true)) {
-            return [
-                'name' => $name,
-                'width' => $width,
-                'height' => $height,
-                'drawWidth' => $width * $ratio,
-                'drawHeight' => $height * $ratio,
-                'data' => $raw,
-                'filter' => 'DCTDecode',
-                'colorSpace' => '/DeviceRGB',
-                'bits' => 8,
-                'decodeParms' => null,
-                'smaskData' => null,
-                'smaskDecodeParms' => null,
-            ];
-        }
-
-        if ($extension !== 'png' || !function_exists('gzuncompress') || !function_exists('gzcompress')) {
-            return null;
-        }
-
-        return $this->createPdfPngImageObject($raw, $name, $width, $height, $ratio);
-    }
-
-    /**
-     * @return array{name:string,width:int,height:int,drawWidth:float,drawHeight:float,data:string,filter:string,colorSpace:string,bits:int,decodeParms:?string,smaskData:?string,smaskDecodeParms:?string}|null
-     */
-    private function createPdfPngImageObject(string $raw, string $name, int $width, int $height, float $ratio): ?array
-    {
-        $signature = substr($raw, 0, 8);
-        if ($signature !== "\x89PNG\r\n\x1a\n") {
-            return null;
-        }
-
-        $offset = 8;
-        $colorType = null;
-        $bitDepth = null;
-        $idat = '';
-        $palette = null;
-        $transparency = null;
-
-        while ($offset + 8 <= strlen($raw)) {
-            $length = unpack('N', substr($raw, $offset, 4))[1];
-            $type = substr($raw, $offset + 4, 4);
-            $data = substr($raw, $offset + 8, $length);
-            $offset += 12 + $length;
-
-            if ($type === 'IHDR') {
-                $ihdr = unpack('Nwidth/Nheight/Cbit/Ccolor/Ccompression/Cfilter/Cinterlace', $data);
-                $bitDepth = (int) $ihdr['bit'];
-                $colorType = (int) $ihdr['color'];
-            } elseif ($type === 'PLTE') {
-                $palette = $data;
-            } elseif ($type === 'tRNS') {
-                $transparency = $data;
-            } elseif ($type === 'IDAT') {
-                $idat .= $data;
-            } elseif ($type === 'IEND') {
-                break;
-            }
-        }
-
-        if ($idat === '' || !in_array($colorType, [2, 3, 6], true)) {
-            return null;
-        }
-
-        if ($colorType === 3) {
-            return $this->createIndexedPdfPngImageObject($name, $width, $height, $ratio, $bitDepth ?? 8, $idat, $palette, $transparency);
-        }
-
-        if ($bitDepth !== 8) {
-            return null;
-        }
-
-        $decodeParmsRgb = '<< /Predictor 15 /Colors 3 /BitsPerComponent 8 /Columns ' . $width . ' >>';
-
-        if ($colorType === 2) {
-            return [
-                'name' => $name,
-                'width' => $width,
-                'height' => $height,
-                'drawWidth' => $width * $ratio,
-                'drawHeight' => $height * $ratio,
-                'data' => $idat,
-                'filter' => 'FlateDecode',
-                'colorSpace' => '/DeviceRGB',
-                'bits' => 8,
-                'decodeParms' => $decodeParmsRgb,
-                'smaskData' => null,
-                'smaskDecodeParms' => null,
-            ];
-        }
-
-        $decoded = @gzuncompress($idat);
-        if (!is_string($decoded) || $decoded === '') {
-            return null;
-        }
-
-        $rowBytes = 1 + ($width * 4);
-        $rgb = '';
-        $alpha = '';
-
-        for ($row = 0; $row < $height; ++$row) {
-            $rowData = substr($decoded, $row * $rowBytes, $rowBytes);
-            if (strlen($rowData) !== $rowBytes) {
-                return null;
-            }
-
-            $filter = $rowData[0];
-            $rgb .= $filter;
-            $alpha .= $filter;
-
-            for ($x = 0; $x < $width; ++$x) {
-                $base = 1 + ($x * 4);
-                $rgb .= $rowData[$base] . $rowData[$base + 1] . $rowData[$base + 2];
-                $alpha .= $rowData[$base + 3];
-            }
-        }
-
-        $rgbCompressed = gzcompress($rgb);
-        $alphaCompressed = gzcompress($alpha);
-        if (!is_string($rgbCompressed) || !is_string($alphaCompressed)) {
-            return null;
-        }
-
-        return [
-            'name' => $name,
-            'width' => $width,
-            'height' => $height,
-            'drawWidth' => $width * $ratio,
-            'drawHeight' => $height * $ratio,
-            'data' => $rgbCompressed,
-            'filter' => 'FlateDecode',
-            'colorSpace' => '/DeviceRGB',
-            'bits' => 8,
-            'decodeParms' => $decodeParmsRgb,
-            'smaskData' => $alphaCompressed,
-            'smaskDecodeParms' => '<< /Predictor 15 /Colors 1 /BitsPerComponent 8 /Columns ' . $width . ' >>',
-        ];
-    }
-
-    /**
-     * @return array{name:string,width:int,height:int,drawWidth:float,drawHeight:float,data:string,filter:string,colorSpace:string,bits:int,decodeParms:?string,smaskData:?string,smaskDecodeParms:?string}|null
-     */
-    private function createIndexedPdfPngImageObject(string $name, int $width, int $height, float $ratio, int $bitDepth, string $idat, ?string $palette, ?string $transparency): ?array
-    {
-        if ($palette === null || $palette === '' || !in_array($bitDepth, [1, 2, 4, 8], true)) {
-            return null;
-        }
-
-        $paletteHex = strtoupper(bin2hex($palette));
-        $maxIndex = intdiv(strlen($palette), 3) - 1;
-        $decodeParms = '<< /Predictor 15 /Colors 1 /BitsPerComponent ' . $bitDepth . ' /Columns ' . $width . ' >>';
-        $smaskData = null;
-        $smaskDecodeParms = null;
-
-        if ($transparency !== null && $transparency !== '' && $bitDepth === 8) {
-            $decoded = @gzuncompress($idat);
-            if (!is_string($decoded) || $decoded === '') {
-                return null;
-            }
-
-            $rowBytes = 1 + $width;
-            $alphaStream = '';
-            $alphaMap = array_values(unpack('C*', $transparency));
-
-            for ($row = 0; $row < $height; ++$row) {
-                $rowData = substr($decoded, $row * $rowBytes, $rowBytes);
-                if (strlen($rowData) !== $rowBytes) {
-                    return null;
-                }
-
-                $alphaStream .= $rowData[0];
-                for ($x = 0; $x < $width; ++$x) {
-                    $index = ord($rowData[$x + 1]);
-                    $alphaStream .= chr($alphaMap[$index] ?? 255);
-                }
-            }
-
-            $compressedAlpha = gzcompress($alphaStream);
-            if (!is_string($compressedAlpha)) {
-                return null;
-            }
-
-            $smaskData = $compressedAlpha;
-            $smaskDecodeParms = '<< /Predictor 15 /Colors 1 /BitsPerComponent 8 /Columns ' . $width . ' >>';
-        }
-
-        return [
-            'name' => $name,
-            'width' => $width,
-            'height' => $height,
-            'drawWidth' => $width * $ratio,
-            'drawHeight' => $height * $ratio,
-            'data' => $idat,
-            'filter' => 'FlateDecode',
-            'colorSpace' => '[/Indexed /DeviceRGB ' . $maxIndex . ' <' . $paletteHex . '>]',
-            'bits' => $bitDepth,
-            'decodeParms' => $decodeParms,
-            'smaskData' => $smaskData,
-            'smaskDecodeParms' => $smaskDecodeParms,
-        ];
     }
     /**
      * @param Sponsor[] $items
@@ -1116,21 +1425,38 @@ class SponsorController extends AbstractController
                 return;
             }
 
-            fputcsv($out, ['id', 'event_id', 'event_title', 'company_name', 'contact_email', 'contribution_tnd', 'industry', 'phone', 'tax_id'], ';');
+            // BOM UTF-8: required for clean accents in Excel.
+            fwrite($out, "\xEF\xBB\xBF");
+
+            fputcsv(
+                $out,
+                ['id', 'event_id', 'event_title', 'company_name', 'contact_email', 'contribution_tnd', 'industry', 'phone', 'tax_id'],
+                ';',
+                '"',
+                '\\',
+                "\r\n"
+            );
 
             foreach ($items as $sponsor) {
                 $eventId = (int) ($sponsor->getEventId() ?? 0);
-                fputcsv($out, [
-                    $sponsor->getId(),
-                    $eventId,
-                    $eventTitleMap[$eventId] ?? '-',
-                    $sponsor->getCompanyName(),
-                    $sponsor->getContactEmail(),
-                    number_format($sponsor->getContributionAmount(), 2, '.', ''),
-                    $sponsor->getIndustry(),
-                    $sponsor->getPhone(),
-                    $sponsor->getTaxId(),
-                ], ';');
+                fputcsv(
+                    $out,
+                    [
+                        (int) ($sponsor->getId() ?? 0),
+                        $eventId,
+                        $this->sanitizeCsvText($eventTitleMap[$eventId] ?? '-'),
+                        $this->sanitizeCsvText($sponsor->getCompanyName()),
+                        $this->sanitizeCsvText($sponsor->getContactEmail()),
+                        number_format((float) ($sponsor->getContributionAmount() ?? 0), 2, ',', ''),
+                        $this->sanitizeCsvText($sponsor->getIndustry()),
+                        $this->asExcelTextLiteral($sponsor->getPhone()),
+                        $this->asExcelTextLiteral($sponsor->getTaxId()),
+                    ],
+                    ';',
+                    '"',
+                    '\\',
+                    "\r\n"
+                );
             }
 
             fclose($out);
@@ -1142,25 +1468,53 @@ class SponsorController extends AbstractController
         return $response;
     }
 
-    private function denyUnlessAdminOrOrganizer(): void
+    private function sanitizeCsvText(mixed $value): string
+    {
+        $text = trim((string) ($value ?? ''));
+        if ($text === '') {
+            return '';
+        }
+
+        // Avoid accidental Excel formula execution.
+        if (preg_match('/^[=\-+@]/', $text) === 1) {
+            return "'" . $text;
+        }
+
+        return $text;
+    }
+
+    private function asExcelTextLiteral(mixed $value): string
+    {
+        $text = trim((string) ($value ?? ''));
+        if ($text === '') {
+            return '';
+        }
+
+        $escaped = str_replace('"', '""', $text);
+
+        // Keep values like phone/tax_id as text (no scientific notation, no lost zeros).
+        return '="' . $escaped . '"';
+    }
+
+    private function denyUnlessAdmin(): void
     {
         $user = $this->getUser();
         if (!$user instanceof UserModel) {
-            throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+            throw $this->createAccessDeniedException('Acces reserve a l administration.');
         }
 
         // Vérifier via les rôles Symfony (plus fiable)
         $roles = $user->getRoles();
-        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_ORGANISATEUR', $roles, true)) {
+        if (in_array('ROLE_ADMIN', $roles, true)) {
             return;
         }
 
-        // Vérification de secours via roleId (Admin=2, Organisateur=3)
+        // Verification de secours via roleId (Administrateur=4)
         $roleId = (int) ($user->getRoleId() ?? 0);
-        if ($roleId === 2 || $roleId === 3) {
+        if ($roleId === 4) {
             return;
         }
 
-        throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+        throw $this->createAccessDeniedException('Acces reserve a l administration.');
     }
 }

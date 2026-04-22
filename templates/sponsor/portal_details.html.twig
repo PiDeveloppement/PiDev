@@ -7,16 +7,293 @@
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
     <style>
         body { margin: 0; font-family: Inter, Arial, sans-serif; background: #eef3f9; color: #0f172a; }
-        .topbar { background: #fff; border-bottom: 1px solid #dbe3ee; padding: 14px 26px; display: flex; justify-content: space-between; align-items: center; }
-        .brand { font-weight: 800; color: #1d4ed8; font-size: 22px; }
-        .wrap { max-width: 1180px; margin: 20px auto; padding: 0 14px 24px; }
+        .portal-navbar {
+            height: 80px;
+            padding: 0 60px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #ffffff;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .portal-logo-wrap img {
+            width: auto;
+            height: 56px;
+            max-width: 180px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .portal-nav-links {
+            display: flex;
+            gap: 40px;
+            position: relative;
+            top: -4px;
+        }
+
+        .portal-nav-link {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .portal-account-menu {
+            position: relative;
+            top: -4px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .portal-account-menu summary {
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .portal-account-menu summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .portal-account-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #7fb2ea;
+            background: linear-gradient(180deg, #3f8fe2 0%, #2d79ca 100%);
+            border-radius: 20px;
+            padding: 4px 10px 4px 6px;
+            color: #ffffff;
+            min-height: 42px;
+        }
+
+        .portal-account-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #0f4d90;
+            border: 2px solid rgba(255, 255, 255, 0.75);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .portal-account-meta {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .portal-account-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .portal-account-role {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.84);
+        }
+
+        .portal-account-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 180px;
+            background: #ffffff;
+            border: 1px solid #d9e2ef;
+            border-radius: 12px;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
+            padding: 8px;
+            z-index: 1200;
+        }
+
+        .portal-account-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            background: transparent;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .portal-account-action:hover {
+            background: #f3f7fd;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            position: relative;
+            top: -4px;
+        }
+
+        .btn-login {
+            background: transparent;
+            color: #0D47A1;
+            font-weight: 700;
+            border: 1.5px solid #0D47A1;
+            border-radius: 8px;
+            padding: 8px 24px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-login:hover {
+            background: rgba(13, 71, 161, 0.05);
+        }
+
+        .btn-signup {
+            background: #0D47A1;
+            color: white;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 24px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 4px 8px rgba(13, 71, 161, 0.3);
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-signup:hover {
+            background: #0A3A80;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(13, 71, 161, 0.4);
+        }
+
+        .portal-translate {
+            position: relative;
+            top: -4px;
+            margin-right: 12px;
+        }
+
+        .portal-translate-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 8px 14px;
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(22, 163, 74, 0.3);
+        }
+
+        .portal-translate-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 180px;
+            background: #fff;
+            border: 1px solid #d9e2ef;
+            border-radius: 12px;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
+            padding: 8px;
+            display: none;
+            z-index: 1400;
+        }
+
+        .portal-translate-menu.open {
+            display: block;
+        }
+
+        .portal-translate-opt {
+            width: 100%;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #0f172a;
+            border-radius: 8px;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 6px;
+        }
+
+        .portal-translate-opt:last-child {
+            margin-bottom: 0;
+        }
+
+        .wrap { max-width: 1180px; margin: 100px auto 20px; padding: 0 14px 24px; }
     </style>
 </head>
 <body>
-<div class="topbar">
-    <div class="brand">EventFlow</div>
-    <a class="btn-sponsor outline" href="{{ path(backRoute) }}">Retour portail</a>
-</div>
+<nav class="portal-navbar">
+    <div class="portal-logo-wrap">
+        <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+    </div>
+
+    <div class="portal-nav-links">
+        <a class="portal-nav-link" href="{{ path('app_landing') }}">Accueil</a>
+        <a class="portal-nav-link" href="{{ path('app_public_events') }}">Evenements</a>
+        <a class="portal-nav-link active" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
+        <a class="portal-nav-link" href="{{ path('app_landing') }}#features">Fonctionnalites</a>
+        <a class="portal-nav-link" href="{{ path('app_feedback_view') }}">Feedback</a>
+        <a class="portal-nav-link" href="{{ path('app_landing') }}#contact">Contact</a>
+    </div>
+
+    <div style="display:flex; align-items:center;">
+        <div class="portal-translate" id="portalTranslateWidget">
+            <button type="button" class="portal-translate-btn" id="portalTranslateToggle"><i class="fas fa-language"></i> Traduire</button>
+            <div class="portal-translate-menu" id="portalTranslateMenu">
+                <button type="button" class="portal-translate-opt" data-lang="original">Originale (sans traduction)</button>
+                <button type="button" class="portal-translate-opt" data-lang="fr">Francais</button>
+                <button type="button" class="portal-translate-opt" data-lang="en">English</button>
+                <button type="button" class="portal-translate-opt" data-lang="ar">Arabic</button>
+                <button type="button" class="portal-translate-opt" data-lang="es">Espanol</button>
+                <button type="button" class="portal-translate-opt" data-lang="de">Deutsch</button>
+                <button type="button" class="portal-translate-opt" data-lang="it">Italiano</button>
+            </div>
+        </div>
+        {% if app.user %}
+            <details class="portal-account-menu">
+                <summary class="portal-account-chip">
+                    <span class="portal-account-avatar">{{ app.user.initials ?: (app.user.fullName ? app.user.fullName|slice(0, 1)|upper : 'C') }}</span>
+                    <span class="portal-account-meta">
+                        <span class="portal-account-name">{{ app.user.fullName ?: 'Compte' }}</span>
+                        <span class="portal-account-role">Sponsor</span>
+                    </span>
+                </summary>
+                <div class="portal-account-dropdown">
+                    <button type="button" class="portal-account-action">Profile</button>
+                    <a class="portal-account-action" href="{{ path('app_logout') }}">Deconnexion</a>
+                </div>
+            </details>
+        {% else %}
+            <div class="nav-buttons">
+                <a class="btn-login" href="{{ path('app_login') }}">Connexion</a>
+                <a class="btn-signup" href="{{ path('app_register') }}">Inscription</a>
+            </div>
+        {% endif %}
+    </div>
+</nav>
 
 <div class="wrap sponsor-page">
     <div class="sponsor-detail-card sponsor-detail-card-rich">
@@ -92,13 +369,8 @@
             <div class="sponsor-contract-head">
                 <div>
                     <div class="sponsor-panel-title">Contrat de partenariat</div>
-                    <p>Le bouton <strong>Contrat</strong> telecharge directement le PDF genere a partir de votre fiche.</p>
                 </div>
                 <a class="btn-sponsor primary" href="{{ contractDownloadUrl }}">Contrat</a>
-            </div>
-
-            <div class="sponsor-pdf-viewer">
-                <iframe src="{{ contractPreviewUrl }}" title="Contrat de partenariat PDF"></iframe>
             </div>
         </section>
 
@@ -107,5 +379,68 @@
         </div>
     </div>
 </div>
+<div id="google_translate_element" style="display:none;"></div>
+<script>
+    (function () {
+        const toggle = document.getElementById('portalTranslateToggle');
+        const menu = document.getElementById('portalTranslateMenu');
+        const widget = document.getElementById('portalTranslateWidget');
+
+        const setTranslateCookie = function (value) {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=' + value + ';path=/';
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=' + value + ';path=/;domain=.' + host;
+            }
+        };
+
+        const clearTranslateCookie = function () {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + host;
+            }
+        };
+
+        if (toggle && menu) {
+            toggle.addEventListener('click', function () {
+                menu.classList.toggle('open');
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!widget || widget.contains(event.target)) {
+                    return;
+                }
+                menu.classList.remove('open');
+            });
+
+            menu.querySelectorAll('[data-lang]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const lang = button.getAttribute('data-lang') || 'en';
+                    if (lang === 'original') {
+                        clearTranslateCookie();
+                    } else {
+                        setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+                    }
+                    window.location.reload();
+                });
+            });
+        }
+    })();
+
+    function googleTranslateElementInit() {
+        if (!window.google || !window.google.translate || !window.google.translate.TranslateElement) {
+            return;
+        }
+
+        new window.google.translate.TranslateElement({
+            pageLanguage: 'fr',
+            includedLanguages: 'fr,en,ar,es,de,it',
+            autoDisplay: false,
+            multilanguagePage: true
+        }, 'google_translate_element');
+    }
+</script>
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>

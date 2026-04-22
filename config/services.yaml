@@ -4,6 +4,12 @@ parameters:
 
     profile_images_directory: '%kernel.project_dir%/public/uploads/profile_images'
     gemini_api_key: '%env(GEMINI_API_KEY)%'
+    external_ai_reco_api_url: '%env(string:EXTERNAL_AI_RECO_API_URL)%'
+    external_ai_reco_api_key: '%env(string:EXTERNAL_AI_RECO_API_KEY)%'
+    external_ai_reco_model: '%env(string:EXTERNAL_AI_RECO_MODEL)%'
+    ollama_base_url: '%env(string:OLLAMA_BASE_URL)%'
+    ollama_model: '%env(string:OLLAMA_MODEL)%'
+    ollama_timeout_seconds: '%env(int:OLLAMA_TIMEOUT_SECONDS)%'
 
 services:
     # configuration par défaut
@@ -29,11 +35,29 @@ services:
         arguments:
             $requestStack: '@request_stack'
             $logger: '@logger'
-            
-    # 2. On ajoute ton service de génération de questions ici
+
+    # Service de génération de questions
     App\Service\Questionnaire\QuestionGenerator:
         arguments:
             $geminiApiKey: '%gemini_api_key%'
+
+    App\Service\Sponsor\ExternalAiRecommendationService:
+        arguments:
+            $apiUrl: '%external_ai_reco_api_url%'
+            $apiKey: '%external_ai_reco_api_key%'
+            $model: '%external_ai_reco_model%'
+
+    App\Service\Sponsor\SponsorAlertEmailService:
+        arguments:
+            $fromEmail: '%env(string:MAILER_FROM)%'
+
+    App\Service\AI\OllamaClient:
+        arguments:
+            $baseUrl: '%ollama_base_url%'
+            $model: '%ollama_model%'
+            $timeoutSeconds: '%ollama_timeout_seconds%'
+
+    Swap\Swap: '@florianv_swap.swap'
 
     # ✅ PAS DE LIGNE SUPPLÉMENTAIRE POUR UserSessionService !
     # L'autowiring s'en charge automatiquement

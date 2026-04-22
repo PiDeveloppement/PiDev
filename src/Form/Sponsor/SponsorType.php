@@ -35,6 +35,9 @@ class SponsorType extends AbstractType
         if ($fixedEmail !== null && trim((string) $fixedEmail) !== '') {
             $emailFieldOptions['data'] = $fixedEmail;
             $emailFieldOptions['disabled'] = true;
+        } else {
+            $emailFieldOptions['required'] = false;
+            $emailFieldOptions['empty_data'] = '';
         }
 
         $eventFieldOptions = [
@@ -61,6 +64,8 @@ class SponsorType extends AbstractType
             ->add('eventId', ChoiceType::class, $eventFieldOptions)
             ->add('companyName', TextType::class, [
                 'label' => 'Entreprise',
+                'required' => false,
+                'empty_data' => '',
                 'invalid_message' => 'Veuillez saisir un nom d entreprise valide.',
                 'attr' => [
                     'placeholder' => 'Nom entreprise',
@@ -69,9 +74,11 @@ class SponsorType extends AbstractType
             ])
             ->add('contactEmail', EmailType::class, $emailFieldOptions)
             ->add('contributionName', NumberType::class, [
-                'label' => 'Contribution (TND)',
+                'label' => 'Contribution',
                 'scale' => 2,
                 'html5' => false,
+                'required' => false,
+                'empty_data' => '',
                 'invalid_message' => 'Veuillez saisir un montant valide.',
                 'attr' => [
                     'step' => '0.01',
@@ -79,6 +86,26 @@ class SponsorType extends AbstractType
                     'placeholder' => 'ex: 1500.00',
                     'class' => 'form-control',
                     'inputmode' => 'decimal',
+                ],
+            ])
+            ->add('contributionCurrency', ChoiceType::class, [
+                'label' => 'Devise contribution',
+                'mapped' => false,
+                'data' => 'TND',
+                'choices' => [
+                    'TND' => 'TND',
+                    'USD' => 'USD',
+                    'EUR' => 'EUR',
+                    'GBP' => 'GBP',
+                    'CHF' => 'CHF',
+                    'CAD' => 'CAD',
+                ],
+                'attr' => [
+                    'class' => 'form-control',
+                ],
+                'constraints' => [
+                    new Assert\NotBlank(message: 'La devise est obligatoire.'),
+                    new Assert\Choice(choices: ['TND', 'USD', 'EUR', 'GBP', 'CHF', 'CAD'], message: 'Devise invalide.'),
                 ],
             ])
             ->add('industry', TextType::class, [

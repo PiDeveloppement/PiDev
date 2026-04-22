@@ -7,6 +7,7 @@ use App\Entity\User\UserModel;
 use App\Form\Budget\BudgetType;
 use App\Repository\Budget\BudgetRepository;
 use App\Service\Budget\BudgetService;
+use App\Service\Currency\CurrencyConverterService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,18 +19,22 @@ class BudgetController extends AbstractController
     public function __construct(
         private EntityManagerInterface $entityManager,
         private BudgetRepository $budgetRepository,
-        private BudgetService $budgetService
+        private BudgetService $budgetService,
+        private CurrencyConverterService $currencyConverter
     ) {
     }
 
     #[Route('/admin/budget', name: 'app_budget_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $eventId = (int) $request->query->get('event_id', 0);
         $health = (string) $request->query->get('health', 'all');
         $status = (string) $request->query->get('status', 'all');
+        $search = (string) $request->query->get('search', '');
+        $sort = (string) $request->query->get('sort', 'default');
+        $state = (string) $request->query->get('state', 'all');
 
         $qb = $this->budgetRepository->createQueryBuilder('b')->orderBy('b.id', 'DESC');
         if ($eventId > 0) {
@@ -44,8 +49,60 @@ class BudgetController extends AbstractController
 
         $budgets = array_values(array_filter($budgets, fn (Budget $budget): bool => $this->budgetService->passesFilters($budget, $health, $status)));
 
-        $stats = $this->budgetService->buildStats($budgets);
+        // Get event title map for searching
         $eventTitleMap = $this->budgetService->getEventTitleMap(array_map(static fn (Budget $budget): int => (int) $budget->getEventId(), $budgets));
+
+        // Filter by search term
+        if (!empty($search)) {
+            $searchLower = strtolower($search);
+            $budgets = array_filter($budgets, function (Budget $budget) use ($searchLower, $eventTitleMap) {
+                $eventTitle = $eventTitleMap[(int) $budget->getEventId()] ?? '';
+                return stripos($eventTitle, $searchLower) !== false;
+            });
+            $budgets = array_values($budgets);
+        }
+
+        // Filter by state
+        if ($state !== 'all' && !empty($state)) {
+            $budgets = array_filter($budgets, function (Budget $budget) use ($state) {
+                $ini = (float) $budget->getInitialBudget();
+                $ren = (float) $budget->getRentabilite();
+                
+                $hClass = 'good';
+                if ($ren >= $ini * 0.5) {
+                    $hClass = 'excellent';
+                } elseif ($ren < 0) {
+                    $hClass = 'critical';
+                } elseif ($ren < $ini * 0.2) {
+                    $hClass = 'fragile';
+                }
+                
+                return $hClass === $state;
+            });
+            $budgets = array_values($budgets);
+        }
+
+        // Apply sorting
+        usort($budgets, function (Budget $a, Budget $b) use ($sort) {
+            switch ($sort) {
+                case 'name-asc':
+                    return strcasecmp($a->getEventId(), $b->getEventId());
+                case 'name-desc':
+                    return strcasecmp($b->getEventId(), $a->getEventId());
+                case 'budget-asc':
+                    return ((float) $a->getInitialBudget()) <=> ((float) $b->getInitialBudget());
+                case 'budget-desc':
+                    return ((float) $b->getInitialBudget()) <=> ((float) $a->getInitialBudget());
+                case 'profitability-asc':
+                    return ((float) $a->getRentabilite()) <=> ((float) $b->getRentabilite());
+                case 'profitability-desc':
+                    return ((float) $b->getRentabilite()) <=> ((float) $a->getRentabilite());
+                default:
+                    return 0;
+            }
+        });
+
+        $stats = $this->budgetService->buildStats($budgets);
 
         $top5 = array_slice($budgets, 0, 5);
         $chartLabels = [];
@@ -62,7 +119,7 @@ class BudgetController extends AbstractController
         }
 
         return $this->render('budget/index.html.twig', [
-            'pageInfo' => ['title' => 'Gestion du budget', 'subtitle' => 'CRUD, KPI et previsions budget'],
+                'pageInfo' => ['title' => 'Gestion du budget', 'subtitle' => 'Pilotez vos budgets, mesurez la rentabilite et anticipez les ecarts financiers.'],
             'budgets' => $budgets,
             'events' => $this->budgetService->fetchEventRows(),
             'eventTitleMap' => $eventTitleMap,
@@ -74,13 +131,54 @@ class BudgetController extends AbstractController
             'chartInitial' => $chartInitial,
             'chartExpenses' => $chartExpenses,
             'chartRevenue' => $chartRevenue,
+            'search' => $search,
+            'sort' => $sort,
+            'state' => $state,
         ]);
+    }
+
+    #[Route('/admin/budget/suggestions', name: 'app_budget_suggestions', methods: ['GET'])]
+    public function suggestions(Request $request): Response
+    {
+        $this->denyUnlessAdmin();
+
+        $q = (string) $request->query->get('q', '');
+        
+        if (strlen($q) < 1) {
+            return $this->json([]);
+        }
+
+        $budgets = $this->budgetRepository->createQueryBuilder('b')
+            ->orderBy('b.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        $eventTitleMap = $this->budgetService->getEventTitleMap(
+            array_map(static fn (Budget $budget): int => (int) $budget->getEventId(), $budgets)
+        );
+
+        $searchLower = strtolower($q);
+        $suggestions = [];
+        $seen = [];
+
+        foreach ($budgets as $budget) {
+            $eventTitle = $eventTitleMap[(int) $budget->getEventId()] ?? '';
+            if (!empty($eventTitle) && stripos($eventTitle, $searchLower) !== false && !in_array($eventTitle, $seen)) {
+                $suggestions[] = $eventTitle;
+                $seen[] = $eventTitle;
+            }
+            if (count($suggestions) >= 10) {
+                break;
+            }
+        }
+
+        return $this->json($suggestions);
     }
 
     #[Route('/admin/budget/new', name: 'app_budget_new', methods: ['GET', 'POST'])]
     public function new(Request $request): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $budget = new Budget();
         $this->budgetService->initializeBudget($budget);
@@ -97,17 +195,27 @@ class BudgetController extends AbstractController
             } elseif ($this->budgetRepository->existsForEvent($eventId)) {
                 $this->addFlash('error', 'Un budget existe deja pour cet evenement.');
             } else {
-                $this->budgetService->recomputeBudget($budget);
-                $this->entityManager->persist($budget);
-                $this->entityManager->flush();
+                try {
+                    $initialCurrency = (string) $form->get('initialBudgetCurrency')->getData();
+                    $revenueCurrency = (string) $form->get('totalRevenueCurrency')->getData();
 
-                $this->addFlash('success', 'Budget ajoute avec succes.');
-                return $this->redirectToRoute('app_budget_index');
+                    $budget->setInitialBudget($this->currencyConverter->convert((float) $budget->getInitialBudget(), $initialCurrency, 'TND'));
+                    $budget->setTotalRevenue($this->currencyConverter->convert((float) $budget->getTotalRevenue(), $revenueCurrency, 'TND'));
+
+                    $this->budgetService->recomputeBudget($budget);
+                    $this->entityManager->persist($budget);
+                    $this->entityManager->flush();
+
+                    $this->addFlash('success', 'Budget ajoute avec succes.');
+                    return $this->redirectToRoute('app_budget_index');
+                } catch (\RuntimeException $exception) {
+                    $this->addFlash('error', $exception->getMessage());
+                }
             }
         }
 
         return $this->render('budget/form.html.twig', [
-            'pageInfo' => ['title' => 'Nouveau budget', 'subtitle' => 'Creation budget'],
+                'pageInfo' => ['title' => 'Nouveau budget', 'subtitle' => 'Creez un budget evenementiel avec montants initiaux et previsions de revenus.'],
             'form' => $form->createView(),
             'isEdit' => false,
         ]);
@@ -116,7 +224,7 @@ class BudgetController extends AbstractController
     #[Route('/admin/budget/{id}/edit', name: 'app_budget_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Budget $budget): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $form = $this->createForm(BudgetType::class, $budget, [
             'event_choices' => $this->budgetService->buildEventChoices(),
@@ -131,16 +239,26 @@ class BudgetController extends AbstractController
             } elseif ($this->budgetRepository->existsForEvent($eventId, $budgetId)) {
                 $this->addFlash('error', 'Un autre budget existe deja pour cet evenement.');
             } else {
-                $this->budgetService->recomputeBudget($budget);
-                $this->entityManager->flush();
+                try {
+                    $initialCurrency = (string) $form->get('initialBudgetCurrency')->getData();
+                    $revenueCurrency = (string) $form->get('totalRevenueCurrency')->getData();
 
-                $this->addFlash('success', 'Budget modifie avec succes.');
-                return $this->redirectToRoute('app_budget_index');
+                    $budget->setInitialBudget($this->currencyConverter->convert((float) $budget->getInitialBudget(), $initialCurrency, 'TND'));
+                    $budget->setTotalRevenue($this->currencyConverter->convert((float) $budget->getTotalRevenue(), $revenueCurrency, 'TND'));
+
+                    $this->budgetService->recomputeBudget($budget);
+                    $this->entityManager->flush();
+
+                    $this->addFlash('success', 'Budget modifie avec succes.');
+                    return $this->redirectToRoute('app_budget_index');
+                } catch (\RuntimeException $exception) {
+                    $this->addFlash('error', $exception->getMessage());
+                }
             }
         }
 
         return $this->render('budget/form.html.twig', [
-            'pageInfo' => ['title' => 'Modifier budget', 'subtitle' => 'Mise a jour budget'],
+                'pageInfo' => ['title' => 'Modifier budget', 'subtitle' => 'Ajustez les valeurs du budget pour refleter l etat financier actuel de l evenement.'],
             'form' => $form->createView(),
             'isEdit' => true,
             'budget' => $budget,
@@ -150,7 +268,7 @@ class BudgetController extends AbstractController
     #[Route('/admin/budget/{id}/details', name: 'app_budget_details', methods: ['GET'])]
     public function details(Budget $budget): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         $this->budgetService->recomputeBudget($budget);
         $this->entityManager->flush();
@@ -181,7 +299,7 @@ class BudgetController extends AbstractController
         }
 
         return $this->render('budget/details.html.twig', [
-            'pageInfo' => ['title' => 'Details budget', 'subtitle' => 'Previsions et simulation'],
+                'pageInfo' => ['title' => 'Details budget', 'subtitle' => 'Analysez le budget, les depenses, les revenus et la simulation de rentabilite.'],
             'budget' => $budget,
             'eventTitle' => (string) ($event['title'] ?? ('Event #' . (int) $budget->getEventId())),
             'remaining' => $remaining,
@@ -197,7 +315,7 @@ class BudgetController extends AbstractController
     #[Route('/admin/budget/{id}', name: 'app_budget_delete', methods: ['POST'])]
     public function delete(Request $request, Budget $budget): Response
     {
-        $this->denyUnlessAdminOrOrganizer();
+        $this->denyUnlessAdmin();
 
         if ($this->isCsrfTokenValid('delete_budget_' . $budget->getId(), (string) $request->request->get('_token'))) {
             $this->entityManager->remove($budget);
@@ -208,25 +326,25 @@ class BudgetController extends AbstractController
         return $this->redirectToRoute('app_budget_index');
     }
 
-    private function denyUnlessAdminOrOrganizer(): void
+    private function denyUnlessAdmin(): void
     {
         $user = $this->getUser();
         if (!$user instanceof UserModel) {
-            throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+            throw $this->createAccessDeniedException('Acces reserve a l administration.');
         }
 
         // Vérifier via les rôles Symfony (plus fiable)
         $roles = $user->getRoles();
-        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_ORGANISATEUR', $roles, true)) {
+        if (in_array('ROLE_ADMIN', $roles, true)) {
             return;
         }
 
-        // Vérification de secours via roleId (Admin=2, Organisateur=3)
+        // Verification de secours via roleId (Administrateur=4)
         $roleId = (int) ($user->getRoleId() ?? 0);
-        if ($roleId === 2 || $roleId === 3) {
+        if ($roleId === 4) {
             return;
         }
 
-        throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');
+        throw $this->createAccessDeniedException('Acces reserve a l administration.');
     }
 }
