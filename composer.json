@@ -40,7 +40,8 @@
         "symfony/uid": "6.4.*",
         "symfony/validator": "6.4.*",
         "symfony/yaml": "6.4.*",
-        "twilio/sdk": "*"
+        "twilio/sdk": "*",
+        "vich/uploader-bundle": "^2.9"
     },
     "config": {
         "allow-plugins": {

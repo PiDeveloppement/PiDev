@@ -101,19 +101,19 @@
                 </div>
                 
                 {# Image (si disponible) #}
-                {% if form.imagePath is defined %}
+                {% if form.imageFile is defined %}
                 <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 12px; padding: 25px; border: 1px solid #e2e8f0;">
                     <label style="display: block; color: #374151; font-weight: 600; font-size: 14px; margin-bottom: 10px;">
-                        <i class="fas fa-camera" style="color: #667eea; margin-right: 8px;"></i>URL de l'image
+                        <i class="fas fa-camera" style="color: #667eea; margin-right: 8px;"></i>Image de l'équipement
                     </label>
-                    {{ form_widget(form.imagePath, {'attr': {
+                    {{ form_widget(form.imageFile, {'attr': {
                         'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;', 
-                        'placeholder': 'https://images.unsplash.com/...'
+                        'accept': 'image/jpeg,image/png,image/webp'
                     }}) }}
                     <div style="background: #dbeafe; padding: 12px 15px; border-radius: 8px; margin-top: 15px; font-size: 13px; color: #1e40af; border-left: 4px solid #3b82f6;">
-                        <i class="fas fa-info-circle"></i> <strong>Info :</strong> Laissez vide pour une image par défaut
+                        <i class="fas fa-info-circle"></i> <strong>Info :</strong> Formats acceptés : JPEG, PNG, WebP (max 5MB)
                     </div>
-                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.imagePath) }}</div>
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.imageFile) }}</div>
                 </div>
                 {% endif %}
             </div>

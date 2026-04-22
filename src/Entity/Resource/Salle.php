@@ -5,8 +5,12 @@ namespace App\Entity\Resource;
 use App\Repository\Resource\SalleRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: SalleRepository::class)]
+#[Vich\Uploadable]
 class Salle
 {
     #[ORM\Id]
@@ -46,6 +50,14 @@ class Salle
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $imagePath = null;
+
+    #[Vich\UploadableField(mapping: 'salle_images', fileNameProperty: 'imagePath')]
+    #[Assert\File(
+        maxSize: '5M',
+        mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        mimeTypesMessage: 'Veuillez uploader une image valide (JPEG, PNG ou WebP)'
+    )]
+    private ?File $imageFile = null;
 
     #[ORM\Column(nullable: true)]
     private ?float $latitude = null;
@@ -128,6 +140,16 @@ class Salle
         $this->imagePath = $imagePath;
 
         return $this;
+    }
+
+    public function getImageFile(): ?File
+    {
+        return $this->imageFile;
+    }
+
+    public function setImageFile(?File $imageFile = null): void
+    {
+        $this->imageFile = $imageFile;
     }
 
     public function getLatitude(): ?float
