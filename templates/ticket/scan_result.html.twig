@@ -196,7 +196,7 @@
             </article>
         </section>
 
-        {% if status == 'preview' and token is defined and token is not empty and not ticket.isUsed %}
+        {% if status == 'preview' and canValidate|default(false) and token is defined and token is not empty and not ticket.isUsed %}
             <div class="actions">
                 <form method="post" action="{{ path('app_ticket_scan_validate', { token: token }) }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('scan_validate_' ~ token) }}">

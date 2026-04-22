@@ -222,6 +222,11 @@ class ManagementAssistantService
             || (
                 $this->containsAny($question, ['resume', 'resum', 'rsum', 'bilan', 'vue', 'kpi'])
                 && $this->containsAny($question, ['global', 'generale', 'general'])
+            )
+            || (
+                $this->containsAny($question, ['compare', 'comparaison', 'comparer'])
+                && $this->containsAny($question, ['depense', 'depenses'])
+                && $this->containsAny($question, ['budget global', 'global'])
             );
 
         if (!$isGlobalIntent) {
@@ -256,11 +261,16 @@ class ManagementAssistantService
                 $this->formatMoney((float) ($sponsors['totalContribution'] ?? 0.0)),
                 $this->formatMoney((float) ($sponsors['averageContribution'] ?? 0.0))
             ),
+            sprintf('- Ecart budget global vs depenses: %s DT',
+                $this->formatMoney((float) ($budgets['totalInitial'] ?? 0.0) - (float) ($budgets['totalExpenses'] ?? 0.0))
+            ),
             '',
             'Actions recommandees:',
-            '- Traiter en priorite les budgets en deficit.',
-            '- Verrouiller un plafond sur les categories de depense dominantes.',
-            '- Concentrer le suivi relationnel sur les top sponsors.',
+            '- Prioriser les budgets deja en deficit avant toute nouvelle allocation.',
+            '- Fixer un plafond sur les categories de depense les plus lourdes.',
+            '- Revoir les evenements dont les depenses absorbent trop vite le budget initial.',
+            '- Accelerer l encaissement des revenus attendus quand la couverture est faible.',
+            '- Concentrer le suivi relationnel sur les top sponsors pour consolider la tresorerie.',
         ]);
     }
 
@@ -299,10 +309,15 @@ class ManagementAssistantService
      */
     private function buildCriticalBudgetsAnswer(string $question, array $context): ?string
     {
-        $isCriticalQuestion = $this->containsAny($question, [
-            'budget critique', 'budgets critiques', 'budget en deficit', 'budgets en deficit',
-            'budget en perte', 'budgets en perte', 'rentabilite negative',
-        ]);
+        $isCriticalQuestion =
+            $this->containsAny($question, [
+                'budget critique', 'budgets critiques', 'budget en deficit', 'budgets en deficit',
+                'budget en perte', 'budgets en perte', 'rentabilite negative',
+            ])
+            || (
+                $this->containsAny($question, ['budget', 'budgets'])
+                && $this->containsAny($question, ['critique', 'critiques', 'deficit', 'perte', 'negatif', 'negative'])
+            );
 
         if (!$isCriticalQuestion) {
             return null;
@@ -335,13 +350,28 @@ class ManagementAssistantService
 
         $rank = 1;
         foreach ($critical as $row) {
+            $budgetId = (int) ($row['budgetId'] ?? 0);
+            $rentabilite = (float) ($row['rentabilite'] ?? 0.0);
+            $expenses = (float) ($row['totalExpenses'] ?? 0.0);
+            $revenue = (float) ($row['totalRevenue'] ?? 0.0);
+            $initialBudget = (float) ($row['initialBudget'] ?? 0.0);
+            $coverageRate = $expenses > 0 ? ($revenue / $expenses) * 100 : 0.0;
+            $consumptionRate = $initialBudget > 0 ? ($expenses / $initialBudget) * 100 : 0.0;
+
             $lines[] = sprintf(
-                '- %d) %s | Rentabilite: %s DT | Depenses: %s DT | Revenus: %s DT',
+                '- %d) Budget %d - %s | Rentabilite: %s DT | Depenses: %s DT | Revenus: %s DT',
                 $rank,
+                $budgetId,
                 (string) ($row['eventTitle'] ?? 'Evenement inconnu'),
-                $this->formatMoney((float) ($row['rentabilite'] ?? 0.0)),
-                $this->formatMoney((float) ($row['totalExpenses'] ?? 0.0)),
-                $this->formatMoney((float) ($row['totalRevenue'] ?? 0.0))
+                $this->formatMoney($rentabilite),
+                $this->formatMoney($expenses),
+                $this->formatMoney($revenue)
+            );
+            $lines[] = sprintf(
+                '  Pourquoi: deficit de %s DT, couverture des depenses a %s%%, consommation du budget a %s%%.',
+                $this->formatMoney(abs($rentabilite)),
+                $this->formatMoney($coverageRate),
+                $this->formatMoney($consumptionRate)
             );
             $rank++;
         }
@@ -633,7 +663,8 @@ class ManagementAssistantService
         }
 
         $isSponsorSummaryQuestion = $this->containsAny($question, [
-            'diagnostic sponsor', 'resume sponsor', 'vue globale sponsor', 'top sponsor', 'top entreprise sponsor',
+            'diagnostic sponsor', 'diagnostic sponsors', 'resume sponsor', 'resume sponsors',
+            'vue globale sponsor', 'vue globale sponsors', 'top sponsor', 'top sponsors', 'top entreprise sponsor',
         ]);
 
         if (!$isSponsorSummaryQuestion) {

@@ -4,7 +4,7 @@ namespace App\Controller\Dashboard;
 
 use App\Entity\Event\Event;
 use App\Entity\User\UserModel;
-use App\Service\User\UserService;  // Ajoutez cette ligne
+use App\Service\User\UserService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Psr\Log\LoggerInterface;
+use Dompdf\Dompdf;
 
 #[Route('/dashboard')]
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
@@ -39,13 +40,13 @@ class DashboardController extends AbstractController
         $this->logger->info('Initialisation DashboardController...');
 
         // Récupérer l'utilisateur connecté et son rôle
-        $user = $this->getUser();
+        $currentUser = $this->getUser();
         $userRole = 'user';
         $isOrganizer = false;
         $isAdmin = false;
 
-        if ($user) {
-            $roleId = $user->getRoleId();
+        if ($currentUser instanceof UserModel) {
+            $roleId = $currentUser->getRoleId();
             if ($roleId == 2) {
                 $userRole = 'admin';
                 $isAdmin = true;
@@ -55,7 +56,7 @@ class DashboardController extends AbstractController
             }
         }
 
-        $this->logger->info('👤 Utilisateur connecté avec rôle: ' . $userRole . ' (roleId: ' . ($user ? $user->getRoleId() : 'N/A') . ')');
+        $this->logger->info('👤 Utilisateur connecté avec rôle: ' . $userRole . ' (roleId: ' . ($currentUser instanceof UserModel ? (string) $currentUser->getRoleId() : 'N/A') . ')');
 
         try {
             $stats = $this->loadDashboardData($isOrganizer, $isAdmin);
@@ -89,12 +90,12 @@ class DashboardController extends AbstractController
     public function refresh(): JsonResponse
     {
         try {
-            $user = $this->getUser();
+            $currentUser = $this->getUser();
             $isOrganizer = false;
             $isAdmin = false;
 
-            if ($user) {
-                $roleId = $user->getRoleId();
+            if ($currentUser instanceof UserModel) {
+                $roleId = $currentUser->getRoleId();
                 if ($roleId == 2) {
                     $isAdmin = true;
                 } elseif ($roleId == 3) {
@@ -138,6 +139,51 @@ class DashboardController extends AbstractController
         } catch (\Exception $e) {
             $this->logger->error('❌ Erreur refresh dashboard: ' . $e->getMessage());
             return $this->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[Route('/report', name: 'app_dashboard_report')]
+    public function generateReport(): Response
+    {
+        try {
+            $currentUser = $this->getUser();
+            $isOrganizer = false;
+            $isAdmin = false;
+
+            if ($currentUser instanceof UserModel) {
+                $roleId = $currentUser->getRoleId();
+                if ($roleId == 2) {
+                    $isAdmin = true;
+                } elseif ($roleId == 3) {
+                    $isOrganizer = true;
+                }
+            }
+
+            $stats = $this->loadDashboardData($isOrganizer, $isAdmin);
+
+            $html = $this->renderView('dashboard/report.html.twig', [
+                'stats' => $stats,
+                'upcoming_events' => $stats['upcoming_events'] ?? [],
+                'user_role' => $isAdmin ? 'admin' : ($isOrganizer ? 'organisateur' : 'user'),
+                'generated_at' => new \DateTime()
+            ]);
+
+            $dompdf = new Dompdf();
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            $pdfContent = $dompdf->output();
+
+            $response = new Response($pdfContent);
+            $response->headers->set('Content-Type', 'application/pdf');
+            $response->headers->set('Content-Disposition', 'attachment; filename="rapport-dashboard-' . date('Y-m-d-His') . '.pdf"');
+
+            return $response;
+        } catch (\Exception $e) {
+            $this->logger->error('❌ Erreur génération rapport: ' . $e->getMessage());
+            $this->addFlash('error', 'Erreur lors de la génération du rapport');
+            return $this->redirectToRoute('app_dashboard');
         }
     }
 

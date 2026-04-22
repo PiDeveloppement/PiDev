@@ -6,11 +6,11 @@
     {{ parent() }}
     <style>
         .ai-shell {
-            max-width: 1100px;
+            max-width: 1220px;
             margin: 0 auto;
             padding: 24px;
             display: grid;
-            grid-template-columns: 280px 1fr;
+            grid-template-columns: 320px 1fr;
             gap: 18px;
         }
 
@@ -23,7 +23,9 @@
 
         .ai-side {
             padding: 14px;
-            height: fit-content;
+            display: grid;
+            gap: 14px;
+            align-content: start;
         }
 
         .ai-title {
@@ -36,7 +38,105 @@
         .ai-sub {
             font-size: 12px;
             color: #64748b;
-            margin-bottom: 14px;
+        }
+
+        .ai-section-title {
+            font-size: 12px;
+            font-weight: 800;
+            color: #334155;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .ai-side-actions {
+            display: grid;
+            gap: 8px;
+        }
+
+        .ai-btn {
+            width: 100%;
+            border: 1px solid #dbeafe;
+            background: #eff6ff;
+            color: #1e3a8a;
+            border-radius: 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 10px 12px;
+            cursor: pointer;
+        }
+
+        .ai-btn.primary {
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            color: #ffffff;
+            border-color: transparent;
+        }
+
+        .ai-conversations {
+            display: grid;
+            gap: 8px;
+            max-height: 420px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .ai-conversation-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: start;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px;
+            background: #ffffff;
+        }
+
+        .ai-conversation-item.active {
+            border-color: #93c5fd;
+            background: #eff6ff;
+        }
+
+        .ai-conversation-open {
+            border: none;
+            background: transparent;
+            text-align: left;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .ai-conversation-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.35;
+        }
+
+        .ai-conversation-meta {
+            margin-top: 4px;
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .ai-conversation-delete {
+            border: 1px solid #fecaca;
+            background: #fff1f2;
+            color: #b91c1c;
+            border-radius: 10px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .ai-empty-side {
+            font-size: 12px;
+            color: #64748b;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 12px;
         }
 
         .ai-chip {
@@ -176,21 +276,38 @@
 {% block admin_content %}
     <div class="ai-shell">
         <aside class="ai-card ai-side">
-            <div class="ai-title">Assistant IA</div>
-            <div class="ai-sub">Nouveau module Ollama, separe du chat existant.</div>
+            <div>
+                <div class="ai-title">Assistant IA</div>
+                <div class="ai-sub">Module Ollama dedie a Sponsor, Budget et Depense.</div>
+            </div>
 
-            <button class="ai-chip" type="button" data-prompt="Quels sont les budgets les plus critiques actuellement et pourquoi ?">
-                Budgets critiques
-            </button>
-            <button class="ai-chip" type="button" data-prompt="Resume les depenses par categorie et propose 3 optimisations.">
-                Optimiser depenses
-            </button>
-            <button class="ai-chip" type="button" data-prompt="Donne un diagnostic rapide des sponsors: volume, moyenne, top entreprises.">
-                Diagnostic sponsors
-            </button>
-            <button class="ai-chip" type="button" data-prompt="Compare depenses et budget global, puis propose un plan d action en 5 points.">
-                Plan d action global
-            </button>
+            <div class="ai-side-actions">
+                <button id="aiNewConversation" class="ai-btn primary" type="button">Nouvelle conversation</button>
+            </div>
+
+            <div>
+                <div class="ai-section-title">Conversations</div>
+                <div id="aiConversations" class="ai-conversations"></div>
+                <div id="aiConversationsEmpty" class="ai-empty-side" hidden>
+                    Aucune conversation enregistree pour le moment.
+                </div>
+            </div>
+
+            <div>
+                <div class="ai-section-title">Suggestions</div>
+                <button class="ai-chip" type="button" data-prompt="Quels sont les budgets les plus critiques actuellement et pourquoi ?">
+                    Budgets critiques
+                </button>
+                <button class="ai-chip" type="button" data-prompt="Resume les depenses par categorie et propose 3 optimisations.">
+                    Optimiser depenses
+                </button>
+                <button class="ai-chip" type="button" data-prompt="Donne un diagnostic rapide des sponsors: volume, moyenne, top entreprises.">
+                    Diagnostic sponsors
+                </button>
+                <button class="ai-chip" type="button" data-prompt="Compare depenses et budget global, puis propose un plan d action en 5 points.">
+                    Plan d action global
+                </button>
+            </div>
         </aside>
 
         <section class="ai-card ai-main">
@@ -198,23 +315,14 @@
                 <div class="ai-head-left" style="display:flex;align-items:center;gap:10px;">
                     <img src="{{ asset('images/chatbot.png') }}" alt="Chatbot" style="width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid #e2e8f0;">
                     <div>
-                        <h2>Copilote Gestion Sponsor/Budget/Depense</h2>
+                        <h2 id="aiConversationTitle">Nouvelle conversation</h2>
                         <p>Analyse metier en langage naturel avec contexte de la base.</p>
                     </div>
                 </div>
                 <span class="ai-model-badge">Modele: {{ modelName }}</span>
             </header>
 
-            <div id="aiMessages" class="ai-messages">
-                <div class="ai-msg bot">
-                    Constat :<br>
-                    Je suis pret a t aider sur Sponsor, Budget et Depense.<br><br>
-                    Chiffres exacts :<br>
-                    Je reponds a partir des donnees reelles disponibles.<br><br>
-                    ⚡ Actions recommandées :<br>
-                    Pose une question claire (ex : budgets critiques, top depenses, sponsors).
-                </div>
-            </div>
+            <div id="aiMessages" class="ai-messages"></div>
 
             <form id="aiForm" class="ai-composer">
                 <input id="aiInput" class="ai-input" type="text" placeholder="Ex: Quelles sont les categories de depenses qui coutent le plus ce mois ?" autocomplete="off">
@@ -225,19 +333,201 @@
 
     <script>
         (function () {
+            const STORAGE_KEY = 'eventflow.management.assistant.conversations.v1';
             const form = document.getElementById('aiForm');
             const input = document.getElementById('aiInput');
             const sendBtn = document.getElementById('aiSend');
             const messages = document.getElementById('aiMessages');
             const chips = document.querySelectorAll('.ai-chip');
-            const history = [];
+            const conversationsList = document.getElementById('aiConversations');
+            const conversationsEmpty = document.getElementById('aiConversationsEmpty');
+            const newConversationBtn = document.getElementById('aiNewConversation');
+            const conversationTitle = document.getElementById('aiConversationTitle');
 
-            function appendMessage(role, content) {
-                const div = document.createElement('div');
-                div.className = 'ai-msg ' + (role === 'user' ? 'user' : 'bot');
-                div.textContent = content;
-                messages.appendChild(div);
+            const initialAssistantMessage = [
+                'Constat:',
+                'Je suis pret a t aider sur Sponsor, Budget et Depense.',
+                '',
+                'Chiffres exacts:',
+                'Je reponds a partir des donnees reelles disponibles.',
+                '',
+                'Actions recommandees:',
+                'Pose une question claire, par exemple sur les budgets critiques, les top depenses ou les sponsors.'
+            ].join('\n');
+
+            let state = loadState();
+            let activeConversationId = state.activeConversationId;
+
+            if (!state.conversations.length) {
+                const created = createConversation('Nouvelle conversation');
+                activeConversationId = created.id;
+                persistState();
+            }
+
+            if (!getActiveConversation()) {
+                activeConversationId = state.conversations[0].id;
+                persistState();
+            }
+
+            function loadState() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (!raw) {
+                        return { conversations: [], activeConversationId: null };
+                    }
+
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || !Array.isArray(parsed.conversations)) {
+                        return { conversations: [], activeConversationId: null };
+                    }
+
+                    return {
+                        conversations: parsed.conversations.filter(isValidConversation),
+                        activeConversationId: typeof parsed.activeConversationId === 'string' ? parsed.activeConversationId : null,
+                    };
+                } catch (error) {
+                    return { conversations: [], activeConversationId: null };
+                }
+            }
+
+            function persistState() {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    conversations: state.conversations,
+                    activeConversationId: activeConversationId,
+                }));
+            }
+
+            function isValidConversation(item) {
+                return item
+                    && typeof item.id === 'string'
+                    && typeof item.title === 'string'
+                    && Array.isArray(item.messages);
+            }
+
+            function createConversation(title) {
+                const conversation = {
+                    id: 'conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                    title: title || 'Nouvelle conversation',
+                    updatedAt: new Date().toISOString(),
+                    messages: [
+                        { role: 'assistant', content: initialAssistantMessage }
+                    ],
+                };
+
+                state.conversations.unshift(conversation);
+                return conversation;
+            }
+
+            function getActiveConversation() {
+                return state.conversations.find(function (conversation) {
+                    return conversation.id === activeConversationId;
+                }) || null;
+            }
+
+            function setActiveConversation(id) {
+                activeConversationId = id;
+                persistState();
+                renderConversationList();
+                renderMessages();
+            }
+
+            function deleteConversation(id) {
+                state.conversations = state.conversations.filter(function (conversation) {
+                    return conversation.id !== id;
+                });
+
+                if (!state.conversations.length) {
+                    const created = createConversation('Nouvelle conversation');
+                    activeConversationId = created.id;
+                } else if (activeConversationId === id) {
+                    activeConversationId = state.conversations[0].id;
+                }
+
+                persistState();
+                renderConversationList();
+                renderMessages();
+            }
+
+            function buildConversationTitle(text) {
+                const clean = String(text || '').trim().replace(/\s+/g, ' ');
+                if (!clean) {
+                    return 'Nouvelle conversation';
+                }
+
+                return clean.length > 42 ? clean.slice(0, 42) + '...' : clean;
+            }
+
+            function renderConversationList() {
+                conversationsList.innerHTML = '';
+                conversationsEmpty.hidden = state.conversations.length !== 0;
+
+                state.conversations.forEach(function (conversation) {
+                    const item = document.createElement('div');
+                    item.className = 'ai-conversation-item' + (conversation.id === activeConversationId ? ' active' : '');
+
+                    const openBtn = document.createElement('button');
+                    openBtn.type = 'button';
+                    openBtn.className = 'ai-conversation-open';
+                    openBtn.innerHTML = '<div class="ai-conversation-name"></div><div class="ai-conversation-meta"></div>';
+                    openBtn.querySelector('.ai-conversation-name').textContent = conversation.title || 'Nouvelle conversation';
+                    openBtn.querySelector('.ai-conversation-meta').textContent = formatDate(conversation.updatedAt) + ' • ' + conversation.messages.length + ' messages';
+                    openBtn.addEventListener('click', function () {
+                        setActiveConversation(conversation.id);
+                    });
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.type = 'button';
+                    deleteBtn.className = 'ai-conversation-delete';
+                    deleteBtn.textContent = '×';
+                    deleteBtn.title = 'Supprimer cette conversation';
+                    deleteBtn.addEventListener('click', function () {
+                        deleteConversation(conversation.id);
+                    });
+
+                    item.appendChild(openBtn);
+                    item.appendChild(deleteBtn);
+                    conversationsList.appendChild(item);
+                });
+            }
+
+            function renderMessages() {
+                const conversation = getActiveConversation();
+                messages.innerHTML = '';
+
+                if (!conversation) {
+                    conversationTitle.textContent = 'Nouvelle conversation';
+                    return;
+                }
+
+                conversationTitle.textContent = conversation.title || 'Nouvelle conversation';
+
+                conversation.messages.forEach(function (message) {
+                    const div = document.createElement('div');
+                    div.className = 'ai-msg ' + (message.role === 'user' ? 'user' : 'bot');
+                    div.textContent = message.content;
+                    messages.appendChild(div);
+                });
+
                 messages.scrollTop = messages.scrollHeight;
+            }
+
+            function formatDate(value) {
+                if (!value) {
+                    return '-';
+                }
+
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) {
+                    return '-';
+                }
+
+                return date.toLocaleString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
             }
 
             function setLoading(loading) {
@@ -246,9 +536,40 @@
                 sendBtn.textContent = loading ? '...' : 'Envoyer';
             }
 
+            function addMessage(role, content) {
+                const conversation = getActiveConversation();
+                if (!conversation) {
+                    return;
+                }
+
+                conversation.messages.push({ role: role, content: content });
+                conversation.updatedAt = new Date().toISOString();
+
+                if (role === 'user' && (conversation.title === 'Nouvelle conversation' || conversation.messages.length <= 2)) {
+                    conversation.title = buildConversationTitle(content);
+                }
+
+                persistState();
+                renderConversationList();
+                renderMessages();
+            }
+
+            function buildHistory(conversation) {
+                return conversation.messages.map(function (message) {
+                    return {
+                        role: message.role === 'user' ? 'user' : 'assistant',
+                        content: message.content,
+                    };
+                });
+            }
+
             async function askAssistant(question) {
-                appendMessage('user', question);
-                history.push({ role: 'user', content: question });
+                const conversation = getActiveConversation();
+                if (!conversation) {
+                    return;
+                }
+
+                addMessage('user', question);
                 setLoading(true);
 
                 try {
@@ -257,7 +578,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             question: question,
-                            history: history,
+                            history: buildHistory(conversation),
                         }),
                     });
 
@@ -267,15 +588,23 @@
                     }
 
                     const answer = String(payload.answer || '').trim() || 'Pas de reponse retournee.';
-                    appendMessage('assistant', answer);
-                    history.push({ role: 'assistant', content: answer });
+                    addMessage('assistant', answer);
                 } catch (e) {
-                    appendMessage('assistant', 'Erreur: ' + (e.message || 'Impossible de contacter le service IA.'));
+                    addMessage('assistant', 'Erreur: ' + (e.message || 'Impossible de contacter le service IA.'));
                 } finally {
                     setLoading(false);
                     input.focus();
                 }
             }
+
+            newConversationBtn.addEventListener('click', function () {
+                const created = createConversation('Nouvelle conversation');
+                activeConversationId = created.id;
+                persistState();
+                renderConversationList();
+                renderMessages();
+                input.focus();
+            });
 
             form.addEventListener('submit', function (event) {
                 event.preventDefault();
@@ -295,10 +624,12 @@
                         return;
                     }
 
-                    input.value = '';
                     askAssistant(prompt);
                 });
             });
+
+            renderConversationList();
+            renderMessages();
         })();
     </script>
 {% endblock %}

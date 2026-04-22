@@ -100,6 +100,27 @@
         padding: 16px;
     }
 
+    .qr-preview {
+        width: 100%;
+        min-height: 320px;
+        background: #ffffff;
+        border: 2px solid #dbe3ee;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .65);
+        margin-bottom: 12px;
+    }
+
+    .qr-preview img {
+        width: 100%;
+        max-width: 280px;
+        height: auto;
+        display: block;
+    }
+
     .ticket-code-box {
         margin-top: 12px;
         background: #f8fafc;
@@ -216,10 +237,16 @@
     <div class="ticket-main-grid">
         <div>
             <h3 class="verify-label">Code de Vérification</h3>
-            <div class="verify-placeholder">
-                Emplacement réservé au QR Code<br>
-                (à intégrer plus tard)
-            </div>
+            {% if ticket.qrCode %}
+                <div class="qr-preview">
+                    {% set scanUrl = url('app_ticket_scan_short', { token: ticket.qrCode }) %}
+                    <img src="{{ qr_code_data_uri(scanUrl, 'pdf') }}" alt="QR code du billet">
+                </div>
+            {% else %}
+                <div class="verify-placeholder">
+                    QR Code indisponible pour ce billet.
+                </div>
+            {% endif %}
 
             <div class="ticket-code-box">
                 <div class="ticket-code-label">Numéro du Billet</div>

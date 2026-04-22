@@ -193,7 +193,7 @@ class GoogleCalendarWriteService
     /**
      * @return array{ok: bool, found: bool, event: ?array<string, mixed>}
      */
-    public function fetchRemoteEventByLocalId(int $localEventId): array
+    public function fetchRemoteEventByLocalId(int $localEventId, ?Event $localEvent = null): array
     {
         $this->lastError = null;
 
@@ -235,33 +235,136 @@ class GoogleCalendarWriteService
         }
 
         $items = $response['data']['items'] ?? [];
-        if (!is_array($items) || !isset($items[0]) || !is_array($items[0])) {
-            return ['ok' => true, 'found' => false, 'event' => null];
-        }
+        if (is_array($items) && isset($items[0]) && is_array($items[0])) {
+            $mapped = $this->mapGoogleItemToRemoteEvent($items[0]);
+            if ($mapped !== null) {
+                return ['ok' => true, 'found' => true, 'event' => $mapped];
+            }
 
-        $item = $items[0];
-        if ((string) ($item['status'] ?? '') === 'cancelled') {
-            return ['ok' => true, 'found' => false, 'event' => null];
-        }
-
-        $startRaw = (string) ($item['start']['dateTime'] ?? $item['start']['date'] ?? '');
-        $endRaw = (string) ($item['end']['dateTime'] ?? $item['end']['date'] ?? '');
-
-        if ($startRaw === '' || $endRaw === '') {
             $this->lastError = 'Google event payload is missing start or end date.';
             return ['ok' => false, 'found' => false, 'event' => null];
         }
 
+        // Fallback for legacy events that were created without private extended properties.
+        if ($localEvent instanceof Event) {
+            $fallback = $this->fetchRemoteEventByDateWindow($localEvent, $accessToken);
+            if ($fallback !== null) {
+                return ['ok' => true, 'found' => true, 'event' => $fallback];
+            }
+        }
+
+        return ['ok' => true, 'found' => false, 'event' => null];
+    }
+
+    private function fetchRemoteEventByDateWindow(Event $localEvent, string $accessToken): ?array
+    {
+        if (!$localEvent->getStartDate() || !$localEvent->getEndDate()) {
+            return null;
+        }
+
+        $start = \DateTimeImmutable::createFromInterface($localEvent->getStartDate());
+        $end = \DateTimeImmutable::createFromInterface($localEvent->getEndDate());
+        $timeMin = $start->modify('-1 day')->format(DATE_ATOM);
+        $timeMax = $end->modify('+1 day')->format(DATE_ATOM);
+
+        $url = sprintf(
+            'https://www.googleapis.com/calendar/v3/calendars/%s/events?singleEvents=true&orderBy=startTime&timeMin=%s&timeMax=%s&maxResults=50',
+            rawurlencode((string) $this->calendarId),
+            rawurlencode($timeMin),
+            rawurlencode($timeMax)
+        );
+
+        $response = $this->requestJson(
+            $url,
+            'GET',
+            [
+                'Authorization: Bearer ' . $accessToken,
+                'Accept: application/json',
+            ]
+        );
+
+        if (!$this->isSuccessStatus($response['status'] ?? 500)) {
+            return null;
+        }
+
+        $items = $response['data']['items'] ?? [];
+        if (!is_array($items)) {
+            return null;
+        }
+
+        $targetStartTs = $start->getTimestamp();
+        $targetEndTs = $end->getTimestamp();
+        $targetLocation = mb_strtolower(trim((string) ($localEvent->getLocation() ?? '')));
+
+        $bestMatch = null;
+        $bestScore = PHP_INT_MAX;
+
+        // Allow wider tolerance for legacy events where timezone/all-day conversions shifted timestamps.
+        $maxStartDiff = 12 * 3600;
+        $maxEndDiff = 24 * 3600;
+
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            if ((string) ($item['status'] ?? '') === 'cancelled') {
+                continue;
+            }
+
+            $itemStartRaw = (string) ($item['start']['dateTime'] ?? $item['start']['date'] ?? '');
+            $itemEndRaw = (string) ($item['end']['dateTime'] ?? $item['end']['date'] ?? '');
+            if ($itemStartRaw === '' || $itemEndRaw === '') {
+                continue;
+            }
+
+            $itemStartTs = strtotime($itemStartRaw);
+            $itemEndTs = strtotime($itemEndRaw);
+            if ($itemStartTs === false || $itemEndTs === false) {
+                continue;
+            }
+
+            $startDiff = abs($itemStartTs - $targetStartTs);
+            $endDiff = abs($itemEndTs - $targetEndTs);
+
+            if ($startDiff > $maxStartDiff || $endDiff > $maxEndDiff) {
+                continue;
+            }
+
+            $itemLocation = mb_strtolower(trim((string) ($item['location'] ?? '')));
+            if ($targetLocation !== '' && $itemLocation !== '' && $targetLocation !== $itemLocation) {
+                continue;
+            }
+
+            $mapped = $this->mapGoogleItemToRemoteEvent($item);
+            if ($mapped === null) {
+                continue;
+            }
+
+            $score = $startDiff + $endDiff;
+            if ($score < $bestScore) {
+                $bestScore = $score;
+                $bestMatch = $mapped;
+            }
+        }
+
+        return $bestMatch;
+    }
+
+    private function mapGoogleItemToRemoteEvent(array $item): ?array
+    {
+        $startRaw = (string) ($item['start']['dateTime'] ?? $item['start']['date'] ?? '');
+        $endRaw = (string) ($item['end']['dateTime'] ?? $item['end']['date'] ?? '');
+        if ($startRaw === '' || $endRaw === '') {
+            return null;
+        }
+
         return [
-            'ok' => true,
-            'found' => true,
-            'event' => [
-                'title' => (string) ($item['summary'] ?? ''),
-                'description' => (string) ($item['description'] ?? ''),
-                'location' => (string) ($item['location'] ?? ''),
-                'start' => $startRaw,
-                'end' => $endRaw,
-            ],
+            'title' => (string) ($item['summary'] ?? ''),
+            'description' => (string) ($item['description'] ?? ''),
+            'location' => (string) ($item['location'] ?? ''),
+            'start' => $startRaw,
+            'end' => $endRaw,
         ];
     }
 

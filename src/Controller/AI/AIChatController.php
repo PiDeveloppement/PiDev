@@ -25,20 +25,23 @@ class AIChatController extends AbstractController
         $message = $data['message'] ?? '';
 
         if (empty($message)) {
-            return new JsonResponse(['error' => 'Message vide'], 400, ['Content-Type' => 'application/json; charset=UTF-8']);
+            return new JsonResponse(['error' => 'Message vide'], 400);
         }
 
         try {
+            // Vérifier si la clé API OpenAI est configurée
             $apiKey = $_ENV['OPENAI_API_KEY'] ?? null;
 
             if (!$apiKey) {
+                // Réponse simulée si pas de clé API
                 $response = $this->getSimulatedResponse($message);
                 return new JsonResponse([
                     'response' => $response,
                     'isSimulated' => true
-                ], 200, ['Content-Type' => 'application/json; charset=UTF-8']);
+                ]);
             }
 
+            // Appel à l'API OpenAI
             $response = $this->httpClient->request('POST', 'https://api.openai.com/v1/chat/completions', [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $apiKey,
@@ -67,15 +70,16 @@ class AIChatController extends AbstractController
             return new JsonResponse([
                 'response' => $aiResponse,
                 'isSimulated' => false
-            ], 200, ['Content-Type' => 'application/json; charset=UTF-8']);
+            ]);
 
         } catch (\Exception $e) {
+            // En cas d'erreur, retourner une réponse simulée
             $response = $this->getSimulatedResponse($message);
             return new JsonResponse([
                 'response' => $response,
                 'isSimulated' => true,
                 'error' => $e->getMessage()
-            ], 200, ['Content-Type' => 'application/json; charset=UTF-8']);
+            ]);
         }
     }
 
@@ -83,6 +87,7 @@ class AIChatController extends AbstractController
     {
         $message = strtolower($message);
 
+        // Réponses simulées basées sur des mots-clés
         if (str_contains($message, 'utilisateur') || str_contains($message, 'inscrit')) {
             return "Pour voir les statistiques des utilisateurs, allez dans la section 'Utilisateurs' du tableau de bord. Vous pouvez y voir le nombre total d'utilisateurs, les nouveaux inscrits et les administrateurs.";
         }

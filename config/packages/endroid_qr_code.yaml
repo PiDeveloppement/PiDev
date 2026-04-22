@@ -9,9 +9,9 @@ endroid_qr_code:
         validateResult: false
     pdf:
         writer: Endroid\QrCode\Writer\SvgWriter
-        size: 300
-        margin: 10
+        size: 420
+        margin: 16
         encoding: 'UTF-8'
-        errorCorrectionLevel: 'low'
+        errorCorrectionLevel: 'high'
         roundBlockSizeMode: 'margin'
         validateResult: false

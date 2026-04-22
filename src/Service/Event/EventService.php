@@ -133,7 +133,7 @@ class EventService
     /**
      * Pull changes from Google Calendar for linked EventFlow events.
      *
-     * @return array{updated:int,deleted:int,failed:int}
+     * @return array{updated:int,deleted:int,failed:int,skipped:int}
      */
     public function syncFromGoogleCalendarToEventFlow(): array
     {
@@ -141,6 +141,7 @@ class EventService
             'updated' => 0,
             'deleted' => 0,
             'failed' => 0,
+            'skipped' => 0,
         ];
 
         $hasChanges = false;
@@ -151,7 +152,7 @@ class EventService
                 continue;
             }
 
-            $remoteResult = $this->googleCalendarWriteService->fetchRemoteEventByLocalId($event->getId());
+            $remoteResult = $this->googleCalendarWriteService->fetchRemoteEventByLocalId($event->getId(), $event);
 
             if (!(bool) ($remoteResult['ok'] ?? false)) {
                 $stats['failed']++;
@@ -162,7 +163,7 @@ class EventService
                 // Keep local event if it still has dependent records (tickets/questions)
                 // to avoid FK violations during automatic Google -> EventFlow sync.
                 if ($event->getTickets()->count() > 0 || $event->getQuestions()->count() > 0) {
-                    $stats['failed']++;
+                    $stats['skipped']++;
                     continue;
                 }
 
@@ -340,8 +341,9 @@ class EventService
         }
 
         $remoteDescription = (string) ($remoteEvent['description'] ?? '');
-        if ($remoteDescription !== (string) $event->getDescription()) {
-            $event->setDescription($remoteDescription === '' ? '-' : $remoteDescription);
+        $normalizedDescription = $remoteDescription === '' ? '-' : $remoteDescription;
+        if ($normalizedDescription !== (string) $event->getDescription()) {
+            $event->setDescription($normalizedDescription);
             $changed = true;
         }
 

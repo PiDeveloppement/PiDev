@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historique des partenariats - EventFlow</title>
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
-    <style>
+    <style>`r`n        {{ include('partials/public_header_styles.html.twig') }}
         .portal-navbar {
             height: 80px;
             padding: 0 60px;
@@ -246,55 +246,7 @@
     </style>
 </head>
 <body class="portal-body">
-<nav class="portal-navbar">
-    <div class="portal-logo-wrap">
-        <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
-    </div>
-
-    <div class="portal-nav-links">
-        <a class="portal-nav-link" href="{{ path('app_landing') }}">Accueil</a>
-        <a class="portal-nav-link" href="{{ path('app_public_events') }}">Evenements</a>
-        <a class="portal-nav-link active" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
-        <a class="portal-nav-link" href="{{ path('app_landing') }}#features">Fonctionnalites</a>
-        <a class="portal-nav-link" href="{{ path('app_feedback_view') }}">Feedback</a>
-        <a class="portal-nav-link" href="{{ path('app_landing') }}#contact">Contact</a>
-    </div>
-
-    <div style="display:flex; align-items:center;">
-        <div class="portal-translate" id="portalTranslateWidget">
-            <button type="button" class="portal-translate-btn" id="portalTranslateToggle"><i class="fas fa-language"></i> Traduire</button>
-            <div class="portal-translate-menu" id="portalTranslateMenu">
-                <button type="button" class="portal-translate-opt" data-lang="original">Originale (sans traduction)</button>
-                <button type="button" class="portal-translate-opt" data-lang="fr">Francais</button>
-                <button type="button" class="portal-translate-opt" data-lang="en">English</button>
-                <button type="button" class="portal-translate-opt" data-lang="ar">Arabic</button>
-                <button type="button" class="portal-translate-opt" data-lang="es">Espanol</button>
-                <button type="button" class="portal-translate-opt" data-lang="de">Deutsch</button>
-                <button type="button" class="portal-translate-opt" data-lang="it">Italiano</button>
-            </div>
-        </div>
-        {% if app.user %}
-            <details class="portal-account-menu">
-                <summary class="portal-account-chip">
-                    <span class="portal-account-avatar">{{ app.user.initials ?: (app.user.fullName ? app.user.fullName|slice(0, 1)|upper : 'C') }}</span>
-                    <span class="portal-account-meta">
-                        <span class="portal-account-name">{{ app.user.fullName ?: 'Compte' }}</span>
-                        <span class="portal-account-role">Sponsor</span>
-                    </span>
-                </summary>
-                <div class="portal-account-dropdown">
-                    <button type="button" class="portal-account-action">Profile</button>
-                    <a class="portal-account-action" href="{{ path('app_logout') }}">Deconnexion</a>
-                </div>
-            </details>
-        {% else %}
-            <div class="nav-buttons">
-                <a class="btn-login" href="{{ path('app_login') }}">Connexion</a>
-                <a class="btn-signup" href="{{ path('app_register') }}">Inscription</a>
-            </div>
-        {% endif %}
-    </div>
-</nav>
+{{ include('partials/public_header.html.twig', { active_page: 'sponsor' }) }}
 
 <main class="portal-page">
     {% if not isSponsorSession %}
@@ -305,28 +257,28 @@
         </section>
     {% else %}
     <section class="portal-history-page-head">
-        <a class="btn-sponsor outline" href="{{ path('app_sponsor_portal') }}">⬅ Retour</a>
+        <a class="btn-sponsor outline" href="{{ path('app_sponsor_portal') }}">&lt; Retour</a>
         <div>
-            <h1>🎟️ Mes evenements sponsorises</h1>
+            <h1>Mes evenements sponsorises</h1>
             <p>Retrouvez ici tous les evenements deja sponsorises, a venir ou termines, avec acces rapide aux details.</p>
         </div>
     </section>
 
     <section class="portal-history-stats">
         <div class="portal-history-stat-card">
-            <span>📊 Total partenariats</span>
+            <span>Total partenariats</span>
             <strong>{{ stats.count }}</strong>
         </div>
         <div class="portal-history-stat-card">
-            <span>💰 Contribution totale</span>
+            <span>Contribution totale</span>
             <strong>{{ stats.total|number_format(2, ',', ' ') }} DT</strong>
         </div>
         <div class="portal-history-stat-card">
-            <span>🟢 Evenements a venir</span>
+            <span>Evenements a venir</span>
             <strong>{{ stats.ongoing }}</strong>
         </div>
         <div class="portal-history-stat-card">
-            <span>✅ Evenements passes</span>
+            <span>Evenements passes</span>
             <strong>{{ stats.ended }}</strong>
         </div>
     </section>
@@ -357,7 +309,7 @@
     {% endfor %}
 
     <section class="portal-history-list">
-        <h2 class="portal-section-title">🗓️ Evenements a venir</h2>
+        <h2 class="portal-section-title">Evenements a venir</h2>
         {% if historyItems is empty or not hasUpcoming %}
             <div class="portal-box-empty">Aucun evenement a venir.</div>
         {% else %}
@@ -402,7 +354,7 @@
     </section>
 
     <section class="portal-history-list">
-        <h2 class="portal-section-title">⏳ Evenements passes</h2>
+        <h2 class="portal-section-title">Ã¢ÂÂ³ Evenements passes</h2>
         {% if historyItems is empty or not hasPast %}
             <div class="portal-box-empty">Aucun evenement passe.</div>
         {% else %}

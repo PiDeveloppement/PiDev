@@ -88,7 +88,7 @@ class TicketController extends AbstractController
 
         $this->ticketService->deleteTicket($ticket);
 
-        $this->addFlash('success', 'Billet supprime avec succes.');
+        $this->addFlash('success', 'Billet supprimé avec succès.');
 
         return $this->redirectToRoute('app_ticket_index');
     }

@@ -1,0 +1,28 @@
+{% set active_page = active_page|default('home') %}
+{% set role_name = app.user and app.user.role ? (app.user.role.roleName|default('')|lower|trim) : '' %}
+{% set is_sponsor_user = app.user and (('ROLE_SPONSOR' in app.user.roles) or role_name in ['sponsor', 'role_sponsor'] or app.user.roleId == 3) %}
+
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="logo-container">
+            <a href="{{ path('app_landing') }}">
+                <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+            </a>
+        </div>
+
+        <div class="nav-links">
+            <a class="nav-link {{ active_page == 'home' ? 'is-active' : '' }}" href="{{ path('app_landing') }}">Accueil</a>
+            <a class="nav-link {{ active_page in ['events', 'event_detail', 'tickets', 'calendar', 'confirm'] ? 'is-active' : '' }}" href="{{ path('app_public_events') }}">Evenements</a>
+            {% if is_sponsor_user %}
+                <a class="nav-link {{ active_page == 'sponsor' ? 'is-active' : '' }}" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
+            {% endif %}
+            <a class="nav-link {{ active_page == 'features' ? 'is-active' : '' }}" href="{{ path('app_landing') }}#features">Fonctionnalites</a>
+            <a class="nav-link {{ active_page == 'feedback' ? 'is-active' : '' }}" href="{{ path('app_feedback_view') }}">Feedback</a>
+            <a class="nav-link {{ active_page == 'contact' ? 'is-active' : '' }}" href="{{ path('app_landing') }}#contact">Contact</a>
+        </div>
+
+        <div class="nav-buttons">
+            {% include 'partials/public_auth_buttons.html.twig' %}
+        </div>
+    </div>
+</nav>

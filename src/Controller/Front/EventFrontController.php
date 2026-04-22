@@ -18,7 +18,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use App\Service\Event\WeatherService;
 
 class EventFrontController extends AbstractController
-{
+{//    private EventService $eventService;
     #[Route('/events/public', name: 'app_public_events_legacy', methods: ['GET'])]
     public function legacyRedirect(): Response
     {
@@ -283,13 +283,13 @@ class EventFrontController extends AbstractController
     }
 
     #[Route('/my-tickets/{id}/pdf', name: 'app_my_ticket_pdf', methods: ['GET'], requirements: ['id' => '\\d+'])]
-    public function myTicketPdf(int $id, EntityManagerInterface $em, Pdf $pdf): Response
+    public function myTicketPdf(int $id, Request $request, EntityManagerInterface $em, Pdf $pdf): Response
     {
         /** @var UserModel|null $user */
         $user = $this->getUser();
 
         if (!$user instanceof UserModel) {
-            $this->addFlash('info', 'Connectez-vous pour telecharger vos billets.');
+            $this->addFlash('info', 'Connectez-vous pour télécharger vos billets.');
 
             return $this->redirectToRoute('app_login');
         }
@@ -321,7 +321,7 @@ class EventFrontController extends AbstractController
             $em->flush();
         }
 
-        $appPublicUrl = $_ENV['APP_PUBLIC_URL'] ?? 'http://127.0.0.1:8000';
+        $appPublicUrl = $this->resolvePublicBaseUrl($request);
 
         $html = $this->renderView('front/ticket_pdf.html.twig', [
             'ticket' => $ticket,
@@ -394,9 +394,13 @@ class EventFrontController extends AbstractController
     }
 
     #[Route('/admin/tickets/scan/{token}', name: 'app_ticket_scan_auto', methods: ['GET'])]
-    public function scanTicketPreview(string $token, EntityManagerInterface $em): Response
+    #[Route('/s/{token}', name: 'app_ticket_scan_short', methods: ['GET'])]
+    public function scanTicketPreview(string $token, Request $request, EntityManagerInterface $em): Response
     {
-        if (!$this->canCurrentUserScanTickets()) {
+        $isShortPublicRoute = $request->attributes->get('_route') === 'app_ticket_scan_short';
+        $canValidate = $this->canCurrentUserScanTickets();
+
+        if (!$isShortPublicRoute && !$canValidate) {
             throw new AccessDeniedException('Acces reserve a l administration et aux organisateurs.');
         }
 
@@ -407,6 +411,7 @@ class EventFrontController extends AbstractController
                 'title' => 'QR invalide',
                 'message' => 'Le code QR scanne est vide ou invalide.',
                 'ticket' => null,
+                'canValidate' => $canValidate,
             ]);
         }
 
@@ -418,6 +423,7 @@ class EventFrontController extends AbstractController
                 'title' => 'Billet introuvable',
                 'message' => 'Aucun billet ne correspond a ce QR code.',
                 'ticket' => null,
+                'canValidate' => $canValidate,
             ]);
         }
 
@@ -428,6 +434,7 @@ class EventFrontController extends AbstractController
                 'message' => 'Ce billet est deja en statut USED. Entree refusee.',
                 'ticket' => $ticket,
                 'token' => $token,
+                'canValidate' => $canValidate,
             ]);
         }
 
@@ -438,19 +445,23 @@ class EventFrontController extends AbstractController
 
             return $this->render('ticket/scan_result.html.twig', [
                 'status' => 'too_early',
-                'title' => 'Evenement pas encore commence',
-                'message' => sprintf('Ce billet ne peut pas etre valide maintenant. L evenement est prevu le %s.', $formattedStartAt),
+                'title' => 'Événement pas encore commencé',
+                'message' => sprintf('Ce billet ne peut pas être validé maintenant. L événement est prévu le %s.', $formattedStartAt),
                 'ticket' => $ticket,
                 'token' => $token,
+                'canValidate' => $canValidate,
             ]);
         }
 
         return $this->render('ticket/scan_result.html.twig', [
             'status' => 'preview',
             'title' => 'Billet trouve',
-            'message' => 'Verifiez visuellement le participant, puis confirmez avec le bouton.',
+            'message' => $canValidate
+                ? 'Verifiez visuellement le participant, puis confirmez avec le bouton.'
+                : 'Billet ouvert en lecture seule. Connectez-vous comme organisateur pour valider l entree.',
             'ticket' => $ticket,
             'token' => $token,
+            'canValidate' => $canValidate,
         ]);
     }
 
@@ -499,13 +510,14 @@ class EventFrontController extends AbstractController
 
             return $this->render('ticket/scan_result.html.twig', [
                 'status' => 'too_early',
-                'title' => 'Evenement pas encore commence',
-                'message' => sprintf('Ce billet ne peut pas etre valide maintenant. L evenement est prevu le %s.', $formattedStartAt),
+                'title' => 'Événement pas encore commencé',
+                'message' => sprintf('Ce billet ne peut pas être validé maintenant. L événement est prévu le %s.', $formattedStartAt),
                 'ticket' => $ticket,
                 'token' => $token,
             ]);
         }
 
+        // Atomic transition VALID -> USED to prevent race conditions on double validation.
         $updatedRows = $em->createQuery(
             'UPDATE App\\Entity\\Event\\Ticket t
              SET t.isUsed = true, t.usedAt = :usedAt
@@ -614,5 +626,32 @@ class EventFrontController extends AbstractController
         $value = trim($value, '-');
 
         return $value !== '' ? $value : 'ticket';
+    }
+
+    private function resolvePublicBaseUrl(Request $request): string
+    {
+        $envUrl = trim((string) ($_ENV['APP_PUBLIC_URL'] ?? ''));
+        if ($envUrl !== '') {
+            return rtrim($envUrl, '/');
+        }
+
+        $scheme = $request->getScheme() ?: 'http';
+        $host = (string) $request->getHost();
+        $port = (int) $request->getPort();
+
+        // If served via localhost, try to replace with LAN IP so mobile devices can access the QR link.
+        if (in_array($host, ['127.0.0.1', 'localhost', '::1'], true)) {
+            $detected = gethostbyname((string) gethostname());
+            if (filter_var($detected, FILTER_VALIDATE_IP) && $detected !== '127.0.0.1') {
+                $host = $detected;
+            }
+        }
+
+        $portPart = '';
+        if (($scheme === 'http' && $port !== 80) || ($scheme === 'https' && $port !== 443)) {
+            $portPart = ':' . $port;
+        }
+
+        return sprintf('%s://%s%s', $scheme, $host, $portPart);
     }
 }

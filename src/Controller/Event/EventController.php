@@ -113,6 +113,7 @@ class EventController extends AbstractController
     #[Route('/', name: 'app_event_index', methods: ['GET'])]
     public function index(Request $request, PaginatorInterface $paginator): Response
     {
+        // Avoid heavy inbound sync on each AJAX keystroke in filters.
         if (!$request->isXmlHttpRequest()) {
             $this->eventService->syncFromGoogleCalendarToEventFlow();
         }
@@ -140,8 +141,8 @@ class EventController extends AbstractController
             'totalTermine' => $listData['totalTermine'],
             'filters' => $listData['filters'],
             'pageInfo' => [
-                'title' => 'Gestion des evenements',
-                'subtitle' => 'Consultez et gerez tous vos evenements',
+                'title' => 'Gestion des événements',
+                'subtitle' => 'Consultez et gérez tous vos événements',
             ],
         ];
 
@@ -190,12 +191,12 @@ class EventController extends AbstractController
                 $googleSyncOk = $this->eventService->createEvent($event, $category);
 
                 if ($googleSyncOk) {
-                    $this->addFlash('success', 'Evenement cree et synchronise avec Google Calendar.');
+                    $this->addFlash('success', 'Événement créé et synchronisé avec Google Calendar.');
                 } else {
                     $googleError = $this->eventService->getGoogleCalendarSyncError();
-                    $message = 'Evenement cree, mais la synchronisation Google Calendar a echoue.';
+                    $message = 'Événement créé, mais la synchronisation Google Calendar a échoué.';
                     if ($googleError) {
-                        $message .= ' Detail: ' . $googleError;
+                        $message .= ' Détail: ' . $googleError;
                     }
 
                     $this->addFlash('warning', $message);
@@ -209,8 +210,8 @@ class EventController extends AbstractController
             'event' => $event,
             'categories' => $categories,
             'pageInfo' => [
-                'title' => 'Nouvel Evenement',
-                'subtitle' => 'Creez un nouvel evenement',
+                'title' => 'Nouvel Événement',
+                'subtitle' => 'Créez un nouvel événement',
             ],
         ]);
     }
@@ -245,6 +246,7 @@ class EventController extends AbstractController
     #[Route('/calendar', name: 'app_event_calendar', methods: ['GET'])]
     public function calendar(): Response
     {
+        // Keep local events aligned with Google changes before rendering the calendar.
         $syncStats = $this->eventService->syncFromGoogleCalendarToEventFlow();
 
         if (($syncStats['failed'] ?? 0) > 0) {
@@ -255,8 +257,8 @@ class EventController extends AbstractController
             'calendarEvents' => $this->eventService->getCalendarEvents($this->googleApiKey, $this->googleCalendarId),
             'syncStats' => $syncStats,
             'pageInfo' => [
-                'title' => 'Calendrier des evenements',
-                'subtitle' => 'Vue interactive des evenements',
+                'title' => 'Calendrier des événements',
+                'subtitle' => 'Vue interactive des événements',
             ],
         ]);
     }
@@ -309,8 +311,8 @@ class EventController extends AbstractController
             'eventWeather' => $eventWeather,
             'weatherError' => $weatherError,
             'pageInfo' => [
-                'title' => "Details de l'evenement",
-                'subtitle' => "Consultation des informations de l'evenement",
+                'title' => "Détails de l'Événement",
+                'subtitle' => "Consultation des informations de l'événement",
             ],
         ]);
     }
@@ -337,12 +339,12 @@ class EventController extends AbstractController
                 $googleSyncOk = $this->eventService->updateEvent($event, $category);
 
                 if ($googleSyncOk) {
-                    $this->addFlash('success', 'Evenement mis a jour et synchronise avec Google Calendar.');
+                    $this->addFlash('success', 'Événement mis à jour et synchronisé avec Google Calendar.');
                 } else {
                     $googleError = $this->eventService->getGoogleCalendarSyncError();
-                    $message = 'Evenement mis a jour, mais la synchronisation Google Calendar a echoue.';
+                    $message = 'Événement mis à jour, mais la synchronisation Google Calendar a échoué.';
                     if ($googleError) {
-                        $message .= ' Detail: ' . $googleError;
+                        $message .= ' Détail: ' . $googleError;
                     }
                     $this->addFlash('warning', $message);
                 }
@@ -356,8 +358,8 @@ class EventController extends AbstractController
             'currentEvent' => $event,
             'categories' => $categories,
             'pageInfo' => [
-                'title' => 'Modifier Evenement',
-                'subtitle' => 'Mettez a jour les informations de l\'evenement',
+                'title' => 'Modifier Événement',
+                'subtitle' => 'Mettez à jour les informations de l\'événement',
             ],
         ]);
     }
@@ -388,12 +390,12 @@ class EventController extends AbstractController
         $googleSyncOk = $this->eventService->deleteEvent($event);
 
         if ($googleSyncOk) {
-            $this->addFlash('success', 'Evenement supprime et suppression synchronisee sur Google Calendar.');
+            $this->addFlash('success', 'Événement supprimé et suppression synchronisée sur Google Calendar.');
         } else {
             $googleError = $this->eventService->getGoogleCalendarSyncError();
-            $message = 'Evenement supprime localement, mais la suppression Google Calendar a echoue.';
+            $message = 'Événement supprimé localement, mais la suppression Google Calendar a échoué.';
             if ($googleError) {
-                $message .= ' Detail: ' . $googleError;
+                $message .= ' Détail: ' . $googleError;
             }
             $this->addFlash('warning', $message);
         }

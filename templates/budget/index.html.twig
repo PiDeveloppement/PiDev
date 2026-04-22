@@ -623,13 +623,37 @@
             z-index: auto !important;
         }
 
-        .fab {
+        .btn-export {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1.5px solid #e2e8f0;
+            background: #ffffff;
+            color: #334155;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-family: inherit;
+            box-shadow: none;
+        }
+
+        .btn-export:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+
+        .btn-primary-action {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 11px 20px;
-            background: #1e293b;
-            color: white;
+            padding: 9px 20px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: #ffffff;
             border-radius: 100px;
             font-size: 13px;
             font-weight: 600;
@@ -637,14 +661,14 @@
             text-decoration: none;
             border: none;
             cursor: pointer;
-            box-shadow: 0 4px 16px rgba(0,0,0,.2);
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.2);
             transition: opacity .15s, transform .15s;
         }
 
-        .fab:hover {
+        .btn-primary-action:hover {
             opacity: .88;
             transform: translateY(-1px);
-            color: white;
+            color: #ffffff;
         }
     </style>
 {% endblock %}
@@ -671,6 +695,8 @@
 {% endfor %}
 
 <div class="budget-container">
+
+    <div id="budgetHeaderActions" style="display:flex; justify-content:flex-end; margin-bottom:14px;"></div>
 
     {# ── KPI ROW ── #}
     <div class="kpi-row">
@@ -832,7 +858,10 @@
 
 {# ── Top actions ── #}
 <div id="budgetTopActions" class="budget-top-actions">
-    <a href="{{ path('app_budget_new') }}" class="fab">
+    <a href="{{ path('app_ai_assistant_index') }}" class="btn-export" style="position: static; text-decoration: none;">
+        <i class="fa-solid fa-robot" style="font-size:11px"></i> Assistant IA
+    </a>
+    <a href="{{ path('app_budget_new') }}" class="btn-primary-action" style="position: static;">
         <i class="fa-solid fa-plus" style="font-size:11px"></i> Nouveau budget
     </a>
 </div>
@@ -891,10 +920,9 @@
         const budgetTopActions = document.getElementById('budgetTopActions');
         if (!budgetTopActions) return;
 
-        // Mount into the shared page-header slot (same behavior as sponsor pages)
-        const translationHeaderSlot = document.getElementById('translationHeaderSlot');
-        if (translationHeaderSlot && budgetTopActions.parentElement !== translationHeaderSlot) {
-            translationHeaderSlot.appendChild(budgetTopActions);
+        const budgetHeaderActions = document.getElementById('budgetHeaderActions');
+        if (budgetHeaderActions && budgetTopActions.parentElement !== budgetHeaderActions) {
+            budgetHeaderActions.appendChild(budgetTopActions);
         }
 
         budgetTopActions.style.position = 'static';
@@ -928,7 +956,6 @@
         
         observer.observe(document.body, { childList: true, subtree: true });
         setTimeout(() => observer.disconnect(), 3000); // Stop observing after 3 seconds
-    });
         
         const colors = ['#1d9e75', '#7f77dd', '#ba7517', '#e24b4a'];
         const labels = ['Excellent', 'Bon', 'Fragile', 'Critique'];

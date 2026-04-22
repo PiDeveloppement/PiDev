@@ -2,6 +2,7 @@
 
 namespace App\Entity\Questionnaire;
 use App\Entity\Event\Event;
+use App\Entity\User\UserModel;
 use App\Repository\Questionnaire\QuestionRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -44,6 +45,11 @@ class Question
     #[ORM\JoinColumn(name: "id_event", referencedColumnName: "id", onDelete: "CASCADE")]
     private ?Event $event = null;
 
+    // Relation avec User (id_user dans ton SQL)
+    #[ORM\ManyToOne(targetEntity: UserModel::class, inversedBy: "questions")]
+    #[ORM\JoinColumn(name: "id_user", referencedColumnName: "Id_User", nullable: true, onDelete: "CASCADE")]
+    private ?UserModel $user = null;
+
     // --- GETTERS ET SETTERS ---
 
     public function getId(): ?int { return $this->id; }
@@ -68,4 +74,7 @@ class Question
 
     public function getEvent(): ?Event { return $this->event; }
     public function setEvent(?Event $event): self { $this->event = $event; return $this; }
+
+    public function getUser(): ?UserModel { return $this->user; }
+    public function setUser(?UserModel $user): self { $this->user = $user; return $this; }
 }

@@ -129,45 +129,7 @@
 {% endblock %}
 
 {% block public_content %}
-    {% set isParticipantUser = app.user and ('ROLE_ADMIN' not in app.user.roles) and ('ROLE_ORGANISATEUR' not in app.user.roles) and ('ROLE_SPONSOR' not in app.user.roles) %}
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo-container">
-                <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
-            </div>
-
-            <div class="nav-links">
-                <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}'">Accueil</button>
-                <button class="nav-link" style="color:#0D47A1; font-weight:700; text-decoration:underline;" onclick="window.location.href='{{ path('app_public_events') }}'">Événements</button>
-                <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}#features'">Fonctionnalités</button>
-                <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
-                <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}#contact'">Contact</button>
-            </div>
-
-            <div class="nav-buttons">
-                {% if isParticipantUser %}
-                    <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
-                    <details class="participant-chip-menu">
-                        <summary class="participant-chip">
-                            <span class="participant-chip-avatar">{{ app.user.initials }}</span>
-                            <span class="participant-chip-meta">
-                                <span class="participant-chip-name">{{ app.user.fullName }}</span>
-                                <span class="participant-chip-role">Participant</span>
-                            </span>
-                        </summary>
-                        <div class="participant-chip-dropdown">
-                            <a class="participant-chip-action" href="{{ path('app_logout') }}">Déconnexion</a>
-                        </div>
-                    </details>
-                {% elseif app.user %}
-                    <button class="btn-signup" onclick="window.location.href='{{ path('app_logout') }}'">Déconnexion</button>
-                {% else %}
-                    <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
-                    <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
+    {{ include('partials/public_header.html.twig', { active_page: 'events' }) }}
 
     <main class="confirm-page">
         <div class="confirm-shell">

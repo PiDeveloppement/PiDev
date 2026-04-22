@@ -4,18 +4,15 @@ namespace App\Controller\Auth;
 
 use App\Entity\User\UserModel;
 use App\Entity\Event\Event;
-use App\Entity\Event\Ticket;
 use App\Service\User\UserService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\HttpFoundation\Cookie;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class LoginController extends AbstractController
 {
@@ -93,16 +90,19 @@ class LoginController extends AbstractController
             $session->set('_security_main', serialize($token));
             $session->save();
 
-            $this->handlePendingEventParticipation($session, $user);
-
             // 🎯 Vérifier s'il y a une redirection vers le quiz en attente
             $afterLoginRedirect = $session->get('after_login_redirect');
             $pendingQuizEvent = $session->get('pending_quiz_event');
+            $pendingEventId = $session->get('pending_event');
 
             if ($afterLoginRedirect === 'app_quiz_start' && $pendingQuizEvent) {
                 $session->remove('after_login_redirect');
                 $session->remove('pending_quiz_event');
                 $response = $this->redirectToRoute('app_quiz_start', ['event_id' => $pendingQuizEvent]);
+            } elseif ($pendingEventId) {
+                $session->remove('after_login_redirect');
+                $session->remove('pending_quiz_event');
+                $response = $this->redirectToRoute('app_public_event_participation_confirm', ['id' => (int) $pendingEventId]);
             } else {
                 // ✅ FORCER la redirection selon le rôle (ignorer toute redirection précédente)
                 $redirectRoute = $this->resolveHomeRouteForUser($user);
@@ -153,72 +153,6 @@ class LoginController extends AbstractController
         return class_exists('OpenCV\Core') || class_exists('CV\OpenCV');
     }
 
-    private function handlePendingEventParticipation(SessionInterface $session, UserModel $user): void
-    {
-        $pendingEventId = $session->get('pending_event');
-        
-        if (!$pendingEventId) {
-            return;
-        }
-
-        try {
-            $event = $this->em->getRepository(Event::class)
-                ->createQueryBuilder('e')
-                ->andWhere('e.id = :id')
-                ->andWhere('e.endDate >= :now')
-                ->andWhere('e.status = :status')
-                ->setParameter('id', (int) $pendingEventId)
-                ->setParameter('now', new \DateTimeImmutable())
-                ->setParameter('status', Event::STATUS_PUBLISHED)
-                ->setMaxResults(1)
-                ->getQuery()
-                ->getOneOrNullResult();
-
-            if (!$event instanceof Event) {
-                return;
-            }
-
-            $ticketRepo = $this->em->getRepository(Ticket::class);
-            $existingTicket = $ticketRepo->createQueryBuilder('t')
-                ->andWhere('t.event = :event')
-                ->andWhere('t.user = :user')
-                ->setParameter('event', $event)
-                ->setParameter('user', $user)
-                ->setMaxResults(1)
-                ->getQuery()
-                ->getOneOrNullResult();
-
-            if ($existingTicket instanceof Ticket) {
-                $this->addFlash('info', sprintf('Vous êtes déjà inscrit à "%s".', $event->getTitle()));
-                return;
-            }
-
-            $ticketsForEvent = (int) $ticketRepo->count(['event' => $event]);
-            if ((int) $event->getCapacity() > 0 && $ticketsForEvent >= (int) $event->getCapacity()) {
-                $this->addFlash('warning', sprintf('Capacité atteinte pour "%s".', $event->getTitle()));
-                return;
-            }
-
-            $ticket = new Ticket();
-            $ticket->setEvent($event);
-            $ticket->setUser($user);
-            $ticket->setTicketCode(Ticket::generateTicketCode((int) $event->getId(), (int) $user->getId()));
-
-            $this->em->persist($ticket);
-            $this->em->flush();
-
-            $this->addFlash('success', sprintf(
-                'Bienvenue ! Votre billet pour "%s" a été créé automatiquement. Code: %s',
-                $event->getTitle(),
-                $ticket->getTicketCode()
-            ));
-        } catch (\Exception $e) {
-            $this->addFlash('error', 'Connexion réussie mais création du billet impossible.');
-        } finally {
-            $session->remove('pending_event');
-        }
-    }
-
     /**
      * Détermine la route de redirection selon le roleId de l'utilisateur
      */
@@ -240,13 +174,13 @@ class LoginController extends AbstractController
             return 'app_dashboard';
         }
 
-        // Role id 1 (Default) ou Role id 5 (Participant) → page mes billets
+        // Role id 1 (Default) ou Role id 5 (Participant) → page événements publics
         if ($roleId == 1 || $roleId == 5) {
-            return 'app_my_tickets';
+            return 'app_public_events';
         }
 
         // Redirection par défaut
-        return 'app_my_tickets';
+        return 'app_public_events';
     }
 
     #[Route('/check-auth', name: 'app_check_auth')]

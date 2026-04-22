@@ -1,4 +1,4 @@
-{# templates/auth/landing.html.twig #}
+﻿{# templates/auth/landing.html.twig #}
 
 {% extends 'base.html.twig' %}
 
@@ -19,98 +19,7 @@
         }
         
         /* ==================== NAVBAR ==================== */
-        .navbar {
-            background: white;
-            padding: 0 60px;
-            border-bottom: 1px solid #e2e8f0;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-        }
-        
-        .nav-container {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .logo-container img {
-            width: auto;
-            height: 56px;
-            max-width: 180px;
-            object-fit: contain;
-            display: block;
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 40px;
-            position: relative;
-            top: -4px;
-        }
-        
-        .nav-link {
-            background: transparent;
-            color: #1e293b;
-            font-size: 16px;
-            font-weight: 500;
-            border: none;
-            cursor: pointer;
-            padding: 0;
-            text-decoration: none;
-        }
-        
-        .nav-link:hover {
-            color: #0D47A1;
-        }
-        
-        .nav-buttons {
-            display: flex;
-            gap: 15px;
-            position: relative;
-            top: -4px;
-        }
-        
-        .btn-login {
-            background: transparent;
-            color: #0D47A1;
-            font-weight: bold;
-            border: 1.5px solid #0D47A1;
-            border-radius: 8px;
-            padding: 8px 24px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-login:hover {
-            background: rgba(13, 71, 161, 0.05);
-        }
-        
-        .btn-signup {
-            background: #0D47A1;
-            color: white;
-            font-weight: bold;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 24px;
-            cursor: pointer;
-            font-size: 14px;
-            box-shadow: 0 4px 8px rgba(13, 71, 161, 0.3);
-            transition: all 0.2s ease;
-        }
-        
-        .btn-signup:hover {
-            background: #0A3A80;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(13, 71, 161, 0.4);
-        }
+        {{ include('partials/public_header_styles.html.twig') }}
         
         /* ==================== MAIN CONTENT ==================== */
         .main-content {
@@ -545,31 +454,7 @@
 {% endblock %}
 
 {% block public_content %}
-    <!-- ==================== NAVBAR ==================== -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo-container">
-                <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
-            </div>
-
-            {% set role_name = app.user and app.user.role ? (app.user.role.roleName|default('')|lower) : '' %}
-            {% set is_sponsor_user = app.user and (('ROLE_SPONSOR' in app.user.roles) or role_name == 'sponsor' or app.user.roleId == 3) %}
-            <div class="nav-links">
-                <a class="nav-link" href="{{ path('app_landing') }}">Accueil</a>
-                <a class="nav-link" href="{{ path('app_public_events') }}">Événements</a>
-                {% if is_sponsor_user %}
-                    <a class="nav-link" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
-                {% endif %}
-                <a class="nav-link" href="{{ path('app_landing') }}#features">Fonctionnalités</a>
-                <a class="nav-link" href="{{ path('app_feedback_view') }}">Feedback</a>
-                <a class="nav-link" href="{{ path('app_landing') }}#contact">Contact</a>
-            </div>
-
-            <div class="nav-buttons">
-                {% include 'partials/public_auth_buttons.html.twig' %}
-            </div>
-        </div>
-    </nav>
+    {{ include('partials/public_header.html.twig', { active_page: 'home' }) }}
 
     <!-- ==================== MAIN CONTENT ==================== -->
     <main class="main-content">

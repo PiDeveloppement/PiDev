@@ -2,13 +2,11 @@
 
 namespace App\Service\Currency;
 
-use Swap\Swap;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class CurrencyConverterService
 {
     public function __construct(
-        private readonly Swap $swap,
         private readonly HttpClientInterface $httpClient
     )
     {
@@ -111,18 +109,7 @@ class CurrencyConverterService
             return 1.0;
         }
 
-        try {
-            return (float) $this->swap->latest(sprintf('%s/%s', $from, $to))->getValue();
-        } catch (\Throwable $exception) {
-            // Fallback: calcul croise via EUR lorsque le provider ne supporte pas directement la paire.
-            try {
-                $fromToEur = $from === 'EUR' ? 1.0 : $this->swap->latest(sprintf('%s/%s', $from, 'EUR'))->getValue();
-                $eurToTarget = $to === 'EUR' ? 1.0 : $this->swap->latest(sprintf('%s/%s', 'EUR', $to))->getValue();
-                return (float) $fromToEur * (float) $eurToTarget;
-            } catch (\Throwable $fallbackException) {
-                return $this->fetchRateFromErApi($from, $to, $fallbackException);
-            }
-        }
+        return $this->fetchRateFromErApi($from, $to, new \RuntimeException('Provider Swap indisponible.'));
     }
 
     private function fetchRateFromErApi(string $from, string $to, \Throwable $previous): float

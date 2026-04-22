@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ isEdit ? 'Modifier le partenariat' : 'Sponsoriser un evenement' }} - EventFlow</title>
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
-    <style>
+    <style>`r`n        {{ include('partials/public_header_styles.html.twig') }}
         .portal-navbar {
             height: 80px;
             padding: 0 60px;
@@ -631,55 +631,7 @@
     </style>
 </head>
 <body class="portal-form-body">
-<nav class="portal-navbar">
-    <div class="portal-logo-wrap">
-        <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
-    </div>
-
-    <div class="portal-nav-links">
-        <a class="portal-nav-link" href="{{ path('app_landing') }}">Accueil</a>
-        <a class="portal-nav-link" href="{{ path('app_public_events') }}">Evenements</a>
-        <a class="portal-nav-link active" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
-        <a class="portal-nav-link" href="{{ path('app_landing') }}#features">Fonctionnalites</a>
-        <a class="portal-nav-link" href="{{ path('app_feedback_view') }}">Feedback</a>
-        <a class="portal-nav-link" href="{{ path('app_landing') }}#contact">Contact</a>
-    </div>
-
-    <div style="display:flex; align-items:center;">
-        <div class="portal-translate" id="portalTranslateWidget">
-            <button type="button" class="portal-translate-btn" id="portalTranslateToggle"><i class="fas fa-language"></i> Traduire</button>
-            <div class="portal-translate-menu" id="portalTranslateMenu">
-                <button type="button" class="portal-translate-opt" data-lang="original">Originale (sans traduction)</button>
-                <button type="button" class="portal-translate-opt" data-lang="fr">Francais</button>
-                <button type="button" class="portal-translate-opt" data-lang="en">English</button>
-                <button type="button" class="portal-translate-opt" data-lang="ar">Arabic</button>
-                <button type="button" class="portal-translate-opt" data-lang="es">Espanol</button>
-                <button type="button" class="portal-translate-opt" data-lang="de">Deutsch</button>
-                <button type="button" class="portal-translate-opt" data-lang="it">Italiano</button>
-            </div>
-        </div>
-        {% if app.user %}
-            <details class="portal-account-menu">
-                <summary class="portal-account-chip">
-                    <span class="portal-account-avatar">{{ app.user.initials ?: (app.user.fullName ? app.user.fullName|slice(0, 1)|upper : 'C') }}</span>
-                    <span class="portal-account-meta">
-                        <span class="portal-account-name">{{ app.user.fullName ?: 'Compte' }}</span>
-                        <span class="portal-account-role">Sponsor</span>
-                    </span>
-                </summary>
-                <div class="portal-account-dropdown">
-                    <button type="button" class="portal-account-action">Profile</button>
-                    <a class="portal-account-action" href="{{ path('app_logout') }}">Deconnexion</a>
-                </div>
-            </details>
-        {% else %}
-            <div class="nav-buttons">
-                <a class="btn-login" href="{{ path('app_login') }}">Connexion</a>
-                <a class="btn-signup" href="{{ path('app_register') }}">Inscription</a>
-            </div>
-        {% endif %}
-    </div>
-</nav>
+{{ include('partials/public_header.html.twig', { active_page: 'sponsor' }) }}
 
 <div class="portal-form-wrap sponsor-page">
     <div class="flash-wrap">
@@ -689,13 +641,13 @@
 
     <section class="portal-form-hero">
         <div>
-            <h2>{{ isEdit ? '??? Mettre a jour votre partenariat' : '?? Sponsoriser cet evenement' }}</h2>
-            <p>Formulaire optimisé avec conversion dynamique des devises via <strong>FlorianvSwapBundle</strong>.</p>
+            <h2>{{ isEdit ? 'Mettre a jour votre partenariat' : 'Sponsoriser cet evenement' }}</h2>
+            <p>Formulaire optimisÃ© avec conversion dynamique des devises via <strong>FlorianvSwapBundle</strong>.</p>
         </div>
         <div class="hero-pill-list">
-            <span class="hero-pill">?? Sponsoring intelligent</span>
-            <span class="hero-pill">?? Taux en direct</span>
-            <span class="hero-pill">?? Contrat auto</span>
+            <span class="hero-pill">Sponsoring intelligent</span>
+            <span class="hero-pill">Taux en direct</span>
+            <span class="hero-pill">Contrat auto</span>
         </div>
     </section>
 
@@ -715,13 +667,13 @@
             {{ form_start(form) }}
 
             <section class="portal-form-section blue">
-                <h4 class="portal-form-section-title">?? Informations générales</h4>
+                <h4 class="portal-form-section-title">Informations generales</h4>
                 <p class="section-intro">Renseignez les informations de base de l entreprise et du contact principal.</p>
                 <div class="portal-form-grid">
                     {% if event %}
                     <div>
                         <label>Evenement</label>
-                        <div class="event-fixed-pill">?? {{ event.title }}</div>
+                        <div class="event-fixed-pill">Evenement: {{ event.title }}</div>
                         <div style="display:none;">
                             {{ form_widget(form.eventId) }}
                         </div>
@@ -762,7 +714,7 @@
             </section>
 
             <section class="portal-form-section purple">
-                <h4 class="portal-form-section-title">??? Logo de l entreprise</h4>
+                <h4 class="portal-form-section-title">Logo de l entreprise</h4>
                 <p class="section-intro">Ajoutez un logo pour personnaliser vos documents et contrats de sponsoring.</p>
                 <div class="logo-toolbar">
                     <button type="button" class="btn-sponsor light" id="pick-logo-btn">Choisir logo</button>
@@ -781,7 +733,7 @@
                         {% else %}
                             <img id="logo-preview-img" alt="Logo preview">
                         {% endif %}
-                        <span class="placeholder" id="logo-preview-placeholder">Aperçu logo</span>
+                        <span class="placeholder" id="logo-preview-placeholder">AperÃ§u logo</span>
                     </div>
 
                     <div>
@@ -794,7 +746,7 @@
             </section>
 
             <section class="portal-form-section green">
-                <h4 class="portal-form-section-title">?? Contribution financiere</h4>
+                <h4 class="portal-form-section-title">Contribution financiere</h4>
                 <p class="section-intro">Le montant final est converti automatiquement en TND selon le taux actuel.</p>
                 <div class="finance-row">
                     <div>
@@ -811,17 +763,17 @@
 
                 <div class="fx-summary">
                     <article class="fx-card">
-                        <h5>?? Taux live</h5>
+                        <h5>Taux live</h5>
                         <p class="fx-card-value" id="fx-rate-value">1 TND = 1.0000 TND</p>
                         <p class="fx-card-muted">Source: FlorianvSwapBundle</p>
                     </article>
                     <article class="fx-card">
-                        <h5>?? Estimation convertie</h5>
+                        <h5>Estimation convertie</h5>
                         <p class="fx-card-value" id="contribution-tnd">-</p>
                         <p class="fx-card-muted" id="fx-preview-line">Saisissez un montant pour voir l estimation.</p>
                     </article>
                     <article class="fx-card">
-                        <h5>?? Derniere mise a jour</h5>
+                        <h5>Derniere mise a jour</h5>
                         <p class="fx-card-value" id="fx-updated-at">-</p>
                         <p class="fx-card-muted">Taux recalcule en direct selon la devise choisie.</p>
                     </article>
@@ -960,7 +912,7 @@
 
             contributionOut.textContent = formatMoney(payload.converted);
             if (fxPreviewLine) {
-                fxPreviewLine.textContent = `${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency} ˜ ${formatMoney(payload.converted)}`;
+                fxPreviewLine.textContent = `${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency} Ëœ ${formatMoney(payload.converted)}`;
             }
         } catch (error) {
             contributionOut.textContent = '-';

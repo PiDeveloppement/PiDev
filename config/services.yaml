@@ -1,23 +1,16 @@
 # config/services.yaml
 parameters:
     database_url: '%env(DATABASE_URL)%'
-
     profile_images_directory: '%kernel.project_dir%/public/uploads/profile_images'
-    external_ai_reco_api_url: '%env(string:EXTERNAL_AI_RECO_API_URL)%'
-    external_ai_reco_api_key: '%env(string:EXTERNAL_AI_RECO_API_KEY)%'
-    external_ai_reco_model: '%env(string:EXTERNAL_AI_RECO_MODEL)%'
-    ollama_base_url: '%env(string:OLLAMA_BASE_URL)%'
-    ollama_model: '%env(string:OLLAMA_MODEL)%'
-    ollama_timeout_seconds: '%env(int:OLLAMA_TIMEOUT_SECONDS)%'
-
+    ollama_base_url: 'http://127.0.0.1:11434'
+    ollama_model: 'llama3.1'
+    ollama_timeout_seconds: 60
 
 services:
-    # configuration par défaut
     _defaults:
         autowire: true
         autoconfigure: true
 
-    # makes classes in src/ available to be used as services
     App\:
         resource: '../src/'
         exclude:
@@ -25,34 +18,17 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    # Service de base de données
     App\Service\DatabaseService:
         arguments:
             $databaseUrl: '%database_url%'
 
-    # Service de session utilisateur - version simplifiée (pas besoin d'alias)
     App\Service\UserSessionService:
         arguments:
             $requestStack: '@request_stack'
             $logger: '@logger'
-
-    App\Service\Sponsor\ExternalAiRecommendationService:
-        arguments:
-            $apiUrl: '%external_ai_reco_api_url%'
-            $apiKey: '%external_ai_reco_api_key%'
-            $model: '%external_ai_reco_model%'
-
-    App\Service\Sponsor\SponsorAlertEmailService:
-        arguments:
-            $fromEmail: '%env(string:MAILER_FROM)%'
 
     App\Service\Ai\OllamaClient:
         arguments:
             $baseUrl: '%ollama_base_url%'
             $model: '%ollama_model%'
             $timeoutSeconds: '%ollama_timeout_seconds%'
-
-    Swap\Swap: '@florianv_swap.swap'
-
-    # ✅ PAS DE LIGNE SUPPLÉMENTAIRE POUR UserSessionService !
-    # L'autowiring s'en charge automatiquement

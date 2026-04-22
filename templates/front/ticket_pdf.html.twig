@@ -109,14 +109,22 @@
         }
 
         .qr-box img {
-            width: 170px;
-            height: 170px;
+            width: 220px;
+            height: 220px;
         }
 
         .qr-caption {
             font-size: 11px;
             color: #64748b;
             margin-top: 8px;
+            word-break: break-all;
+        }
+
+        .qr-meta {
+            margin-top: 10px;
+            font-size: 11px;
+            color: #475569;
+            line-height: 1.45;
             word-break: break-all;
         }
 
@@ -170,10 +178,15 @@
 
         <div class="content-right">
             <div class="qr-box">
-                {% set scanPath = path('app_ticket_scan_auto', { token: ticket.qrCode }) %}
+                {% set scanPath = path('app_ticket_scan_short', { token: ticket.qrCode }) %}
                 {% set scanUrl = appPublicUrl ~ scanPath %}
                 <img src="{{ qr_code_data_uri(scanUrl, 'pdf') }}" alt="QR code billet">
-                <div class="qr-caption">Scan organisateur: ouverture + validation automatique</div>
+                <div class="qr-caption">Scan organisateur</div>
+                <div class="qr-meta">
+                    URL: {{ scanUrl }}<br>
+                    Token: {{ ticket.qrCode }}<br>
+                    Code billet: {{ ticket.ticketCode }}
+                </div>
             </div>
         </div>
     </div>

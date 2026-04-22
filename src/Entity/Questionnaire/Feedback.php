@@ -44,11 +44,11 @@ class Feedback
 
     // Relations avec les autres entités
     #[ORM\ManyToOne(targetEntity: UserModel::class)]
-    #[ORM\JoinColumn(name: "id_user", referencedColumnName: "Id_User", nullable: true)]
+    #[ORM\JoinColumn(name: "id_user", referencedColumnName: "Id_User", nullable: true, onDelete: "CASCADE")]
     private ?UserModel $user = null;
 
     #[ORM\ManyToOne(targetEntity: Question::class)]
-    #[ORM\JoinColumn(name: "id_question", referencedColumnName: "id_question", nullable: true)]
+    #[ORM\JoinColumn(name: "id_question", referencedColumnName: "id_question", nullable: true, onDelete: "CASCADE")]
     private ?Question $question = null;
 
     // ==================== GETTERS & SETTERS ====================
