@@ -1,0 +1,17 @@
+florianv_swap:
+    cache:
+        type: filesystem
+        ttl: 3600
+    providers:
+        array:
+            latestRates:
+                'EUR/TND': 3.13
+                'USD/TND': 2.88
+                'GBP/TND': 3.66
+                'CHF/TND': 3.24
+                'CAD/TND': 2.08
+                'TND/EUR': 0.319489
+                'TND/USD': 0.347222
+                'TND/GBP': 0.273224
+                'TND/CHF': 0.308642
+                'TND/CAD': 0.480769

@@ -16,7 +16,7 @@ class SponsorAlertEmailService
         private SponsorRepository $sponsorRepository,
         private UserRepository $userRepository,
         private SponsorService $sponsorService,
-        private string $fromEmail = 'no-reply@eventflow.local'
+        private string $fromEmail = 'manaimaryem4@gmail.com'
     ) {
     }
 

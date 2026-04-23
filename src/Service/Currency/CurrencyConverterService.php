@@ -2,12 +2,16 @@
 
 namespace App\Service\Currency;
 
+use Swap\Swap;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class CurrencyConverterService
 {
     public function __construct(
-        private readonly HttpClientInterface $httpClient
+        private readonly HttpClientInterface $httpClient,
+        #[Autowire(service: 'florianv_swap.swap')]
+        private readonly Swap $swap
     )
     {
     }
@@ -109,7 +113,11 @@ class CurrencyConverterService
             return 1.0;
         }
 
-        return $this->fetchRateFromErApi($from, $to, new \RuntimeException('Provider Swap indisponible.'));
+        try {
+            return (float) $this->swap->latest(sprintf('%s/%s', $from, $to))->getValue();
+        } catch (\Throwable $swapException) {
+            return $this->fetchRateFromErApi($from, $to, $swapException);
+        }
     }
 
     private function fetchRateFromErApi(string $from, string $to, \Throwable $previous): float

@@ -12,4 +12,5 @@ return [
     Endroid\QrCodeBundle\EndroidQrCodeBundle::class => ['all' => true],
     CalendarBundle\CalendarBundle::class => ['all' => true],
     Symfony\UX\Chartjs\ChartjsBundle::class => ['all' => true],
+    Florianv\SwapBundle\FlorianvSwapBundle::class => ['all' => true],
 ];

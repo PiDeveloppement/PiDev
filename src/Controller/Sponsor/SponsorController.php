@@ -1379,7 +1379,7 @@ class SponsorController extends AbstractController
         $eventTitle = (string) ($event['title'] ?? ($this->sponsorService->getEventTitleById((int) $sponsor->getEventId()) ?? 'Evenement'));
         $company = trim((string) ($sponsor->getCompanyName() ?? 'Entreprise'));
         $filename = 'contrat-sponsor-' . $this->slugifyFilename($company !== '' ? $company : 'eventflow') . '.pdf';
-        $from = (string) (getenv('MAILER_FROM') ?: ($_ENV['MAILER_FROM'] ?? 'no-reply@eventflow.local'));
+        $from = (string) (getenv('MAILER_FROM') ?: ($_ENV['MAILER_FROM'] ?? 'manaimaryem4@gmail.com'));
 
         $email = (new Email())
             ->from($from)
