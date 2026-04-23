@@ -4,6 +4,7 @@ parameters:
 
     profile_images_directory: '%kernel.project_dir%/public/uploads/profile_images'
     gemini_api_key: '%env(GEMINI_API_KEY)%'
+    bad_words_api_url: '%env(BAD_WORDS_API_URL)%'
 
 services:
     # configuration par défaut

@@ -396,6 +396,34 @@
                     <div class="progress-bar progress-bar-animated" role="progressbar"
                          style="width: {{ (1 / questions|length) * 100 }}%" id="quizProgress"></div>
                 </div>
+                
+                <!-- Timer avec Turbolinks - Attend captcha -->
+                <div class="timer-container mt-3" id="timer-container">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-soft-primary">
+                            <i class="fas fa-clock me-2"></i>
+                            <span id="timer-display">00:20</span>
+                        </span>
+                        <small class="text-muted" id="timer-status">En attente de confirmation...</small>
+                    </div>
+                </div>
+                
+                <div id="timer-warning" style="display: none; background: #f39c12; color: white; padding: 8px; border-radius: 5px; margin: 10px 0; text-align: center; font-size: 14px;">
+                    ⚠️ Attention: Plus que 5 secondes restantes !
+                </div>
+                
+                <!-- Section confirmation captcha -->
+                <div id="captcha-section" class="text-center mt-3">
+                    <div class="alert alert-info">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        <strong>Vérification de sécurité</strong>
+                    </div>
+                    <button type="button" class="btn btn-success" onclick="confirmAndStart()">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Confirmer et commencer
+                    </button>
+                    <p class="text-muted mt-2">Cliquez pour confirmer et démarrer le chronomètre</p>
+                </div>
             </div>
 
             <div class="card-body p-4 p-md-5">
@@ -424,14 +452,8 @@
                             {% endfor %}
                         </div>
 
-                        <div class="mt-5 d-flex justify-content-between">
-                            {% if not loop.first %}
-                                <button type="button" class="btn btn-light px-4 py-2" onclick="changeStep({{ loop.index - 1 }})">
-                                    <i class="fas fa-arrow-left me-2"></i>Précédent
-                                </button>
-                            {% else %}
-                                <div></div>{# Espace vide pour garder le bouton Suivant à droite #}
-                            {% endif %}
+                        <div class="mt-5 d-flex justify-content-end">
+                            {# Plus de bouton Précédent - uniquement le bouton Suivant #}
                             
                             {% if not loop.last %}
                                 <button type="button" class="btn btn-primary px-4 py-2 shadow-sm" onclick="validateAndChangeStep({{ loop.index }}, {{ loop.index + 1 }})">
@@ -485,10 +507,7 @@
                             </div>
                         </div>
 
-                        <div class="mt-5 d-flex justify-content-between">
-                            <button type="button" class="btn btn-light px-4 py-2" onclick="changeStep({{ questions|length }})">
-                                <i class="fas fa-arrow-left me-2"></i>Précédent
-                            </button>
+                        <div class="mt-5 d-flex justify-content-end">
                             <button type="button" class="btn btn-success px-5 py-2 shadow border-0" onclick="validateLastQuestionAndSubmit()">
                                 <i class="fas fa-check-circle me-2"></i>Terminer le Quiz
                             </button>
@@ -500,6 +519,237 @@
     </div>
 
     <script>
+    // Timer variables avec Turbolinks - 20 secondes par question
+    let timeRemaining = 20; // 20 secondes par question
+    let timerInterval;
+    let quizActive = true;
+    let currentQuestionStartTime = Date.now();
+    let questionTimeout = false;
+    let captchaVerified = false;
+    
+    // Configuration Turbolinks pour le timer - attend confirmation
+    document.addEventListener('turbolinks:load', function() {
+        console.log('Turbolinks loaded - Waiting for confirmation');
+        updateTimerDisplay();
+        hideTimerWarning();
+        // NE PAS démarrer le timer - attendre confirmation
+    });
+    
+    document.addEventListener('turbolinks:before-visit', function() {
+        console.log('Turbolinks before visit - Stopping timer');
+        stopTimer();
+    });
+    
+    // Fonction pour confirmer et démarrer le timer
+    function confirmAndStart() {
+        console.log('Confirmation clicked - Starting timer immediately');
+        
+        // Mettre à jour le statut
+        const timerStatus = document.getElementById('timer-status');
+        if (timerStatus) {
+            timerStatus.textContent = 'Quiz en cours...';
+        }
+        
+        // Cacher la section captcha
+        const captchaSection = document.getElementById('captcha-section');
+        if (captchaSection) {
+            captchaSection.style.display = 'none';
+        }
+        
+        // Démarrer le timer immédiatement
+        startTimer();
+    }
+    
+        
+    // Initialiser reCAPTCHA
+    document.addEventListener('DOMContentLoaded', function() {
+        // Vérifier si reCAPTCHA est chargé
+        if (typeof grecaptcha !== 'undefined') {
+            grecaptcha.ready(function() {
+                console.log('reCAPTCHA ready');
+            });
+        }
+    });
+    
+    // Timer functions avec Turbolinks - 20 secondes par question
+    function startTimer() {
+        if (!quizActive) return;
+        
+        // Réinitialiser le timer pour chaque question
+        timeRemaining = 20;
+        questionTimeout = false;
+        currentQuestionStartTime = Date.now();
+        
+        timerInterval = setInterval(function() {
+            if (!quizActive) {
+                stopTimer();
+                return;
+            }
+            
+            timeRemaining--;
+            updateTimerDisplay();
+            
+            // Warning 5 secondes
+            if (timeRemaining === 5) {
+                showTimerWarning();
+            }
+            
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                questionTimeout = true;
+                disableCurrentQuestion();
+                // Passer automatiquement à la question suivante
+                autoNextQuestion();
+            }
+        }, 1000);
+    }
+    
+    function resetTimerForNewQuestion() {
+        stopTimer();
+        timeRemaining = 20;
+        questionTimeout = false;
+        currentQuestionStartTime = Date.now();
+        updateTimerDisplay();
+        hideTimerWarning();
+        
+        // Démarrer le timer seulement si le captcha a été vérifié
+        if (captchaVerified) {
+            startTimer();
+        }
+    }
+    
+    function updateTimerDisplay() {
+        const seconds = timeRemaining % 60;
+        const display = `00:${seconds.toString().padStart(2, '0')}`;
+        const timerDisplay = document.getElementById('timer-display');
+        
+        if (timerDisplay) {
+            timerDisplay.textContent = display;
+            
+            // Toujours afficher en rouge comme demandé
+            timerDisplay.style.color = '#e74c3c';
+            timerDisplay.style.fontWeight = 'bold';
+            
+            // Effet spécial quand il reste moins de 5 secondes
+            if (timeRemaining <= 5) {
+                timerDisplay.style.animation = 'pulse 0.5s infinite';
+            } else {
+                timerDisplay.style.animation = 'none';
+            }
+        }
+        
+        // Mise à jour du container timer
+        updateTimerContainer();
+    }
+    
+    function updateTimerContainer() {
+        const container = document.getElementById('timer-container');
+        if (container) {
+            // Ajouter classe CSS selon le temps restant
+            container.className = 'timer-container mt-3';
+            if (timeRemaining <= 60) {
+                container.classList.add('timer-critical');
+            } else if (timeRemaining <= 300) {
+                container.classList.add('timer-warning');
+            } else {
+                container.classList.add('timer-normal');
+            }
+        }
+    }
+    
+    function showTimerWarning() {
+        const warning = document.getElementById('timer-warning');
+        if (warning) {
+            warning.style.display = 'block';
+            warning.style.animation = 'pulse 1s infinite';
+        }
+    }
+    
+    function hideTimerWarning() {
+        const warning = document.getElementById('timer-warning');
+        if (warning) {
+            warning.style.display = 'none';
+        }
+    }
+    
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+    
+    function disableCurrentQuestion() {
+        // Désactiver uniquement la question actuelle
+        const currentStepDiv = document.querySelector('.quiz-step:not([style*="display: none"])');
+        if (currentStepDiv) {
+            currentStepDiv.querySelectorAll('.form-check').forEach(label => {
+                label.style.pointerEvents = 'none';
+                label.style.opacity = '0.5';
+            });
+            
+            // Marquer comme "non répondue" pour le score automatique
+            const questionId = currentStepDiv.id.replace('step-', '');
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = `timeout[${questionId}]`;
+            hiddenInput.value = '1';
+            currentStepDiv.appendChild(hiddenInput);
+        }
+        
+        // Afficher message temps écoulé
+        const timerDisplay = document.getElementById('timer-display');
+        if (timerDisplay) {
+            timerDisplay.textContent = 'TEMPS ÉCOULÉ';
+            timerDisplay.style.color = '#e74c3c';
+        }
+    }
+    
+    function disableQuiz() {
+        quizActive = false;
+        stopTimer();
+        
+        // Désactiver tous les boutons et options
+        document.querySelectorAll('.form-check').forEach(label => {
+            label.style.pointerEvents = 'none';
+            label.style.opacity = '0.5';
+        });
+        
+        document.querySelectorAll('.btn').forEach(button => {
+            button.disabled = true;
+        });
+        
+        // Afficher message temps écoulé
+        const timerDisplay = document.getElementById('timer-display');
+        if (timerDisplay) {
+            timerDisplay.textContent = 'TEMPS ÉCOULÉ';
+            timerDisplay.style.color = '#e74c3c';
+        }
+    }
+    
+    function autoNextQuestion() {
+        const totalQuestions = {{ questions|length }};
+        
+        // Trouver la question actuelle
+        let currentStep = null;
+        for (let i = 1; i <= totalQuestions; i++) {
+            const stepDiv = document.getElementById('step-' + i);
+            if (stepDiv && stepDiv.style.display !== 'none') {
+                currentStep = i;
+                break;
+            }
+        }
+        
+        if (currentStep && currentStep < totalQuestions) {
+            // Passer à la question suivante
+            changeStep(currentStep + 1);
+            resetTimerForNewQuestion();
+        } else if (currentStep === totalQuestions) {
+            // Dernière question : passer à l'évaluation
+            changeStep(totalQuestions + 1);
+        }
+    }
+
     /**
      * Valide la réponse actuelle avant de passer à la question suivante
      * @param {number} currentStep - L'index de la question actuelle
@@ -680,6 +930,11 @@
         } else {
             document.getElementById('stepCounter').innerText = "Question " + step + "/" + totalQuestions;
         }
+        
+        // 6. Réinitialiser le timer pour la nouvelle question
+        if (step <= totalQuestions) {
+            resetTimerForNewQuestion();
+        }
     }
 
     // Gestion de la touche Entrée pour la soumission
@@ -808,6 +1063,35 @@
         
         .hover-bg-light:hover {
             background-color: #f8f9fa !important;
+        }
+        
+        /* Timer styles */
+        .timer-container {
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .timer-normal {
+            background: #e0eaff;
+            border: 1px solid #3f6ad8;
+        }
+        
+        .timer-warning {
+            background: #fef3e7;
+            border: 1px solid #f39c12;
+        }
+        
+        .timer-critical {
+            background: #ffebee;
+            border: 1px solid #e74c3c;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
         }
         
         /* Popup reCAPTCHA */

@@ -151,39 +151,82 @@ class QuizController extends AbstractController
         $session = $request->getSession();
         $data = $session->get('quiz_answers', []); 
         $evaluation = $request->request->all('evaluation'); 
+        $timeouts = $request->request->all('timeout'); // Questions non répondues par timeout
         
         $results = [];
         $score = 0;
-
-        foreach ($data as $questionId => $userAnswer) {
-            $question = $repo->find($questionId);
-            if ($question) {
+        $quizQuestions = $session->get('quiz_questions', []);
+        
+        // Récupérer les entités Question fraîches depuis la base de données
+        $questionIds = array_map(function($q) { return $q->getId(); }, $quizQuestions);
+        $freshQuestions = $repo->findBy(['id' => $questionIds]);
+        
+        // Traiter uniquement les 10 questions sélectionnées pour le quiz
+        foreach ($freshQuestions as $question) {
+            $questionId = $question->getId();
+            $isTimeout = isset($timeouts[$questionId]);
+            $hasAnswer = isset($data[$questionId]);
+            
+            // Créer un feedback pour chaque question
+            $fb = new Feedback();
+            $fb->setQuestion($question);
+            
+            $user = $this->getUser();
+            if ($user) {
+                $fb->setUserId($user->getId());
+                $fb->setUser($user);
+            } else {
+                $fb->setUserId(null);
+            }
+            
+            if ($isTimeout) {
+                // Question non répondue (timeout) = FAUX automatique
+                $fb->setReponseDonnee("Non répondu (temps écoulé)");
+                $fb->setComments("Question non répondue - temps écoulé (20 secondes)");
+                $fb->setEtoiles(0);
+                $isCorrect = false;
+                
+                $results[] = [
+                    'question' => $question->getTexte(),
+                    'userAnswer' => 'Non répondu (temps écoulé)',
+                    'correctAnswer' => $question->getReponse(),
+                    'isCorrect' => false,
+                    'timeout' => true
+                ];
+            } elseif ($hasAnswer) {
+                // Question répondue normalement
+                $userAnswer = $data[$questionId];
                 $isCorrect = (trim(strtolower($question->getReponse())) === trim(strtolower($userAnswer)));
                 if ($isCorrect) $score++;
-
-                $fb = new Feedback();
-                $fb->setQuestion($question);
+                
                 $fb->setReponseDonnee($userAnswer);
-
-                $user = $this->getUser();
-                if ($user) {
-                    $fb->setUserId($user->getId());
-                    $fb->setUser($user);
-                } else {
-                    $fb->setUserId(null);
-                }
-
-                $fb->setComments("Réponse automatique (Quiz)");
+                $fb->setComments("Réponse utilisateur");
                 $fb->setEtoiles(0);
-
-                $em->persist($fb);
+                
                 $results[] = [
                     'question' => $question->getTexte(),
                     'userAnswer' => $userAnswer,
                     'correctAnswer' => $question->getReponse(),
-                    'isCorrect' => $isCorrect
+                    'isCorrect' => $isCorrect,
+                    'timeout' => false
+                ];
+            } else {
+                // Question non répondue (pas de timeout) = FAUX
+                $fb->setReponseDonnee("Non répondu");
+                $fb->setComments("Question non répondue");
+                $fb->setEtoiles(0);
+                $isCorrect = false;
+                
+                $results[] = [
+                    'question' => $question->getTexte(),
+                    'userAnswer' => 'Non répondu',
+                    'correctAnswer' => $question->getReponse(),
+                    'isCorrect' => false,
+                    'timeout' => false
                 ];
             }
+            
+            $em->persist($fb);
         }
         
         $em->flush();
@@ -191,7 +234,10 @@ class QuizController extends AbstractController
         $userFeedback = null;
         if (isset($evaluation['comments']) && isset($evaluation['etoiles'])) {
             $userFeedback = new Feedback();
-            $userFeedback->setComments($evaluation['comments']);
+            
+            // Modérer le commentaire avant de le sauvegarder
+            $moderatedComment = $this->moderationService->moderateContent($evaluation['comments']);
+            $userFeedback->setComments($moderatedComment);
             $userFeedback->setEtoiles((int)$evaluation['etoiles']);
             
             $user = $this->getUser();
@@ -255,6 +301,51 @@ class QuizController extends AbstractController
         ]);
     }
 
+    #[Route('/quiz/feedback/edit/{id}', name: 'app_quiz_feedback_edit', methods: ['POST'])]
+    public function editFeedback(Request $request, int $id, EntityManagerInterface $em): Response
+    {
+        $feedback = $em->getRepository(Feedback::class)->find($id);
+        
+        if (!$feedback) {
+            $this->addFlash('error', 'Feedback non trouvé');
+            return $this->redirectToRoute('app_quiz_final_results');
+        }
+        
+        $user = $this->getUser();
+        if (!$user || $feedback->getUserId() !== $user->getId()) {
+            $this->addFlash('error', 'Non autorisé');
+            return $this->redirectToRoute('app_quiz_final_results');
+        }
+        
+        $etoiles = $request->request->get('etoiles');
+        $comments = $request->request->get('comments');
+        
+        if ($etoiles !== null) {
+            // Modérer le commentaire avant de le sauvegarder
+            if ($comments) {
+                $moderatedComment = $this->moderationService->moderateContent($comments);
+                $feedback->setComments($moderatedComment);
+            }
+            
+            $feedback->setEtoiles((int)$etoiles);
+            $em->flush();
+            
+            // Mettre à jour la session avec le feedback modifié
+            $session = $request->getSession();
+            $quizResults = $session->get('quiz_results');
+            if ($quizResults && isset($quizResults['userFeedback']) && $quizResults['userFeedback']->getId() === $feedback->getId()) {
+                $quizResults['userFeedback'] = $feedback;
+                $session->set('quiz_results', $quizResults);
+            }
+            
+            $this->addFlash('success', 'Votre avis a été modifié avec succès');
+            return $this->redirectToRoute('app_quiz_final_results');
+        }
+        
+        $this->addFlash('error', 'Données invalides');
+        return $this->redirectToRoute('app_quiz_final_results');
+    }
+
     #[Route('/quiz/feedback/save', name: 'app_quiz_feedback_save', methods: ['POST'])]
     public function saveFeedback(Request $request, EntityManagerInterface $em): Response
     {
@@ -283,6 +374,13 @@ class QuizController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Modérer le commentaire avant de le sauvegarder
+            $originalComment = $feedback->getComments();
+            if ($originalComment) {
+                $moderatedComment = $this->moderationService->moderateContent($originalComment);
+                $feedback->setComments($moderatedComment);
+            }
+            
             $user = $this->getUser();
             if ($user) {
                 $feedback->setUserId($user->getId());
@@ -375,8 +473,9 @@ class QuizController extends AbstractController
         $score = $quizResults['score'];
         $total = $quizResults['total'];
 
-        if ($score < 5 || $score > 10) {
-            $this->addFlash('error', 'Le certificat n\'est disponible que pour un score entre 5 et 10. Votre score: ' . $score . '/' . $total);
+        $percentage = ($score / $total) * 100;
+        if ($percentage < 50) {
+            $this->addFlash('error', 'Le certificat n\'est disponible que pour un score de 50% ou plus. Votre score: ' . round($percentage) . '% (' . $score . '/' . $total . ')');
             return $this->redirectToRoute('app_quiz_final_results');
         }
 
@@ -393,7 +492,7 @@ class QuizController extends AbstractController
         }
 
         try {
-            $percentage = round(($score / $total) * 100);
+            $percentage = round($percentage);
             $date = (new \DateTime())->format('d/m/Y');
 
             $html = '<!DOCTYPE html><html><head><meta charset="UTF-8">

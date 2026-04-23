@@ -308,14 +308,15 @@
                         {% endif %}
                         
                         <div class="text-center mt-4">
-                            {% if score >= 5 and score <= 10 %}
+                            {% set percentage = (score / total * 100) %}
+                            {% if percentage >= 50 %}
                                 <a href="{{ path('app_quiz_certificate') }}" class="btn btn-primary me-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;" download>
                                     <i class="fas fa-download me-2"></i>Télécharger le certificat
                                 </a>
                             {% else %}
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    Le certificat est disponible uniquement pour un score entre 5 et 10. Votre score: {{ score }}/{{ total }}
+                                    Le certificat est disponible uniquement pour un score de 50% ou plus. Votre score: {{ percentage|round }}% ({{ score }}/{{ total }})
                                 </div>
                             {% endif %}
                             <a href="{{ path('app_landing') }}" class="btn btn-outline-secondary">

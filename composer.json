@@ -37,6 +37,7 @@
         "symfony/twilio-notifier": "6.4.*",
         "symfony/uid": "6.4.*",
         "symfony/ux-chartjs": "^2.0",
+        "symfony/ux-turbo": "^2.35",
         "symfony/validator": "6.4.*",
         "symfony/yaml": "6.4.*",
         "tattali/calendar-bundle": "^1.3",

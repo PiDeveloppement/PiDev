@@ -1,5 +1,31 @@
 {% extends 'base.html.twig' %}
 
+{% block javascripts %}
+    <script>
+        // Configuration Turbolinks pour le timer
+        document.addEventListener('turbolinks:load', function() {
+            console.log('Turbolinks loaded - Starting timer');
+            if (typeof startTimer === 'function') {
+                startTimer();
+            }
+        });
+        
+        document.addEventListener('turbolinks:before-visit', function() {
+            console.log('Turbolinks before visit - Stopping timer');
+            if (typeof stopTimer === 'function') {
+                stopTimer();
+            }
+        });
+        
+        document.addEventListener('turbolinks:visit', function() {
+            console.log('Turbolinks visit - Restarting timer');
+            if (typeof startTimer === 'function') {
+                startTimer();
+            }
+        });
+    </script>
+{% endblock %}
+
 {% block title %}Quiz - Question {{ currentQuestion + 1 }}{% endblock %}
 
 {% block stylesheets %}
@@ -143,8 +169,35 @@
     .timer {
         text-align: center;
         font-size: 1.1em;
-        color: #e74c3c;
         margin: 15px 0;
+        padding: 10px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .timer-normal {
+        background: #d5f4e6;
+        color: #27ae60;
+        border: 2px solid #27ae60;
+    }
+    
+    .timer-warning {
+        background: #fef5e7;
+        color: #f39c12;
+        border: 2px solid #f39c12;
+    }
+    
+    .timer-critical {
+        background: #fadbd8;
+        color: #e74c3c;
+        border: 2px solid #e74c3c;
+        animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
     }
     
     .quiz-info {
@@ -211,6 +264,13 @@
             <span>Question <strong>{{ currentQuestion + 1 }}</strong> sur {{ totalQuestions }}</span>
             <span>Points: <strong>{{ currentPoints }}</strong></span>
         </div>
+        <div class="timer" id="timer-container">
+            <strong>⏱️ Temps restant: <span id="timer-display">10:00</span></strong>
+        </div>
+        
+        <div id="timer-warning" style="display: none; background: #f39c12; color: white; padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center;">
+            ⚠️ Attention: Plus que 5 secondes restantes !
+        </div>
         <div class="progress-bar">
             <div class="progress-fill" style="width: {{ ((currentQuestion + 1) / totalQuestions) * 100 }}%"></div>
         </div>
@@ -264,6 +324,24 @@
     let answers = {{ answers|json_encode|raw }};
     let questions = {{ questions|json_encode|raw }};
     let currentPoints = {{ currentPoints }};
+    
+    // Timer variables avec Turbo
+    let timeRemaining = 600; // 10 minutes en secondes
+    let timerInterval;
+    let quizActive = true;
+    
+    // Initialisation Turbolinks pour le timer
+    document.addEventListener('turbolinks:load', function() {
+        console.log('Turbolinks loaded - Starting timer');
+        updateTimerDisplay();
+        hideTimerWarning();
+        startTimer();
+    });
+    
+    document.addEventListener('turbolinks:before-visit', function() {
+        console.log('Turbolinks before visit - Stopping timer');
+        stopTimer();
+    });
 
     // Gérer la sélection des options
     document.querySelectorAll('.option-label').forEach(label => {
@@ -419,11 +497,134 @@
         }).catch(error => console.log('Auto-save failed:', error));
     }, 30000); // Toutes les 30 secondes
 
+    // Timer functions avec Turbo et temps réel
+    function startTimer() {
+        if (!quizActive) return;
+        
+        timerInterval = setInterval(function() {
+            if (!quizActive) {
+                stopTimer();
+                return;
+            }
+            
+            timeRemaining--;
+            updateTimerDisplay();
+            
+            // Warning 5 secondes
+            if (timeRemaining === 5) {
+                showTimerWarning();
+            }
+            
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                quizActive = false;
+                submitQuiz(); // Soumettre automatiquement quand le temps est écoulé
+            }
+        }, 1000);
+    }
+    
+    function updateTimerDisplay() {
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+        const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const timerDisplay = document.getElementById('timer-display');
+        
+        if (timerDisplay) {
+            timerDisplay.textContent = display;
+            
+            // Changer la couleur quand il reste peu de temps
+            if (timeRemaining <= 60) {
+                timerDisplay.style.color = '#e74c3c';
+                timerDisplay.style.fontWeight = 'bold';
+            } else if (timeRemaining <= 300) {
+                timerDisplay.style.color = '#f39c12';
+                timerDisplay.style.fontWeight = 'bold';
+            } else {
+                timerDisplay.style.color = '#27ae60';
+            }
+        }
+        
+        // Mise à jour Turbo du timer
+        updateTimerContainer();
+    }
+    
+    function updateTimerContainer() {
+        const container = document.getElementById('timer-container');
+        if (container) {
+            // Ajouter classe CSS selon le temps restant
+            container.className = 'timer';
+            if (timeRemaining <= 60) {
+                container.classList.add('timer-critical');
+            } else if (timeRemaining <= 300) {
+                container.classList.add('timer-warning');
+            } else {
+                container.classList.add('timer-normal');
+            }
+        }
+    }
+    
+    function showTimerWarning() {
+        const warning = document.getElementById('timer-warning');
+        if (warning) {
+            warning.style.display = 'block';
+            warning.style.animation = 'pulse 1s infinite';
+        }
+    }
+    
+    function hideTimerWarning() {
+        const warning = document.getElementById('timer-warning');
+        if (warning) {
+            warning.style.display = 'none';
+        }
+    }
+    
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+    
+    function disableQuiz() {
+        quizActive = false;
+        stopTimer();
+        
+        // Désactiver tous les boutons et options
+        document.querySelectorAll('.option-label').forEach(label => {
+            label.style.pointerEvents = 'none';
+            label.style.opacity = '0.5';
+        });
+        
+        document.querySelectorAll('.nav-button').forEach(button => {
+            button.disabled = true;
+        });
+        
+        // Afficher message temps écoulé
+        const timerDisplay = document.getElementById('timer-display');
+        if (timerDisplay) {
+            timerDisplay.textContent = 'TEMPS ÉCOULÉ';
+            timerDisplay.style.color = '#e74c3c';
+        }
+    }
+    
     // Empêcher la fermeture de la page sans avertissement
     window.addEventListener('beforeunload', function(event) {
         if (currentQuestionIndex < totalQuestionsCount - 1) {
             event.preventDefault();
             event.returnValue = '';
+        }
+    });
+    
+    // Démarrer le timer au chargement de la page (compatible avec Turbolinks)
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded - Initializing timer');
+        updateTimerDisplay();
+        hideTimerWarning();
+        
+        // Si Turbolinks n'est pas encore chargé, démarrer manuellement
+        if (!window.Turbolinks) {
+            console.log('Turbolinks not found, starting timer manually');
+            startTimer();
         }
     });
 </script>

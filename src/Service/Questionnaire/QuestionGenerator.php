@@ -162,7 +162,7 @@ class QuestionGenerator
         return $data;
     }
 
-    /**
+    /** 
      * Génère une question par défaut si l'IA n'est pas disponible
      */
     private function generateFallbackQuestion(): array
