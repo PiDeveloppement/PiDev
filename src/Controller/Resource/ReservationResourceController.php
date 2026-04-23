@@ -189,8 +189,15 @@ class ReservationResourceController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_reservation_resource_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, ReservationResource $reservation, EntityManagerInterface $em): Response
+    public function edit(Request $request, ReservationResourceRepository $repo, EntityManagerInterface $em, int $id): Response
     {
+        $reservation = $repo->find($id);
+        
+        if (!$reservation) {
+            $this->addFlash('error', 'Réservation non trouvée.');
+            return $this->redirectToRoute('app_reservation_resource_index');
+        }
+        
         $form = $this->createForm(ReservationType::class, $reservation);
         $form->handleRequest($request);
 
@@ -207,8 +214,15 @@ class ReservationResourceController extends AbstractController
     }
 
     #[Route('/{id}/delete', name: 'app_reservation_resource_delete', methods: ['POST'])]
-    public function delete(Request $request, ReservationResource $reservation, EntityManagerInterface $em, EmailService $emailService): Response
+    public function delete(Request $request, ReservationResourceRepository $repo, EntityManagerInterface $em, EmailService $emailService, int $id): Response
     {
+        $reservation = $repo->find($id);
+        
+        if (!$reservation) {
+            $this->addFlash('error', 'Réservation non trouvée.');
+            return $this->redirectToRoute('app_reservation_resource_index');
+        }
+        
         if ($this->isCsrfTokenValid('delete'.$reservation->getId(), $request->request->get('_token'))) {
             // Préparer les données pour l'email avant suppression
             $userName = $this->getUser()->getFullName() ?? $this->getUser()->getEmail();

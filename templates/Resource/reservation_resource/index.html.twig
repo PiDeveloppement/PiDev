@@ -103,9 +103,9 @@
                                     {{ reservation.resourceType }}
                                 </span>
                                 <h4 style="font-size: 16px; font-weight: 600; color: #1f2937; margin: 0;">
-                                    {% if reservation.resourceType == 'SALLE' and reservation.salle %}
+                                    {% if reservation.resourceType == 'SALLE' and reservation.salle is defined and reservation.salle %}
                                         {{ reservation.salle.name }}
-                                    {% elseif reservation.resourceType == 'EQUIPEMENT' and reservation.equipement %}
+                                    {% elseif reservation.resourceType == 'EQUIPEMENT' and reservation.equipement is defined and reservation.equipement %}
                                         {{ reservation.equipement.name }}
                                     {% else %}
                                         Ressource inconnue
