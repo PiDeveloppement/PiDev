@@ -3,13 +3,11 @@ framework:
         chatter_transports: ~
 
         texter_transports:
-            sendgrid: '%env(MAILER_DSN)%'
             infobip: '%env(INFOBIP_DSN)%'
-            twilio: '%env(TWILIO_DSN)%'
 
         channel_policy:
-            urgent: ['sms/infobip']
-            high: ['sms/infobip']
+            urgent: ['sms']
+            high: ['sms']
             medium: ['email']
             low: ['email']
 

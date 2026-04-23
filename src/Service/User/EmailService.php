@@ -37,6 +37,9 @@ class EmailService
             $subject = '🎉 Bienvenue sur EventFlow !';
 
             $this->logger->info('📧 Tentative d\'envoi email bienvenue à: ' . $user->getEmail());
+            $this->logger->info('📧 Données utilisateur - firstName: ' . $user->getFirstName());
+            $this->logger->info('📧 Données utilisateur - lastName: ' . $user->getLastName());
+            $this->logger->info('📧 Données utilisateur - faculte: ' . ($user->getFaculte() ?: 'NULL'));
 
             // Générer le contenu HTML depuis un template Twig
             $htmlContent = $this->twig->render('email/welcome.html.twig', [

@@ -515,8 +515,12 @@
 
 {% block public_content %}
 <div class="signup-container">
-    <div class="back-button">
+    <div class="back-button" style="display: flex; justify-content: space-between; align-items: center;">
         <a href="{{ path('app_landing') }}">← Retour à l'accueil</a>
+        <button onclick="toggleTheme()" style="background: rgba(33, 150, 243, 0.1); color: #2196F3; border: 1px solid #2196F3; border-radius: 20px; padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: bold;">
+            <i class="fas fa-moon" id="themeIconSignup"></i>
+            <span id="themeTextSignup">Mode Sombre</span>
+        </button>
     </div>
 
     <div class="main-grid">
@@ -674,14 +678,21 @@
 {% if setup_face == 1 and user_email is defined %}
 <div id="faceModal" class="face-modal">
     <div class="face-modal-content">
-        <div class="face-modal-header">
-            <h3>🔐 Configuration Face ID</h3>
-            <p>Veuillez positionner votre visage devant la caméra</p>
+        <div class="face-modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="text-align: center; flex: 1;">
+                <h3> Configuration Face ID</h3>
+                <p>Veuillez positionner votre visage devant la caméra</p>
+            </div>
+            <button onclick="toggleTheme()" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 20px; padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: bold;">
+                <i class="fas fa-moon" id="themeIconFaceSignup"></i>
+                <span id="themeTextFaceSignup">Mode Sombre</span>
+            </button>
         </div>
         <div class="face-modal-body">
             <div class="video-container">
                 <video id="video" autoplay playsinline class="face-video" style="display: none;"></video>
                 <div id="videoPlaceholder" class="video-placeholder">
+                    <div></div>
                     <div>📷</div>
                     <p>Demande d'accès à la caméra...</p>
                 </div>

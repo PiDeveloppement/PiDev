@@ -2,20 +2,18 @@
 
 namespace App\Controller\User;
 
-
 use App\Entity\User\UserModel;
 use App\Repository\Role\RoleRepository;
 use App\Repository\User\UserRepository;
 use App\Service\Role\RoleService;
 use App\Service\User\UserService;
+use App\Bundle\NotificationBundle\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Notifier\Message\SmsMessage;
-use Symfony\Component\Notifier\TexterInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
@@ -32,7 +30,7 @@ class ProfilController extends AbstractController
         private EntityManagerInterface $entityManager,
         private UserPasswordHasherInterface $passwordHasher,
         private SluggerInterface $slugger,
-        private TexterInterface $texter
+        private NotificationService $notificationService
     ) {}
 
     #[Route('/', name: 'app_profile')]
@@ -136,14 +134,20 @@ class ProfilController extends AbstractController
         $user->setPassword($hashedPassword);
         $this->entityManager->flush();
 
-        // Envoyer notification SMS via Infobip
+        // Envoyer notification SMS via NotificationService
         try {
+            error_log('=== Changement de mot de passe - Vérification téléphone ===');
+            error_log('Numéro de téléphone: ' . ($user->getPhone() ?: 'NULL'));
+            
             if ($user->getPhone()) {
-                $sms = new SmsMessage(
+                error_log('Envoi SMS en cours vers: ' . $user->getPhone());
+                $this->notificationService->sendSms(
                     $user->getPhone(),
                     'EventFlow: Votre mot de passe a été modifié avec succès. Si vous n\'avez pas effectué cette action, contactez le support.'
                 );
-                $this->texter->send($sms);
+                error_log('SMS envoyé avec succès');
+            } else {
+                error_log('Aucun numéro de téléphone, SMS non envoyé');
             }
         } catch (\Exception $e) {
             error_log('Erreur envoi SMS: ' . $e->getMessage());

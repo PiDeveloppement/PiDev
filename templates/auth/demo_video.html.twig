@@ -180,8 +180,12 @@
 {% block public_content %}
 <div class="demo-container">
     <!-- Bouton retour -->
-    <div class="back-button">
+    <div class="back-button" style="display: flex; justify-content: space-between; align-items: center;">
         <a href="{{ path('app_landing') }}">← Retour à l'accueil</a>
+        <button onclick="toggleTheme()" style="background: rgba(13, 71, 161, 0.1); color: #0D47A1; border: 1px solid #0D47A1; border-radius: 20px; padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: bold;">
+            <i class="fas fa-moon" id="themeIconDemo"></i>
+            <span id="themeTextDemo">Mode Sombre</span>
+        </button>
     </div>
     
     <!-- Carte de démo avec VRAIE vidéo -->
@@ -245,6 +249,53 @@
         const savedTime = localStorage.getItem('demoVideoTime');
         if (savedTime) {
             video.currentTime = savedTime;
+        }
+    });
+
+    // Theme toggle for demo video page
+    function toggleTheme() {
+        const body = document.body;
+        const themeIconDemo = document.getElementById('themeIconDemo');
+        const themeTextDemo = document.getElementById('themeTextDemo');
+        
+        if (body.classList.contains('dark-mode')) {
+            body.classList.remove('dark-mode');
+            localStorage.setItem('theme', 'light');
+            if (themeIconDemo) {
+                themeIconDemo.classList.remove('fa-sun');
+                themeIconDemo.classList.add('fa-moon');
+            }
+            if (themeTextDemo) {
+                themeTextDemo.textContent = 'Mode Sombre';
+            }
+        } else {
+            body.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+            if (themeIconDemo) {
+                themeIconDemo.classList.remove('fa-moon');
+                themeIconDemo.classList.add('fa-sun');
+            }
+            if (themeTextDemo) {
+                themeTextDemo.textContent = 'Mode Clair';
+            }
+        }
+    }
+
+    // Load saved theme on page load for demo video page
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedTheme = localStorage.getItem('theme');
+        const themeIconDemo = document.getElementById('themeIconDemo');
+        const themeTextDemo = document.getElementById('themeTextDemo');
+        
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            if (themeIconDemo) {
+                themeIconDemo.classList.remove('fa-moon');
+                themeIconDemo.classList.add('fa-sun');
+            }
+            if (themeTextDemo) {
+                themeTextDemo.textContent = 'Mode Clair';
+            }
         }
     });
 </script>

@@ -656,6 +656,10 @@
             </div>
 
             <div class="nav-buttons">
+                <button onclick="toggleTheme()" style="background: rgba(33, 150, 243, 0.1); color: #2196F3; border: 1px solid #2196F3; border-radius: 20px; padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: bold; margin-right: 10px;">
+                    <i class="fas fa-moon" id="themeIconLanding"></i>
+                    <span id="themeTextLanding">Mode Sombre</span>
+                </button>
                 {% if isParticipantUser %}
                     <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
                     <details class="participant-chip-menu">
@@ -667,6 +671,10 @@
                             </span>
                         </summary>
                         <div class="participant-chip-dropdown">
+                            <button class="participant-chip-action" onclick="toggleTheme()" style="background: none; border: none; cursor: pointer; width: 100%; text-align: left;">
+                                <i class="fas fa-moon" style="width: 16px;" id="themeIconFront"></i>
+                                <span id="themeTextFront">Mode Sombre</span>
+                            </button>
                             <a class="participant-chip-action" href="{{ path('app_logout') }}">Déconnexion</a>
                         </div>
                     </details>
@@ -871,7 +879,7 @@
             </div>
 
             <div class="footer-copyright">
-                © 2026 EventFlow. Tous droits réservés.
+                2026 EventFlow. Tous droits réservés.
             </div>
         </footer>
     </main>
@@ -901,6 +909,78 @@
                 this.style.transform = 'translateY(0)';
                 this.style.boxShadow = 'none';
             });
+        });
+
+        // Theme toggle for front office
+        function toggleTheme() {
+            const body = document.body;
+            const themeIconFront = document.getElementById('themeIconFront');
+            const themeTextFront = document.getElementById('themeTextFront');
+            const themeIconLanding = document.getElementById('themeIconLanding');
+            const themeTextLanding = document.getElementById('themeTextLanding');
+            
+            if (body.classList.contains('dark-mode')) {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
+                if (themeIconFront) {
+                    themeIconFront.classList.remove('fa-sun');
+                    themeIconFront.classList.add('fa-moon');
+                }
+                if (themeTextFront) {
+                    themeTextFront.textContent = 'Mode Sombre';
+                }
+                if (themeIconLanding) {
+                    themeIconLanding.classList.remove('fa-sun');
+                    themeIconLanding.classList.add('fa-moon');
+                }
+                if (themeTextLanding) {
+                    themeTextLanding.textContent = 'Mode Sombre';
+                }
+            } else {
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+                if (themeIconFront) {
+                    themeIconFront.classList.remove('fa-moon');
+                    themeIconFront.classList.add('fa-sun');
+                }
+                if (themeTextFront) {
+                    themeTextFront.textContent = 'Mode Clair';
+                }
+                if (themeIconLanding) {
+                    themeIconLanding.classList.remove('fa-moon');
+                    themeIconLanding.classList.add('fa-sun');
+                }
+                if (themeTextLanding) {
+                    themeTextLanding.textContent = 'Mode Clair';
+                }
+            }
+        }
+
+        // Load saved theme on page load for front office
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme');
+            const themeIconFront = document.getElementById('themeIconFront');
+            const themeTextFront = document.getElementById('themeTextFront');
+            const themeIconLanding = document.getElementById('themeIconLanding');
+            const themeTextLanding = document.getElementById('themeTextLanding');
+            
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                if (themeIconFront) {
+                    themeIconFront.classList.remove('fa-moon');
+                    themeIconFront.classList.add('fa-sun');
+                }
+                if (themeTextFront) {
+                    themeTextFront.textContent = 'Mode Clair';
+                }
+                if (themeIconLanding) {
+                    themeIconLanding.classList.remove('fa-moon');
+                    themeIconLanding.classList.add('fa-sun');
+                }
+                if (themeTextLanding) {
+                    themeTextLanding.textContent = 'Mode Clair';
+                }
+            }
         });
     </script>
 

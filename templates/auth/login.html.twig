@@ -637,8 +637,12 @@
 
 {% block public_content %}
 <div class="login-page">
-    <div class="back-button">
+    <div class="back-button" style="display: flex; justify-content: space-between; align-items: center;">
         <a href="{{ path('app_landing') }}">← Retour à l'accueil</a>
+        <button onclick="toggleTheme()" style="background: rgba(33, 150, 243, 0.1); color: #2196F3; border: 1px solid #2196F3; border-radius: 20px; padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: bold;">
+            <i class="fas fa-moon" id="themeIconLogin"></i>
+            <span id="themeTextLogin">Mode Sombre</span>
+        </button>
     </div>
 
     <div class="main-grid">
@@ -777,9 +781,15 @@
 <!-- Modal Face ID -->
 <div id="faceModal" class="face-modal">
     <div class="face-modal-content">
-        <div class="face-modal-header">
-            <h3> Connexion Face ID</h3>
-            <p>Regardez la caméra pour vous connecter</p>
+        <div class="face-modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="text-align: center; flex: 1;">
+                <h3> Connexion Face ID</h3>
+                <p>Regardez la caméra pour vous connecter</p>
+            </div>
+            <button onclick="toggleTheme()" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 20px; padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: bold;">
+                <i class="fas fa-moon" id="themeIconFaceLogin"></i>
+                <span id="themeTextFaceLogin">Mode Sombre</span>
+            </button>
         </div>
         <div class="face-modal-body">
             <div class="video-container">
@@ -1103,5 +1113,61 @@ function showInlineError(message) {
         }
     }, 5000);
 }
+
+// Theme toggle for login page
+function toggleTheme() {
+    const body = document.body;
+    const themeIconLogin = document.getElementById('themeIconLogin');
+    const themeTextLogin = document.getElementById('themeTextLogin');
+    
+    if (body.classList.contains('dark-mode')) {
+        body.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light');
+        if (themeIconLogin) {
+            themeIconLogin.classList.remove('fa-sun');
+            themeIconLogin.classList.add('fa-moon');
+        }
+        if (themeTextLogin) {
+            themeTextLogin.textContent = 'Mode Sombre';
+        }
+    } else {
+        body.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+        if (themeIconLogin) {
+            themeIconLogin.classList.remove('fa-moon');
+            themeIconLogin.classList.add('fa-sun');
+        }
+        if (themeTextLogin) {
+            themeTextLogin.textContent = 'Mode Clair';
+        }
+    }
+}
+
+// Load saved theme on page load for login page
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('theme');
+    const themeIconLogin = document.getElementById('themeIconLogin');
+    const themeTextLogin = document.getElementById('themeTextLogin');
+    const themeIconFaceLogin = document.getElementById('themeIconFaceLogin');
+    const themeTextFaceLogin = document.getElementById('themeTextFaceLogin');
+    
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        if (themeIconLogin) {
+            themeIconLogin.classList.remove('fa-moon');
+            themeIconLogin.classList.add('fa-sun');
+        }
+        if (themeTextLogin) {
+            themeTextLogin.textContent = 'Mode Clair';
+        }
+        if (themeIconFaceLogin) {
+            themeIconFaceLogin.classList.remove('fa-moon');
+            themeIconFaceLogin.classList.add('fa-sun');
+        }
+        if (themeTextFaceLogin) {
+            themeTextFaceLogin.textContent = 'Mode Clair';
+        }
+    }
+});
 </script>
 {% endblock %}

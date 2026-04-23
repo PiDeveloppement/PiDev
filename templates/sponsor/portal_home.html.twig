@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recommandations sponsor - EventFlow</title>
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}?v=20260416-ia-focus">
+    <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}">
     <style>
         /* Navbar aligned with landing dimensions */
         .portal-navbar {
@@ -499,6 +500,10 @@
     </div>
 
     <div style="display:flex; align-items:center;">
+        <button onclick="toggleTheme()" style="background: rgba(33, 150, 243, 0.1); color: #2196F3; border: 1px solid #2196F3; border-radius: 20px; padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: bold; margin-right: 12px;">
+            <i class="fas fa-moon" id="themeIconSponsor"></i>
+            <span id="themeTextSponsor">Mode Sombre</span>
+        </button>
         <div class="portal-translate" id="portalTranslateWidget">
             <button type="button" class="portal-translate-btn" id="portalTranslateToggle"><i class="fas fa-language"></i> Traduire</button>
             <div class="portal-translate-menu" id="portalTranslateMenu">
@@ -1356,6 +1361,55 @@
             multilanguagePage: true
         }, 'google_translate_element');
     }
+</script>
+
+<script>
+// Theme toggle for sponsor portal
+function toggleTheme() {
+    const body = document.body;
+    const themeIconSponsor = document.getElementById('themeIconSponsor');
+    const themeTextSponsor = document.getElementById('themeTextSponsor');
+    
+    if (body.classList.contains('dark-mode')) {
+        body.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light');
+        if (themeIconSponsor) {
+            themeIconSponsor.classList.remove('fa-sun');
+            themeIconSponsor.classList.add('fa-moon');
+        }
+        if (themeTextSponsor) {
+            themeTextSponsor.textContent = 'Mode Sombre';
+        }
+    } else {
+        body.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+        if (themeIconSponsor) {
+            themeIconSponsor.classList.remove('fa-moon');
+            themeIconSponsor.classList.add('fa-sun');
+        }
+        if (themeTextSponsor) {
+            themeTextSponsor.textContent = 'Mode Clair';
+        }
+    }
+}
+
+// Load saved theme on page load for sponsor portal
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('theme');
+    const themeIconSponsor = document.getElementById('themeIconSponsor');
+    const themeTextSponsor = document.getElementById('themeTextSponsor');
+    
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        if (themeIconSponsor) {
+            themeIconSponsor.classList.remove('fa-moon');
+            themeIconSponsor.classList.add('fa-sun');
+        }
+        if (themeTextSponsor) {
+            themeTextSponsor.textContent = 'Mode Clair';
+        }
+    }
+});
 </script>
 <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>

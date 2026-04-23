@@ -25,25 +25,6 @@ class EventFrontController extends AbstractController
         return $this->redirectToRoute('app_public_events');
     }
 
-   #[Route('/participation/confirm', name: 'app_participation_confirm', methods: ['GET'])]
-public function participationConfirm(
-    SessionInterface $session,
-    EventRepository $eventRepository,
-    EntityManagerInterface $em
-): Response {
-    $eventId = $session->get('pending_event');
-    $event = null;
-
-    if ($eventId) {
-        $event = $eventRepository->find($eventId);
-    }
-
-    return $this->render('front/participation_confirm_simple.html.twig', [
-        'event' => $event,
-        'hasTickets' => $this->currentUserHasTickets($em),
-    ]);
-}
-
     #[Route('/events/calendar', name: 'app_public_events_calendar', methods: ['GET'])]
     public function calendarView(): Response
     {

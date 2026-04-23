@@ -10,6 +10,9 @@ parameters:
     ollama_base_url: '%env(string:OLLAMA_BASE_URL)%'
     ollama_model: '%env(string:OLLAMA_MODEL)%'
     ollama_timeout_seconds: '%env(int:OLLAMA_TIMEOUT_SECONDS)%'
+    infobip_api_key: '8b2261053a9ab3341deeebeeae7cb34a-9380087c-d807-4b00-9a88-94ab41417972'
+    infobip_base_url: 'https://api.infobip.com'
+    infobip_sender: 'EventFlow'
 
 services:
     # configuration par défaut
@@ -58,6 +61,14 @@ services:
             $timeoutSeconds: '%ollama_timeout_seconds%'
 
     Swap\Swap: '@florianv_swap.swap'
+
+    # NotificationBundle - NotificationService (autowired with NotifierInterface)
+    App\Bundle\NotificationBundle\Service\NotificationService: ~
+
+    # LoginSuccessListener for SMS notifications
+    App\EventListener\LoginSuccessListener:
+        tags:
+            - { name: kernel.event_listener, event: Symfony\Component\Security\Http\Event\LoginSuccessEvent }
 
     # ✅ PAS DE LIGNE SUPPLÉMENTAIRE POUR UserSessionService !
     # L'autowiring s'en charge automatiquement
