@@ -198,6 +198,131 @@
             padding: 28px;
             color: #5f7185;
         }
+
+        .notifications-panel {
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #f6f9ff 100%);
+            border: 1px solid #d8e4f3;
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .notifications-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .notifications-title {
+            margin: 0;
+            color: #10345f;
+            font-size: 22px;
+        }
+
+        .notifications-badge {
+            border-radius: 999px;
+            padding: 6px 10px;
+            background: #e7f1ff;
+            color: #174a92;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .notifications-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: #ffffff;
+            border: 1px solid #dbe7f5;
+        }
+
+        .notification-headline {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .notification-delete-form {
+            margin: 0;
+        }
+
+        .notification-delete-btn {
+            border: 1px solid #f0c9c9;
+            background: #ffffff;
+            color: #c22b23;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            transition: all 0.18s ease;
+        }
+
+        .notification-delete-btn:hover {
+            background: #fff1f1;
+            border-color: #e8aaaa;
+            transform: translateY(-1px);
+        }
+
+        .notification-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #edf4ff;
+            font-size: 18px;
+            flex: 0 0 36px;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 4px;
+            color: #5b6b7f;
+            font-size: 12px;
+        }
+
+        .notification-title-line {
+            color: #0e1f35;
+            font-weight: 800;
+            margin: 0 0 4px;
+        }
+
+        .notification-message {
+            margin: 0;
+            color: #516277;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .notification-empty {
+            text-align: center;
+            color: #5f7185;
+            padding: 18px 10px 6px;
+        }
     </style>
 {% endblock %}
 
@@ -219,6 +344,7 @@
 
             <div class="nav-buttons">
                 {% if isParticipantUser %}
+                    {% set frontUnreadCount = unreadNotificationCount|default(notificationUnreadCount|default(0)) %}
                     <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
                     <details class="participant-chip-menu">
                         <summary class="participant-chip">
@@ -232,6 +358,34 @@
                             <a class="participant-chip-action" href="{{ path('app_logout') }}">Déconnexion</a>
                         </div>
                     </details>
+                    <div
+                        class="notif-bell-wrap"
+                        data-notif-root
+                        data-notif-url="{{ path('app_front_notifications_latest') }}"
+                        data-notif-mark-read-url="{{ path('app_front_notifications_mark_all_read') }}"
+                        data-notif-csrf-token="{{ csrf_token('front_notifications_mark_all') }}"
+                        data-notif-delete-url-template="{{ path('app_front_notifications_delete', {'id': '__id__'}) }}"
+                        data-notif-delete-csrf-token="{{ csrf_token('front_notifications_delete') }}"
+                    >
+                        <button type="button" class="notif-bell-btn" aria-label="Notifications" data-notif-toggle>
+                            <span aria-hidden="true">🔔</span>
+                            {% if frontUnreadCount > 0 %}
+                                <span class="notif-badge" data-notif-badge>{{ frontUnreadCount > 99 ? '99+' : frontUnreadCount }}</span>
+                            {% else %}
+                                <span class="notif-badge" data-notif-badge hidden>0</span>
+                            {% endif %}
+                        </button>
+
+                        <div class="notif-dropdown" data-notif-dropdown hidden>
+                            <div class="notif-dropdown-head">
+                                <span class="notif-dropdown-title">Notifications</span>
+                                <button type="button" class="notif-mark-read-btn" data-notif-mark-all>Tout marquer comme lu</button>
+                            </div>
+                            <div class="notif-list" data-notif-list>
+                                <div class="notif-empty">Chargement...</div>
+                            </div>
+                        </div>
+                    </div>
                 {% elseif app.user %}
                     <button class="btn-login" onclick="window.location.href='{{ path('app_dashboard') }}'">Back-office</button>
                     <button class="btn-signup" onclick="window.location.href='{{ path('app_logout') }}'">Déconnexion</button>
@@ -266,6 +420,53 @@
                     <div class="flash-msg flash-warning">{{ message }}</div>
                 {% endfor %}
             </div>
+
+            <section class="notifications-panel">
+                <div class="notifications-header">
+                    <h2 class="notifications-title">Notifications</h2>
+                    <span class="notifications-badge">
+                        {{ unreadNotificationCount }} non lue{{ unreadNotificationCount > 1 ? 's' : '' }}
+                    </span>
+                </div>
+
+                {% if latestNotifications is not empty %}
+                    <div class="notifications-list">
+                        {% for notification in latestNotifications %}
+                            <article class="notification-item" style="opacity: {{ notification.isRead ? '0.72' : '1' }};">
+                                <div class="notification-icon">{{ notification.icon ?? '🔔' }}</div>
+                                <div class="notification-content">
+                                    <div class="notification-headline">
+                                        <div class="notification-meta">
+                                            <span>{{ notification.type }}</span>
+                                            <span>•</span>
+                                            <span>{{ notification.createdAt ? notification.createdAt|date('d/m/Y H:i') : '-' }}</span>
+                                            {% if notification.isRead %}
+                                                <span>•</span>
+                                                <span>Lue</span>
+                                            {% endif %}
+                                        </div>
+                                        <form
+                                            method="post"
+                                            action="{{ path('app_front_notifications_delete', {'id': notification.id}) }}"
+                                            class="notification-delete-form"
+                                            onsubmit="return confirm('Supprimer cette notification ?');"
+                                        >
+                                            <input type="hidden" name="_token" value="{{ csrf_token('front_notifications_delete') }}">
+                                            <button type="submit" class="notification-delete-btn" title="Supprimer" aria-label="Supprimer notification">
+                                                <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <p class="notification-title-line">{{ notification.title }}</p>
+                                    <p class="notification-message">{{ notification.message }}</p>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="notification-empty">Aucune notification pour le moment.</div>
+                {% endif %}
+            </section>
 
             {% if tickets is empty %}
                 <div class="empty-tickets">

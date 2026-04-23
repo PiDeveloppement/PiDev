@@ -22,11 +22,11 @@ class Notification
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: UserModel::class)]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'Id_User', nullable: false, onDelete: 'CASCADE')]
     private ?UserModel $user = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(targetEntity: Event::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Event $event = null;
 

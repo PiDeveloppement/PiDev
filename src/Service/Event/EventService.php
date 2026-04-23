@@ -8,6 +8,7 @@ use App\Repository\Event\CategoryRepository;
 use App\Repository\Event\EventRepository;
 use App\Repository\Event\TicketRepository;
 use App\Service\Event\GoogleCalendarWriteService;
+use App\Service\Event\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 
@@ -18,7 +19,8 @@ class EventService
         private CategoryRepository $categoryRepository,
         private TicketRepository $ticketRepository,
         private EntityManagerInterface $entityManager,
-        private GoogleCalendarWriteService $googleCalendarWriteService
+        private GoogleCalendarWriteService $googleCalendarWriteService,
+        private NotificationService $notificationService
     ) {
     }
 
@@ -118,11 +120,32 @@ class EventService
         $this->prepareEventBeforeSave($event, $category, false);
         $this->entityManager->flush();
 
+        // TRIGGER 2: Notifier tous les participants de la modification
+        $activeTickets = $this->ticketRepository->findBy([
+            'event' => $event,
+            'isUsed' => false
+        ]);
+        foreach ($activeTickets as $ticket) {
+            $user = $ticket->getUser();
+            if ($user !== null) {
+                $this->notificationService->createModification($user, $event);
+            }
+        }
+
         return $this->googleCalendarWriteService->syncUpdatedEvent($event);
     }
 
     public function deleteEvent(Event $event): bool
     {
+        // TRIGGER 3: Notifier tous les participants de l'annulation AVANT suppression
+        $allTickets = $this->ticketRepository->findBy(['event' => $event]);
+        foreach ($allTickets as $ticket) {
+            $user = $ticket->getUser();
+            if ($user !== null) {
+                $this->notificationService->createCancellation($user, $event);
+            }
+        }
+
         $googleSyncOk = $this->googleCalendarWriteService->syncDeletedEvent($event);
         $this->entityManager->remove($event);
         $this->entityManager->flush();

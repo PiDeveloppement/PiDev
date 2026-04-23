@@ -4,21 +4,29 @@ namespace App\Controller\Front;
 
 use App\Entity\Event\Event;
 use App\Entity\Event\Category;
+use App\Entity\Event\Notification;
 use App\Entity\Event\Ticket;
 use App\Entity\User\UserModel;
 use App\Repository\Event\EventRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Snappy\Pdf;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Service\Event\WeatherService;
+use App\Service\Event\NotificationService;
 
 class EventFrontController extends AbstractController
-{//    private EventService $eventService;
+{
+    public function __construct(private NotificationService $notificationService)
+    {
+    }
+
+    //    private EventService $eventService;
     #[Route('/events/public', name: 'app_public_events_legacy', methods: ['GET'])]
     public function legacyRedirect(): Response
     {
@@ -29,6 +37,114 @@ class EventFrontController extends AbstractController
     public function calendarView(): Response
     {
         return $this->render('front/events_calendar.html.twig');
+    }
+
+    #[Route('/front/notifications/latest', name: 'app_front_notifications_latest', methods: ['GET'])]
+    public function latestNotifications(): JsonResponse
+    {
+        /** @var UserModel|null $user */
+        $user = $this->getUser();
+        if (!$user instanceof UserModel) {
+            return $this->json(['ok' => false, 'message' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+
+        $notifications = $this->notificationService->getLatest($user, 5);
+        $unreadCount = $this->notificationService->getUnreadCount($user);
+
+        $items = array_map(static function ($notification): array {
+            return [
+                'id' => $notification->getId(),
+                'type' => $notification->getType(),
+                'title' => $notification->getTitle(),
+                'message' => $notification->getMessage(),
+                'icon' => $notification->getIcon(),
+                'isRead' => $notification->isRead(),
+                'createdAt' => $notification->getCreatedAt()?->format('d/m/Y H:i'),
+            ];
+        }, $notifications);
+
+        return $this->json([
+            'ok' => true,
+            'unreadCount' => $unreadCount,
+            'notifications' => $items,
+        ]);
+    }
+
+    #[Route('/front/notifications/mark-all-read', name: 'app_front_notifications_mark_all_read', methods: ['POST'])]
+    public function markAllNotificationsRead(Request $request): JsonResponse
+    {
+        /** @var UserModel|null $user */
+        $user = $this->getUser();
+        if (!$user instanceof UserModel) {
+            return $this->json(['ok' => false, 'message' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+
+        $csrfToken = (string) $request->headers->get('X-CSRF-TOKEN', '');
+        if (!$this->isCsrfTokenValid('front_notifications_mark_all', $csrfToken)) {
+            return $this->json(['ok' => false, 'message' => 'Invalid CSRF token'], JsonResponse::HTTP_FORBIDDEN);
+        }
+
+        $updated = $this->notificationService->markAllAsRead($user);
+
+        return $this->json([
+            'ok' => true,
+            'updated' => $updated,
+            'unreadCount' => 0,
+        ]);
+    }
+
+    #[Route('/front/notifications/{id}/delete', name: 'app_front_notifications_delete', methods: ['POST'])]
+    public function deleteNotification(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        /** @var UserModel|null $user */
+        $user = $this->getUser();
+        if (!$user instanceof UserModel) {
+            if ($this->requestWantsJson($request)) {
+                return $this->json(['ok' => false, 'message' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+            }
+
+            $this->addFlash('info', 'Connectez-vous pour gerer vos notifications.');
+            return $this->redirectToRoute('app_login');
+        }
+
+        $csrfToken = (string) $request->headers->get('X-CSRF-TOKEN', '');
+        if ($csrfToken === '') {
+            $csrfToken = (string) $request->request->get('_token', '');
+        }
+
+        if (!$this->isCsrfTokenValid('front_notifications_delete', $csrfToken)) {
+            if ($this->requestWantsJson($request)) {
+                return $this->json(['ok' => false, 'message' => 'Invalid CSRF token'], JsonResponse::HTTP_FORBIDDEN);
+            }
+
+            $this->addFlash('error', 'Action invalide, merci de reessayer.');
+            return $this->redirectToRoute('app_my_tickets');
+        }
+
+        $notification = $em->getRepository(Notification::class)->find($id);
+
+        if (!$notification instanceof Notification || $notification->getUser()?->getId() !== $user->getId()) {
+            if ($this->requestWantsJson($request)) {
+                return $this->json(['ok' => false, 'message' => 'Notification not found'], JsonResponse::HTTP_NOT_FOUND);
+            }
+
+            $this->addFlash('warning', 'Notification introuvable.');
+            return $this->redirectToRoute('app_my_tickets');
+        }
+
+        $em->remove($notification);
+        $em->flush();
+
+        if ($this->requestWantsJson($request)) {
+            return $this->json([
+                'ok' => true,
+                'id' => $id,
+                'unreadCount' => $this->notificationService->getUnreadCount($user),
+            ]);
+        }
+
+        $this->addFlash('success', 'Notification supprimee.');
+        return $this->redirectToRoute('app_my_tickets');
     }
 
     #[Route('/events', name: 'app_public_events', methods: ['GET'])]
@@ -214,6 +330,7 @@ class EventFrontController extends AbstractController
 
             $em->persist($ticket);
             $em->flush();
+            $this->notificationService->createConfirmation($user, $event);
             $session->remove('pending_event');
 
             $this->addFlash('success', sprintf('Participation confirmee. Votre billet pour "%s" a ete cree automatiquement.', $event->getTitle()));
@@ -236,6 +353,9 @@ class EventFrontController extends AbstractController
             $this->addFlash('info', 'Connectez-vous pour voir vos billets.');
             return $this->redirectToRoute('app_login');
         }
+
+        $latestNotifications = $this->notificationService->getLatest($user, 5);
+        $unreadNotificationCount = $this->notificationService->getUnreadCount($user);
 
         $tickets = $em->getRepository(Ticket::class)
             ->createQueryBuilder('t')
@@ -279,6 +399,8 @@ class EventFrontController extends AbstractController
             'historyTickets' => $historyTickets,
             'now' => $now,
             'hasTickets' => count($tickets) > 0,
+            'latestNotifications' => $latestNotifications,
+            'unreadNotificationCount' => $unreadNotificationCount,
         ]);
     }
 
@@ -519,6 +641,13 @@ class EventFrontController extends AbstractController
         if ($updatedRows > 0) {
             $em->refresh($ticket);
 
+            // TRIGGER 4: Notifier le participant à la validation du billet
+            $user = $ticket->getUser();
+            $event = $ticket->getEvent();
+            if ($user !== null && $event !== null) {
+                $this->notificationService->createWelcome($user, $event);
+            }
+
             return $this->render('ticket/scan_result.html.twig', [
                 'status' => 'success',
                 'title' => 'Entree validee',
@@ -574,6 +703,15 @@ class EventFrontController extends AbstractController
         return in_array((int) $user->getRoleId(), [2, 3], true);
     }
 
+    private function isParticipantUser(UserModel $user): bool
+    {
+        $roles = $user->getRoles();
+
+        return !in_array('ROLE_ADMIN', $roles, true)
+            && !in_array('ROLE_ORGANISATEUR', $roles, true)
+            && !in_array('ROLE_SPONSOR', $roles, true);
+    }
+
     private function findTicketByQrToken(EntityManagerInterface $em, string $token): ?Ticket
     {
         $ticket = $em->getRepository(Ticket::class)
@@ -615,5 +753,12 @@ class EventFrontController extends AbstractController
         $value = trim($value, '-');
 
         return $value !== '' ? $value : 'ticket';
+    }
+
+    private function requestWantsJson(Request $request): bool
+    {
+        $accept = (string) $request->headers->get('Accept', '');
+
+        return $request->isXmlHttpRequest() || str_contains($accept, 'application/json');
     }
 }
