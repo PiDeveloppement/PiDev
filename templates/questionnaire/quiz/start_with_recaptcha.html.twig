@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Démarrer le Quiz{% endblock %}
+
+{% block body %}
+<div style="max-width: 600px; margin: 50px auto; padding: 30px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center;">
+    <h1 style="color: #2c3e50; margin-bottom: 20px;">🎯 Quiz Interactif</h1>
+    
+    <p style="color: #7f8c8d; margin-bottom: 30px;">
+        Testez vos connaissances avec notre quiz interactif !<br>
+        Pour garantir une expérience de qualité, nous utilisons reCAPTCHA pour vérifier que vous n'êtes pas un robot.
+    </p>
+
+    <div style="background: #ecf0f1; padding: 20px; border-radius: 10px; margin: 20px 0; text-align: left;">
+        <h3 style="color: #2c3e50; margin-top: 0;">📋 Informations sur le quiz</h3>
+        <ul>
+            <li><strong>Nombre de questions :</strong> 10</li>
+            <li><strong>Temps estimé :</strong> 15 minutes</li>
+            <li><strong>Difficulté :</strong> Moyenne</li>
+            {% if event is defined and event %}
+                <li><strong>Événement :</strong> {{ event.title }}</li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <button style="background: linear-gradient(45deg, #3498db, #2980b9); color: white; border: none; padding: 15px 40px; font-size: 18px; border-radius: 25px; cursor: pointer;" onclick="alert('Test OK - Page fonctionne!')">
+        🚀 Commencer le Quiz
+    </button>
+</div>
+{% endblock %}

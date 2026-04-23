@@ -40,4 +40,43 @@ class QuestionRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    /**
+     * Récupère les questions pour un quiz (général ou par événement)
+     */
+    public function findQuestionsForQuiz($event = null): array
+    {
+        $qb = $this->createQueryBuilder('q')
+            ->orderBy('q.id', 'ASC');
+
+        if ($event) {
+            $qb->where('q.event = :event')
+               ->setParameter('event', $event);
+        } else {
+            $qb->where('q.event IS NULL');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * Récupère un nombre limité de questions aléatoires pour un quiz
+     */
+    public function findRandomQuestionsForQuiz($event = null, int $limit = 10): array
+    {
+        $qb = $this->createQueryBuilder('q');
+
+        if ($event) {
+            $qb->where('q.event = :event')
+               ->setParameter('event', $event);
+        } else {
+            $qb->where('q.event IS NULL');
+        }
+
+        $questions = $qb->getQuery()->getResult();
+        
+        // Mélanger et limiter les questions
+        shuffle($questions);
+        return array_slice($questions, 0, $limit);
+    }
 }
