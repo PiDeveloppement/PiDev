@@ -356,7 +356,12 @@
             </div>
 
             <div class="nav-buttons">
+                <button onclick="toggleTheme()" style="background: rgba(33, 150, 243, 0.1); color: #2196F3; border: 1px solid #2196F3; border-radius: 20px; padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: bold; margin-right: 10px;">
+                    <i class="fas fa-moon" id="themeIconEventShow"></i>
+                    <span id="themeTextEventShow">Mode Sombre</span>
+                </button>
                 {% if isParticipantUser %}
+                    {% set frontUnreadCount = unreadNotificationCount|default(notificationUnreadCount|default(0)) %}
                     <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
                     <details class="participant-chip-menu">
                         <summary class="participant-chip">
@@ -370,6 +375,34 @@
                             <a class="participant-chip-action" href="{{ path('app_logout') }}">Déconnexion</a>
                         </div>
                     </details>
+                    <div
+                        class="notif-bell-wrap"
+                        data-notif-root
+                        data-notif-url="{{ path('app_front_notifications_latest') }}"
+                        data-notif-mark-read-url="{{ path('app_front_notifications_mark_all_read') }}"
+                        data-notif-csrf-token="{{ csrf_token('front_notifications_mark_all') }}"
+                        data-notif-delete-url-template="{{ path('app_front_notifications_delete', {'id': '__id__'}) }}"
+                        data-notif-delete-csrf-token="{{ csrf_token('front_notifications_delete') }}"
+                    >
+                        <button type="button" class="notif-bell-btn" aria-label="Notifications" data-notif-toggle>
+                            <span aria-hidden="true">🔔</span>
+                            {% if frontUnreadCount > 0 %}
+                                <span class="notif-badge" data-notif-badge>{{ frontUnreadCount > 99 ? '99+' : frontUnreadCount }}</span>
+                            {% else %}
+                                <span class="notif-badge" data-notif-badge hidden>0</span>
+                            {% endif %}
+                        </button>
+
+                        <div class="notif-dropdown" data-notif-dropdown hidden>
+                            <div class="notif-dropdown-head">
+                                <span class="notif-dropdown-title">Notifications</span>
+                                <button type="button" class="notif-mark-read-btn" data-notif-mark-all>Tout marquer comme lu</button>
+                            </div>
+                            <div class="notif-list" data-notif-list>
+                                <div class="notif-empty">Chargement...</div>
+                            </div>
+                        </div>
+                    </div>
                 {% elseif app.user %}
                     <button class="btn-login" onclick="window.location.href='{{ path('app_dashboard') }}'">Back-office</button>
                     <button class="btn-signup" onclick="window.location.href='{{ path('app_logout') }}'">Déconnexion</button>
@@ -496,4 +529,210 @@
             </article>
         </div>
     </main>
+
+    <script>
+        // Notification JavaScript
+        (function () {
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function renderNotifications(listNode, notifications) {
+                if (!Array.isArray(notifications) || notifications.length === 0) {
+                    listNode.innerHTML = '<div class="notif-empty">Aucune notification.</div>';
+                    return;
+                }
+
+                listNode.innerHTML = notifications.map(function (item) {
+                    var icon = item.icon ? escapeHtml(item.icon) : '🔔';
+                    var type = item.type ? escapeHtml(item.type) : 'INFO';
+                    var createdAt = item.createdAt ? escapeHtml(item.createdAt) : '-';
+                    var title = item.title ? escapeHtml(item.title) : 'Notification';
+                    var message = item.message ? escapeHtml(item.message) : '';
+                    var readClass = item.isRead ? 'read' : 'unread';
+                    var notificationId = Number(item.id || 0);
+
+                    return '' +
+                        '<article class="notif-item ' + readClass + '">' +
+                            '<div class="notif-item-head">' +
+                                '<span class="notif-item-meta">' +
+                                    '<span>' + icon + ' ' + type + '</span>' +
+                                    '<span>•</span>' +
+                                    '<span>' + createdAt + '</span>' +
+                                '</span>' +
+                                '<button type="button" class="notif-delete-btn" title="Supprimer" aria-label="Supprimer notification" data-notif-delete-id="' + notificationId + '"><i class="fas fa-trash-alt" aria-hidden="true"></i></button>' +
+                            '</div>' +
+                            '<p class="notif-item-title">' + title + '</p>' +
+                            '<p class="notif-item-message">' + message + '</p>' +
+                        '</article>';
+                }).join('');
+            }
+
+            function updateBadge(badgeNode, unreadCount) {
+                if (!badgeNode) {
+                    return;
+                }
+
+                if (unreadCount > 0) {
+                    badgeNode.hidden = false;
+                    badgeNode.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                } else {
+                    badgeNode.hidden = true;
+                    badgeNode.textContent = '0';
+                }
+            }
+
+            async function fetchLatest(root, badgeNode, listNode) {
+                try {
+                    const response = await fetch(root.dataset.notifUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    });
+
+                    if (!response.ok) {
+                        const bodyText = await response.text();
+                        throw new Error('HTTP ' + response.status + ' ' + bodyText.slice(0, 120));
+                    }
+
+                    const payload = await response.json();
+                    updateBadge(badgeNode, Number(payload.unreadCount || 0));
+                    renderNotifications(listNode, payload.notifications || []);
+                } catch (error) {
+                    const message = error && error.message ? error.message : 'Impossible de charger les notifications.';
+                    listNode.innerHTML = '<div class="notif-empty">' + escapeHtml(message) + '</div>';
+                }
+            }
+
+            async function markAllAsRead(root, badgeNode, listNode) {
+                try {
+                    const response = await fetch(root.dataset.notifMarkReadUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': root.dataset.notifCsrfToken || ''
+                        },
+                        credentials: 'same-origin'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('mark all failed');
+                    }
+
+                    updateBadge(badgeNode, 0);
+                    await fetchLatest(root, badge, listNode);
+                } catch (error) {
+                    // Keep silent to avoid intrusive UI in header.
+                }
+            }
+
+            async function deleteNotification(root, notificationId, badgeNode, listNode) {
+                const urlTemplate = root.dataset.notifDeleteUrlTemplate || '';
+                if (!urlTemplate || !notificationId) {
+                    return;
+                }
+
+                const deleteUrl = urlTemplate.replace('__id__', String(notificationId));
+
+                try {
+                    const response = await fetch(deleteUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': root.dataset.notifDeleteCsrfToken || ''
+                        },
+                        credentials: 'same-origin'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('delete failed');
+                    }
+
+                    const payload = await response.json();
+                    updateBadge(badgeNode, Number(payload.unreadCount || 0));
+                    await fetchLatest(root, badgeNode, listNode);
+                } catch (error) {
+                    // Keep quiet in header UI.
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const roots = document.querySelectorAll('[data-notif-root]');
+
+                roots.forEach(function (root) {
+                    const toggle = root.querySelector('[data-notif-toggle]');
+                    const dropdown = root.querySelector('[data-notif-dropdown]');
+                    const badge = root.querySelector('[data-notif-badge]');
+                    const list = root.querySelector('[data-notif-list]');
+                    const markAll = root.querySelector('[data-notif-mark-all]');
+
+                    if (!toggle || !dropdown || !list) {
+                        return;
+                    }
+
+                    fetchLatest(root, badge, list);
+
+                    toggle.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        const isOpen = !dropdown.hidden;
+
+                        document.querySelectorAll('[data-notif-dropdown]').forEach(function (node) {
+                            node.hidden = true;
+                        });
+
+                        dropdown.hidden = isOpen;
+                        if (!isOpen) {
+                            fetchLatest(root, badge, list);
+                        }
+                    });
+
+                    if (markAll) {
+                        markAll.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            markAllAsRead(root, badge, list);
+                        });
+                    }
+
+                    list.addEventListener('click', function (event) {
+                        const deleteBtn = event.target.closest('[data-notif-delete-id]');
+                        if (!deleteBtn) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        const notificationId = Number(deleteBtn.getAttribute('data-notif-delete-id'));
+                        if (!notificationId) {
+                            return;
+                        }
+
+                        deleteNotification(root, notificationId, badge, list);
+                    });
+
+                    root.addEventListener('keydown', function (event) {
+                        if (event.key === 'Escape') {
+                            dropdown.hidden = true;
+                        }
+                    });
+                });
+
+                document.addEventListener('click', function (event) {
+                    const inside = event.target.closest('[data-notif-root]');
+                    if (inside) {
+                        return;
+                    }
+
+                    document.querySelectorAll('[data-notif-dropdown]').forEach(function (node) {
+                        node.hidden = true;
+                    });
+                });
+            });
+        })();
+    </script>
 {% endblock %}

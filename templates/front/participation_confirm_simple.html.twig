@@ -19,6 +19,9 @@
             justify-content: center;
             padding: 20px;
         }
+        body.dark-mode {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
         .container {
             background: white;
             border-radius: 20px;
@@ -27,6 +30,9 @@
             width: 100%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             text-align: center;
+        }
+        body.dark-mode .container {
+            background: #1e293b;
         }
         .emoji {
             font-size: 80px;
@@ -37,10 +43,16 @@
             margin-bottom: 15px;
             font-size: 28px;
         }
+        body.dark-mode h1 {
+            color: #f1f5f9;
+        }
         p {
             color: #666;
             margin-bottom: 30px;
             line-height: 1.6;
+        }
+        body.dark-mode p {
+            color: #cbd5e1;
         }
         .btn {
             display: block;
@@ -62,9 +74,33 @@
             background: #f0f0f0;
             color: #333;
         }
+        body.dark-mode .btn-secondary {
+            background: #334155;
+            color: #f1f5f9;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙 Mode Sombre</button>
     <div class="container">
         <div class="emoji">✅</div>
         <h1>Bienvenue !</h1>
@@ -73,5 +109,32 @@
         <a href="{{ path('app_public_events') }}" class="btn btn-primary">Voir les événements</a>
         <a href="{{ path('app_my_tickets') }}" class="btn btn-secondary">Mes billets</a>
     </div>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            
+            if (body.classList.contains('dark-mode')) {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
+                button.textContent = '🌙 Mode Sombre';
+            } else {
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+                button.textContent = '☀️ Mode Clair';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme');
+            const button = document.querySelector('.theme-toggle');
+            
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                button.textContent = '☀️ Mode Clair';
+            }
+        });
+    </script>
 </body>
 </html>
