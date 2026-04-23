@@ -33,7 +33,7 @@ class PasswordResetToken
 
     // ==================== RELATIONS ====================
 
-   #[ORM\OneToOne(inversedBy: 'resetToken')]  // ← Changé de ManyToOne à OneToOne
+   #[ORM\ManyToOne(targetEntity: UserModel::class)]
     #[ORM\JoinColumn(name: "user_id", referencedColumnName: "Id_User", nullable: false)]
     private ?UserModel $user = null;
 

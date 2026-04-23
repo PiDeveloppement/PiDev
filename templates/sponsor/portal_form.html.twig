@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ isEdit ? 'Modifier le partenariat' : 'Sponsoriser un evenement' }} - EventFlow</title>
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
-    <style>`r`n        {{ include('partials/public_header_styles.html.twig') }}
+    <style>
+        {{ include('partials/public_header_styles.html.twig') }}
         .portal-navbar {
             height: 80px;
             padding: 0 60px;
@@ -654,13 +655,13 @@
     <div class="portal-form-card">
         <div class="portal-form-header">
             <div class="title-wrap">
-                <span class="portal-form-badge">{{ isEdit ? '?' : '?' }}</span>
+                <span class="portal-form-badge">{{ isEdit ? '✎' : '🤝' }}</span>
                 <div>
                     <h3>{{ isEdit ? 'Modifier le partenariat' : 'Nouveau partenariat' }}</h3>
                     <p>{{ isEdit ? 'Mettez a jour les informations de votre sponsoring' : 'Remplissez les informations de l entreprise partenaire' }}</p>
                 </div>
             </div>
-            <strong class="portal-form-watermark">? EventFlow Sponsor</strong>
+            <strong class="portal-form-watermark">◆ EventFlow Sponsor</strong>
         </div>
 
         <div class="portal-form-content">

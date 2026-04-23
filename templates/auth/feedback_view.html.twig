@@ -1,39 +1,10 @@
-﻿{% extends 'base.html.twig' %}
+{% extends 'base.html.twig' %}
 
 {% block title %}Feedback{% endblock %}
 
-{% block stylesheets %}
-    {{ parent() }}
-    <style>
-        {{ include('partials/public_header_styles.html.twig') }}
-
-        .feedback-page {
-            margin-top: 80px;
-            min-height: 100vh;
-            padding: 40px 16px 56px;
-            background:
-                radial-gradient(circle at 0% 0%, rgba(13, 71, 161, 0.08), transparent 40%),
-                radial-gradient(circle at 100% 10%, rgba(25, 118, 210, 0.12), transparent 42%),
-                #eef2f6;
-        }
-
-        .feedback-shell {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 24px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-        }
-    </style>
-{% endblock %}
-
 {% block public_content %}
-{{ include('partials/public_header.html.twig', { active_page: 'feedback' }) }}
-<div class="feedback-page">
-    <div class="feedback-shell">
-        <h1 style="margin:0 0 12px 0;color:#0A1929">Feedback</h1>
-        <p style="margin:0;color:#475569">Vue temporaire: le module feedback detaille n'est pas encore reactive.</p>
-    </div>
+<div style="max-width:900px;margin:40px auto;padding:24px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.08)">
+    <h1 style="margin:0 0 12px 0;color:#0A1929">Feedback</h1>
+    <p style="margin:0;color:#475569">Vue temporaire: le module feedback détaillé n'est pas encore réactivé.</p>
 </div>
 {% endblock %}

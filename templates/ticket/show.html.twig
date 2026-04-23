@@ -1,303 +1,448 @@
 {% extends 'base.html.twig' %}
-{% block title %}Détail billet{% endblock %}
+
+{% block title %}{{ event.title }} - Événement{% endblock %}
 
 {% block admin_content %}
+{% set now = "now"|date('U') %}
+{% set start = event.startDate ? event.startDate|date('U') : 0 %}
+{% set end = event.endDate ? event.endDate|date('U') : 0 %}
+
+{% if end < now %}
+    {% set temporalStatus = 'termine' %}
+    {% set statusLabel = 'Terminé' %}
+{% elseif start > now %}
+    {% set temporalStatus = 'avenir' %}
+    {% set statusLabel = 'À venir' %}
+{% else %}
+    {% set temporalStatus = 'encours' %}
+    {% set statusLabel = 'En cours' %}
+{% endif %}
+
 <style>
-    .ticket-show-wrap {
-        background: #fff;
+    .event-show-topbar {
+        background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 16px;
-        padding: 18px;
-        box-shadow: 0 2px 10px rgba(2, 6, 23, .04);
-    }
-
-    .ticket-show-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        padding: 8px 0 16px;
-        border-bottom: 1px solid #eef2f7;
-        margin-bottom: 14px;
-        flex-wrap: wrap;
-    }
-
-    .ticket-head-left {
+        padding: 16px 18px;
         display: flex;
         align-items: center;
         gap: 12px;
+        margin-bottom: 16px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+
+    .event-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 12px 18px;
+        text-decoration: none;
+        color: #48627d;
+        font-size: 14px;
+        font-weight: 600;
+        background: #f8fbff;
+    }
+
+    .event-back-link:hover {
+        background: #eef6ff;
+        color: #27496d;
+    }
+
+    .event-show-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 16px;
+    }
+
+    .event-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+
+    .event-main-head {
+        padding: 20px;
+        border-bottom: 1px solid #e2e8f0;
+        background: linear-gradient(140deg, #f4f9ff 0%, #ffffff 62%);
+    }
+
+    .event-main-title {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1.6rem;
+        font-weight: 800;
+    }
+
+    .event-main-meta {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
         flex-wrap: wrap;
     }
 
-    .btn-soft {
-        background: #f1f5f9;
-        color: #334155;
-        border: 1px solid #dbe3ee;
-        border-radius: 8px;
-        padding: 9px 14px;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 13px;
-    }
-
-    .ticket-title {
-        font-size: 38px;
-        font-weight: 800;
-        color: #1f2937;
-        line-height: 1;
-        margin: 0;
-    }
-
-    .ticket-subtitle {
-        margin: 3px 0 0;
-        color: #94a3b8;
-        font-size: 13px;
-    }
-
-    .ticket-status {
+    .event-meta-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
         border-radius: 999px;
-        padding: 9px 18px;
+        border: 1px solid #dbeafe;
+        background: #f8fbff;
+        color: #37506b;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 5px 12px;
+        max-width: 100%;
+    }
+
+    .event-meta-icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-size: 11px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .event-status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 11px;
         font-weight: 700;
-        font-size: 18px;
-        white-space: nowrap;
+        border: 1px solid transparent;
     }
 
-    .ticket-status.valid {
-        background: #d1fae5;
-        color: #047857;
+    .event-status-pill.avenir { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+    .event-status-pill.encours { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .event-status-pill.termine { background: #e2e8f0; color: #334155; border-color: #cbd5e1; }
+
+    .event-main-body {
+        padding: 20px;
     }
 
-    .ticket-status.used {
-        background: #fee2e2;
-        color: #b91c1c;
-    }
-
-    .ticket-main-grid {
-        display: grid;
-        grid-template-columns: 340px 1fr;
-        gap: 18px;
-    }
-
-    .verify-label {
-        font-size: 28px;
+    .event-block-title {
+        margin: 0 0 10px;
+        font-size: 12px;
         font-weight: 700;
-        color: #1e293b;
-        margin: 0 0 12px;
+        letter-spacing: .35px;
+        color: #64748b;
+        text-transform: uppercase;
     }
 
-    .verify-placeholder {
-        width: 100%;
-        height: 320px;
-        background: #fbfdff;
-        border: 2px dashed #d7dfeb;
-        border-radius: 16px;
+    .event-description {
+        margin: 0;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        line-height: 1.65;
+        color: #334155;
+        white-space: pre-line;
+    }
+
+    .event-poster-wrap {
+        margin-bottom: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #f8fafc;
+        min-height: 280px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #94a3b8;
-        font-size: 14px;
+        overflow: hidden;
+    }
+
+    .event-poster-wrap img {
+        display: block;
+        width: 100%;
+        max-height: 520px;
+        object-fit: contain;
+    }
+
+    .event-poster-empty {
+        color: #64748b;
+        font-size: 13px;
         text-align: center;
         padding: 16px;
     }
 
-    .qr-preview {
-        width: 100%;
-        min-height: 320px;
-        background: #ffffff;
-        border: 2px solid #dbe3ee;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 18px;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .65);
-        margin-bottom: 12px;
+    .event-data-grid {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
     }
 
-    .qr-preview img {
-        width: 100%;
-        max-width: 280px;
-        height: auto;
-        display: block;
-    }
-
-    .ticket-code-box {
-        margin-top: 12px;
-        background: #f8fafc;
+    .event-data-item {
         border: 1px solid #e2e8f0;
         border-radius: 12px;
-        padding: 12px 14px;
+        background: #ffffff;
+        padding: 11px 12px;
     }
 
-    .ticket-code-label {
-        color: #64748b;
-        font-size: 12px;
+    .event-data-label {
+        display: block;
+        color: #94a3b8;
+        font-size: 11px;
         font-weight: 700;
-        margin-bottom: 6px;
+        text-transform: uppercase;
     }
 
-    .ticket-code-value {
-        color: #2563eb;
-        font-size: 30px;
-        font-weight: 800;
-        letter-spacing: .5px;
+    .event-data-value {
+        margin-top: 5px;
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 700;
     }
 
-    .ticket-info-list {
-        display: grid;
-        gap: 12px;
-    }
-
-    .info-card {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
+    .event-side {
         padding: 16px;
     }
 
-    .info-title {
-        color: #64748b;
-        font-size: 18px;
-        font-weight: 700;
-        margin: 0 0 10px;
+    .event-side-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #ffffff;
     }
 
-    .info-main {
-        font-size: 30px;
-        font-weight: 800;
-        color: #1f2937;
+    .weather-card {
+        background: linear-gradient(135deg, #fff8e1, #fff3c4);
+        border: 1px solid #fbbf24;
+    }
+
+    .weather-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .weather-title {
         margin: 0;
-        line-height: 1.1;
+        color: #92400e;
+        font-size: 15px;
+        font-weight: 800;
     }
 
-    .info-sub {
-        margin-top: 6px;
-        color: #64748b;
-        font-size: 16px;
+    .weather-icon {
+        font-size: 28px;
+        line-height: 1;
     }
 
-    .dates-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(180px, 1fr));
-        gap: 12px;
+    .weather-temp {
+        margin-top: 8px;
+        color: #0f172a;
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: -0.4px;
     }
 
-    .date-item-label {
-        color: #94a3b8;
-        font-size: 12px;
-        margin-bottom: 4px;
-    }
-
-    .date-item-value {
-        color: #1f2937;
-        font-size: 18px;
+    .weather-desc {
+        margin-top: 4px;
+        color: #334155;
+        font-size: 13px;
         font-weight: 700;
     }
 
-    .ticket-actions {
-        margin-top: 14px;
+    .weather-meta {
+        margin-top: 8px;
+        display: grid;
+        gap: 4px;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .weather-error {
+        color: #b45309;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.5;
+    }
+
+    .event-side-label {
+        color: #94a3b8;
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .event-side-value {
+        margin-top: 5px;
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .event-actions {
         display: flex;
         gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 14px;
     }
 
-    .btn-danger {
-        background: #dc2626;
-        color: #fff;
+    .event-btn {
         border: none;
-        border-radius: 8px;
-        padding: 9px 14px;
-        cursor: pointer;
-        font-weight: 600;
+        border-radius: 10px;
+        padding: 9px 13px;
         font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
     }
 
-    @media (max-width: 1080px) {
-        .ticket-title { font-size: 30px; }
-        .ticket-main-grid { grid-template-columns: 1fr; }
-        .ticket-code-value { font-size: 24px; }
-        .info-main { font-size: 24px; }
+    .event-btn.edit {
+        background: linear-gradient(180deg, #1d7bbf 0%, #1565c0 100%);
+        color: #ffffff;
+    }
+
+    .event-btn.delete {
+        background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+        color: #ffffff;
+    }
+
+    @media (max-width: 960px) {
+        .event-show-topbar {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .event-show-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .event-data-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
-<div class="ticket-show-wrap">
-    <div class="ticket-show-head">
-        <div class="ticket-head-left">
-            <a href="{{ path('app_ticket_index') }}" class="btn-soft">&larr; Retour aux billets</a>
-            <div>
-                <h2 class="ticket-title">Détails du Billet</h2>
-                <p class="ticket-subtitle">Consultation et gestion du billet d'événement</p>
+<div class="event-show-topbar">
+    <a class="event-back-link" href="{{ path('app_event_index') }}">
+        <span aria-hidden="true">←</span>
+        <span>Retour à la liste</span>
+    </a>
+</div>
+
+<div class="event-show-layout">
+    <section class="event-card">
+        <div class="event-main-head">
+            <h3 class="event-main-title">{{ event.title }}</h3>
+            <div class="event-main-meta">
+                <span class="event-status-pill {{ temporalStatus }}">{{ statusLabel }}</span>
+                <span class="event-meta-chip">
+                    <span class="event-meta-icon">🏷️</span>
+                    <span>{{ event.category ? ((event.category.icon ?? '📁') ~ ' ' ~ event.category.name) : 'Sans catégorie' }}</span>
+                </span>
+                <span class="event-meta-chip">
+                    <span class="event-meta-icon">📍</span>
+                    <span>{{ event.location ?: 'Lieu non renseigné' }}</span>
+                </span>
             </div>
         </div>
 
-        <span class="ticket-status {{ ticket.isUsed ? 'used' : 'valid' }}">
-            {{ ticket.isUsed ? 'Billet Utilisé' : 'Ticket Valide' }}
-        </span>
-    </div>
+        <div class="event-main-body">
+            <h4 class="event-block-title">Affiche de l'événement</h4>
+            <div class="event-poster-wrap">
+                {% if event.imageUrl %}
+                    <img src="{{ asset(event.imageUrl) }}" alt="Affiche de {{ event.title }}">
+                {% else %}
+                    <div class="event-poster-empty">Aucune affiche n'a ete generee pour cet evenement.</div>
+                {% endif %}
+            </div>
 
-    <div class="ticket-main-grid">
-        <div>
-            <h3 class="verify-label">Code de Vérification</h3>
-            {% if ticket.qrCode %}
-                <div class="qr-preview">
-                    {% set scanUrl = url('app_ticket_scan_short', { token: ticket.qrCode }) %}
-                    <img src="{{ qr_code_data_uri(scanUrl, 'pdf') }}" alt="QR code du billet">
+            <h4 class="event-block-title">Description</h4>
+            <p class="event-description">{{ event.description ?: 'Aucune description fournie.' }}</p>
+
+            <div class="event-data-grid">
+                <div class="event-data-item">
+                    <span class="event-data-label">Début</span>
+                    <div class="event-data-value">{{ event.startDate ? event.startDate|date('d/m/Y H:i') : '-' }}</div>
                 </div>
+                <div class="event-data-item">
+                    <span class="event-data-label">Fin</span>
+                    <div class="event-data-value">{{ event.endDate ? event.endDate|date('d/m/Y H:i') : '-' }}</div>
+                </div>
+                <div class="event-data-item">
+                    <span class="event-data-label">Capacité</span>
+                    <div class="event-data-value">{{ event.capacity ?? 0 }} personnes</div>
+                </div>
+                <div class="event-data-item">
+                    <span class="event-data-label">Prix du ticket</span>
+                    <div class="event-data-value">
+                        {% if event.isFree %}
+                            Gratuit
+                        {% else %}
+                            {{ event.ticketPrice ?? 0 }} TND
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <aside class="event-card event-side">
+        <div class="event-side-item">
+            <div class="event-side-label">Créé par</div>
+            <div class="event-side-value">{{ event.creator ? (event.creator.firstName ~ ' ' ~ event.creator.lastName) : 'Non défini' }}</div>
+        </div>
+
+        <div class="event-side-item weather-card">
+            <div class="weather-head">
+                <div class="weather-title">Météo actuelle</div>
+                <div class="weather-icon">{{ eventWeather ? eventWeather.icon : '🌤️' }}</div>
+            </div>
+            {% if eventWeather %}
+                <div class="weather-temp">{{ eventWeather.temperature|number_format(1, '.', ' ') }}°C</div>
+                <div class="weather-desc">{{ eventWeather.description }}</div>
+                <div class="weather-meta">
+                    <div>📍 {{ eventWeather.governorate }}</div>
+                    <div>💨 {{ eventWeather.windSpeed }} km/h</div>
+                    <div>💧 {{ eventWeather.humidity }} %</div>
+                </div>
+            {% elseif weatherError %}
+                <div class="weather-error">{{ weatherError }}</div>
             {% else %}
-                <div class="verify-placeholder">
-                    QR Code indisponible pour ce billet.
-                </div>
+                <div class="weather-error">Aucune météo disponible pour cet événement.</div>
             {% endif %}
-
-            <div class="ticket-code-box">
-                <div class="ticket-code-label">Numéro du Billet</div>
-                <div class="ticket-code-value">{{ ticket.ticketCode }}</div>
-            </div>
         </div>
 
-        <div class="ticket-info-list">
-            <div class="info-card">
-                <h4 class="info-title">Événement</h4>
-                <p class="info-main">{{ ticket.event ? ticket.event.title : '-' }}</p>
-                <div class="info-sub">
-                    {{ ticket.event and ticket.event.startDate ? ticket.event.startDate|date('d/m/Y') : '-' }}
-                    {% if ticket.event and ticket.event.location %}
-                        <br>{{ ticket.event.location }}
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="info-card">
-                <h4 class="info-title">Participant</h4>
-                <p class="info-main">
-                    {% if ticket.user %}
-                        {{ ticket.user.firstName }} {{ ticket.user.lastName }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </p>
-                <div class="info-sub">{{ ticket.user ? ticket.user.email : '-' }}</div>
-            </div>
-
-            <div class="info-card">
-                <h4 class="info-title">Dates</h4>
-                <div class="dates-grid">
-                    <div>
-                        <div class="date-item-label">Créé le</div>
-                        <div class="date-item-value">{{ ticket.createdAt ? ticket.createdAt|date('d/m/Y H:i') : '-' }}</div>
-                    </div>
-                    <div>
-                        <div class="date-item-label">Utilisé le</div>
-                        <div class="date-item-value">{{ ticket.usedAt ? ticket.usedAt|date('d/m/Y H:i') : 'Non utilisé' }}</div>
-                    </div>
-                </div>
-            </div>
+        <div class="event-side-item">
+            <div class="event-side-label">Date de création</div>
+            <div class="event-side-value">{{ event.createdAt ? event.createdAt|date('d/m/Y H:i') : '-' }}</div>
         </div>
-    </div>
 
-    <div class="ticket-actions">
-        <form method="post" action="{{ path('app_ticket_delete', {'id': ticket.id}) }}" onsubmit="return confirm('Supprimer ce billet ?')" style="margin:0;">
-            <button type="submit" class="btn-danger">Supprimer</button>
-        </form>
-    </div>
+        <div class="event-side-item">
+            <div class="event-side-label">Dernière mise à jour</div>
+            <div class="event-side-value">{{ event.updatedAt ? event.updatedAt|date('d/m/Y H:i') : 'Aucune' }}</div>
+        </div>
+
+        <div class="event-actions">
+            <a href="{{ path('app_event_edit', {'id': event.id}) }}" class="event-btn edit">
+                <i class="fas fa-pen"></i>
+                Modifier
+            </a>
+            <form method="post" action="{{ path('app_event_delete', {'id': event.id}) }}" style="margin:0;" onsubmit="return confirm('Supprimer cet événement ?');">
+                <button type="submit" class="event-btn delete">
+                    <i class="fas fa-trash"></i>
+                    Supprimer
+                </button>
+            </form>
+        </div>
+    </aside>
 </div>
 {% endblock %}

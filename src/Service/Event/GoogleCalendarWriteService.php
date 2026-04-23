@@ -240,9 +240,6 @@ class GoogleCalendarWriteService
             if ($mapped !== null) {
                 return ['ok' => true, 'found' => true, 'event' => $mapped];
             }
-
-            $this->lastError = 'Google event payload is missing start or end date.';
-            return ['ok' => false, 'found' => false, 'event' => null];
         }
 
         // Fallback for legacy events that were created without private extended properties.

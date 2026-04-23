@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ event.title }} - EventFlow</title>
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
-    <style>`r`n        {{ include('partials/public_header_styles.html.twig') }}
+    <style>
+        {{ include('partials/public_header_styles.html.twig') }}
         .portal-navbar {
             height: 80px;
             padding: 0 60px;
@@ -266,28 +267,28 @@
             </div>
             <div class="event-detail-side">
                 <div class="event-detail-stat">
-                    <div class="stat-icon">CAL</div>
+                    <div class="stat-icon" aria-label="Date debut">📅</div>
                     <div class="stat-content">
                         <span>Date debut</span>
                         <strong>{{ event.startDate ? event.startDate|date('d/m/Y H:i') : '-' }}</strong>
                     </div>
                 </div>
                 <div class="event-detail-stat">
-                    <div class="stat-icon">FIN</div>
+                    <div class="stat-icon" aria-label="Date fin">⏱</div>
                     <div class="stat-content">
                         <span>Date fin</span>
                         <strong>{{ event.endDate ? event.endDate|date('d/m/Y H:i') : '-' }}</strong>
                     </div>
                 </div>
                 <div class="event-detail-stat">
-                    <div class="stat-icon">LOC</div>
+                    <div class="stat-icon" aria-label="Lieu">📍</div>
                     <div class="stat-content">
                         <span>Lieu</span>
                         <strong>{{ event.location ?: '-' }}</strong>
                     </div>
                 </div>
                 <div class="event-detail-stat">
-                    <div class="stat-icon">AUD</div>
+                    <div class="stat-icon" aria-label="Participants">👥</div>
                     <div class="stat-content">
                         <span>Participants</span>
                         <strong>{{ event.participantsCount|default(0) }}{% if event.capacity|default(0) > 0 %} / {{ event.capacity }}{% endif %}</strong>
@@ -300,21 +301,21 @@
             <h3>Pourquoi sponsoriser cet evenement ?</h3>
             <div class="event-detail-points">
                 <div class="event-detail-point">
-                    <div class="point-icon">VIS</div>
+                    <div class="point-icon" aria-label="Visibilite">👁</div>
                     <div class="point-content">
                         <strong>Visibilite</strong>
                         <span>Associez votre marque a un evenement public et cible.</span>
                     </div>
                 </div>
                 <div class="event-detail-point">
-                    <div class="point-icon">AUD</div>
+                    <div class="point-icon" aria-label="Audience">👥</div>
                     <div class="point-content">
                         <strong>Audience</strong>
                         <span>Mettez en avant votre entreprise aupres des participants et partenaires.</span>
                     </div>
                 </div>
                 <div class="event-detail-point">
-                    <div class="point-icon">REL</div>
+                    <div class="point-icon" aria-label="Partenariat">🤝</div>
                     <div class="point-content">
                         <strong>Partenariat</strong>
                         <span>Construisez une relation durable avec l ecosysteme EventFlow.</span>

@@ -8,6 +8,7 @@ use App\Repository\User\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
+
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -63,8 +64,8 @@ class UserModel implements UserInterface, PasswordAuthenticatedUserInterface
 #[ORM\JoinColumn(name: "Role_Id", referencedColumnName: "Id_Role", nullable: false)]
 private ?Role $role = null;
 
-    #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
-    private ?PasswordResetToken $resetToken = null;
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: PasswordResetToken::class, cascade: ['persist', 'remove'])]
+    private Collection $resetTokens;
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Feedback::class, cascade: ['remove'])]
     private Collection $feedbacks;
@@ -74,11 +75,17 @@ private ?Role $role = null;
 
     // Champ temporaire pour le formulaire (non persistant)
     private ?string $plainPassword = null;
+#[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $faceDescriptor = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $lastLoginAt = null;
 
     public function __construct()
     {
         $this->feedbacks = new ArrayCollection();
         $this->questions = new ArrayCollection();
+        $this->resetTokens = new ArrayCollection();
         $this->registrationDate = new \DateTime();
     }
 
@@ -212,22 +219,30 @@ private ?Role $role = null;
         return $this;
     }
 
-    public function getResetToken(): ?PasswordResetToken
+    /**
+     * @return Collection<int, PasswordResetToken>
+     */
+    public function getResetTokens(): Collection
     {
-        return $this->resetToken;
+        return $this->resetTokens;
     }
 
-    public function setResetToken(?PasswordResetToken $resetToken): self
+    public function addResetToken(PasswordResetToken $resetToken): self
     {
-        if ($resetToken === null && $this->resetToken !== null) {
-            $this->resetToken->setUser(null);
-        }
-
-        if ($resetToken !== null && $resetToken->getUser() !== $this) {
+        if (!$this->resetTokens->contains($resetToken)) {
+            $this->resetTokens->add($resetToken);
             $resetToken->setUser($this);
         }
+        return $this;
+    }
 
-        $this->resetToken = $resetToken;
+    public function removeResetToken(PasswordResetToken $resetToken): self
+    {
+        if ($this->resetTokens->removeElement($resetToken)) {
+            if ($resetToken->getUser() === $this) {
+                $resetToken->setUser(null);
+            }
+        }
         return $this;
     }
 
@@ -297,7 +312,26 @@ private ?Role $role = null;
         $this->plainPassword = $plainPassword;
         return $this;
     }
+public function getFaceDescriptor(): ?array
+    {
+        return $this->faceDescriptor;
+    }
 
+    public function setFaceDescriptor(?array $faceDescriptor): self
+    {
+        $this->faceDescriptor = $faceDescriptor;
+        return $this;
+    }
+    public function getLastLoginAt(): ?\DateTimeInterface
+    {
+        return $this->lastLoginAt;
+    }
+
+    public function setLastLoginAt(?\DateTimeInterface $lastLoginAt): self
+    {
+        $this->lastLoginAt = $lastLoginAt;
+        return $this;
+    }
     // ==================== MÉTHODES DE SÉCURITÉ ====================
 
     /**

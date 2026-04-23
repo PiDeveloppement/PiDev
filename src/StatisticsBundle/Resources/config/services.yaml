@@ -1,0 +1,11 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    StatisticsBundle\Service\StatisticsService:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+            $userRepository: '@App\Repository\User\UserRepository'
+            $eventRepository: '@App\Repository\Event\EventRepository'
+            $ticketRepository: '@App\Repository\Event\TicketRepository'

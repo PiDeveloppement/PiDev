@@ -889,9 +889,11 @@
                         {% set mood = 'Contexte innovation terrain' %}
                     {% endif %}
 
+                    {% set eventImage = event.imageUrl ?? null %}
+
                     <article class="reco-card {{ cls }}">
                         <div class="reco-rank-badge">Top {{ loop.index }}</div>
-                        <img class="reco-card-image" src="{{ asset('images/' ~ event.title ~ '.jpg') }}" alt="{{ event.title }}" onerror="this.src=&quot;{{ asset('images/sponsor-cards/' ~ defaultImage) }}&quot;">
+                        <img class="reco-card-image" src="{{ eventImage ? asset(eventImage) : asset('images/sponsor-cards/' ~ defaultImage) }}" alt="{{ event.title }}" onerror="this.src=&quot;{{ asset('images/sponsor-cards/' ~ defaultImage) }}&quot;">
                         <div class="reco-card-content">
                             <div class="reco-card-top">
                                 <span class="reco-type-badge {{ cls }}">{{ type }}</span>
@@ -976,8 +978,10 @@
                         {% set mood = 'Contexte innovation terrain' %}
                     {% endif %}
 
+                    {% set eventImage = event.imageUrl ?? null %}
+
                     <article class="portal-event-card {{ cls }} {{ loop.index == 3 ? 'highlight' : '' }}" data-live-search-item data-search="{{ event.title }}" data-live-suggest="{{ event.title }}">
-                        <img class="portal-event-visual" src="{{ asset('images/' ~ event.title ~ '.jpg') }}" alt="{{ event.title }}" onerror="this.src=&quot;{{ asset('images/sponsor-cards/' ~ defaultImage) }}&quot;">
+                        <img class="portal-event-visual" src="{{ eventImage ? asset(eventImage) : asset('images/sponsor-cards/' ~ defaultImage) }}" alt="{{ event.title }}" onerror="this.src=&quot;{{ asset('images/sponsor-cards/' ~ defaultImage) }}&quot;">
                         <div class="portal-event-content">
                             <div class="portal-event-topline">
                                 <span class="portal-badge {{ cls }}">{{ type }}</span>

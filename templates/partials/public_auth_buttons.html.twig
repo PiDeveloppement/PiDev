@@ -40,3 +40,56 @@
     <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
     <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
 {% endif %}
+
+<script>
+    (function () {
+        if (window.EventFlowPublicTranslationReady) {
+            return;
+        }
+        window.EventFlowPublicTranslationReady = true;
+
+        const setTranslateCookie = function (value) {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=' + value + ';path=/';
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=' + value + ';path=/;domain=.' + host;
+            }
+        };
+
+        const clearTranslateCookie = function () {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + host;
+            }
+        };
+
+        document.addEventListener('click', function (event) {
+            const toggle = event.target.closest('.translation-account-toggle');
+            if (toggle) {
+                const dropdown = toggle.closest('.participant-chip-dropdown, .dropdown-menu');
+                const panel = dropdown ? dropdown.querySelector('.translation-account-panel') : null;
+                if (panel) {
+                    panel.style.display = panel.style.display === 'none' || panel.style.display === '' ? 'block' : 'none';
+                }
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+
+            const option = event.target.closest('.translation-option');
+            if (!option) {
+                return;
+            }
+
+            const lang = option.getAttribute('data-lang') || 'en';
+            if (lang === 'original') {
+                clearTranslateCookie();
+            } else {
+                setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+            }
+
+            window.location.reload();
+        });
+    })();
+</script>

@@ -251,8 +251,22 @@
 
 {% block javascripts %}
     {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script defer>
     document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-sponsor-chart]').forEach(function(canvas) {
+            if (typeof Chart === 'undefined') {
+                return;
+            }
+
+            try {
+                const config = JSON.parse(canvas.getAttribute('data-chart-config') || '{}');
+                new Chart(canvas, config);
+            } catch (error) {
+                console.error('Erreur initialisation graphique sponsor:', error);
+            }
+        });
+
         const chartViewSelect = document.getElementById('chartViewSelect');
         const chartPanels = document.querySelectorAll('[data-chart-panel]');
         const alertNotifToggle = document.getElementById('spAlertNotifToggle');
@@ -533,14 +547,14 @@
                     <article class="sp-chart-card">
                         <h4>Top 5 événements (montant)</h4>
                         <div class="sp-chart-canvas">
-                            {{ render_chart(eventsByContributionChart) }}
+                            <canvas data-sponsor-chart data-chart-config="{{ eventsByContributionChart.createView|json_encode|e('html_attr') }}"></canvas>
                         </div>
                         <p class="sp-chart-note"><strong>Top 5 des événements qui attirent le plus de budget sponsor.</strong></p>
                     </article>
                     <article class="sp-chart-card">
                         <h4>Top 5 volume sponsors</h4>
                         <div class="sp-chart-canvas">
-                            {{ render_chart(eventsShareChart) }}
+                            <canvas data-sponsor-chart data-chart-config="{{ eventsShareChart.createView|json_encode|e('html_attr') }}"></canvas>
                         </div>
                         <p class="sp-chart-note"><strong>Top 5 des événements avec le plus grand nombre de sponsors engagés.</strong></p>
                     </article>
@@ -552,14 +566,14 @@
                     <article class="sp-chart-card">
                         <h4>Top sponsors</h4>
                         <div class="sp-chart-canvas">
-                            {{ render_chart(topSponsorsChart) }}
+                            <canvas data-sponsor-chart data-chart-config="{{ topSponsorsChart.createView|json_encode|e('html_attr') }}"></canvas>
                         </div>
                         <p class="sp-chart-note"><strong>Répartition des contributions sur les entreprises les plus engagées.</strong></p>
                     </article>
                     <article class="sp-chart-card">
                         <h4>Frequence partenariats</h4>
                         <div class="sp-chart-canvas">
-                            {{ render_chart(topSponsorsComparisonChart) }}
+                            <canvas data-sponsor-chart data-chart-config="{{ topSponsorsComparisonChart.createView|json_encode|e('html_attr') }}"></canvas>
                         </div>
                         <p class="sp-chart-note"><strong>Lecture horizontale pour comparer le nombre de partenariats par sponsor.</strong></p>
                     </article>
@@ -571,14 +585,14 @@
                     <article class="sp-chart-card">
                         <h4>Vue globale</h4>
                         <div class="sp-chart-canvas">
-                            {{ render_chart(overviewChart) }}
+                            <canvas data-sponsor-chart data-chart-config="{{ overviewChart.createView|json_encode|e('html_attr') }}"></canvas>
                         </div>
                         <p class="sp-chart-note"><strong>Vision synthétique pour lire l'état global du portefeuille sponsor.</strong></p>
                     </article>
                     <article class="sp-chart-card">
                         <h4>Distribution alertes risque</h4>
                         <div class="sp-chart-canvas">
-                            {{ render_chart(overviewKpiChart) }}
+                            <canvas data-sponsor-chart data-chart-config="{{ overviewKpiChart.createView|json_encode|e('html_attr') }}"></canvas>
                         </div>
                         <p class="sp-chart-note"><strong>Repartition des alertes inactivite par niveau de criticite.</strong></p>
                     </article>

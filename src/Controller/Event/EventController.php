@@ -248,7 +248,6 @@ class EventController extends AbstractController
     {
         // Keep local events aligned with Google changes before rendering the calendar.
         $syncStats = $this->eventService->syncFromGoogleCalendarToEventFlow();
-
         if (($syncStats['failed'] ?? 0) > 0) {
             $this->addFlash('warning', 'Certaines synchronisations Google entrantes ont echoue.');
         }

@@ -25,6 +25,25 @@ class EventFrontController extends AbstractController
         return $this->redirectToRoute('app_public_events');
     }
 
+   #[Route('/participation/confirm', name: 'app_participation_confirm', methods: ['GET'])]
+public function participationConfirm(
+    SessionInterface $session,
+    EventRepository $eventRepository,
+    EntityManagerInterface $em
+): Response {
+    $eventId = $session->get('pending_event');
+    $event = null;
+
+    if ($eventId) {
+        $event = $eventRepository->find($eventId);
+    }
+
+    return $this->render('front/participation_confirm_simple.html.twig', [
+        'event' => $event,
+        'hasTickets' => $this->currentUserHasTickets($em),
+    ]);
+}
+
     #[Route('/events/calendar', name: 'app_public_events_calendar', methods: ['GET'])]
     public function calendarView(): Response
     {
@@ -283,7 +302,7 @@ class EventFrontController extends AbstractController
     }
 
     #[Route('/my-tickets/{id}/pdf', name: 'app_my_ticket_pdf', methods: ['GET'], requirements: ['id' => '\\d+'])]
-    public function myTicketPdf(int $id, Request $request, EntityManagerInterface $em, Pdf $pdf): Response
+    public function myTicketPdf(int $id, EntityManagerInterface $em, Pdf $pdf): Response
     {
         /** @var UserModel|null $user */
         $user = $this->getUser();
@@ -321,7 +340,7 @@ class EventFrontController extends AbstractController
             $em->flush();
         }
 
-        $appPublicUrl = $this->resolvePublicBaseUrl($request);
+        $appPublicUrl = $_ENV['APP_PUBLIC_URL'] ?? 'http://127.0.0.1:8000';
 
         $html = $this->renderView('front/ticket_pdf.html.twig', [
             'ticket' => $ticket,
@@ -394,13 +413,9 @@ class EventFrontController extends AbstractController
     }
 
     #[Route('/admin/tickets/scan/{token}', name: 'app_ticket_scan_auto', methods: ['GET'])]
-    #[Route('/s/{token}', name: 'app_ticket_scan_short', methods: ['GET'])]
-    public function scanTicketPreview(string $token, Request $request, EntityManagerInterface $em): Response
+    public function scanTicketPreview(string $token, EntityManagerInterface $em): Response
     {
-        $isShortPublicRoute = $request->attributes->get('_route') === 'app_ticket_scan_short';
-        $canValidate = $this->canCurrentUserScanTickets();
-
-        if (!$isShortPublicRoute && !$canValidate) {
+        if (!$this->canCurrentUserScanTickets()) {
             throw new AccessDeniedException('Acces reserve a l administration et aux organisateurs.');
         }
 
@@ -411,7 +426,6 @@ class EventFrontController extends AbstractController
                 'title' => 'QR invalide',
                 'message' => 'Le code QR scanne est vide ou invalide.',
                 'ticket' => null,
-                'canValidate' => $canValidate,
             ]);
         }
 
@@ -423,7 +437,6 @@ class EventFrontController extends AbstractController
                 'title' => 'Billet introuvable',
                 'message' => 'Aucun billet ne correspond a ce QR code.',
                 'ticket' => null,
-                'canValidate' => $canValidate,
             ]);
         }
 
@@ -434,7 +447,6 @@ class EventFrontController extends AbstractController
                 'message' => 'Ce billet est deja en statut USED. Entree refusee.',
                 'ticket' => $ticket,
                 'token' => $token,
-                'canValidate' => $canValidate,
             ]);
         }
 
@@ -449,19 +461,15 @@ class EventFrontController extends AbstractController
                 'message' => sprintf('Ce billet ne peut pas être validé maintenant. L événement est prévu le %s.', $formattedStartAt),
                 'ticket' => $ticket,
                 'token' => $token,
-                'canValidate' => $canValidate,
             ]);
         }
 
         return $this->render('ticket/scan_result.html.twig', [
             'status' => 'preview',
             'title' => 'Billet trouve',
-            'message' => $canValidate
-                ? 'Verifiez visuellement le participant, puis confirmez avec le bouton.'
-                : 'Billet ouvert en lecture seule. Connectez-vous comme organisateur pour valider l entree.',
+            'message' => 'Verifiez visuellement le participant, puis confirmez avec le bouton.',
             'ticket' => $ticket,
             'token' => $token,
-            'canValidate' => $canValidate,
         ]);
     }
 
@@ -626,32 +634,5 @@ class EventFrontController extends AbstractController
         $value = trim($value, '-');
 
         return $value !== '' ? $value : 'ticket';
-    }
-
-    private function resolvePublicBaseUrl(Request $request): string
-    {
-        $envUrl = trim((string) ($_ENV['APP_PUBLIC_URL'] ?? ''));
-        if ($envUrl !== '') {
-            return rtrim($envUrl, '/');
-        }
-
-        $scheme = $request->getScheme() ?: 'http';
-        $host = (string) $request->getHost();
-        $port = (int) $request->getPort();
-
-        // If served via localhost, try to replace with LAN IP so mobile devices can access the QR link.
-        if (in_array($host, ['127.0.0.1', 'localhost', '::1'], true)) {
-            $detected = gethostbyname((string) gethostname());
-            if (filter_var($detected, FILTER_VALIDATE_IP) && $detected !== '127.0.0.1') {
-                $host = $detected;
-            }
-        }
-
-        $portPart = '';
-        if (($scheme === 'http' && $port !== 80) || ($scheme === 'https' && $port !== 443)) {
-            $portPart = ':' . $port;
-        }
-
-        return sprintf('%s://%s%s', $scheme, $host, $portPart);
     }
 }

@@ -18,7 +18,7 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('css/atlantafx-custom.css') }}">
-    
+
     <style>
         * {
             margin: 0;
@@ -46,7 +46,8 @@
     </style>
     
     {% block stylesheets %}{% endblock %}
-    {{ importmap('app') }}
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
     {# ✅ Liste des routes publiques (sans sidebar) #}
@@ -366,9 +367,6 @@
         </div>
     {% endif %}
     
-    <div id="google_translate_element" style="display:none;"></div>
-
-    <!-- Chat Panel (uniquement pour les pages admin) -->
     {% if not is_public and not is_management_ai_context %}
     <div id="chatPanel" style="position: absolute; top: 0; right: 0; width: 400px; height: 100vh; background: white; box-shadow: -5px 0 20px rgba(0,0,0,0.3); border-left: 1px solid #e0e0e0; display: none; flex-direction: column; z-index: 100;">
         <!-- Chat content -->
@@ -526,6 +524,7 @@
                             <div style="background: #E3F2FD; border-radius: 16px 16px 16px 5px; padding: 10px; max-width: 80%;">
                                 <p style="margin: 0; font-size: 13px; color: #333;">${data.response}</p>
                                 ${data.isSimulated ? '<p style="margin: 5px 0 0 0; font-size: 10px; color: #999;">Mode simulation</p>' : ''}
+                                ${data.debug ? '<p style="margin: 5px 0 0 0; font-size: 9px; color: #666;">Debug: ' + data.debug + '</p>' : ''}
                             </div>
                         `;
                         chatMessages.appendChild(responseDiv);
@@ -665,7 +664,6 @@
                 }, 380);
             }, 4500 + (index * 120));
         });
-
         function setTranslateCookie(value) {
             const host = window.location.hostname;
             document.cookie = 'googtrans=' + value + ';path=/';

@@ -1,0 +1,5 @@
+framework:
+    notifier:
+        texter_transports:
+            infobip: '%env(INFOBIP_DSN)%'
+            twilio: '%env(TWILIO_DSN)%'

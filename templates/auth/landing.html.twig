@@ -19,7 +19,189 @@
         }
         
         /* ==================== NAVBAR ==================== */
-        {{ include('partials/public_header_styles.html.twig') }}
+        .navbar {
+            background: white;
+            padding: 0 60px;
+            border-bottom: 1px solid #e2e8f0;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .nav-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo-container img {
+            width: auto;
+            height: 56px;
+            max-width: 180px;
+            object-fit: contain;
+            display: block;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            position: relative;
+            top: -4px;
+        }
+        
+        .nav-link {
+            background: transparent;
+            color: #1e293b;
+            font-size: 16px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+        
+        .nav-link:hover {
+            color: #0D47A1;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            position: relative;
+            top: -4px;
+        }
+
+        .participant-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #7fb2ea;
+            background: linear-gradient(180deg, #3f8fe2 0%, #2d79ca 100%);
+            border-radius: 20px;
+            padding: 4px 10px 4px 6px;
+            color: #ffffff;
+            min-height: 42px;
+            cursor: pointer;
+        }
+
+        .participant-chip-menu {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            margin: 0;
+        }
+
+        .participant-chip-menu summary {
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .participant-chip-menu summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .participant-chip-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 170px;
+            background: #ffffff;
+            border: 1px solid #d9e2ef;
+            border-radius: 12px;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
+            padding: 8px;
+            z-index: 1200;
+        }
+
+        .participant-chip-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .participant-chip-action:hover {
+            background: #f3f7fd;
+        }
+
+        .participant-chip-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #0f4d90;
+            border: 2px solid rgba(255,255,255,0.75);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .participant-chip-meta {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .participant-chip-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .participant-chip-role {
+            font-size: 11px;
+            color: rgba(255,255,255,0.84);
+        }
+        
+        .btn-login {
+            background: transparent;
+            color: #0D47A1;
+            font-weight: bold;
+            border: 1.5px solid #0D47A1;
+            border-radius: 8px;
+            padding: 8px 24px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-login:hover {
+            background: rgba(13, 71, 161, 0.05);
+        }
+        
+        .btn-signup {
+            background: #0D47A1;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 24px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 4px 8px rgba(13, 71, 161, 0.3);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-signup:hover {
+            background: #0A3A80;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(13, 71, 161, 0.4);
+        }
         
         /* ==================== MAIN CONTENT ==================== */
         .main-content {
@@ -454,7 +636,49 @@
 {% endblock %}
 
 {% block public_content %}
-    {{ include('partials/public_header.html.twig', { active_page: 'home' }) }}
+    {% set isParticipantUser = app.user and ('ROLE_ADMIN' not in app.user.roles) and ('ROLE_ORGANISATEUR' not in app.user.roles) and ('ROLE_SPONSOR' not in app.user.roles) %}
+    <!-- ==================== NAVBAR ==================== -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo-container">
+                <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
+            </div>
+
+            <div class="nav-links">
+                <button class="nav-link" onclick="scrollToSection('home')">Accueil</button>
+                <button class="nav-link" onclick="window.location.href='{{ path('app_public_events') }}'">Événements</button>
+
+                <button class="nav-link" onclick="window.location.href='{{ path('app_sponsor_portal') }}'">Recommandations sponsor</button>
+
+                <button class="nav-link" onclick="scrollToSection('features')">Fonctionnalités</button>
+                <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
+                <button class="nav-link" onclick="scrollToSection('contact')">Contact</button>
+            </div>
+
+            <div class="nav-buttons">
+                {% if isParticipantUser %}
+                    <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
+                    <details class="participant-chip-menu">
+                        <summary class="participant-chip">
+                            <span class="participant-chip-avatar">{{ app.user.initials }}</span>
+                            <span class="participant-chip-meta">
+                                <span class="participant-chip-name">{{ app.user.fullName }}</span>
+                                <span class="participant-chip-role">Participant</span>
+                            </span>
+                        </summary>
+                        <div class="participant-chip-dropdown">
+                            <a class="participant-chip-action" href="{{ path('app_logout') }}">Déconnexion</a>
+                        </div>
+                    </details>
+                {% elseif app.user %}
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_logout') }}'">Déconnexion</button>
+                {% else %}
+                    <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
+                    <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
 
     <!-- ==================== MAIN CONTENT ==================== -->
     <main class="main-content">
@@ -467,7 +691,7 @@
                     <p class="hero-subtitle">EventFlow est la plateforme tout-en-un qui simplifie la gestion de vos événements, participants, sponsors et ressources. Rejoignez des milliers d'organisateurs satisfaits.</p>
                     
                     <div class="hero-buttons">
-                        <button class="btn-primary" onclick="window.location.href='{{ path('app_register') }}'">Commencer maintenant</button>
+                        <button class="btn-primary" onclick="window.location.href='{{ path('app_login') }}'">Commencer maintenant</button>
                         <button class="btn-secondary" onclick="window.location.href='{{ path('app_demo_video') }}'">Voir la démo</button>
                     </div>
 
@@ -514,7 +738,7 @@
                     <p class="feature-description">Gérez les inscriptions, les présences et l'historique.</p>
                 </div>
 
-                <div class="feature-card" onclick="window.location.href='{{ path('app_sponsor_portal') }}'">
+                <div class="feature-card" onclick="window.location.href='{{ path('app_public_events') }}'">
                     <div class="feature-icon">💼</div>
                     <h3 class="feature-title">Sponsors</h3>
                     <p class="feature-description">Trouvez et gérez vos partenaires et leurs contrats.</p>

@@ -151,8 +151,3 @@ class Depense
         return $this;
     }
 }
-
-
-
-
-

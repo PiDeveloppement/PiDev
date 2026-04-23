@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historique des partenariats - EventFlow</title>
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
-    <style>`r`n        {{ include('partials/public_header_styles.html.twig') }}
+    <style>
+        {{ include('partials/public_header_styles.html.twig') }}
         .portal-navbar {
             height: 80px;
             padding: 0 60px;
@@ -354,7 +355,7 @@
     </section>
 
     <section class="portal-history-list">
-        <h2 class="portal-section-title">Ã¢ÂÂ³ Evenements passes</h2>
+        <h2 class="portal-section-title">Evenements passes</h2>
         {% if historyItems is empty or not hasPast %}
             <div class="portal-box-empty">Aucun evenement passe.</div>
         {% else %}

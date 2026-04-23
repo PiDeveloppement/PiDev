@@ -6,9 +6,9 @@ use App\Entity\Questionnaire\Question;
 use App\Entity\Questionnaire\Feedback;
 use App\Entity\Questionnaire\QuizAnswer;
 use App\Entity\Event\Event;
-use App\Entity\Event\Ticket;
 use App\Form\Questionnaire\FeedbackType;
 use App\Form\Questionnaire\QuizAnswerType;
+use App\Service\Questionnaire\ContentModerationService;
 use App\Repository\Questionnaire\QuestionRepository;
 use App\Repository\Event\EventRepository;
 use App\Repository\User\UserRepository;
@@ -28,14 +28,19 @@ class QuizController extends AbstractController
 {
     private UserRepository $userRepository;
     private EventRepository $eventRepository;
+    private ContentModerationService $moderationService;
 
-    public function __construct(EventRepository $eventRepository, UserRepository $userRepository)
+    public function __construct(EventRepository $eventRepository, UserRepository $userRepository, ContentModerationService $moderationService)
     {
         $this->eventRepository = $eventRepository;
+        $this->userRepository = $userRepository;
+        $this->moderationService = $moderationService;
+        // Configurer le service de modération pour l'entité Feedback
+        Feedback::setModerationService($moderationService);
     }
 
     #[Route('/quiz/start', name: 'app_quiz_start')]
-    public function start(Request $request, QuestionRepository $repo, UserRepository $user, EntityManagerInterface $em): Response
+    public function start(Request $request, QuestionRepository $repo, UserRepository $user): Response
     {
         $user = $this->getUser();
         $eventId = $request->query->get('event_id');
@@ -54,14 +59,7 @@ class QuizController extends AbstractController
             $this->addFlash('error', 'Vous n\'avez pas les droits pour passer ce quiz.');
             return $this->redirectToRoute('app_public_events');
         }
-
-        if (!$eventId) {
-            error_log('=== QUIZ DEBUG === No event ID provided');
-            $this->addFlash('error', 'Veuillez sélectionner un événement pour passer le quiz.');
-
-            return $this->redirectToRoute('app_public_events');
-        }
-
+        
         // Filtrer les questions par événement si un event_id est fourni
         if ($eventId) {
             error_log('=== QUIZ DEBUG === Event ID received: ' . $eventId);
@@ -74,18 +72,6 @@ class QuizController extends AbstractController
                 return $this->redirectToRoute('app_public_events');
             }
             error_log('=== QUIZ DEBUG === Event found: ' . $event->getTitle());
-
-            $usedTicketCount = (int) $em->getRepository(Ticket::class)->count([
-                'event' => $event,
-                'user' => $user,
-                'isUsed' => true,
-            ]);
-
-            if ($usedTicketCount <= 0) {
-                $this->addFlash('error', 'Le quiz est disponible uniquement après participation effective à l\'événement (billet USED).');
-
-                return $this->redirectToRoute('app_public_event_show', ['id' => (int) $eventId]);
-            }
             
             $questions = $repo->createQueryBuilder('q')
                 ->where('q.event = :eventId')
@@ -118,6 +104,10 @@ class QuizController extends AbstractController
                 $this->addFlash('error', 'Aucune question disponible pour cet événement. Veuillez contacter l\'administrateur.');
                 return $this->redirectToRoute('app_public_events');
             }
+        } else {
+            error_log('=== QUIZ DEBUG === No event ID provided');
+            $this->addFlash('error', 'Veuillez sélectionner un événement pour passer le quiz.');
+            return $this->redirectToRoute('app_public_events');
         }
         
         shuffle($questions);

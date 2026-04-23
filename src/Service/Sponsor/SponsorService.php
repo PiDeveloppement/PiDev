@@ -25,7 +25,7 @@ class SponsorService
      */
     public function fetchEventsCatalog(bool $activeOnly = false): array
     {
-        $sql = 'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity,
+        $sql = 'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity, e.image_url,
                       COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
                 FROM event e';
         $params = [];
@@ -93,7 +93,7 @@ class SponsorService
         }
 
         $rows = $this->entityManager->getConnection()->fetchAllAssociative(
-            'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity,
+            'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity, e.image_url,
                           COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
              FROM event e
              WHERE e.id = :id
@@ -470,7 +470,7 @@ class SponsorService
         }
 
         $rows = $this->entityManager->getConnection()->fetchAllAssociative(
-            'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity,
+            'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity, e.image_url,
                           COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
              FROM event e
              WHERE e.id IN (?)',
@@ -583,6 +583,7 @@ class SponsorService
             'title' => (string) ($row['title'] ?? ''),
             'description' => (string) ($row['description'] ?? ''),
             'location' => (string) ($row['location'] ?? ''),
+            'imageUrl' => !empty($row['image_url']) ? (string) $row['image_url'] : null,
             'capacity' => isset($row['capacity']) ? (int) $row['capacity'] : 0,
             'participantsCount' => isset($row['participants_count']) ? (int) $row['participants_count'] : 0,
             'startDate' => !empty($row['start_date']) ? new \DateTimeImmutable((string) $row['start_date']) : null,

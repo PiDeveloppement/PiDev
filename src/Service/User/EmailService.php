@@ -35,7 +35,9 @@ class EmailService
     {
         try {
             $subject = '🎉 Bienvenue sur EventFlow !';
-            
+
+            $this->logger->info('📧 Tentative d\'envoi email bienvenue à: ' . $user->getEmail());
+
             // Générer le contenu HTML depuis un template Twig
             $htmlContent = $this->twig->render('email/welcome.html.twig', [
                 'user' => $user
@@ -48,15 +50,17 @@ class EmailService
                 ->html($htmlContent);
 
             $this->mailer->send($email);
-            
-            $this->logger->info('✅ Email de bienvenue envoyé à: ' . $user->getEmail());
+
+            $this->logger->info('✅ Email de bienvenue envoyé avec succès à: ' . $user->getEmail());
             return true;
 
         } catch (TransportExceptionInterface $e) {
-            $this->logger->error('❌ Erreur envoi email bienvenue: ' . $e->getMessage());
+            $this->logger->error('❌ Erreur transport envoi email bienvenue: ' . $e->getMessage());
+            $this->logger->error('❌ Détails: ' . $e->getTraceAsString());
             return false;
         } catch (\Exception $e) {
-            $this->logger->error('❌ Erreur inattendue: ' . $e->getMessage());
+            $this->logger->error('❌ Erreur inattendue envoi email bienvenue: ' . $e->getMessage());
+            $this->logger->error('❌ Détails: ' . $e->getTraceAsString());
             return false;
         }
     }
