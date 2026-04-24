@@ -6,6 +6,7 @@ use App\Entity\Resource\Salle;
 use App\Form\Resource\SalleType;
 use App\Repository\Resource\SalleRepository;
 use App\Service\Resource\UnsplashService;
+use App\Service\Resource\AuditService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -29,7 +30,7 @@ final class SalleController extends AbstractController
 
     #[Route('/new', name: 'app_resource_salle_new', methods: ['GET', 'POST'])]
     #[Route('/{id}/edit', name: 'app_resource_salle_edit', methods: ['GET', 'POST'])]
-    public function form(Request $request, Salle $salle = null, EntityManagerInterface $entityManager, SluggerInterface $slugger, UnsplashService $unsplashService): Response
+    public function form(Request $request, Salle $salle = null, EntityManagerInterface $entityManager, SluggerInterface $slugger, UnsplashService $unsplashService, AuditService $auditService): Response
     {
         if (!$salle) {
             $salle = new Salle();
@@ -40,8 +41,8 @@ final class SalleController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var UploadedFile $imageFile */
-            $imageFile = $form->get('imageUpload')->getData();
-            $imagePath = $form->get('imagePath')->getData();
+            $imageFile = $form->get('imageFile')->getData();
+            // Pas de champ imagePath dans le formulaire, on utilise l'URL Unsplash par défaut
 
             // Cas 1: L'utilisateur a uploadé un fichier
             if ($imageFile) {
@@ -59,11 +60,7 @@ final class SalleController extends AbstractController
                     $this->addFlash('error', "Erreur lors de l'upload");
                 }
             } 
-            // Cas 2: L'utilisateur a mis une URL manuelle
-            elseif ($imagePath) {
-                $salle->setImagePath($imagePath);
-            }
-            // Cas 3: Aucune image choisie -> Génération auto via Unsplash
+            // Cas 2: Aucune image uploadée -> Génération auto via Unsplash
             else {
                 $autoImageUrl = $unsplashService->getImageUrl($salle->getName());
                 if ($autoImageUrl) {
@@ -75,10 +72,16 @@ final class SalleController extends AbstractController
             }
 
             if (!$salle->getId()) {
+                // Persister d'abord l'entité pour obtenir un ID
                 $entityManager->persist($salle);
+                $entityManager->flush();
+                // Logger la création dans l'audit après persistance
+                $auditService->logCreate($salle);
+            } else {
+                // Logger la modification dans l'audit
+                $auditService->logUpdate($salle, [], $auditService->extractEntityValues($salle));
+                $entityManager->flush();
             }
-            
-            $entityManager->flush();
             return $this->redirectToRoute('app_resource_salle_index');
         }
 
@@ -97,9 +100,12 @@ final class SalleController extends AbstractController
     }
 
     #[Route('/{id}/delete', name: 'app_resource_salle_delete', methods: ['POST'])]
-    public function delete(Request $request, Salle $salle, EntityManagerInterface $entityManager): Response
+    public function delete(Request $request, Salle $salle, EntityManagerInterface $entityManager, AuditService $auditService): Response
     {
         if ($this->isCsrfTokenValid('delete'.$salle->getId(), $request->getPayload()->getString('_token'))) {
+            // Logger la suppression dans l'audit avant de supprimer l'entité
+            $auditService->logDelete($salle);
+            
             $entityManager->remove($salle);
             $entityManager->flush();
         }

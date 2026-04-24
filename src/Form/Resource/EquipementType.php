@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Form;
+namespace App\Form\Resource;
 
 use App\Entity\Resource\Equipement; // Vérifie bien que le dossier "Resource" existe dans Entity
 use Symfony\Component\Form\AbstractType;

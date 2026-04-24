@@ -91,6 +91,13 @@
                 </div>
             {% endif %}
             
+            {% if reservation.equipement is defined and reservation.equipement %}
+                <div class="detail-row">
+                    <span class="detail-label">Équipement:</span>
+                    <span>{{ reservation.equipement.name }}</span>
+                </div>
+            {% endif %}
+            
             {% if reservation.dateReservation %}
                 <div class="detail-row">
                     <span class="detail-label">Date:</span>

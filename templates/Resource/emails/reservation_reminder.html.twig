@@ -106,10 +106,17 @@
                 </div>
             {% endif %}
             
-            {% if reservation.salle %}
+            {% if reservation.salle is defined and reservation.salle %}
                 <div class="detail-row">
                     <span class="detail-label">Salle:</span>
-                    <span>{{ reservation.salle.nomSalle }}</span>
+                    <span>{{ reservation.salle.name }}</span>
+                </div>
+            {% endif %}
+            
+            {% if reservation.equipement is defined and reservation.equipement %}
+                <div class="detail-row">
+                    <span class="detail-label">Équipement:</span>
+                    <span>{{ reservation.equipement.name }}</span>
                 </div>
             {% endif %}
             

@@ -869,7 +869,7 @@
 </div>
 
 <script>
-
+(function() {
     /* ── Server-side search suggestions ── */
     async function showSuggestions() {
         const searchInput = document.getElementById('searchInput');
@@ -1107,7 +1107,8 @@
             }
         });
         barChart.render();
-    });
+    })();
+})();
 </script>
 
 {% endblock %}

@@ -1,10 +1,6 @@
 {# templates/resource/equipement/index.html.twig #}
 {% extends 'base.html.twig' %}
 
-{% block stylesheets %}
-    {{ parent() }}
-{% endblock %}
-
 {% block admin_content %}
 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 2px; margin-bottom: 20px;">
     <div style="background: white; border-radius: 14px; padding: 30px;">
@@ -42,12 +38,12 @@
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto auto; gap: 15px;">
                 <div>
                     <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">Nom de l'équipement</label>
-                    <input type="text" id="searchInput" placeholder="Rechercher..." 
+                    <input type="text" id="searchInput" data-turbo-permanent="false" placeholder="Rechercher..." 
                            style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
                 </div>
                 <div>
                     <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">Catégorie</label>
-                    <select id="categoryFilter" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
+                    <select id="categoryFilter" data-turbo-permanent="false" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
                         <option value="">Toutes catégories</option>
                         {% for category in categoriesList %}
                             <option value="{{ category }}" {% if selectedCategory == category %}selected{% endif %}>{{ category }}</option>
@@ -56,7 +52,7 @@
                 </div>
                 <div>
                     <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">Statut</label>
-                    <select id="statusFilter" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
+                    <select id="statusFilter" data-turbo-permanent="false" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white;">
                         <option value="">Tous les statuts</option>
                         <option value="DISPONIBLE">Disponible</option>
                         <option value="INDISPONIBLE">Indisponible</option>
@@ -144,6 +140,7 @@
 </div>
 
 <script>
+(function() {
     const searchInput = document.getElementById('searchInput');
     const categoryFilter = document.getElementById('categoryFilter');
     const statusFilter = document.getElementById('statusFilter');
@@ -167,9 +164,10 @@
         });
     }
 
-    searchInput.addEventListener('keyup', applyFilters);
-    categoryFilter.addEventListener('change', applyFilters);
-    statusFilter.addEventListener('change', applyFilters);
+    if (searchInput) searchInput.addEventListener('keyup', applyFilters);
+    if (categoryFilter) categoryFilter.addEventListener('change', applyFilters);
+    if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+})();
 </script>
 
       

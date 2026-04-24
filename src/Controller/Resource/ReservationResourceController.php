@@ -10,6 +10,8 @@ use App\Repository\Resource\ReservationResourceRepository;
 use App\Repository\Resource\SalleRepository;
 use App\Repository\Resource\EquipementRepository;
 use App\Service\Resource\EmailService;
+use App\Service\Resource\AuditService;
+use App\Repository\Resource\HistoriqueLogRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -23,7 +25,7 @@ use Twig\Environment;
 class ReservationResourceController extends AbstractController
 {
     #[Route('/', name: 'app_reservation_resource_index', methods: ['GET'])]
-    public function index(Request $request, ReservationResourceRepository $repo): Response
+    public function index(Request $request, ReservationResourceRepository $repo, HistoriqueLogRepository $historiqueRepo): Response
     {
         $filters = [
             'name' => $request->query->get('name'),
@@ -35,16 +37,43 @@ class ReservationResourceController extends AbstractController
 
         $reservations = $repo->findByFilters($filters, $sortBy, $direction);
 
+        // Charger les logs d'historique dynamiquement
+        $auditLogs = $historiqueRepo->findRecentWithPagination(1, 10);
+        
+        // Formater les logs pour le template
+        $auditLogsData = [];
+        foreach ($auditLogs as $log) {
+            $auditLogsData[] = [
+                'id' => $log['id'],
+                'action' => $log['action'],
+                'actionLabel' => $this->getActionLabel($log['action']),
+                'resourceType' => $log['resource_type'],
+                'resourceTypeLabel' => $this->getResourceTypeLabel($log['resource_type']),
+                'resourceId' => $log['resource_id'],
+                'resourceName' => $log['resource_name'],
+                'oldValues' => $log['old_values'],
+                'newValues' => $log['new_values'],
+                'changes' => $this->getChanges($log['old_values'], $log['new_values']),
+                'createdAt' => $log['created_at'] instanceof \DateTime ? $log['created_at']->format('d/m/Y H:i:s') : $log['created_at'],
+                'ipAddress' => $log['ip_address'],
+                'userAgent' => $log['user_agent'],
+                'userName' => $log['user_name'] ?? null,
+                'userEmail' => $log['user_email'] ?? null,
+                'description' => $this->getDescription($log)
+            ];
+        }
+
         return $this->render('resource/reservation_resource/index.html.twig', [
             'reservations' => $reservations,
             'filters' => $filters,
             'sortBy' => $sortBy,
             'direction' => $direction,
+            'auditLogsData' => $auditLogsData,
         ]);
     }
 
     #[Route('/new', name: 'app_reservation_resource_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $em, EmailService $emailService): Response
+    public function new(Request $request, EntityManagerInterface $em, EmailService $emailService, AuditService $auditService): Response
     {
         $reservation = new ReservationResource();
         
@@ -67,9 +96,12 @@ class ReservationResourceController extends AbstractController
             $em->persist($reservation);
             $em->flush();
             
+            // Logger la création dans l'audit
+            $auditService->logCreate($reservation);
+            
             // Préparer les données pour l'email
             $userName = $this->getUser()->getFullName() ?? $this->getUser()->getEmail();
-            $userEmail = 'mecherguisouhail8@gmail.com'; // Forcer l'envoi à cette adresse pour test
+            $userEmail = $this->getUser()->getEmail();
             
             $reservationData = [
                 'id' => $reservation->getId(),
@@ -189,13 +221,33 @@ class ReservationResourceController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_reservation_resource_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, ReservationResource $reservation, EntityManagerInterface $em): Response
+    public function edit(Request $request, ReservationResourceRepository $repo, EntityManagerInterface $em, AuditService $auditService, int $id): Response
     {
+        $reservation = $repo->find($id);
+        
+        if (!$reservation) {
+            $this->addFlash('error', 'Réservation non trouvée.');
+            return $this->redirectToRoute('app_reservation_resource_index');
+        }
+        
         $form = $this->createForm(ReservationType::class, $reservation);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Capturer les anciennes valeurs avant la modification
+            $oldValues = $auditService->extractEntityValues($reservation);
+            
             $em->flush();
+            
+            // Capturer les nouvelles valeurs après la modification
+            $newValues = $auditService->extractEntityValues($reservation);
+            
+            // Logger la modification dans l'audit avec les différences
+            $changes = $auditService->getChangedValues($oldValues, $newValues);
+            if (!empty($changes)) {
+                $auditService->logUpdate($reservation, $oldValues, $newValues);
+            }
+            
             $this->addFlash('success', 'Réservation mise à jour !');
             return $this->redirectToRoute('app_reservation_resource_index');
         }
@@ -207,36 +259,31 @@ class ReservationResourceController extends AbstractController
     }
 
     #[Route('/{id}/delete', name: 'app_reservation_resource_delete', methods: ['POST'])]
-    public function delete(Request $request, ReservationResource $reservation, EntityManagerInterface $em, EmailService $emailService): Response
+    public function delete(Request $request, ReservationResourceRepository $repo, EntityManagerInterface $em, EmailService $emailService, AuditService $auditService, int $id): Response
     {
+        $reservation = $repo->find($id);
+        
+        if (!$reservation) {
+            $this->addFlash('error', 'Réservation non trouvée.');
+            return $this->redirectToRoute('app_reservation_resource_index');
+        }
+        
         if ($this->isCsrfTokenValid('delete'.$reservation->getId(), $request->request->get('_token'))) {
-            // Préparer les données pour l'email avant suppression
-            $userName = $this->getUser()->getFullName() ?? $this->getUser()->getEmail();
-            $userEmail = $this->getUser()->getEmail();
-            
-            $reservationData = [
-                'id' => $reservation->getId(),
-                'resourceType' => $reservation->getResourceType(),
-                'dateReservation' => $reservation->getStartTime(),
-                'heureDebut' => $reservation->getStartTime(),
-                'heureFin' => $reservation->getEndTime(),
-                'motif' => $reservation->getEvent() ? $reservation->getEvent()->getTitle() : 'Réservation de ressource',
-                'quantity' => $reservation->getQuantity()
-            ];
-            
-            if ($reservation->getResourceType() === 'SALLE' && $reservation->getSalle()) {
-                $reservationData['salle'] = $reservation->getSalle();
-            } elseif ($reservation->getResourceType() === 'EQUIPEMENT' && $reservation->getEquipement()) {
-                $reservationData['equipement'] = $reservation->getEquipement();
-            }
+            // Logger la suppression dans l'audit avant de supprimer l'entité
+            $auditService->logDelete($reservation);
             
             $em->remove($reservation);
             $em->flush();
             
-            // Envoyer l'email d'annulation à l'utilisateur
-            $emailService->sendReservationCancellation($userEmail, $userName, $reservationData);
+            // Envoyer la notification à l'administrateur
+            $emailService->sendNotification(
+                'admin@pidev.com', 
+                'Réservation supprimée - ' . ($reservation->getEvent() ? $reservation->getEvent()->getTitle() : 'Réservation'),
+                'La réservation a été supprimée par ' . $this->getUser()->getFullName() . ' pour le ' . $reservation->getStartTime()->format('d/m/Y'),
+                ['user_name' => $this->getUser()->getFullName(), 'reservation' => $reservation]
+            );
             
-            $this->addFlash('success', 'Réservation supprimée. Un email d\'annulation vous a été envoyé.');
+            $this->addFlash('success', 'Réservation supprimée avec succès !');
         }
 
         return $this->redirectToRoute('app_reservation_resource_index');
@@ -331,6 +378,69 @@ class ReservationResourceController extends AbstractController
                 'Content-Type' => 'application/pdf',
                 'Content-Disposition' => 'attachment; filename="reservations_' . date('Y-m-d_H-i-s') . '.pdf"'
             ]
+        );
+    }
+
+    private function getActionLabel(string $action): string
+    {
+        return match($action) {
+            'CREATE' => 'Création',
+            'UPDATE' => 'Modification',
+            'DELETE' => 'Suppression',
+            default => $action
+        };
+    }
+
+    private function getResourceTypeLabel(string $resourceType): string
+    {
+        return match($resourceType) {
+            'RESERVATION' => 'Réservation',
+            'SALLE' => 'Salle',
+            'EQUIPEMENT' => 'Équipement',
+            default => $resourceType
+        };
+    }
+
+    private function getChanges(?string $oldValues, ?string $newValues): ?array
+    {
+        if ($oldValues || $newValues) {
+            $old = $oldValues ? json_decode($oldValues, true) : [];
+            $new = $newValues ? json_decode($newValues, true) : [];
+            
+            $changes = [];
+            foreach ($old as $key => $oldValue) {
+                if (isset($new[$key]) && $oldValue !== $new[$key]) {
+                    $changes[$key] = [
+                        'old' => $oldValue,
+                        'new' => $new[$key]
+                    ];
+                }
+            }
+            
+            return $changes;
+        }
+        
+        return null;
+    }
+
+    private function getDescription(array $log): string
+    {
+        $userName = $log['user_name'] ?? 'Utilisateur inconnu';
+        
+        // created_at peut être un objet DateTime ou une chaîne
+        if ($log['created_at'] instanceof \DateTime) {
+            $createdAt = $log['created_at'];
+        } else {
+            $createdAt = new \DateTime($log['created_at']);
+        }
+        $time = $createdAt->format('H:i');
+        
+        return sprintf(
+            "%s %s par %s à %s",
+            $log['resource_name'],
+            $this->getActionLabel($log['action']),
+            $userName,
+            $time
         );
     }
 }
