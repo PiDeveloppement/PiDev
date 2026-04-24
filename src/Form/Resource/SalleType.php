@@ -19,19 +19,27 @@ class SalleType extends AbstractType
         $builder
             ->add('name', TextType::class, [
                 'label' => 'Nom de la salle',
-                'required' => false,
+                'required' => true,
             ])
             ->add('capacity', IntegerType::class, [
                 'label' => 'Capacité',
-                'required' => false,
+                'required' => true,
+                'attr' => [
+                    'min' => 1,
+                    'max' => 1000
+                ]
             ])
             ->add('building', TextType::class, [
                 'label' => 'Bâtiment',
-                'required' => false,
+                'required' => true,
             ])
             ->add('floor', IntegerType::class, [
                 'label' => 'Étage',
-                'required' => false,
+                'required' => true,
+                'attr' => [
+                    'min' => 0,
+                    'max' => 50
+                ]
             ])
             ->add('status', ChoiceType::class, [
                 'choices' => [
@@ -39,7 +47,7 @@ class SalleType extends AbstractType
                     'OCCUPEE' => 'OCCUPEE',
                 ],
                 'label' => 'Statut',
-                'required' => false,
+                'required' => true,
             ])
             ->add('imageFile', FileType::class, [
                 'label' => 'Image de la salle',

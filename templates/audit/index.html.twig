@@ -1,0 +1,277 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Historique des Audits{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="fas fa-history me-2"></i>
+            Historique des Audits
+        </h1>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#filterModal">
+                <i class="fas fa-filter me-1"></i>
+                Filtrer
+            </button>
+            <button type="button" class="btn btn-outline-primary" onclick="refreshLogs()">
+                <i class="fas fa-sync-alt me-1"></i>
+                Actualiser
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtres actifs -->
+    {% if filters|length > 0 %}
+        <div class="alert alert-info">
+            <strong>Filtres actifs:</strong>
+            {% if filters.resourceType %}<span class="badge bg-primary me-1">{{ filters.resourceType }}</span>{% endif %}
+            {% if filters.action %}<span class="badge bg-success me-1">{{ filters.action }}</span>{% endif %}
+            {% if filters.user %}<span class="badge bg-info me-1">{{ filters.user }}</span>{% endif %}
+            {% if filters.startDate %}<span class="badge bg-warning me-1">Du {{ filters.startDate|date('d/m/Y') }}</span>{% endif %}
+            {% if filters.endDate %}<span class="badge bg-warning me-1">Au {{ filters.endDate|date('d/m/Y') }}</span>{% endif %}
+            <a href="{{ path('app_audit_logs') }}" class="btn btn-sm btn-outline-secondary ms-2">
+                <i class="fas fa-times"></i> Effacer
+            </a>
+        </div>
+    {% endif %}
+
+    <!-- Statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">{{ totalLogs }}</h5>
+                    <p class="card-text">Total des logs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">{{ logs|filter(log => log.action == 'CREATE')|length }}</h5>
+                    <p class="card-text">Créations</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">{{ logs|filter(log => log.action == 'UPDATE')|length }}</h5>
+                    <p class="card-text">Modifications</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">{{ logs|filter(log => log.action == 'DELETE')|length }}</h5>
+                    <p class="card-text">Suppressions</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tableau des logs -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Dernières activités</h5>
+        </div>
+        <div class="card-body">
+            {% if logs|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Action</th>
+                                <th>Type</th>
+                                <th>Ressource</th>
+                                <th>Utilisateur</th>
+                                <th>Description</th>
+                                <th>IP</th>
+                                <th>Détails</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                                <tr>
+                                    <td>{{ log.createdAt|date('d/m/Y H:i:s') }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ log.action == 'CREATE' ? 'success' : log.action == 'UPDATE' ? 'warning' : 'danger' }}">
+                                            {{ log.actionLabel }}
+                                        </span>
+                                    </td>
+                                    <td>{{ log.resourceTypeLabel }}</td>
+                                    <td>
+                                        {% if log.resourceName %}
+                                            <strong>{{ log.resourceName }}</strong>
+                                            <small class="text-muted d-block">#{{ log.resourceId }}</small>
+                                        {% else %}
+                                            <em>Resource #{{ log.resourceId }}</em>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ log.user }}</td>
+                                    <td>{{ log.description }}</td>
+                                    <td>{{ log.ipAddress }}</td>
+                                    <td>
+                                        {% if log.changes %}
+                                            <button type="button" class="btn btn-sm btn-outline-info" onclick="showChanges({{ log.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if totalPages > 1 %}
+                    <nav aria-label="Pagination des logs">
+                        <ul class="pagination justify-content-center">
+                            {% if hasPreviousPage %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ path('app_audit_logs', {page: currentPage - 1, limit: limit}) }}">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page in max(1, currentPage - 2)..min(totalPages, currentPage + 2) %}
+                                <li class="page-item {{ page == currentPage ? 'active' : '' }}">
+                                    <a class="page-link" href="{{ path('app_audit_logs', {page: page, limit: limit}) }}">
+                                        {{ page }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                            
+                            {% if hasNextPage %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ path('app_audit_logs', {page: currentPage + 1, limit: limit}) }}">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Aucun log trouvé</h5>
+                    <p class="text-muted">Aucune activité d'audit n'a été enregistrée pour les critères sélectionnés.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de filtres -->
+<div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filterModalLabel">Filtrer les logs</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="get" action="{{ path('app_audit_logs') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="resourceType" class="form-label">Type de ressource</label>
+                        <select class="form-select" id="resourceType" name="resourceType">
+                            <option value="">Tous</option>
+                            {% for type in resourceTypes %}
+                                <option value="{{ type }}" {{ filters.resourceType == type ? 'selected' : '' }}>{{ type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="action" class="form-label">Action</label>
+                        <select class="form-select" id="action" name="action">
+                            <option value="">Toutes</option>
+                            {% for action in actions %}
+                                <option value="{{ action }}" {{ filters.action == action ? 'selected' : '' }}>{{ action }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="user" class="form-label">Utilisateur</label>
+                        <input type="text" class="form-control" id="user" name="user" value="{{ filters.user ?? '' }}">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="startDate" class="form-label">Date de début</label>
+                            <input type="date" class="form-control" id="startDate" name="startDate" value="{{ filters.startDate ? filters.startDate|date('Y-m-d') : '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="endDate" class="form-label">Date de fin</label>
+                            <input type="date" class="form-control" id="endDate" name="endDate" value="{{ filters.endDate ? filters.endDate|date('Y-m-d') : '' }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Appliquer les filtres</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal des détails des changements -->
+<div class="modal fade" id="changesModal" tabindex="-1" aria-labelledby="changesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changesModalLabel">Détails des changements</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="changesContent">
+                    <!-- Le contenu sera chargé dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showChanges(logId) {
+    // Récupérer les détails du log via AJAX
+    fetch(`/audit/logs/details/${logId}`)
+        .then(response => response.json())
+        .then(data => {
+            let content = '';
+            if (data.changes) {
+                content = '<div class="row">';
+                for (const [key, value] of Object.entries(data.changes)) {
+                    content += `
+                        <div class="col-md-6 mb-3">
+                            <strong>${key}:</strong><br>
+                            ${value.old ? '<span class="text-danger text-decoration-line-through">' + value.old + '</span>' : '<span class="text-muted">N/A</span>'}
+                            ${value.new ? '<span class="text-success"> → ' + value.new + '</span>' : ''}
+                        </div>
+                    `;
+                }
+                content += '</div>';
+            } else {
+                content = '<p class="text-muted">Aucun détail de changement disponible.</p>';
+            }
+            
+            document.getElementById('changesContent').innerHTML = content;
+            new bootstrap.Modal(document.getElementById('changesModal')).show();
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            document.getElementById('changesContent').innerHTML = '<p class="text-danger">Erreur lors du chargement des détails.</p>';
+            new bootstrap.Modal(document.getElementById('changesModal')).show();
+        });
+}
+
+function refreshLogs() {
+    location.reload();
+}
+</script>
+{% endblock %}
