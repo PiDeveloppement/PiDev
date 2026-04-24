@@ -1,5 +1,11 @@
 {% extends 'base.html.twig' %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
+{% endblock %}
+
 {% block title %}Mon profil - EventFlow{% endblock %}
 {% block page_title %}Profile{% endblock %}
 {% block page_subtitle %}Consultez votre profile{% endblock %}

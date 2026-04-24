@@ -1,6 +1,10 @@
 {# templates/resource/salle/new.html.twig #}
 {% extends 'base.html.twig' %}
 
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
 {% block title %}Ajouter une Salle - EventFlow{% endblock %}
 
 {% block admin_content %}

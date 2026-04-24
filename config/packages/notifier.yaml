@@ -4,7 +4,7 @@ framework:
 
         texter_transports:
             infobip: '%env(INFOBIP_DSN)%'
-
+            twilio: '%env(TWILIO_DSN)%'
         channel_policy:
             urgent: ['sms']
             high: ['sms']

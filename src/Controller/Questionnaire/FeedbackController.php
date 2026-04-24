@@ -5,6 +5,7 @@ namespace App\Controller\Questionnaire;
 use App\Entity\Questionnaire\Feedback;
 use App\Entity\User\UserModel;
 use App\Form\Questionnaire\FeedbackType;
+use App\Service\Questionnaire\ContentModerationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,6 +18,13 @@ use Dompdf\Options;
 #[Route('/questionnaire/feedback')]
 final class FeedbackController extends AbstractController
 {
+    private ContentModerationService $moderationService;
+
+    public function __construct(ContentModerationService $moderationService)
+    {
+        $this->moderationService = $moderationService;
+    }
+
     // ------------------------------------------------------------------ INDEX
     #[Route('', name: 'app_questionnaire_feedback_index', methods: ['GET'])]
     public function index(EntityManagerInterface $entityManager): Response
@@ -53,8 +61,38 @@ final class FeedbackController extends AbstractController
             if (isset($distribution[$e])) $distribution[$e]++;
         }
 
+        // Analyser le sentiment de chaque feedback
+        $feedbacksWithSentiment = [];
+        foreach ($feedbacksList as $feedback) {
+            $comment = $feedback->getComments() ?? '';
+            $sentiment = 'neutre';
+            $isInappropriate = false;
+
+            if ($comment) {
+                $isInappropriate = $this->moderationService->containsInappropriateContent($comment);
+                
+                // Analyser le sentiment basé sur les étoiles et le contenu
+                if ($feedback->getEtoiles() >= 4) {
+                    $sentiment = 'positif';
+                } elseif ($feedback->getEtoiles() <= 2) {
+                    $sentiment = 'négatif';
+                }
+                
+                // Ajuster le sentiment si contenu inapproprié
+                if ($isInappropriate) {
+                    $sentiment = 'inapproprié';
+                }
+            }
+
+            $feedbacksWithSentiment[] = [
+                'feedback' => $feedback,
+                'sentiment' => $sentiment,
+                'is_inappropriate' => $isInappropriate
+            ];
+        }
+
         return $this->render('questionnaire/feedback/show_all.html.twig', [
-            'userFeedbacks'  => $feedbacksList,
+            'userFeedbacks'  => $feedbacksWithSentiment,
             'usersInfo'      => $usersInfo,
             'totalAvis'      => $totalAvis,
             'moyenneEtoiles' => $moyenneEtoiles,

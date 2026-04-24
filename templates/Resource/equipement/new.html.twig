@@ -1,6 +1,10 @@
 {# templates/resource/equipement/new.html.twig #}
 {% extends 'base.html.twig' %}
 
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
 {% block title %}Ajouter un Équipement - EventFlow{% endblock %}
 
 {% block admin_content %}

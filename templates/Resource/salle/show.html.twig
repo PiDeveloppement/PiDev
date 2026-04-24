@@ -1,5 +1,9 @@
 {% extends 'base.html.twig' %}
 
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
 {% block title %}{{ salle.name }} - Détails de la Salle - EventFlow{% endblock %}
 
 {% block admin_content %}

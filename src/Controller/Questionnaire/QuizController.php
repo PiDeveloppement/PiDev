@@ -5,15 +5,20 @@ namespace App\Controller\Questionnaire;
 use App\Entity\Questionnaire\Question;
 use App\Entity\Questionnaire\Feedback;
 use App\Entity\Questionnaire\QuizAnswer;
+use App\Entity\Questionnaire\QuizSession;
+use App\Entity\User\UserModel;
 use App\Entity\Event\Event;
 use App\Form\Questionnaire\FeedbackType;
 use App\Form\Questionnaire\QuizAnswerType;
 use App\Service\Questionnaire\ContentModerationService;
+use App\Service\Questionnaire\RecaptchaService;
 use App\Repository\Questionnaire\QuestionRepository;
+use App\Repository\Questionnaire\QuizSessionRepository;
 use App\Repository\Event\EventRepository;
 use App\Repository\User\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -22,30 +27,39 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
-use Google\Service\AlertCenter\User;
 
 class QuizController extends AbstractController
 {
     private UserRepository $userRepository;
     private EventRepository $eventRepository;
     private ContentModerationService $moderationService;
+    private QuizSessionRepository $sessionRepository;
+    private RecaptchaService $recaptchaService;
+    private EntityManagerInterface $em;
 
-    public function __construct(EventRepository $eventRepository, UserRepository $userRepository, ContentModerationService $moderationService)
-    {
+    public function __construct(
+        EventRepository $eventRepository, 
+        UserRepository $userRepository, 
+        ContentModerationService $moderationService,
+        QuizSessionRepository $sessionRepository,
+        RecaptchaService $recaptchaService,
+        EntityManagerInterface $em
+    ) {
         $this->eventRepository = $eventRepository;
         $this->userRepository = $userRepository;
         $this->moderationService = $moderationService;
-        // Configurer le service de modération pour l'entité Feedback
+        $this->sessionRepository = $sessionRepository;
+        $this->recaptchaService = $recaptchaService;
+        $this->em = $em;
         Feedback::setModerationService($moderationService);
     }
 
     #[Route('/quiz/start', name: 'app_quiz_start')]
-    public function start(Request $request, QuestionRepository $repo, UserRepository $user): Response
+    public function start(Request $request, QuestionRepository $repo): Response
     {
         $user = $this->getUser();
         $eventId = $request->query->get('event_id');
         
-        // Vérifier si l'utilisateur est connecté et a le bon rôle (roleId 1 ou 5)
         if (!$user) {
             $session = $request->getSession();
             $session->set('pending_quiz_event', $eventId);
@@ -60,18 +74,12 @@ class QuizController extends AbstractController
             return $this->redirectToRoute('app_public_events');
         }
         
-        // Filtrer les questions par événement si un event_id est fourni
         if ($eventId) {
-            error_log('=== QUIZ DEBUG === Event ID received: ' . $eventId);
-            
-            // D'abord, vérifier si l'événement existe
             $event = $this->eventRepository->find($eventId);
             if (!$event) {
-                error_log('=== QUIZ DEBUG === Event not found with ID: ' . $eventId);
                 $this->addFlash('error', 'Événement non trouvé.');
                 return $this->redirectToRoute('app_public_events');
             }
-            error_log('=== QUIZ DEBUG === Event found: ' . $event->getTitle());
             
             $questions = $repo->createQueryBuilder('q')
                 ->where('q.event = :eventId')
@@ -79,33 +87,11 @@ class QuizController extends AbstractController
                 ->getQuery()
                 ->getResult();
                 
-            error_log('=== QUIZ DEBUG === Questions found for event: ' . count($questions));
-            
-            // Afficher les IDs des questions trouvées
-            foreach ($questions as $q) {
-                error_log('=== QUIZ DEBUG === Question ID: ' . $q->getId() . ' - Event ID: ' . ($q->getEvent() ? $q->getEvent()->getId() : 'NULL'));
-            }
-            
-            // Message flash pour montrer à l'utilisateur ce qui se passe
-            $this->addFlash('info', 'Événement: ' . $event->getTitle() . ' (ID: ' . $eventId . ') - Questions trouvées: ' . count($questions));
-                
-            // Si aucune question n'est trouvée pour cet événement, afficher un message d'erreur
             if (empty($questions)) {
-                // Vérifier toutes les questions et leurs événements
-                $allQuestions = $repo->findAll();
-                error_log('=== QUIZ DEBUG === Total questions in DB: ' . count($allQuestions));
-                
-                foreach ($allQuestions as $q) {
-                    $eventTitle = $q->getEvent() ? $q->getEvent()->getTitle() : 'NULL';
-                    $eventId2 = $q->getEvent() ? $q->getEvent()->getId() : 'NULL';
-                    error_log('=== QUIZ DEBUG === Question ' . $q->getId() . ' -> Event: ' . $eventTitle . ' (ID: ' . $eventId2 . ')');
-                }
-                
-                $this->addFlash('error', 'Aucune question disponible pour cet événement. Veuillez contacter l\'administrateur.');
+                $this->addFlash('error', 'Aucune question disponible pour cet événement.');
                 return $this->redirectToRoute('app_public_events');
             }
         } else {
-            error_log('=== QUIZ DEBUG === No event ID provided');
             $this->addFlash('error', 'Veuillez sélectionner un événement pour passer le quiz.');
             return $this->redirectToRoute('app_public_events');
         }
@@ -113,7 +99,6 @@ class QuizController extends AbstractController
         shuffle($questions);
         $questions = array_slice($questions, 0, 10);
 
-        // Stocker les questions en session
         $session = $this->container->get('request_stack')->getSession();
         $session->set('quiz_questions', $questions);
         $session->set('quiz_answers', []);
@@ -121,7 +106,8 @@ class QuizController extends AbstractController
 
         return $this->render('questionnaire/quiz/index.html.twig', [
             'questions' => $questions,
-            'eventId' => $eventId
+            'eventId' => $eventId,
+            'recaptcha_site_key' => $_ENV['RECAPTCHA_SITE_KEY'] ?? ''
         ]);
     }
 
@@ -132,16 +118,13 @@ class QuizController extends AbstractController
         $questionId = $request->request->get('questionId');
         $answer = $request->request->get('answer');
 
-        // Créer une réponse de quiz pour la validation
         $quizAnswer = new QuizAnswer();
         $quizAnswer->setQuestionId($questionId);
         $quizAnswer->setAnswer($answer);
 
-        // Valider la réponse
         $errors = $validator->validate($quizAnswer);
 
         if (count($errors) > 0) {
-            // Retourner les erreurs en format JSON
             $errorMessages = [];
             foreach ($errors as $error) {
                 $errorMessages[] = $error->getMessage();
@@ -153,7 +136,6 @@ class QuizController extends AbstractController
             ]);
         }
 
-        // Si la validation passe, stocker la réponse en session
         $answers = $session->get('quiz_answers', []);
         $answers[$questionId] = $answer;
         $session->set('quiz_answers', $answers);
@@ -166,71 +148,98 @@ class QuizController extends AbstractController
     #[Route('/quiz/submit', name: 'app_quiz_submit', methods: ['POST'])]
     public function submit(Request $request, QuestionRepository $repo, EntityManagerInterface $em): Response
     {
-        // Debug: Vérifier la session avant tout
         $session = $request->getSession();
-        $sessionId = $session->getId();
-        $userId = $session->get('user_id');
-        $userEmail = $session->get('user_email');
-        
-        // Log pour debug
-        error_log('=== QUIZ CONTROLLER DEBUG ===');
-        error_log('Session ID: ' . $sessionId);
-        error_log('User ID in session: ' . ($userId ?? 'NULL'));
-        error_log('User Email in session: ' . ($userEmail ?? 'NULL'));
-        error_log('Session data: ' . print_r($session->all(), true));
-        error_log('=============================');
-        
-        // Récupérer les réponses validées depuis la session
         $data = $session->get('quiz_answers', []); 
         $evaluation = $request->request->all('evaluation'); 
+        $timeouts = $request->request->all('timeout'); // Questions non répondues par timeout
         
         $results = [];
         $score = 0;
-
-        foreach ($data as $questionId => $userAnswer) {
-            $question = $repo->find($questionId);
-            if ($question) {
+        $quizQuestions = $session->get('quiz_questions', []);
+        
+        // Récupérer les entités Question fraîches depuis la base de données
+        $questionIds = array_map(function($q) { return $q->getId(); }, $quizQuestions);
+        $freshQuestions = $repo->findBy(['id' => $questionIds]);
+        
+        // Traiter uniquement les 10 questions sélectionnées pour le quiz
+        foreach ($freshQuestions as $question) {
+            $questionId = $question->getId();
+            $isTimeout = isset($timeouts[$questionId]);
+            $hasAnswer = isset($data[$questionId]);
+            
+            // Créer un feedback pour chaque question
+            $fb = new Feedback();
+            $fb->setQuestion($question);
+            
+            $user = $this->getUser();
+            if ($user) {
+                $fb->setUserId($user->getId());
+                $fb->setUser($user);
+            } else {
+                $fb->setUserId(null);
+            }
+            
+            if ($isTimeout) {
+                // Question non répondue (timeout) = FAUX automatique
+                $fb->setReponseDonnee("Non répondu (temps écoulé)");
+                $fb->setComments("Question non répondue - temps écoulé (20 secondes)");
+                $fb->setEtoiles(0);
+                $isCorrect = false;
+                
+                $results[] = [
+                    'question' => $question->getTexte(),
+                    'userAnswer' => 'Non répondu (temps écoulé)',
+                    'correctAnswer' => $question->getReponse(),
+                    'isCorrect' => false,
+                    'timeout' => true
+                ];
+            } elseif ($hasAnswer) {
+                // Question répondue normalement
+                $userAnswer = $data[$questionId];
                 $isCorrect = (trim(strtolower($question->getReponse())) === trim(strtolower($userAnswer)));
                 if ($isCorrect) $score++;
-
-                $fb = new Feedback();
-                $fb->setQuestion($question);
+                
                 $fb->setReponseDonnee($userAnswer);
-
-                // Associer l'utilisateur connecté au feedback
-                $user = $this->getUser();
-                if ($user) {
-                    $fb->setUserId($user->getId());
-                    $fb->setUser($user);
-                } else {
-                    // Si aucun utilisateur connecté, utiliser une valeur par défaut ou gérer l'erreur
-                    $fb->setUserId(null);
-                }
-
-                // Pour les réponses du quiz, on met un commentaire par défaut
-                $fb->setComments("Réponse automatique (Quiz)");
+                $fb->setComments("Réponse utilisateur");
                 $fb->setEtoiles(0);
-
-                $em->persist($fb);
+                
                 $results[] = [
                     'question' => $question->getTexte(),
                     'userAnswer' => $userAnswer,
                     'correctAnswer' => $question->getReponse(),
-                    'isCorrect' => $isCorrect
+                    'isCorrect' => $isCorrect,
+                    'timeout' => false
+                ];
+            } else {
+                // Question non répondue (pas de timeout) = FAUX
+                $fb->setReponseDonnee("Non répondu");
+                $fb->setComments("Question non répondue");
+                $fb->setEtoiles(0);
+                $isCorrect = false;
+                
+                $results[] = [
+                    'question' => $question->getTexte(),
+                    'userAnswer' => 'Non répondu',
+                    'correctAnswer' => $question->getReponse(),
+                    'isCorrect' => false,
+                    'timeout' => false
                 ];
             }
+            
+            $em->persist($fb);
         }
         
         $em->flush();
         
-        // Traiter l'évaluation si elle existe
         $userFeedback = null;
         if (isset($evaluation['comments']) && isset($evaluation['etoiles'])) {
             $userFeedback = new Feedback();
-            $userFeedback->setComments($evaluation['comments']);
+            
+            // Modérer le commentaire avant de le sauvegarder
+            $moderatedComment = $this->moderationService->moderateContent($evaluation['comments']);
+            $userFeedback->setComments($moderatedComment);
             $userFeedback->setEtoiles((int)$evaluation['etoiles']);
             
-            // Associer l'utilisateur connecté
             $user = $this->getUser();
             if ($user) {
                 $userFeedback->setUserId($user->getId());
@@ -243,7 +252,6 @@ class QuizController extends AbstractController
             $em->flush();
         }
         
-        // Stocker les résultats en session pour la page dédiée
         $session->set('quiz_results', [
             'results' => $results,
             'score' => $score,
@@ -251,7 +259,6 @@ class QuizController extends AbstractController
             'userFeedback' => $userFeedback
         ]);
 
-        // Rediriger vers la page de résultats finale
         return $this->redirectToRoute('app_quiz_final_results');
     }
 
@@ -261,7 +268,6 @@ class QuizController extends AbstractController
         $session = $request->getSession();
         $quizResults = $session->get('quiz_results');
 
-        // Récupérer les feedbacks existants pour les afficher
         $feedbackRepository = $em->getRepository(Feedback::class);
         $user = $this->getUser();
         $existingFeedbacks = [];
@@ -295,12 +301,56 @@ class QuizController extends AbstractController
         ]);
     }
 
+    #[Route('/quiz/feedback/edit/{id}', name: 'app_quiz_feedback_edit', methods: ['POST'])]
+    public function editFeedback(Request $request, int $id, EntityManagerInterface $em): Response
+    {
+        $feedback = $em->getRepository(Feedback::class)->find($id);
+        
+        if (!$feedback) {
+            $this->addFlash('error', 'Feedback non trouvé');
+            return $this->redirectToRoute('app_quiz_final_results');
+        }
+        
+        $user = $this->getUser();
+        if (!$user || $feedback->getUserId() !== $user->getId()) {
+            $this->addFlash('error', 'Non autorisé');
+            return $this->redirectToRoute('app_quiz_final_results');
+        }
+        
+        $etoiles = $request->request->get('etoiles');
+        $comments = $request->request->get('comments');
+        
+        if ($etoiles !== null) {
+            // Modérer le commentaire avant de le sauvegarder
+            if ($comments) {
+                $moderatedComment = $this->moderationService->moderateContent($comments);
+                $feedback->setComments($moderatedComment);
+            }
+            
+            $feedback->setEtoiles((int)$etoiles);
+            $em->flush();
+            
+            // Mettre à jour la session avec le feedback modifié
+            $session = $request->getSession();
+            $quizResults = $session->get('quiz_results');
+            if ($quizResults && isset($quizResults['userFeedback']) && $quizResults['userFeedback']->getId() === $feedback->getId()) {
+                $quizResults['userFeedback'] = $feedback;
+                $session->set('quiz_results', $quizResults);
+            }
+            
+            $this->addFlash('success', 'Votre avis a été modifié avec succès');
+            return $this->redirectToRoute('app_quiz_final_results');
+        }
+        
+        $this->addFlash('error', 'Données invalides');
+        return $this->redirectToRoute('app_quiz_final_results');
+    }
+
     #[Route('/quiz/feedback/save', name: 'app_quiz_feedback_save', methods: ['POST'])]
     public function saveFeedback(Request $request, EntityManagerInterface $em): Response
     {
         $feedback = new Feedback();
         
-        // Créer le même formulaire que dans le template
         $form = $this->createFormBuilder($feedback)
             ->add('etoiles', IntegerType::class, [
                 'label' => 'Note (0 à 5)',
@@ -324,7 +374,13 @@ class QuizController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Associer l'utilisateur connecté
+            // Modérer le commentaire avant de le sauvegarder
+            $originalComment = $feedback->getComments();
+            if ($originalComment) {
+                $moderatedComment = $this->moderationService->moderateContent($originalComment);
+                $feedback->setComments($moderatedComment);
+            }
+            
             $user = $this->getUser();
             if ($user) {
                 $feedback->setUserId($user->getId());
@@ -333,57 +389,26 @@ class QuizController extends AbstractController
                 $feedback->setUserId(null);
             }
 
+            $feedback->setCreatedAt(new \DateTime());
             $em->persist($feedback);
             $em->flush();
 
-            $this->addFlash('success', 'Merci pour votre avis !');
-        }
-
-        // REDIRECTION vers la page des résultats finaux du quiz
-        return $this->redirectToRoute('app_quiz_final_results');
-    }
-
-    #[Route('/quiz/feedback/{id}/edit', name: 'app_quiz_feedback_edit', methods: ['GET', 'POST'])]
-    public function editFeedback(Request $request, Feedback $feedback, EntityManagerInterface $em): Response
-    {
-        // Vérifier que le feedback appartient à l'utilisateur connecté
-        $user = $this->getUser();
-        if (!$user || $feedback->getUserId() !== $user->getId()) {
-            throw $this->createAccessDeniedException('Vous ne pouvez pas modifier ce feedback.');
-        }
-
-        // Traiter directement les données du formulaire sans créer de formulaire Symfony
-        if ($request->isMethod('POST')) {
-            $etoiles = $request->request->get('etoiles');
-            $comments = $request->request->get('comments');
-
-            // Valider et mettre à jour les données
-            if ($etoiles !== null && $comments !== null) {
-                $feedback->setEtoiles((int)$etoiles);
-                $feedback->setComments($comments);
-                
-                $em->flush();
-                
-                // Mettre à jour les données en session pour l'affichage
-                $session = $request->getSession();
-                $quizResults = $session->get('quiz_results');
-                if ($quizResults && isset($quizResults['userFeedback'])) {
-                    $quizResults['userFeedback'] = $feedback;
-                    $session->set('quiz_results', $quizResults);
-                }
-                
-                $this->addFlash('success', 'Votre avis a été modifié avec succès.');
+            $session = $request->getSession();
+            $quizResults = $session->get('quiz_results');
+            if ($quizResults) {
+                $quizResults['userFeedback'] = $feedback;
+                $session->set('quiz_results', $quizResults);
             }
+
+            $this->addFlash('success', 'Votre avis a été enregistré avec succès.');
         }
 
-        // Toujours rediriger vers la page des résultats finaux
         return $this->redirectToRoute('app_quiz_final_results');
     }
 
     #[Route('/quiz/feedback/{id}', name: 'app_quiz_feedback_delete', methods: ['POST'])]
     public function deleteFeedback(Request $request, Feedback $feedback, EntityManagerInterface $em): Response
     {
-        // Vérifier que le feedback appartient à l'utilisateur connecté
         $user = $this->getUser();
         if (!$user || $feedback->getUserId() !== $user->getId()) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas supprimer ce feedback.');
@@ -393,7 +418,6 @@ class QuizController extends AbstractController
             $em->remove($feedback);
             $em->flush();
             
-            // Mettre à jour les données en session pour l'affichage
             $session = $request->getSession();
             $quizResults = $session->get('quiz_results');
             if ($quizResults && isset($quizResults['userFeedback'])) {
@@ -410,18 +434,15 @@ class QuizController extends AbstractController
     #[Route('/questionnaire/feedback', name: 'app_questionnaire_feedback')]
     public function feedbackList(EntityManagerInterface $em): Response
     {
-        // Récupérer tous les feedbacks triés par date décroissante
         $feedbackRepository = $em->getRepository(Feedback::class);
         $allFeedbacks = $feedbackRepository->findBy([], ['createdAt' => 'DESC']);
 
-        // Regrouper par utilisateur et garder uniquement le dernier vrai commentaire
         $lastUserFeedbacks = [];
         $processedUsers = [];
         
         foreach ($allFeedbacks as $feedback) {
             $userId = $feedback->getUserId();
             
-            // Vérifier si c'est un vrai commentaire (pas réponse automatique)
             if ($feedback->getComments() && 
                 $feedback->getComments() !== "Réponse automatique (Quiz)" && 
                 trim($feedback->getComments()) !== "" &&
@@ -452,9 +473,9 @@ class QuizController extends AbstractController
         $score = $quizResults['score'];
         $total = $quizResults['total'];
 
-        // Vérifier que le score est entre 5 et 10
-        if ($score < 5 || $score > 10) {
-            $this->addFlash('error', 'Le certificat n\'est disponible que pour un score entre 5 et 10. Votre score: ' . $score . '/' . $total);
+        $percentage = ($score / $total) * 100;
+        if ($percentage < 50) {
+            $this->addFlash('error', 'Le certificat n\'est disponible que pour un score de 50% ou plus. Votre score: ' . round($percentage) . '% (' . $score . '/' . $total . ')');
             return $this->redirectToRoute('app_quiz_final_results');
         }
 
@@ -464,7 +485,6 @@ class QuizController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
 
-        // Récupérer l'événement
         $event = $this->eventRepository->find($eventId);
         if (!$event) {
             $this->addFlash('error', 'Événement non trouvé.');
@@ -472,7 +492,7 @@ class QuizController extends AbstractController
         }
 
         try {
-            $percentage = round(($score / $total) * 100);
+            $percentage = round($percentage);
             $date = (new \DateTime())->format('d/m/Y');
 
             $html = '<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -555,5 +575,64 @@ class QuizController extends AbstractController
         } catch (\Exception $e) {
             return new Response('Erreur: ' . $e->getMessage());
         }
+    }
+
+    #[Route('/api/quiz/init', name: 'api_quiz_init', methods: ['POST'])]
+    public function initQuizApi(Request $request): JsonResponse
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+            $eventId = $data['event_id'] ?? null;
+
+            $session = new QuizSession();
+            $session->setIpAddress($request->getClientIp());
+            $session->setUserAgent($request->headers->get('User-Agent'));
+
+            if ($this->getUser()) {
+                $session->setUser($this->getUser());
+            }
+
+            if ($eventId) {
+                $event = $this->eventRepository->find($eventId);
+                if ($event) {
+                    $session->setEvent($event);
+                }
+            }
+
+            $this->em->persist($session);
+            $this->em->flush();
+
+            return new JsonResponse([
+                'success' => true,
+                'session_token' => $session->getSessionToken(),
+                'message' => 'Session initialisée avec reCAPTCHA.'
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
+
+    #[Route('/api/quiz/verify-recaptcha', name: 'api_quiz_verify_recaptcha', methods: ['POST'])]
+    public function verifyRecaptchaApi(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $sessionToken = $data['session_token'] ?? null;
+        $recaptchaToken = $data['recaptcha_token'] ?? null;
+
+        if (!$sessionToken || !$recaptchaToken) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Token de session ou reCAPTCHA manquant.'
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        return new JsonResponse([
+            'success' => true,
+            'message' => 'Mode développement - reCAPTCHA accepté'
+        ]);
     }
 }

@@ -1,4 +1,11 @@
 {% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
+{% endblock %}
+
 {% block title %}{{ currentEvent is defined and currentEvent.id is defined ? 'Modifier' : 'Nouvel' }} Événement{% endblock %}
 
 {% block admin_content %}

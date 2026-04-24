@@ -6,6 +6,8 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
     <style>
         * {
             margin: 0;

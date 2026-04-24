@@ -1,4 +1,11 @@
 {% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
+{% endblock %}
+
 {% block title %}Modifier Catégorie{% endblock %}
 
 {% block admin_content %}

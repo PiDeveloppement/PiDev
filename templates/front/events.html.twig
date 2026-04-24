@@ -4,6 +4,8 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
     <style>
         .events-vitrine {

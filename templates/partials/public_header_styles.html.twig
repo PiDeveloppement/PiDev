@@ -1,0 +1,227 @@
+/* Navbar aligned with landing dimensions */
+.portal-navbar {
+    height: 80px;
+    padding: 0 60px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #ffffff;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+}
+
+.portal-nav-container {
+    width: 100%;
+    padding: 0 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.portal-logo-wrap img {
+    width: auto;
+    height: 44px;
+    max-width: 180px;
+    object-fit: contain;
+    display: block;
+}
+
+.portal-nav-links {
+    display: flex;
+    gap: 40px;
+    position: relative;
+    top: -4px;
+    align-items: center;
+}
+
+.portal-nav-link {
+    font-size: 15px;
+    font-weight: 500;
+    color: #1e293b;
+    text-decoration: none;
+}
+
+.portal-nav-link:hover {
+    color: #0D47A1;
+}
+
+.portal-nav-link.active {
+    color: #0D47A1;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 2px solid #2563eb;
+    padding-bottom: 2px;
+}
+
+.portal-account-menu {
+    position: relative;
+}
+
+.portal-account-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 10px 4px 6px;
+    color: #ffffff;
+    min-height: 42px;
+    min-width: 164px;
+    max-width: 220px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 24px;
+    cursor: pointer;
+    list-style: none;
+    border: none;
+    outline: none;
+}
+
+.portal-account-avatar {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.portal-account-meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+    min-width: 0;
+}
+
+.portal-account-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.portal-account-role {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.portal-account-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    padding: 8px 0;
+    min-width: 200px;
+    display: none;
+}
+
+.portal-account-menu[open] .portal-account-dropdown {
+    display: block;
+}
+
+.portal-account-action {
+    display: block;
+    width: 100%;
+    padding: 10px 20px;
+    text-align: left;
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: #1e293b;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.portal-account-action:hover {
+    background: #f8fafc;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    position: relative;
+    top: -4px;
+    min-height: 42px;
+}
+
+.btn-login {
+    padding: 10px 24px;
+    background: transparent;
+    border: 2px solid #2563eb;
+    color: #2563eb;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-signup {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: #ffffff;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.portal-translate {
+    position: relative;
+    margin-right: 12px;
+}
+
+.portal-translate-btn {
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196F3;
+    border: 1px solid #2196F3;
+    border-radius: 20px;
+    padding: 8px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.portal-translate-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    padding: 8px 0;
+    min-width: 180px;
+    display: none;
+    z-index: 1001;
+}
+
+.portal-translate-menu.open {
+    display: block;
+}
+
+.portal-translate-opt {
+    display: block;
+    width: 100%;
+    padding: 10px 20px;
+    text-align: left;
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: #1e293b;
+    cursor: pointer;
+}
+
+.portal-translate-opt:hover {
+    background: #f8fafc;
+}

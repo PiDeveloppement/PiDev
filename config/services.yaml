@@ -54,7 +54,7 @@ services:
         arguments:
             $fromEmail: '%env(string:MAILER_FROM)%'
 
-    App\Service\AI\OllamaClient:
+    App\Service\Ai\OllamaClient:
         arguments:
             $baseUrl: '%ollama_base_url%'
             $model: '%ollama_model%'

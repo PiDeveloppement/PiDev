@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Service\AI;
+namespace App\Service\Ai;
 
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -11,71 +11,129 @@ class OllamaClient
         private readonly HttpClientInterface $httpClient,
         private readonly string $baseUrl,
         private readonly string $model,
-        private readonly int $timeoutSeconds = 60
+        private readonly int $timeoutSeconds
     ) {
     }
 
-    public function generateResponse(string $prompt, array $context = []): string
+    /**
+     * @param array<int,array{role:string,content:string}> $messages
+     */
+    public function chat(array $messages): string
+    {
+        $preferredModel = $this->model;
+
+        $result = $this->requestChat($preferredModel, $messages);
+        if ($result['ok']) {
+            return $result['content'];
+        }
+
+        $error = $result['error'];
+        if (stripos($error, 'not found') !== false) {
+            $installed = $this->getInstalledModels();
+            if ($installed !== []) {
+                $fallbackModel = $installed[0];
+                $fallbackResult = $this->requestChat($fallbackModel, $messages);
+                if ($fallbackResult['ok']) {
+                    return $fallbackResult['content'];
+                }
+            }
+
+            throw new \RuntimeException(
+                "Aucun modele utilisable. Le modele configure '{$preferredModel}' est introuvable. "
+                . "Installe-le avec: ollama pull {$preferredModel}"
+            );
+        }
+
+        throw new \RuntimeException('Erreur Ollama: ' . $error);
+    }
+
+    /**
+     * @param array<int,array{role:string,content:string}> $messages
+     * @return array{ok:bool,content:string,error:string}
+     */
+    private function requestChat(string $model, array $messages): array
     {
         try {
-            $messages = $this->buildMessages($prompt, $context);
-
             $response = $this->httpClient->request('POST', rtrim($this->baseUrl, '/') . '/api/chat', [
-                'timeout' => $this->timeoutSeconds,
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ],
                 'json' => [
-                    'model' => $this->model,
+                    'model' => $model,
                     'messages' => $messages,
                     'stream' => false,
+                    'options' => [
+                        'temperature' => 0,
+                        'top_p' => 0.1,
+                        'seed' => 42,
+                    ],
                 ],
+                'timeout' => $this->timeoutSeconds,
             ]);
-
-            $result = $response->toArray();
-
-            return $result['message']['content'] ?? 'No response generated';
         } catch (TransportExceptionInterface $e) {
-            throw new \RuntimeException('Failed to connect to Ollama: ' . $e->getMessage());
-        } catch (\Exception $e) {
-            throw new \RuntimeException('Ollama request failed: ' . $e->getMessage());
+            throw new \RuntimeException('Impossible de contacter Ollama. Verifiez que le service est lance.', 0, $e);
         }
-    }
 
-    public function isAvailable(): bool
-    {
-        try {
-            $response = $this->httpClient->request('GET', rtrim($this->baseUrl, '/') . '/api/tags', [
-                'timeout' => 5,
-            ]);
+        $status = $response->getStatusCode();
+        $payload = $response->toArray(false);
 
-            return $response->getStatusCode() === 200;
-        } catch (\Exception) {
-            return false;
-        }
-    }
-
-    private function buildMessages(string $prompt, array $context): array
-    {
-        $messages = [
-            [
-                'role' => 'system',
-                'content' => 'You are a helpful assistant for EventFlow, an event management platform.',
-            ],
-        ];
-
-        if (!empty($context)) {
-            $messages[] = [
-                'role' => 'system',
-                'content' => 'Context: ' . json_encode($context),
+        if ($status >= 400) {
+            $errorMessage = isset($payload['error']) ? (string) $payload['error'] : 'Erreur Ollama inconnue.';
+            return [
+                'ok' => false,
+                'content' => '',
+                'error' => $errorMessage,
             ];
         }
 
-        $messages[] = [
-            'role' => 'user',
-            'content' => $prompt,
-        ];
+        $content = (string) ($payload['message']['content'] ?? '');
+        if ($content === '') {
+            return [
+                'ok' => false,
+                'content' => '',
+                'error' => 'Reponse Ollama vide.',
+            ];
+        }
 
-        return $messages;
+        return [
+            'ok' => true,
+            'content' => trim($content),
+            'error' => '',
+        ];
+    }
+
+    /**
+     * @return string[]
+     */
+    private function getInstalledModels(): array
+    {
+        try {
+            $response = $this->httpClient->request('GET', rtrim($this->baseUrl, '/') . '/api/tags', [
+                'timeout' => 10,
+            ]);
+            $payload = $response->toArray(false);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $models = [];
+        if (!isset($payload['models']) || !is_array($payload['models'])) {
+            return $models;
+        }
+
+        foreach ($payload['models'] as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $name = isset($row['name']) ? trim((string) $row['name']) : '';
+            if ($name !== '') {
+                $models[] = $name;
+            }
+        }
+
+        return array_values(array_unique($models));
+    }
+
+    public function getModel(): string
+    {
+        return $this->model;
     }
 }

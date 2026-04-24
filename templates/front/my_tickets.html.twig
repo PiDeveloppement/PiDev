@@ -4,6 +4,8 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
     <style>
         .tickets-page {
             margin-top: 80px;
@@ -633,7 +635,7 @@
                                     <a class="ticket-btn" href="{{ path('app_public_event_show', {'id': eventItem.id}) }}">Voir événement</a>
                                 {% endif %}
                                 {% if eventItem and ticket.isUsed %}
-                                    <a class="ticket-btn" href="{{ path('app_quiz_start', {'event_id': eventItem.id}) }}" style="background: #f3e9ff; color: #6f2dbd; border-color: #d8b4f8;">🎯 Passer le Quiz</a>
+                                    <a class="ticket-btn" href="{{ path('app_quiz_start') }}?event_id={{ eventItem.id }}" style="background: #f3e9ff; color: #6f2dbd; border-color: #d8b4f8;">🎯 Passer le Quiz</a>
                                 {% endif %}
                             </div>
                         </article>

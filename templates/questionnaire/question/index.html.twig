@@ -3,12 +3,38 @@
 {% block title %}Gestion des Questions{% endblock %}
 
 {% block stylesheets %}
-{{ parent() }}
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg:        #ffffff;
-    --card-bg:   #f8fafc;
+    {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg:        #ffffff;
+        --card-bg:   #f8fafc;
+        --border:    #e2e8f0;
+        --text:      #1e293b;
+        --muted:     #64748b;
+        --accent:    #2563eb;
+        --green:     #d1fae5;
+        --green-t:   #065f46;
+        --mint:      #cffafe;
+        --mint-border: #67e8f9;
+        --lavender:  #e0e7ff;
+        --lav-border: #a5b4fc;
+        --peach:     #fed7aa;
+        --peach-border: #fdba74;
+        --sky:       #dbeafe;
+        --sky-border: #93c5fd;
+        --yellow:    #fef3c7;
+        --yellow-border: #fbbf24;
+        --red:       #fee2e2;
+        --red-t:     #dc2626;
+        --shadow:    0 1px 3px rgba(0,0,0,0.08);
+        --shadow-md: 0 4px 14px rgba(0,0,0,0.10);
+        --radius:    12px;
+        --ff:        'Plus Jakarta Sans', sans-serif;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
     --border:    #e2e8f0;
     --text:      #1e293b;
     --muted:     #64748b;
