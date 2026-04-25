@@ -15,32 +15,39 @@ class ManagementAssistantService
      */
     public function ask(string $question, array $history = []): string
     {
+        // Point d'entree principal de l'assistant de gestion.
         $question = trim($question);
         if ($question === '') {
             return 'Pose une question pour commencer.';
         }
 
+        // Nettoyer et normaliser la question pour fiabiliser les comparaisons metier.
         $question = $this->repairCommonMojibake($question);
         $normalizedQuestion = $this->normalizeForMatch($question);
         if ($normalizedQuestion === '') {
             return 'Pose une question pour commencer.';
         }
 
+        // Reponse rapide aux salutations sans appeler le modele.
         if ($this->containsAny($normalizedQuestion, ['salut', 'bonjour', 'hello', 'bonsoir', 'coucou'])) {
             return $this->buildHelpAnswer('aide') ?? 'Pose une question claire sur Sponsor, Budget ou Depense.';
         }
 
+        // Le chatbot est volontairement limite au perimetre Sponsor/Budget/Depense.
         if (!$this->isInScopeQuestion($normalizedQuestion)) {
             return 'Hors perimetre gestion';
         }
 
+        // Charger le contexte temps reel qui servira a construire les reponses fiables.
         $context = $this->contextProvider->getContext();
 
+        // Pour les questions frequentes, on privilegie une reponse deterministe plutot qu'un appel LLM.
         $deterministic = $this->buildDeterministicAnswer($normalizedQuestion, $context);
         if ($deterministic !== null) {
             return $deterministic;
         }
 
+        // Sinon, on prepare un prompt strict et borne pour interroger Ollama.
         $messages = [
             [
                 'role' => 'system',
@@ -62,6 +69,7 @@ class ManagementAssistantService
             ],
         ];
 
+        // L'historique utilisateur/assistant recent est ajoute pour garder le contexte conversationnel.
         foreach ($this->sanitizeHistory($history) as $item) {
             $messages[] = $item;
         }
@@ -71,6 +79,7 @@ class ManagementAssistantService
             'content' => $question,
         ];
 
+        // Appel au modele local puis post-traitement fort pour eviter les hallucinations metier.
         $answer = $this->ollamaClient->chat($messages);
         $answer = $this->repairCommonMojibake($answer);
         $answer = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $answer) ?? $answer;
@@ -93,6 +102,7 @@ class ManagementAssistantService
      */
     private function sanitizeHistory(array $history): array
     {
+        // On ne garde que les tours valides user/assistant et on limite leur taille.
         $normalized = [];
 
         foreach ($history as $entry) {
@@ -118,6 +128,7 @@ class ManagementAssistantService
 
     private function isInScopeQuestion(string $question): bool
     {
+        // Liste de mots-cles metier qui definissent le perimetre autorise.
         return $this->containsAny($question, [
             'sponsor', 'sponsors',
             'budget', 'budgets', 'rentabilite', 'deficit', 'revenu', 'revenus',
@@ -133,6 +144,7 @@ class ManagementAssistantService
      */
     private function buildDeterministicAnswer(string $question, array $context): ?string
     {
+        // Ordre de priorite des reponses deterministes: aide, resume global, budgets critiques, sponsors, etc.
         $help = $this->buildHelpAnswer($question);
         if ($help !== null) {
             return $help;
@@ -193,6 +205,7 @@ class ManagementAssistantService
 
     private function buildHelpAnswer(string $question): ?string
     {
+        // Petite reponse guide pour montrer a l'utilisateur quels types de questions sont supportes.
         if (!$this->containsAny($question, ['aide', 'help', 'exemples', 'que peux tu'])) {
             return null;
         }
@@ -217,6 +230,7 @@ class ManagementAssistantService
      */
     private function buildGlobalSummaryAnswer(string $question, array $context): ?string
     {
+        // Construit une synthese globale a partir des aggregates budget/depense/sponsor.
         $isGlobalIntent =
             $this->containsAny($question, ['resume global', 'resum global', 'rsum global', 'vue globale', 'bilan global', 'kpi global'])
             || (
@@ -279,6 +293,7 @@ class ManagementAssistantService
      */
     private function enforceNoRawContextLeak(string $answer, string $normalizedQuestion, array $context): string
     {
+        // Si le modele renvoie le JSON brut du contexte, on reformate en synthese lisible.
         $looksLikeContextLeak =
             stripos($answer, 'Contexte de gestion JSON') !== false
             || preg_match('/\{.*"budgets".*"depenses".*"sponsors".*\}/s', $answer) === 1;
@@ -309,6 +324,7 @@ class ManagementAssistantService
      */
     private function buildCriticalBudgetsAnswer(string $question, array $context): ?string
     {
+        // Reponse specialisee pour les budgets a rentabilite negative.
         $isCriticalQuestion =
             $this->containsAny($question, [
                 'budget critique', 'budgets critiques', 'budget en deficit', 'budgets en deficit',
@@ -390,6 +406,7 @@ class ManagementAssistantService
      */
     private function buildTopDepenseCategoriesAnswer(string $question, array $context): ?string
     {
+        // Reponse specialisee pour les categories de depense les plus lourdes.
         $isCategoryQuestion = $this->containsAny($question, [
             'categorie de depense', 'categories de depense', 'depenses par categorie',
             'top categories', 'coutent le plus',
@@ -776,6 +793,7 @@ class ManagementAssistantService
      */
     private function buildSpecificSponsorContributionAnswer(string $question, array $sponsors): ?string
     {
+        // Extraction de la contribution d'une entreprise precise si son nom est reconnu dans la question.
         $companyMap = isset($sponsors['companyContributions']) && is_array($sponsors['companyContributions'])
             ? $sponsors['companyContributions']
             : [];
@@ -815,6 +833,7 @@ class ManagementAssistantService
      */
     private function buildSponsorEventsAnswer(string $question, array $context): ?string
     {
+        // Reponse specialisee: lister les evenements deja sponsorises par une entreprise donnee.
         $looksLikeSponsorEventQuestion =
             $this->containsAny($question, ['evenement', 'evenements', 'event', 'events'])
             && $this->containsAny($question, ['sponsorise', 'sponsorises', 'sponsoris', 'partenaire']);
@@ -873,6 +892,7 @@ class ManagementAssistantService
      */
     private function resolveCompanyFromQuestion(string $question, array $companyNames): ?string
     {
+        // Resolution souple du nom d'entreprise: match direct puis match par tokens.
         $normalizedQuestion = $this->normalizeForMatch($question);
         if ($normalizedQuestion === '') {
             return null;
@@ -964,6 +984,7 @@ class ManagementAssistantService
      */
     private function normalizeAssistantOutput(string $text): string
     {
+        // Uniformiser la sortie finale pour garder un format exploitable dans l'interface.
         $text = $this->repairCommonMojibake($text);
         $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? $text;
         $text = str_replace(['€', ' EUR', ' eur', ' Euros', ' euros'], [' DT', ' DT', ' DT', ' DT', ' DT'], $text);
@@ -1089,6 +1110,7 @@ class ManagementAssistantService
      */
     private function enforceNoUnsupportedTimeClaims(string $answer, string $normalizedQuestion, array $context): string
     {
+        // Bloquer les affirmations mensuelles/annuelles si le contexte ne contient pas cette granularite.
         $isSponsorContributionTopic = $this->containsAny($normalizedQuestion, [
             'contribution', 'contributions', 'mensuel', 'annuel', 'par mois', 'par an', 'annee', 'annees',
         ]);
@@ -1123,6 +1145,7 @@ class ManagementAssistantService
      */
     private function enforceNoOutOfScopeRefusal(string $answer, string $normalizedQuestion, array $context): string
     {
+        // Si le modele refuse a tort une question valide, on tente une reponse metier de secours.
         $normalizedAnswer = $this->normalizeForMatch($answer);
         $looksLikeBadRefusal =
             $this->containsAny($normalizedAnswer, ['je suis desole', 'je ne peux pas', 'hors perimetre', 'informations privees', 'confidenti'])

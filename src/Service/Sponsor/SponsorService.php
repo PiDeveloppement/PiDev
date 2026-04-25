@@ -25,6 +25,7 @@ class SponsorService
      */
     public function fetchEventsCatalog(bool $activeOnly = false): array
     {
+        // Lecture directe SQL pour recuperer un catalogue evenementiel enrichi du volume de participants.
         $sql = 'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity, e.image_url,
                       COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
                 FROM event e';
@@ -55,6 +56,7 @@ class SponsorService
      */
     public function buildEventChoices(?array $events = null): array
     {
+        // Les choix affiches au sponsor sont construits a partir des evenements exploitables.
         $source = $events ?? $this->fetchEventsCatalog();
         $choices = [];
 
@@ -138,6 +140,7 @@ class SponsorService
      */
     public function buildRecommendedEvents(array $events, UserModel $user, string $email): array
     {
+        // La recommandation se base sur l'historique de contribution du sponsor.
         $contributionsByEvent = $this->sponsorRepository->getMyContributionsByEvent($email);
         $ranked = $this->rankEventsForSponsor($events, $contributionsByEvent);
 
@@ -151,11 +154,12 @@ class SponsorService
      */
     private function rankEventsForSponsor(array $events, array $contributionsByEvent): array
     {
+        // Chaque evenement recoit un score afin de prioriser ceux ayant le plus de valeur sponsor.
         $scored = [];
         foreach ($events as $event) {
             $score = 0.0;
 
-            // New business rule: prioritize visibility by participant volume.
+            // 1) Plus il y a de participants, plus la visibilite sponsor est forte.
             $participantsCount = max(0, (int) ($event['participantsCount'] ?? 0));
             $capacity = max(0, (int) ($event['capacity'] ?? 0));
             $fillRate = $capacity > 0 ? min(1, $participantsCount / $capacity) : 0;
@@ -163,7 +167,7 @@ class SponsorService
             $score += $participantsCount * 100;
             $score += $fillRate * 20;
 
-            // Small continuity bonus if event title overlaps with previously sponsored titles.
+            // 2) Bonus de continuite si le sponsor a deja soutenu un evenement similaire.
             $title = mb_strtolower((string) ($event['title'] ?? ''));
             foreach ($contributionsByEvent as $eventTitle => $amount) {
                 if ((float) $amount <= 0) {
@@ -177,7 +181,7 @@ class SponsorService
                 }
             }
 
-            // Prefer upcoming events that are not too far in time.
+            // 3) Bonus temporel pour les evenements suffisamment proches pour une action commerciale.
             $startDate = $event['startDate'] ?? null;
             if ($startDate instanceof \DateTimeInterface) {
                 $days = (int) ((int) $startDate->format('U') - time()) / 86400;
@@ -311,6 +315,7 @@ class SponsorService
      */
     public function buildEventTypeStats(array $events): array
     {
+        // Regrouper les evenements en grandes familles pour un affichage plus parlant.
         $stats = [
             'Conference' => 0,
             'Atelier' => 0,
@@ -349,6 +354,7 @@ class SponsorService
      */
     public function buildEventMonthStats(array $events, int $maxMonths = 6): array
     {
+        // Construire une projection par mois pour les prochains evenements sponsorisables.
         $now = new \DateTimeImmutable('first day of this month 00:00:00');
         $stats = [];
 
@@ -386,6 +392,7 @@ class SponsorService
      */
     public function splitEventsByStatus(array $events): array
     {
+        // On separe les evenements archives des evenements encore sponsorisables.
         $sponsorable = [];
         $archived = [];
         $ongoingCount = 0;
@@ -417,6 +424,7 @@ class SponsorService
      */
     public function buildSponsorHistory(array $sponsors): array
     {
+        // L'historique sponsor assemble les donnees sponsor + evenement pour le portail.
         if ($sponsors === []) {
             return [];
         }

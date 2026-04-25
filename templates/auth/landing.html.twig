@@ -86,7 +86,11 @@
             border-radius: 20px;
             padding: 4px 10px 4px 6px;
             color: #ffffff;
+            box-sizing: border-box;
             min-height: 42px;
+            width: 184px;
+            min-width: 184px;
+            max-width: 184px;
             cursor: pointer;
         }
 
@@ -155,12 +159,16 @@
             display: flex;
             flex-direction: column;
             line-height: 1.1;
+            min-width: 0;
         }
 
         .participant-chip-name {
             font-size: 14px;
             font-weight: 700;
             color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .participant-chip-role {
@@ -656,6 +664,8 @@
             </div>
 
             <div class="nav-buttons">
+                {% include 'partials/public_auth_buttons.html.twig' %}
+                <div style="display:none;">
                 {% if isParticipantUser %}
                     <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
                     <details class="participant-chip-menu">
@@ -676,6 +686,7 @@
                     <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
                     <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
                 {% endif %}
+                </div>
             </div>
         </div>
     </nav>

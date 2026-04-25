@@ -52,13 +52,14 @@ class SponsorController extends AbstractController
         $eventId = (int) $request->query->get('event_id', 0);
         $sort = (string) $request->query->get('sort', 'default');
 
+        // 2) Charger les sponsors correspondant aux filtres admin.
         $sponsors = $this->sponsorRepository->searchForAdmin(
             $search !== '' ? $search : null,
             $company !== '' ? $company : null,
             $eventId > 0 ? $eventId : null
         );
 
-        // Server-side sorting
+        // 3) Appliquer le tri cote serveur avant de construire les KPI.
         usort($sponsors, function (Sponsor $a, Sponsor $b) use ($sort): int {
             switch ($sort) {
                 case 'name-asc':
@@ -81,7 +82,7 @@ class SponsorController extends AbstractController
         $events = $this->sponsorService->fetchEventsCatalog();
         $eventTitleMap = $this->sponsorService->buildEventTitleMapForSponsors($sponsors);
 
-        // Grouper les contributions par entreprise pour afficher une seule carte par societe.
+        // 4) Regrouper les lignes sponsor par entreprise pour afficher une seule carte synthese.
         $companyCardsMap = [];
         foreach ($sponsors as $sponsor) {
             $companyName = trim((string) ($sponsor->getCompanyName() ?: '-'));
@@ -141,7 +142,7 @@ class SponsorController extends AbstractController
         $latestByContact = [];
         $latestContributionId = 0;
 
-        // 2) Construire un indicateur d'inactivite par contact base sur la derniere contribution sponsor.
+        // 5) Construire un indicateur d'inactivite par contact a partir de la derniere contribution.
         foreach ($sponsors as $item) {
             $contactKey = mb_strtolower(trim((string) ($item->getContactEmail() ?: $item->getCompanyName() ?: ('sponsor_' . $item->getId()))));
             $contributionId = (int) ($item->getId() ?? 0);
@@ -175,7 +176,7 @@ class SponsorController extends AbstractController
             }
         }
 
-        // Inactivite detectee par l'ecart entre la derniere contribution du sponsor et la contribution la plus recente du systeme.
+        // 6) Detecter les sponsors "froids" en comparant leur derniere activite au rythme global.
         $inactiveSponsorAlerts = array_values(array_filter($latestByContact, static function (array $row) use ($latestContributionId): bool {
             $contributionsSinceLast = max(0, $latestContributionId - (int) ($row['lastContributionId'] ?? 0));
 
@@ -187,7 +188,7 @@ class SponsorController extends AbstractController
             $contributionTotal = (float) ($row['contributionTotal'] ?? 0.0);
             $sponsorshipCount = (int) ($row['sponsorshipCount'] ?? 0);
 
-            // Scoring metier: combine recence contribution, engagement financier et profondeur de sponsoring.
+            // 7) Produire un score de risque metier pour prioriser les relances.
             $riskScore = (int) round(
                 min(
                     100,
@@ -230,7 +231,7 @@ class SponsorController extends AbstractController
         });
         $inactiveSponsorAlerts = array_slice($inactiveSponsorAlerts, 0, 8);
 
-        // 3) Charger les statistiques principales qui alimentent les KPI et graphiques.
+        // 8) Charger les statistiques principales qui alimentent les KPI et graphiques.
         $stats = [
             'total' => $this->sponsorRepository->getTotalSponsors(),
             'totalContribution' => $this->sponsorRepository->getTotalContribution(),
@@ -239,10 +240,10 @@ class SponsorController extends AbstractController
             'topCompanies' => $this->sponsorRepository->getTopCompaniesByContribution(),
         ];
 
-        // Palette commune pour garder une identite visuelle coherente sur tous les graphes.
+        // 9) Definir une palette commune pour garder une identite visuelle coherente.
         $palette = ['#7c3aed', '#2563eb', '#059669', '#d97706', '#e11d48', '#0891b2', '#ec4899', '#6366f1'];
 
-        // 4) Graphe barre: comparaison des montants de contribution par evenement (top 5).
+        // 10) Graphe barre: comparaison des montants de contribution par evenement.
         $topEventContributionMap = array_slice($stats['byEvent'], 0, 5, true);
         $eventLabels = array_values(array_map(static fn (mixed $value): string => (string) $value, array_keys($topEventContributionMap)));
         $eventValues = array_values(array_map(static fn (mixed $value): float => (float) $value, array_values($topEventContributionMap)));
@@ -275,7 +276,7 @@ class SponsorController extends AbstractController
             ],
         ]);
 
-        // 4.b) Graphe droite (vue evenements): volume de sponsors par evenement (top 5, plus lisible).
+        // 11) Graphe horizontal: volume de sponsors par evenement.
         $eventSponsorCountMap = [];
         foreach ($sponsors as $item) {
             $title = (string) ($eventTitleMap[$item->getEventId()] ?? ('Evenement #' . (int) $item->getEventId()));
@@ -321,7 +322,7 @@ class SponsorController extends AbstractController
             ],
         ]);
 
-        // 5) Graphe donut: repartition des top sponsors par contribution totale.
+        // 12) Graphe donut: repartition des top sponsors par contribution totale.
         $topCompanyLabels = array_values(array_map(static fn (mixed $value): string => (string) $value, array_keys($stats['topCompanies'])));
         $topCompanyValues = array_values(array_map(static fn (mixed $value): float => (float) $value, array_values($stats['topCompanies'])));
 
@@ -352,7 +353,7 @@ class SponsorController extends AbstractController
             'cutout' => '62%',
         ]);
 
-        // 5.b) Graphe droite (vue top): nombre de partenariats par sponsor (metrique differente du montant).
+        // 13) Graphe horizontal: nombre de partenariats par sponsor.
         $companyPartnershipCountMap = [];
         foreach ($sponsors as $item) {
             $companyName = (string) ($item->getCompanyName() ?: '-');
@@ -393,7 +394,7 @@ class SponsorController extends AbstractController
             ],
         ]);
 
-        // 6) Graphe radar: vue synthetique (volume sponsors, total, moyenne, evenements couverts).
+        // 14) Graphe radar: vue globale du portefeuille sponsor.
         $overviewChart = $this->chartBuilder->createChart(Chart::TYPE_RADAR);
         $overviewChart->setData([
             'labels' => ['Sponsors', 'Contribution totale (kDT)', 'Moyenne (kDT)', 'Evenements couverts'],
@@ -814,19 +815,6 @@ class SponsorController extends AbstractController
             ));
         }
 
-        if ($isSponsorSession && $request->hasSession()) {
-            $today = (new \DateTimeImmutable())->format('Y-m-d');
-            $sessionKey = 'sponsor_reco_mail_last_sent_' . md5(mb_strtolower(trim($email)));
-            $lastSentAt = (string) $request->getSession()->get($sessionKey, '');
-
-            if ($lastSentAt !== $today) {
-                $sent = $this->sponsorAlertEmailService->sendRecommendationEmailForSponsor($user, $email, $recommendedEvents, $mySponsors);
-                if ($sent) {
-                    $request->getSession()->set($sessionKey, $today);
-                }
-            }
-        }
-
         if ($query !== '') {
             $needle = mb_strtolower($query);
             $mySponsors = array_values(array_filter($mySponsors, function (Sponsor $sponsor) use ($needle): bool {
@@ -860,6 +848,20 @@ class SponsorController extends AbstractController
             $recommendedEvents,
             fn (array $event): bool => $this->sponsorService->resolveEventStatus($event['startDate'] ?? null, $event['endDate'] ?? null)['key'] !== 'termine'
         )), $sort);
+
+        if ($isSponsorSession && $request->hasSession()) {
+            $today = (new \DateTimeImmutable())->format('Y-m-d');
+            $sessionKey = 'sponsor_reco_mail_last_sent_' . md5(mb_strtolower(trim($email)));
+            $lastSentAt = (string) $request->getSession()->get($sessionKey, '');
+
+            if ($lastSentAt !== $today) {
+                $sent = $this->sponsorAlertEmailService->sendRecommendationEmailForSponsor($user, $email, $recommendedEvents, $mySponsors);
+                if ($sent) {
+                    $request->getSession()->set($sessionKey, $today);
+                }
+            }
+        }
+
         $historyItems = $this->sponsorService->buildSponsorHistory($mySponsors);
 
         $eventTypeStats = $this->sponsorService->buildEventTypeStats($allEvents);
@@ -1270,11 +1272,13 @@ class SponsorController extends AbstractController
     }
     private function handleSponsorUploads(Request $request, FormInterface $form, Sponsor $sponsor): void
     {
+        // Upload optionnel du logo sponsor.
         $logoFile = $form->has('logoFile') ? $form->get('logoFile')->getData() : null;
         if ($logoFile instanceof UploadedFile) {
             $sponsor->setLogoUrl($this->storeUploadedFile($request, $logoFile, 'logos'));
         }
 
+        // Upload optionnel du contrat source fourni par le sponsor.
         $contractFile = $form->has('contractFile') ? $form->get('contractFile')->getData() : null;
         if ($contractFile instanceof UploadedFile) {
             $sponsor->setContractUrl($this->storeUploadedFile($request, $contractFile, 'contracts'));
@@ -1283,6 +1287,7 @@ class SponsorController extends AbstractController
 
     private function applySponsorContributionCurrencyConversion(Sponsor $sponsor, FormInterface $form): void
     {
+        // La conversion n'est appliquee que si le formulaire expose une devise differente du TND.
         if (!$form->has('contributionCurrency')) {
             return;
         }
@@ -1299,6 +1304,7 @@ class SponsorController extends AbstractController
 
     private function storeUploadedFile(Request $request, UploadedFile $file, string $bucket): string
     {
+        // Les documents sponsor sont stockes dans public/uploads pour etre accessibles depuis l'interface.
         $projectDir = (string) $this->getParameter('kernel.project_dir');
         $targetDir = $projectDir . '/public/uploads/sponsor/' . $bucket;
 
@@ -1323,6 +1329,7 @@ class SponsorController extends AbstractController
 
     private function createSponsorContractResponse(Sponsor $sponsor, bool $inline, string $backRoute, array $backRouteParams = []): Response
     {
+        // Le contrat est toujours regenere a la demande pour refleter les donnees les plus recentes.
         $pdf = $this->generateContractPdfBytes($sponsor);
         if ($pdf === null) {
             $this->addFlash('error', 'Generation du PDF impossible.');
@@ -1343,6 +1350,7 @@ class SponsorController extends AbstractController
 
     private function generateContractPdfBytes(Sponsor $sponsor): ?string
     {
+        // Le template Twig est rendu en HTML puis converti en PDF via Snappy.
         $event = $this->sponsorService->findEventById((int) $sponsor->getEventId());
         $eventTitle = $event['title'] ?? ($this->sponsorService->getEventTitleById((int) $sponsor->getEventId()) ?? '-');
 
@@ -1365,6 +1373,7 @@ class SponsorController extends AbstractController
 
     private function sendContributionContractEmail(Sponsor $sponsor): bool
     {
+        // Si aucun email n'est saisi, on n'essaie pas de generer un envoi.
         $to = trim((string) $sponsor->getContactEmail());
         if ($to === '') {
             return false;
@@ -1381,6 +1390,7 @@ class SponsorController extends AbstractController
         $filename = 'contrat-sponsor-' . $this->slugifyFilename($company !== '' ? $company : 'eventflow') . '.pdf';
         $from = (string) (getenv('MAILER_FROM') ?: ($_ENV['MAILER_FROM'] ?? 'manaimaryem4@gmail.com'));
 
+        // Le mail contient a la fois une version texte, une version HTML et le contrat en piece jointe.
         $email = (new Email())
             ->from($from)
             ->to($to)
@@ -1417,6 +1427,7 @@ class SponsorController extends AbstractController
      */
     private function buildCsvResponse(array $items, string $filename): Response
     {
+        // On reconstruit les titres d'evenement pour exporter un CSV lisible hors de l'application.
         $eventTitleMap = $this->sponsorService->buildEventTitleMapForSponsors($items);
 
         $response = new StreamedResponse(function () use ($items, $eventTitleMap): void {

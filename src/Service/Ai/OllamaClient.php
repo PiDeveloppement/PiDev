@@ -20,6 +20,7 @@ class OllamaClient
      */
     public function chat(array $messages): string
     {
+        // Le client essaie d'abord le modele configure dans les parametres Symfony.
         $preferredModel = $this->model;
 
         $result = $this->requestChat($preferredModel, $messages);
@@ -27,6 +28,7 @@ class OllamaClient
             return $result['content'];
         }
 
+        // Si le modele est introuvable, on tente automatiquement un modele local deja installe.
         $error = $result['error'];
         if (stripos($error, 'not found') !== false) {
             $installed = $this->getInstalledModels();
@@ -53,6 +55,7 @@ class OllamaClient
      */
     private function requestChat(string $model, array $messages): array
     {
+        // Appel HTTP vers l'API locale Ollama avec options deterministes pour les reponses de gestion.
         try {
             $response = $this->httpClient->request('POST', rtrim($this->baseUrl, '/') . '/api/chat', [
                 'json' => [
@@ -74,6 +77,7 @@ class OllamaClient
         $status = $response->getStatusCode();
         $payload = $response->toArray(false);
 
+        // Toute reponse HTTP >= 400 est transformee en erreur metier explicite.
         if ($status >= 400) {
             $errorMessage = isset($payload['error']) ? (string) $payload['error'] : 'Erreur Ollama inconnue.';
             return [
@@ -83,6 +87,7 @@ class OllamaClient
             ];
         }
 
+        // La reponse utile se trouve dans payload.message.content.
         $content = (string) ($payload['message']['content'] ?? '');
         if ($content === '') {
             return [
@@ -104,6 +109,7 @@ class OllamaClient
      */
     private function getInstalledModels(): array
     {
+        // Interroger Ollama pour connaitre les modeles disponibles localement.
         try {
             $response = $this->httpClient->request('GET', rtrim($this->baseUrl, '/') . '/api/tags', [
                 'timeout' => 10,
@@ -134,6 +140,7 @@ class OllamaClient
 
     public function getModel(): string
     {
+        // Exposer le nom du modele configure pour l'interface admin.
         return $this->model;
     }
 }

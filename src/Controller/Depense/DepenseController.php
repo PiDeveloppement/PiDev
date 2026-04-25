@@ -32,12 +32,14 @@ class DepenseController extends AbstractController
     {
         $this->denyUnlessAdmin();
 
+        // 1) Lire les filtres de recherche et de segmentation des depenses.
         $search = trim((string) $request->query->get('q', ''));
         $budgetId = (int) $request->query->get('budget_id', 0);
         $category = trim((string) $request->query->get('category', ''));
         $period = (string) $request->query->get('period', 'all');
         $financialState = (string) $request->query->get('state', 'all');
 
+        // 2) Construire la requete avec jointure budget pour afficher le contexte financier.
         $qb = $this->depenseRepository->createQueryBuilder('d')
             ->leftJoin('d.budget', 'b')
             ->addSelect('b')
@@ -80,6 +82,7 @@ class DepenseController extends AbstractController
                 break;
         }
 
+        // 3) Executer la requete puis calculer les stats qui alimentent la vue.
         /** @var Depense[] $depenses */
         $depenses = $qb->getQuery()->getResult();
         $budgets = $this->depenseService->fetchBudgets();
@@ -105,6 +108,7 @@ class DepenseController extends AbstractController
     {
         $this->denyUnlessAdmin();
 
+        // Initialiser une depense avec la date du jour et une devise par defaut.
         $depense = new Depense();
         $depense->setExpenseDate(new \DateTimeImmutable());
         $depense->setOriginalCurrency('TND');
@@ -115,6 +119,7 @@ class DepenseController extends AbstractController
         ]);
         $form->handleRequest($request);
 
+        // On rattache explicitement l'objet Budget choisi dans le formulaire.
         if ($form->isSubmitted()) {
             $budgetId = (int) $form->get('budgetId')->getData();
             $budget = $budgetId > 0 ? $this->budgetRepository->find($budgetId) : null;
@@ -133,6 +138,7 @@ class DepenseController extends AbstractController
             }
         }
 
+        // Si le formulaire est valide, on convertit le montant si besoin puis on recalcule le budget.
         if ($form->isSubmitted() && $form->isValid()) {
             $budget = $depense->getBudget();
 
@@ -167,6 +173,7 @@ class DepenseController extends AbstractController
     {
         $this->denyUnlessAdmin();
 
+        // On garde la trace de l'ancien budget pour le resynchroniser si la depense change de rattachement.
         $oldBudget = $depense->getBudget();
         $selectedBudgetId = $oldBudget?->getId();
 
@@ -195,6 +202,7 @@ class DepenseController extends AbstractController
             }
         }
 
+        // L'edition suit la meme logique que la creation, avec resynchronisation des deux budgets.
         if ($form->isSubmitted() && $form->isValid()) {
             $budget = $depense->getBudget();
 
@@ -230,6 +238,7 @@ class DepenseController extends AbstractController
     {
         $this->denyUnlessAdmin();
 
+        // La page detail affiche aussi le titre evenementiel du budget parent pour donner du contexte.
         $budget = $depense->getBudget();
         $eventTitle = '-';
         if ($budget instanceof Budget && $budget->getEventId() !== null) {
@@ -248,6 +257,7 @@ class DepenseController extends AbstractController
     {
         $this->denyUnlessAdmin();
 
+        // Apres suppression, le budget parent est recalculé pour rester coherent.
         if ($this->isCsrfTokenValid('delete_depense_' . $depense->getId(), (string) $request->request->get('_token'))) {
             $budget = $depense->getBudget();
             $this->entityManager->remove($depense);
@@ -287,6 +297,7 @@ class DepenseController extends AbstractController
      */
     private function collectFormErrors(FormInterface $form): array
     {
+        // Normaliser les erreurs Symfony en messages flash lisibles dans l'interface.
         $messages = [];
 
         foreach ($form->getErrors(true, true) as $error) {

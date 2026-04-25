@@ -18,6 +18,7 @@ class BudgetRepository extends ServiceEntityRepository
 
     public function existsForEvent(int $eventId, ?int $excludeId = null): bool
     {
+        // Verifie qu'un evenement ne porte qu'un seul budget actif dans l'application.
         $qb = $this->createQueryBuilder('b')
             ->select('COUNT(b.id)')
             ->andWhere('b.eventId = :eventId')

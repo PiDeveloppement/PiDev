@@ -5,6 +5,11 @@
 {% block stylesheets %}
     {{ parent() }}
     <style>
+        .nav-links .nav-link:nth-child(3) { order: 4; }
+        .nav-links .nav-link:nth-child(4) { order: 5; }
+        .nav-links .nav-link:nth-child(5) { order: 6; }
+        .nav-links .nav-link:nth-child(6) { order: 3; }
+
         .tickets-page {
             margin-top: 80px;
             min-height: 100vh;
@@ -202,6 +207,8 @@
 {% endblock %}
 
 {% block public_content %}
+    {% set role_name = app.user and app.user.role ? (app.user.role.roleName|default('')|lower|trim) : '' %}
+    {% set isSponsorUser = app.user and (('ROLE_SPONSOR' in app.user.roles) or role_name in ['sponsor', 'role_sponsor'] or app.user.roleId == 3) %}
     {% set isParticipantUser = app.user and ('ROLE_ADMIN' not in app.user.roles) and ('ROLE_ORGANISATEUR' not in app.user.roles) and ('ROLE_SPONSOR' not in app.user.roles) %}
     <nav class="navbar">
         <div class="nav-container">
@@ -215,9 +222,14 @@
                 <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}#features'">Fonctionnalités</button>
                 <button class="nav-link" onclick="window.location.href='{{ path('app_feedback_view') }}'">Feedback</button>
                 <button class="nav-link" onclick="window.location.href='{{ path('app_landing') }}#contact'">Contact</button>
+                {% if isSponsorUser %}
+                    <button class="nav-link" onclick="window.location.href='{{ path('app_sponsor_portal') }}'">Recommandations sponsor</button>
+                {% endif %}
             </div>
 
             <div class="nav-buttons">
+                {% include 'partials/public_auth_buttons.html.twig' %}
+                <div style="display:none;">
                 {% if isParticipantUser %}
                     <button class="btn-login" style="border-color:#0eb36f; color:#0b8f58;" onclick="window.location.href='{{ path('app_my_tickets') }}'">Mes billets</button>
                     <details class="participant-chip-menu">
@@ -240,6 +252,7 @@
                     <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
                     <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
                 {% endif %}
+                </div>
             </div>
         </div>
     </nav>
