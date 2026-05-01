@@ -172,10 +172,18 @@ class EventFrontController extends AbstractController
             ->getQuery()
             ->getResult();
 
+        /** @var UserModel|null $user */
+        $user = $this->getUser();
+        $unreadNotificationCount = 0;
+        if ($user instanceof UserModel) {
+            $unreadNotificationCount = $this->notificationService->getUnreadCount($user);
+        }
+
         return $this->render('front/events.html.twig', [
             'events' => $events,
             'categories' => $categories,
             'hasTickets' => $this->currentUserHasTickets($em),
+            'unreadNotificationCount' => $unreadNotificationCount,
         ]);
     }
 

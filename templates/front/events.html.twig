@@ -1118,7 +1118,7 @@
                     }
 
                     updateBadge(badgeNode, 0);
-                    await fetchLatest(root, badge, listNode);
+                    await fetchLatest(root, badgeNode, listNode);
                 } catch (error) {
                     // Keep silent to avoid intrusive UI in header.
                 }
@@ -1160,7 +1160,7 @@
                 roots.forEach(function (root) {
                     const toggle = root.querySelector('[data-notif-toggle]');
                     const dropdown = root.querySelector('[data-notif-dropdown]');
-                    const badge = root.querySelector('[data-notif-badge]');
+                    const badgeNode = root.querySelector('[data-notif-badge]');
                     const list = root.querySelector('[data-notif-list]');
                     const markAll = root.querySelector('[data-notif-mark-all]');
 
@@ -1168,7 +1168,7 @@
                         return;
                     }
 
-                    fetchLatest(root, badge, list);
+                    fetchLatest(root, badgeNode, list);
 
                     toggle.addEventListener('click', function (event) {
                         event.preventDefault();
@@ -1180,14 +1180,14 @@
 
                         dropdown.hidden = isOpen;
                         if (!isOpen) {
-                            fetchLatest(root, badge, list);
+                            fetchLatest(root, badgeNode, list);
                         }
                     });
 
                     if (markAll) {
                         markAll.addEventListener('click', function (event) {
                             event.preventDefault();
-                            markAllAsRead(root, badge, list);
+                            markAllAsRead(root, badgeNode, list);
                         });
                     }
 
@@ -1203,7 +1203,7 @@
                             return;
                         }
 
-                        deleteNotification(root, notificationId, badge, list);
+                        deleteNotification(root, notificationId, badgeNode, list);
                     });
 
                     root.addEventListener('keydown', function (event) {
