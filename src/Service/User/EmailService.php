@@ -16,7 +16,7 @@ class EmailService
     // Configuration SMTP pour Gmail
     private const SMTP_HOST = 'smtp.gmail.com';
     private const SMTP_PORT = 587;
-    private const FROM_EMAIL = 'manaimaryem4@gmail.com';
+    private const FROM_EMAIL = 'sellamiarij7@gmail.com';
     private const FROM_NAME = 'EventFlow';
 
     public function __construct(

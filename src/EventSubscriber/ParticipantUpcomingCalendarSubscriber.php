@@ -28,7 +28,16 @@ class ParticipantUpcomingCalendarSubscriber implements EventSubscriberInterface
     public function onCalendarSetData(CalendarEvent $calendar): void
     {
         $filters = $calendar->getFilters();
-        if (($filters['scope'] ?? null) !== 'participant_upcoming') {
+        $scope = $filters['scope'] ?? null;
+
+        if ($scope === null && isset($filters['filters']) && is_string($filters['filters'])) {
+            $decoded = json_decode($filters['filters'], true);
+            if (is_array($decoded)) {
+                $scope = $decoded['scope'] ?? null;
+            }
+        }
+
+        if ($scope !== 'participant_upcoming') {
             return;
         }
 

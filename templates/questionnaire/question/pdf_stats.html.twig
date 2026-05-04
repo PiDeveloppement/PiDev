@@ -57,7 +57,12 @@
     <!-- Bar chart -->
     {% if stats.byEvent is not empty %}
         <h2>📅 Questions par événement</h2>
-        {% set maxVal = stats.byEvent|length > 0 ? stats.byEvent|max : 1 %}
+        {% set maxVal = 1 %}
+        {% for event, count in stats.byEvent %}
+            {% if count > maxVal %}
+                {% set maxVal = count %}
+            {% endif %}
+        {% endfor %}
         {% for event, count in stats.byEvent %}
             {% set pct = maxVal > 0 ? (count / maxVal * 100) : 0 %}
             <div class="bar-row">

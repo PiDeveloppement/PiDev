@@ -4,20 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}EventFlow{% endblock %}</title>
-    
-    <!-- Font Awesome -->
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('css/atlantafx-custom.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}">
 
     <style>
         * {
@@ -25,7 +19,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
@@ -34,7 +28,6 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Dark Mode Styles */
         body.dark-mode {
             background-color: #1a1a2e;
             color: #e0e0e0;
@@ -80,11 +73,15 @@
         }
 
         body.dark-mode .dropdown-item {
-            color: #e0e0e0;
+            color: #e0e0e0 !important;
         }
 
         body.dark-mode .dropdown-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        body.dark-mode .translation-account-panel {
+            background-color: transparent;
         }
 
         body.dark-mode .stat-card,
@@ -96,14 +93,16 @@
 
         body.dark-mode .stat-value,
         body.dark-mode .chart-title,
-        body.dark-mode .quick-actions-title {
+        body.dark-mode .quick-actions-title,
+        body.dark-mode .event-title {
             color: #ffffff;
         }
 
         body.dark-mode .stat-label,
         body.dark-mode .progress-label,
         body.dark-mode .progress-count,
-        body.dark-mode .event-meta {
+        body.dark-mode .event-meta,
+        body.dark-mode .page-header p {
             color: #b0b0b0;
         }
 
@@ -116,18 +115,11 @@
             background-color: #16213e;
         }
 
-        body.dark-mode .event-title {
-            color: #ffffff;
-        }
-
         body.dark-mode .progress-bar-container {
             background-color: #0f3460;
         }
 
-        body.dark-mode .dashboard-container {
-            background-color: #1a1a2e;
-        }
-
+        body.dark-mode .dashboard-container,
         body.dark-mode main {
             background-color: #1a1a2e;
         }
@@ -141,28 +133,23 @@
             color: #ffffff;
         }
 
-        body.dark-mode .page-header p {
-            color: #b0b0b0;
-        }
-        
         .app-container {
             display: flex;
             min-height: 100vh;
             position: relative;
         }
-        
+
         .public-container {
             width: 100%;
             min-height: 100vh;
         }
     </style>
-    
+
     {% block stylesheets %}{% endblock %}
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
-    {# ✅ Liste des routes publiques (sans sidebar) #}
     {% set public_routes = [
         'app_landing',
         'app_public_events',
@@ -170,56 +157,40 @@
         'app_public_event_show',
         'app_public_event_participation_confirm',
         'app_my_tickets',
-        'app_login', 
-        'app_register', 
-        'app_forgot_password', 
-        'app_reset_password', 
+        'app_login',
+        'app_register',
+        'app_forgot_password',
+        'app_reset_password',
         'app_feedback_view',
         'app_demo_video',
         'app_quiz_start',
         'app_quiz_results',
         'app_quiz_final_results'
     ] %}
-    
-    {# Debug - À SUPPRIMER APRÈS RÉSOLUTION #}
-  {#  <div style="position: fixed; top: 0; left: 0; background: yellow; padding: 10px; z-index: 9999; font-size: 12px; border: 2px solid red;">
-        <strong>DEBUG:</strong><br>
-        Route: <strong>{{ app.request.get('_route') }}</strong><br>
-        Publique: <strong>{{ app.request.get('_route') in public_routes ? 'OUI' : 'NON' }}</strong><br>
-        User: <strong>{{ app.user ? app.user.email : 'NON' }}</strong>
-    </div>
-    #}
     {% set current_route = app.request.get('_route') %}
     {% set is_public = current_route in public_routes %}
     {% set is_management_ai_context = current_route starts with 'app_sponsors_' or current_route starts with 'app_budget_' or current_route starts with 'app_depenses_' %}
-    
+
     {% if is_public %}
-        {# ==================== PAGES PUBLIQUES (sans sidebar) ==================== #}
         <div class="public-container">
             {% block public_content %}{% endblock %}
         </div>
     {% else %}
-        {# ==================== PAGES D'ADMINISTRATION (avec sidebar) ==================== #}
         <div class="app-container" id="app">
-       <!-- Sidebar -->
-<aside class="sidebar" style="width: 220px; display: flex; flex-direction: column;">
-    <div class="sidebar-logo" style="background-color: #0D47A1; padding: 20px 15px; display: flex; flex-direction: column; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-        <img src="{{ asset('images/logo.png') }}" alt="EventFlow" style="width: 120px; height: auto; object-fit: contain;">
-   
-        <p style="color: rgba(255,255,255,0.7); font-size: 12px; margin: 0;">Gestion Événements</p>
-    </div>
-    <!-- Reste du code sidebar... -->
-                
+            <aside class="sidebar" style="width: 220px; display: flex; flex-direction: column;">
+                <div class="sidebar-logo" style="background-color: #0D47A1; padding: 20px 15px; display: flex; flex-direction: column; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <img src="{{ asset('images/logo.png') }}" alt="EventFlow" style="width: 120px; height: auto; object-fit: contain;">
+                    <p style="color: rgba(255,255,255,0.7); font-size: 12px; margin: 0;">Gestion Événements</p>
+                </div>
+
                 <nav style="flex: 1; padding: 25px 15px; overflow-y: auto;">
-                    <!-- Menu dashboard -->
                     <div style="margin-bottom: 4px;">
-                        <a href="{{ path('app_dashboard') }}" class="menu-button {{ app.request.get('_route') == 'app_dashboard' ? 'active' : '' }}">
+                        <a href="{{ path('app_dashboard') }}" class="menu-button {{ current_route == 'app_dashboard' ? 'active' : '' }}">
                             <i class="fas fa-chart-pie" style="width: 20px;"></i>
                             Dashboard
                         </a>
                     </div>
-                    
-                    <!-- Menu événements -->
+
                     <div style="margin-bottom: 4px;">
                         <button class="menu-button" onclick="toggleSubmenu('events-submenu', this)">
                             <i class="fas fa-calendar-alt" style="width: 20px;"></i>
@@ -239,15 +210,13 @@
                                 <i class="fas fa-ticket-alt" style="width: 18px;"></i>
                                 Billets
                             </a>
-
-                            <a href="{{ path('app_event_dashboard') }}"  class="submenu-button">
-                                <i class="fas fa-chart-bar"  style="width: 18px;"></i>
+                            <a href="{{ path('app_event_dashboard') }}" class="submenu-button">
+                                <i class="fas fa-chart-bar" style="width: 18px;"></i>
                                 Statistiques
                             </a>
                         </div>
                     </div>
-                    
-                    <!-- Menu participants (uniquement pour admin) -->
+
                     {% set is_admin = app.user and (app.user.role and app.user.role.roleName == 'Admin') or (app.user and app.user.roleId == 2) %}
                     {% if is_admin %}
                     <div style="margin-bottom: 4px;">
@@ -268,8 +237,7 @@
                         </div>
                     </div>
                     {% endif %}
-                    
-                    <!-- Menu sponsors -->
+
                     <div style="margin-bottom: 4px;">
                         <button class="menu-button" onclick="toggleSubmenu('sponsors-submenu', this)">
                             <i class="fas fa-handshake" style="width: 20px;"></i>
@@ -291,32 +259,30 @@
                             </a>
                         </div>
                     </div>
-                    
-                    <!-- Menu ressources -->
+
                     <div style="margin-bottom: 4px;">
-                        {% set isResourceRoute = app.request.get('_route') in ['app_reservation_resource_index', 'app_reservation_resource_new', 'app_reservation_resource_edit', 'app_resource_equipement_index', 'app_resource_equipement_new', 'app_resource_equipement_edit', 'app_resource_salle_index', 'app_resource_salle_new', 'app_resource_salle_edit'] %}
+                        {% set isResourceRoute = current_route in ['app_reservation_resource_index', 'app_reservation_resource_new', 'app_reservation_resource_edit', 'app_resource_equipement_index', 'app_resource_equipement_new', 'app_resource_equipement_edit', 'app_resource_salle_index', 'app_resource_salle_new', 'app_resource_salle_edit'] %}
                         <button class="menu-button" onclick="toggleSubmenu('ressources-submenu', this)">
                             <i class="fas fa-boxes" style="width: 20px;"></i>
                             <span style="flex: 1; text-align: left;">Ressources</span>
                             <i class="fas fa-chevron-right submenu-arrow" style="font-size: 12px;"></i>
                         </button>
                         <div id="ressources-submenu" class="submenu" style="display: {{ isResourceRoute ? 'block' : 'none' }}; margin-left: 20px; margin-top: 2px;">
-                            <a href="{{ path('app_reservation_resource_index') }}" class="submenu-button {{ (app.request.get('_route') == 'app_reservation_resource_index' or app.request.get('_route') == 'app_reservation_resource_new' or app.request.get('_route') == 'app_reservation_resource_edit') ? 'active' : '' }}">
+                            <a href="{{ path('app_reservation_resource_index') }}" class="submenu-button {{ current_route in ['app_reservation_resource_index', 'app_reservation_resource_new', 'app_reservation_resource_edit'] ? 'active' : '' }}">
                                 <i class="fas fa-calendar-check" style="width: 18px;"></i>
                                 Réservations
                             </a>
-                            <a href="{{ path('app_resource_equipement_index') }}" class="submenu-button {{ (app.request.get('_route') == 'app_resource_equipement_index' or app.request.get('_route') == 'app_resource_equipement_new' or app.request.get('_route') == 'app_resource_equipement_edit') ? 'active' : '' }}">
+                            <a href="{{ path('app_resource_equipement_index') }}" class="submenu-button {{ current_route in ['app_resource_equipement_index', 'app_resource_equipement_new', 'app_resource_equipement_edit'] ? 'active' : '' }}">
                                 <i class="fas fa-laptop" style="width: 18px;"></i>
                                 Équipements
                             </a>
-                            <a href="{{ path('app_resource_salle_index') }}" class="submenu-button {{ (app.request.get('_route') == 'app_resource_salle_index' or app.request.get('_route') == 'app_resource_salle_new' or app.request.get('_route') == 'app_resource_salle_edit') ? 'active' : '' }}">
+                            <a href="{{ path('app_resource_salle_index') }}" class="submenu-button {{ current_route in ['app_resource_salle_index', 'app_resource_salle_new', 'app_resource_salle_edit'] ? 'active' : '' }}">
                                 <i class="fas fa-door-open" style="width: 18px;"></i>
                                 Salles
                             </a>
                         </div>
                     </div>
-                    
-                    <!-- Menu questionnaires -->
+
                     <div style="margin-bottom: 4px;">
                         <button class="menu-button" onclick="toggleSubmenu('questionnaires-submenu', this)">
                             <i class="fas fa-question-circle" style="width: 20px;"></i>
@@ -324,18 +290,18 @@
                             <i class="fas fa-chevron-right submenu-arrow" style="font-size: 12px;"></i>
                         </button>
                         <div id="questionnaires-submenu" class="submenu" style="display: none; margin-left: 20px; margin-top: 2px;">
-                            <a href="{{ path('app_questionnaire_feedback_index') }}" class="submenu-button {{ app.request.get('_route') == 'app_questionnaire_feedback_index' ? 'active' : '' }}">
+                            <a href="{{ path('app_questionnaire_feedback_index') }}" class="submenu-button {{ current_route == 'app_questionnaire_feedback_index' ? 'active' : '' }}">
                                 <i class="fas fa-comments" style="width: 18px;"></i>
                                 Avis
                             </a>
-                            <a href="{{ path('app_question_index') }}" class="submenu-button {{ app.request.get('_route') == 'app_question_index' ? 'active' : '' }}">
+                            <a href="{{ path('app_question_index') }}" class="submenu-button {{ current_route == 'app_question_index' ? 'active' : '' }}">
                                 <i class="fas fa-question" style="width: 18px;"></i>
                                 Questions
                             </a>
                         </div>
                     </div>
                 </nav>
-                
+
                 <div style="padding: 0 15px 25px 15px;">
                     <a href="{{ path('app_logout') }}" class="logout-button">
                         <i class="fas fa-sign-out-alt" style="width: 20px;"></i>
@@ -343,32 +309,24 @@
                     </a>
                 </div>
             </aside>
-            
-            <!-- Main Content -->
+
             <main style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                <!-- Top Bar avec recherche à gauche, date et profil à l'extrémité droite -->
                 <div style="background: #1565C0; padding: 8px 20px; display: flex; align-items: center; height: 60px;">
-                    <!-- Recherche à gauche -->
                     <div style="max-width: 400px; display: flex; align-items: center;">
-                        <input type="text" id="globalSearch" placeholder="Recherche globale..."
-                               style="width: 100%; padding: 8px 15px; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; color: white; font-size: 13px; outline: none;">
+                        <input type="text" id="globalSearch" placeholder="Recherche globale..." style="width: 100%; padding: 8px 15px; background: rgba(255,255,255,0.2); border: none; border-radius: 20px; color: white; font-size: 13px; outline: none;">
                         <button onclick="performSearch()" style="background: transparent; border: none; color: white; font-size: 16px; cursor: pointer; margin-left: -30px;">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
-                    
-                    <!-- Pousse tout vers la droite -->
+
                     <div style="flex: 1;"></div>
-                    
-                    <!-- Date/heure et profil utilisateur collés à l'extrémité droite -->
+
                     <div style="display: flex; align-items: center; gap: 20px;">
-                        <!-- Date et heure -->
                         <div style="text-align: right;">
                             <p style="color: white; font-size: 13px; font-weight: bold; margin: 0;" id="currentDate"></p>
                             <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 2px 0 0 0;" id="currentTime"></p>
                         </div>
-                        
-                        <!-- Profile menu -->
+
                         <div class="profile-menu" style="position: relative;">
                             <div style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 5px 15px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; position: relative;">
@@ -404,27 +362,26 @@
                                 </div>
                                 <i class="fas fa-chevron-down" style="color: white; font-size: 10px;"></i>
                             </div>
-                            
-                            <!-- Dropdown menu -->
-                            <div class="profile-dropdown" style="position: absolute; top: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); min-width: 200px; display: none; z-index: 1000; margin-top: 5px;">
-                                <button type="button" class="dropdown-item" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">
+
+                            <div class="profile-dropdown" style="position: absolute; top: 100%; right: 0; background: white; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); min-width: 220px; display: none; z-index: 1000; margin-top: 5px;">
+                                <a href="{{ path('app_profile') }}" class="dropdown-item" style="padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none;">
                                     <i class="fas fa-user" style="width: 16px;"></i>
                                     Mon Profil
-                                </button>
-                                <button type="button" class="dropdown-item translation-account-toggle" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">
+                                </a>
+                                <button type="button" class="dropdown-item translation-account-toggle" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent; text-align: left;">
                                     <i class="fas fa-language" style="width: 16px;"></i>
                                     Traduire
                                 </button>
                                 <div class="translation-account-panel" style="display: none; padding: 0 8px 6px;">
-                                    <button type="button" class="dropdown-item translation-option" data-lang="original" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">Originale</button>
-                                    <button type="button" class="dropdown-item translation-option" data-lang="fr" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">Francais</button>
-                                    <button type="button" class="dropdown-item translation-option" data-lang="en" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">English</button>
-                                    <button type="button" class="dropdown-item translation-option" data-lang="ar" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">Arabic</button>
-                                    <button type="button" class="dropdown-item translation-option" data-lang="es" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">Espanol</button>
-                                    <button type="button" class="dropdown-item translation-option" data-lang="de" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">Deutsch</button>
-                                    <button type="button" class="dropdown-item translation-option" data-lang="it" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent;">Italiano</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="original" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent; text-align: left;">Originale</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="fr" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent; text-align: left;">Français</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="en" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent; text-align: left;">English</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="ar" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent; text-align: left;">Arabic</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="es" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent; text-align: left;">Español</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="de" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent; text-align: left;">Deutsch</button>
+                                    <button type="button" class="dropdown-item translation-option" data-lang="it" style="width: 100%; padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; border: none; background: transparent; text-align: left;">Italiano</button>
                                 </div>
-                                <a {#href="{{ path('app_settings') }}"#} class="dropdown-item" style="padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none;">
+                                <a class="dropdown-item" style="padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none;">
                                     <i class="fas fa-cog" style="width: 16px;"></i>
                                     Paramètres
                                 </a>
@@ -441,25 +398,21 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Page Header -->
-                <div style="background: white; padding: 15px 30px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+
+                <div class="page-header" style="background: white; padding: 15px 30px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
                     <div>
                         <h1 style="font-size: 24px; font-weight: bold; color: #1e293b; margin: 0;">{{ pageInfo.title|default('EventFlow') }}</h1>
                         <p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0;">{{ pageInfo.subtitle|default('') }}</p>
                     </div>
-                    
+
                     <div style="display: flex; align-items: center; gap: 16px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end;">
                         <div id="translationHeaderSlot" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end;"></div>
-
-                        <!-- KPI Container -->
                         <div id="kpiContainer" class="kpi-container" style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: flex-end;">
                             {% block kpi %}{% endblock %}
                         </div>
                     </div>
                 </div>
-                
-                <!-- Page Content -->
+
                 <div style="flex: 1; background: #f8fafc; padding: 20px; overflow-y: auto;">
                     {% for label, messages in app.flashes %}
                         {% for message in messages %}
@@ -484,10 +437,9 @@
             </main>
         </div>
     {% endif %}
-    
+
     {% if not is_public and not is_management_ai_context %}
     <div id="chatPanel" style="position: absolute; top: 0; right: 0; width: 400px; height: 100vh; background: white; box-shadow: -5px 0 20px rgba(0,0,0,0.3); border-left: 1px solid #e0e0e0; display: none; flex-direction: column; z-index: 100;">
-        <!-- Chat content -->
         <div style="background: linear-gradient(to right, #2196F3, #1565C0); padding: 20px 15px; display: flex; align-items: center; gap: 12px;">
             <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 28px;">🤖</div>
             <div style="flex: 1;">
@@ -496,7 +448,7 @@
             </div>
             <button onclick="toggleChat()" style="background: rgba(255,255,255,0.2); border: none; border-radius: 20px; color: white; font-size: 16px; width: 32px; height: 32px; cursor: pointer;">✕</button>
         </div>
-        
+
         <div style="flex: 1; overflow-y: auto; padding: 20px; background: #f8f9fa;" id="chatMessages">
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <div style="background: #E3F2FD; border-radius: 16px 16px 16px 5px; padding: 12px; max-width: 80%;">
@@ -504,7 +456,7 @@
                     <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Posez-moi des questions sur les utilisateurs, événements...</p>
                 </div>
             </div>
-            
+
             <div style="padding: 10px 0 0 25px;">
                 <p style="font-weight: bold; color: #666; font-size: 11px; margin-bottom: 8px;">✨ Suggestions</p>
                 <button onclick="handleSuggestion('statistiques')" style="background: #E3F2FD; border: 1px solid #90CAF9; border-radius: 20px; padding: 10px 15px; width: 100%; text-align: left; cursor: pointer; margin-bottom: 8px;">📊 Combien d'utilisateurs sont inscrits ?</button>
@@ -512,35 +464,34 @@
                 <button onclick="handleSuggestion('nouveaux utilisateurs')" style="background: #E3F2FD; border: 1px solid #90CAF9; border-radius: 20px; padding: 10px 15px; width: 100%; text-align: left; cursor: pointer; margin-bottom: 8px;">📅 Nouveaux utilisateurs ce mois</button>
             </div>
         </div>
-        
+
         <div style="padding: 15px; background: white; border-top: 1px solid #e0e0e0; display: flex; gap: 10px;">
             <input type="text" id="chatInput" placeholder="Écrivez votre message..." style="flex: 1; padding: 12px 20px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 25px; outline: none;">
             <button onclick="sendMessage()" style="background: #2196F3; border: none; border-radius: 25px; padding: 0 25px; color: white; font-weight: bold; cursor: pointer;">Envoyer</button>
         </div>
-        
+
         <div style="background: #f8f9fa; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; border-top: 1px solid #e0e0e0;">
             <button onclick="clearChat()" style="background: transparent; border: none; color: #f44336; cursor: pointer; font-size: 12px;">🗑️ Effacer</button>
             <span style="color: #ccc;">•</span>
             <span style="color: #999; font-size: 11px;">Astuce: Entrée pour envoyer</span>
         </div>
     </div>
-    
-    <!-- Floating Chat Button -->
-    <button id="chatFloatingButton" onclick="toggleChat()" 
-            style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: linear-gradient(to bottom, #2196F3, #1565C0); border: none; border-radius: 50%; color: white; font-size: 28px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; z-index: 99;">
+
+    <button id="chatFloatingButton" onclick="toggleChat()" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: linear-gradient(to bottom, #2196F3, #1565C0); border: none; border-radius: 50%; color: white; font-size: 28px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; z-index: 99;">
         <span>🤖</span>
         <span style="position: absolute; top: 5px; right: 5px; width: 12px; height: 12px; background: #4CAF50; border: 2px solid white; border-radius: 50%;"></span>
     </button>
     {% endif %}
-    
+
     <script>
-        // Gestion des sous-menus
         function toggleSubmenu(id, button) {
             const submenu = document.getElementById(id);
             const arrow = button.querySelector('.submenu-arrow');
-            
-            if (!submenu || !arrow) return;
-            
+
+            if (!submenu || !arrow) {
+                return;
+            }
+
             if (submenu.style.display === 'none' || submenu.style.display === '') {
                 submenu.style.display = 'block';
                 arrow.style.transform = 'rotate(90deg)';
@@ -549,46 +500,57 @@
                 arrow.style.transform = 'rotate(0deg)';
             }
         }
-        
-        // Auto-open questionnaire submenu if on questionnaire page
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentRoute = '{{ app.request.get('_route') }}';
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const questionnaireRoutes = [
+                'app_questionnaire_feedback_index',
+                'app_question_index',
+                'app_question_new',
+                'app_question_edit',
+                'app_question_stats'
+            ];
+            const currentRoute = '{{ current_route }}';
             const questionnaireSubmenu = document.getElementById('questionnaires-submenu');
             const questionnaireButton = questionnaireSubmenu ? questionnaireSubmenu.previousElementSibling : null;
-            
-            // Open questionnaire submenu if we're on a questionnaire-related page
-            if (currentRoute === 'app_questionnaire_feedback_index' || 
-                currentRoute === 'app_question_index' ||
-                currentRoute === 'app_question_new' ||
-                currentRoute === 'app_question_edit' ||
-                currentRoute === 'app_question_stats') {
-                
-                if (questionnaireSubmenu && questionnaireButton) {
-                    questionnaireSubmenu.style.display = 'block';
-                    const arrow = questionnaireButton.querySelector('.submenu-arrow');
-                    if (arrow) {
-                        arrow.style.transform = 'rotate(90deg)';
-                    }
+
+            if (questionnaireRoutes.includes(currentRoute) && questionnaireSubmenu && questionnaireButton) {
+                questionnaireSubmenu.style.display = 'block';
+                const arrow = questionnaireButton.querySelector('.submenu-arrow');
+                if (arrow) {
+                    arrow.style.transform = 'rotate(90deg)';
+                }
+            }
+
+            const savedTheme = localStorage.getItem('theme');
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                if (themeIcon) {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                }
+                if (themeText) {
+                    themeText.textContent = 'Mode Clair';
                 }
             }
         });
-        
-        // Gestion du chat
+
         function toggleChat() {
             const chatPanel = document.getElementById('chatPanel');
             if (chatPanel) {
                 chatPanel.style.display = chatPanel.style.display === 'none' ? 'flex' : 'none';
             }
         }
-        
+
         function sendMessage() {
             const input = document.getElementById('chatInput');
             if (input && input.value.trim()) {
                 const userMessage = input.value;
                 const chatMessages = document.getElementById('chatMessages');
-                
+
                 if (chatMessages) {
-                    // Afficher le message de l'utilisateur
                     const messageDiv = document.createElement('div');
                     messageDiv.style.display = 'flex';
                     messageDiv.style.justifyContent = 'flex-end';
@@ -600,10 +562,9 @@
                     `;
                     chatMessages.appendChild(messageDiv);
                     chatMessages.scrollTop = chatMessages.scrollHeight;
-                    
+
                     input.value = '';
-                    
-                    // Afficher un indicateur de chargement
+
                     const loadingDiv = document.createElement('div');
                     loadingDiv.style.display = 'flex';
                     loadingDiv.style.justifyContent = 'flex-start';
@@ -616,8 +577,7 @@
                     `;
                     chatMessages.appendChild(loadingDiv);
                     chatMessages.scrollTop = chatMessages.scrollHeight;
-                    
-                    // Envoyer le message à l'API
+
                     fetch('/api/ai-chat/send', {
                         method: 'POST',
                         headers: {
@@ -627,13 +587,11 @@
                     })
                     .then(response => response.json())
                     .then(data => {
-                        // Supprimer le message de chargement
                         const loadingMsg = document.getElementById('loadingMessage');
                         if (loadingMsg) {
                             loadingMsg.remove();
                         }
-                        
-                        // Afficher la réponse de l'AI
+
                         const responseDiv = document.createElement('div');
                         responseDiv.style.display = 'flex';
                         responseDiv.style.justifyContent = 'flex-start';
@@ -642,17 +600,18 @@
                             <div style="background: #E3F2FD; border-radius: 16px 16px 16px 5px; padding: 10px; max-width: 80%;">
                                 <p style="margin: 0; font-size: 13px; color: #333;">${data.response}</p>
                                 ${data.isSimulated ? '<p style="margin: 5px 0 0 0; font-size: 10px; color: #999;">Mode simulation</p>' : ''}
+                                ${data.debug ? '<p style="margin: 5px 0 0 0; font-size: 9px; color: #666;">Debug: ' + data.debug + '</p>' : ''}
                             </div>
                         `;
                         chatMessages.appendChild(responseDiv);
                         chatMessages.scrollTop = chatMessages.scrollHeight;
                     })
-                    .catch(error => {
+                    .catch(() => {
                         const loadingMsg = document.getElementById('loadingMessage');
                         if (loadingMsg) {
                             loadingMsg.remove();
                         }
-                        
+
                         const errorDiv = document.createElement('div');
                         errorDiv.style.display = 'flex';
                         errorDiv.style.justifyContent = 'flex-start';
@@ -668,17 +627,21 @@
                 }
             }
         }
-        
+
         function handleSuggestion(type) {
             const input = document.getElementById('chatInput');
             if (input) {
-                if (type === 'statistiques') input.value = 'Combien d\'utilisateurs sont inscrits ?';
-                else if (type === 'liste admins') input.value = 'Liste des administrateurs';
-                else if (type === 'nouveaux utilisateurs') input.value = 'Nouveaux utilisateurs ce mois';
+                if (type === 'statistiques') {
+                    input.value = 'Combien d\'utilisateurs sont inscrits ?';
+                } else if (type === 'liste admins') {
+                    input.value = 'Liste des administrateurs';
+                } else if (type === 'nouveaux utilisateurs') {
+                    input.value = 'Nouveaux utilisateurs ce mois';
+                }
                 sendMessage();
             }
         }
-        
+
         function clearChat() {
             const chatMessages = document.getElementById('chatMessages');
             if (chatMessages) {
@@ -698,19 +661,18 @@
                 `;
             }
         }
-        
-        // Date et temps réel
+
         function updateDateTime() {
             const now = new Date();
-            const options = { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             };
             const dateElement = document.getElementById('currentDate');
             const timeElement = document.getElementById('currentTime');
-            
+
             if (dateElement) {
                 dateElement.textContent = now.toLocaleDateString('fr-FR', options).replace(/^\w/, c => c.toUpperCase());
             }
@@ -718,56 +680,57 @@
                 timeElement.textContent = now.toLocaleTimeString('fr-FR', { hour12: false });
             }
         }
-        
+
         if (document.getElementById('currentDate')) {
             updateDateTime();
             setInterval(updateDateTime, 1000);
         }
-        
-        // Recherche globale
+
         function performSearch() {
-            const query = document.getElementById('globalSearch').value.trim();
+            const searchInput = document.getElementById('globalSearch');
+            const query = searchInput ? searchInput.value.trim() : '';
             if (query) {
                 window.location.href = "{{ path('app_search') }}?q=" + encodeURIComponent(query);
             }
         }
-        
+
         const searchInput = document.getElementById('globalSearch');
         if (searchInput) {
-            searchInput.addEventListener('keypress', function(e) {
+            searchInput.addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
                     performSearch();
                 }
             });
         }
-        
-        // Gestion du dropdown profil
+
         const profileMenu = document.querySelector('.profile-menu');
         if (profileMenu) {
-            profileMenu.addEventListener('mouseenter', function() {
+            profileMenu.addEventListener('mouseenter', function () {
                 const dropdown = this.querySelector('.profile-dropdown');
-                if (dropdown) dropdown.style.display = 'block';
+                if (dropdown) {
+                    dropdown.style.display = 'block';
+                }
             });
-            
-            profileMenu.addEventListener('mouseleave', function() {
+
+            profileMenu.addEventListener('mouseleave', function () {
                 const dropdown = this.querySelector('.profile-dropdown');
-                if (dropdown) dropdown.style.display = 'none';
+                if (dropdown) {
+                    dropdown.style.display = 'none';
+                }
             });
         }
-        
-        // Chat input avec Entrée
+
         const chatInput = document.getElementById('chatInput');
         if (chatInput) {
-            chatInput.addEventListener('keypress', function(e) {
+            chatInput.addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
                     sendMessage();
                 }
             });
         }
 
-        // Flash messages: show briefly then fade out.
-        document.querySelectorAll('.auto-dismiss-flash').forEach(function(flash, index) {
-            setTimeout(function() {
+        document.querySelectorAll('.auto-dismiss-flash').forEach(function (flash, index) {
+            setTimeout(function () {
                 flash.style.transition = 'opacity 0.35s ease, transform 0.35s ease, max-height 0.35s ease, margin 0.35s ease, padding 0.35s ease';
                 flash.style.opacity = '0';
                 flash.style.transform = 'translateY(-6px)';
@@ -776,11 +739,40 @@
                 flash.style.paddingTop = '0';
                 flash.style.paddingBottom = '0';
 
-                setTimeout(function() {
+                setTimeout(function () {
                     flash.remove();
                 }, 380);
             }, 4500 + (index * 120));
         });
+
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+
+            if (body.classList.contains('dark-mode')) {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
+                if (themeIcon) {
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                }
+                if (themeText) {
+                    themeText.textContent = 'Mode Sombre';
+                }
+            } else {
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+                if (themeIcon) {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                }
+                if (themeText) {
+                    themeText.textContent = 'Mode Clair';
+                }
+            }
+        }
+
         function setTranslateCookie(value) {
             const host = window.location.hostname;
             document.cookie = 'googtrans=' + value + ';path=/';
@@ -857,12 +849,9 @@
         }
     </script>
     <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-    
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    {% block javascripts %}{% endblock %}
-            {% block importmap %}{{ importmap('app') }}{% endblock %}
-</body>
 
+    {% block javascripts %}{% endblock %}
+    {% block importmap %}{% endblock %}
+</body>
 </html>

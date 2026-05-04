@@ -11,6 +11,7 @@ use App\Entity\Event\Event;
 use App\Form\Questionnaire\FeedbackType;
 use App\Form\Questionnaire\QuizAnswerType;
 use App\Service\Questionnaire\ContentModerationService;
+use App\Service\Questionnaire\RecaptchaService;
 use App\Repository\Questionnaire\QuestionRepository;
 use App\Repository\Questionnaire\QuizSessionRepository;
 use App\Repository\Event\EventRepository;
@@ -26,25 +27,35 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
-use Google\Service\AlertCenter\User;
 
 class QuizController extends AbstractController
 {
     private UserRepository $userRepository;
     private EventRepository $eventRepository;
     private ContentModerationService $moderationService;
+    private QuizSessionRepository $sessionRepository;
+    private RecaptchaService $recaptchaService;
+    private EntityManagerInterface $em;
 
-    public function __construct(EventRepository $eventRepository, UserRepository $userRepository, ContentModerationService $moderationService)
-    {
+    public function __construct(
+        EventRepository $eventRepository, 
+        UserRepository $userRepository, 
+        ContentModerationService $moderationService,
+        QuizSessionRepository $sessionRepository,
+        RecaptchaService $recaptchaService,
+        EntityManagerInterface $em
+    ) {
         $this->eventRepository = $eventRepository;
         $this->userRepository = $userRepository;
         $this->moderationService = $moderationService;
-        // Configurer le service de modération pour l'entité Feedback
+        $this->sessionRepository = $sessionRepository;
+        $this->recaptchaService = $recaptchaService;
+        $this->em = $em;
         Feedback::setModerationService($moderationService);
     }
 
     #[Route('/quiz/start', name: 'app_quiz_start')]
-    public function start(Request $request, QuestionRepository $repo, UserRepository $user): Response
+    public function start(Request $request, QuestionRepository $repo): Response
     {
         $user = $this->getUser();
         $eventId = $request->query->get('event_id');
@@ -564,5 +575,64 @@ class QuizController extends AbstractController
         } catch (\Exception $e) {
             return new Response('Erreur: ' . $e->getMessage());
         }
+    }
+
+    #[Route('/api/quiz/init', name: 'api_quiz_init', methods: ['POST'])]
+    public function initQuizApi(Request $request): JsonResponse
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+            $eventId = $data['event_id'] ?? null;
+
+            $session = new QuizSession();
+            $session->setIpAddress($request->getClientIp());
+            $session->setUserAgent($request->headers->get('User-Agent'));
+
+            if ($this->getUser()) {
+                $session->setUser($this->getUser());
+            }
+
+            if ($eventId) {
+                $event = $this->eventRepository->find($eventId);
+                if ($event) {
+                    $session->setEvent($event);
+                }
+            }
+
+            $this->em->persist($session);
+            $this->em->flush();
+
+            return new JsonResponse([
+                'success' => true,
+                'session_token' => $session->getSessionToken(),
+                'message' => 'Session initialisée avec reCAPTCHA.'
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
+
+    #[Route('/api/quiz/verify-recaptcha', name: 'api_quiz_verify_recaptcha', methods: ['POST'])]
+    public function verifyRecaptchaApi(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $sessionToken = $data['session_token'] ?? null;
+        $recaptchaToken = $data['recaptcha_token'] ?? null;
+
+        if (!$sessionToken || !$recaptchaToken) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Token de session ou reCAPTCHA manquant.'
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        return new JsonResponse([
+            'success' => true,
+            'message' => 'Mode développement - reCAPTCHA accepté'
+        ]);
     }
 }

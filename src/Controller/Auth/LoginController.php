@@ -18,8 +18,6 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Symfony\Component\Notifier\TexterInterface;
-use Symfony\Component\Notifier\Message\SmsMessage;
 
 class LoginController extends AbstractController
 {
@@ -30,7 +28,7 @@ class LoginController extends AbstractController
     public function __construct(
         UserService $userService,
         EntityManagerInterface $em,
-        private TexterInterface $texter
+        NotificationService $notificationService
     ) {
         $this->userService = $userService;
         $this->em = $em;
@@ -161,8 +159,9 @@ class LoginController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
     }
-    #[Route('/login/verify-face', name: 'app_verify_face', methods: ['POST'])]
-    public function verifyFace(Request $request): JsonResponse
+#[Route('/login/verify-face', name: 'app_verify_face', methods: ['POST'])]
+#[Route('/login/verify-face', name: 'app_verify_face', methods: ['POST'])]
+public function verifyFace(Request $request): JsonResponse
 {
     $data = json_decode($request->getContent(), true);
     $faceDescriptor = $data['descriptor'] ?? null;
@@ -411,7 +410,7 @@ private function resolveHomeRouteForUser(?UserModel $user): string
         return 'app_dashboard';
     }
 
-    return 'app_participation_confirm';
+    return 'app_public_events';
 }
 
     #[Route('/check-auth', name: 'app_check_auth')]

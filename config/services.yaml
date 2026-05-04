@@ -33,3 +33,7 @@ services:
             $baseUrl: '%ollama_base_url%'
             $model: '%ollama_model%'
             $timeoutSeconds: '%ollama_timeout_seconds%'
+
+    App\Service\Questionnaire\QuestionGenerator:
+        arguments:
+            $geminiApiKey: '%gemini_api_key%'

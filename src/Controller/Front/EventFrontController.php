@@ -18,38 +18,133 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Service\Event\WeatherService;
+use App\Service\Event\NotificationService;
 
 class EventFrontController extends AbstractController
-{//    private EventService $eventService;
+{
+    public function __construct(private NotificationService $notificationService)
+    {
+    }
+
+    //    private EventService $eventService;
     #[Route('/events/public', name: 'app_public_events_legacy', methods: ['GET'])]
     public function legacyRedirect(): Response
     {
         return $this->redirectToRoute('app_public_events');
     }
 
-   #[Route('/participation/confirm', name: 'app_participation_confirm', methods: ['GET'])]
-public function participationConfirm(
-    SessionInterface $session,
-    EventRepository $eventRepository,
-    EntityManagerInterface $em
-): Response {
-    $eventId = $session->get('pending_event');
-    $event = null;
-
-    if ($eventId) {
-        $event = $eventRepository->find($eventId);
-    }
-
-    return $this->render('front/participation_confirm_simple.html.twig', [
-        'event' => $event,
-        'hasTickets' => $this->currentUserHasTickets($em),
-    ]);
-}
-
     #[Route('/events/calendar', name: 'app_public_events_calendar', methods: ['GET'])]
     public function calendarView(): Response
     {
         return $this->render('front/events_calendar.html.twig');
+    }
+
+    #[Route('/front/notifications/latest', name: 'app_front_notifications_latest', methods: ['GET'])]
+    public function latestNotifications(): JsonResponse
+    {
+        /** @var UserModel|null $user */
+        $user = $this->getUser();
+        if (!$user instanceof UserModel) {
+            return $this->json(['ok' => false, 'message' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+
+        $notifications = $this->notificationService->getLatest($user, 5);
+        $unreadCount = $this->notificationService->getUnreadCount($user);
+
+        $items = array_map(static function ($notification): array {
+            return [
+                'id' => $notification->getId(),
+                'type' => $notification->getType(),
+                'title' => $notification->getTitle(),
+                'message' => $notification->getMessage(),
+                'icon' => $notification->getIcon(),
+                'isRead' => $notification->isRead(),
+                'createdAt' => $notification->getCreatedAt()?->format('d/m/Y H:i'),
+            ];
+        }, $notifications);
+
+        return $this->json([
+            'ok' => true,
+            'unreadCount' => $unreadCount,
+            'notifications' => $items,
+        ]);
+    }
+
+    #[Route('/front/notifications/mark-all-read', name: 'app_front_notifications_mark_all_read', methods: ['POST'])]
+    public function markAllNotificationsRead(Request $request): JsonResponse
+    {
+        /** @var UserModel|null $user */
+        $user = $this->getUser();
+        if (!$user instanceof UserModel) {
+            return $this->json(['ok' => false, 'message' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+
+        $csrfToken = (string) $request->headers->get('X-CSRF-TOKEN', '');
+        if (!$this->isCsrfTokenValid('front_notifications_mark_all', $csrfToken)) {
+            return $this->json(['ok' => false, 'message' => 'Invalid CSRF token'], JsonResponse::HTTP_FORBIDDEN);
+        }
+
+        $updated = $this->notificationService->markAllAsRead($user);
+
+        return $this->json([
+            'ok' => true,
+            'updated' => $updated,
+            'unreadCount' => 0,
+        ]);
+    }
+
+    #[Route('/front/notifications/{id}/delete', name: 'app_front_notifications_delete', methods: ['POST'])]
+    public function deleteNotification(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        /** @var UserModel|null $user */
+        $user = $this->getUser();
+        if (!$user instanceof UserModel) {
+            if ($this->requestWantsJson($request)) {
+                return $this->json(['ok' => false, 'message' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+            }
+
+            $this->addFlash('info', 'Connectez-vous pour gerer vos notifications.');
+            return $this->redirectToRoute('app_login');
+        }
+
+        $csrfToken = (string) $request->headers->get('X-CSRF-TOKEN', '');
+        if ($csrfToken === '') {
+            $csrfToken = (string) $request->request->get('_token', '');
+        }
+
+        if (!$this->isCsrfTokenValid('front_notifications_delete', $csrfToken)) {
+            if ($this->requestWantsJson($request)) {
+                return $this->json(['ok' => false, 'message' => 'Invalid CSRF token'], JsonResponse::HTTP_FORBIDDEN);
+            }
+
+            $this->addFlash('error', 'Action invalide, merci de reessayer.');
+            return $this->redirectToRoute('app_my_tickets');
+        }
+
+        $notification = $em->getRepository(Notification::class)->find($id);
+
+        if (!$notification instanceof Notification || $notification->getUser()?->getId() !== $user->getId()) {
+            if ($this->requestWantsJson($request)) {
+                return $this->json(['ok' => false, 'message' => 'Notification not found'], JsonResponse::HTTP_NOT_FOUND);
+            }
+
+            $this->addFlash('warning', 'Notification introuvable.');
+            return $this->redirectToRoute('app_my_tickets');
+        }
+
+        $em->remove($notification);
+        $em->flush();
+
+        if ($this->requestWantsJson($request)) {
+            return $this->json([
+                'ok' => true,
+                'id' => $id,
+                'unreadCount' => $this->notificationService->getUnreadCount($user),
+            ]);
+        }
+
+        $this->addFlash('success', 'Notification supprimee.');
+        return $this->redirectToRoute('app_my_tickets');
     }
 
     #[Route('/events', name: 'app_public_events', methods: ['GET'])]
@@ -666,5 +761,12 @@ public function participationConfirm(
         $value = trim($value, '-');
 
         return $value !== '' ? $value : 'ticket';
+    }
+
+    private function requestWantsJson(Request $request): bool
+    {
+        $accept = (string) $request->headers->get('Accept', '');
+
+        return $request->isXmlHttpRequest() || str_contains($accept, 'application/json');
     }
 }

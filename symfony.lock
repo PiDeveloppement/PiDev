@@ -82,6 +82,18 @@
             "./config/packages/knp_snappy.yaml"
         ]
     },
+    "nelmio/cors-bundle": {
+        "version": "2.6",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.5",
+            "ref": "6bea22e6c564fba3a1391615cada1437d0bde39c"
+        },
+        "files": [
+            "./config/packages/nelmio_cors.yaml"
+        ]
+    },
     "php-http/discovery": {
         "version": "1.20",
         "recipe": {
@@ -222,6 +234,20 @@
             "version": "4.4",
             "ref": "1caff9467bfc5c7f68503aa9eba9dc762a30ae21"
         }
+    },
+    "symfony/stimulus-bundle": {
+        "version": "2.35",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "2.13",
+            "ref": "cef742b8d032ecf36f5da9386af91d012b5f5110"
+        },
+        "files": [
+            "./assets/bootstrap.js",
+            "./assets/controllers.json",
+            "./assets/controllers/hello_controller.js"
+        ]
     },
     "symfony/translation": {
         "version": "6.2",

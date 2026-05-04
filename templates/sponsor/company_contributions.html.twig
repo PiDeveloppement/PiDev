@@ -265,25 +265,6 @@
             margin-left: auto;
         }
 
-        /* Translation button: embed into this page topbar (not sidebar) */
-        #translationWidget {
-            position: relative !important;
-            top: auto !important;
-            right: auto !important;
-            left: auto !important;
-            bottom: auto !important;
-            margin-left: auto;
-        }
-
-        #translationMenu {
-            margin-top: 8px !important;
-        }
-
-        #translationWidget #translationToggle {
-            background: linear-gradient(135deg, #16a34a, #22c55e) !important;
-            box-shadow: 0 8px 20px rgba(22, 163, 74, 0.35) !important;
-        }
-
         @media (max-width: 1000px) {
             .sp-kpi {
                 grid-template-columns: 1fr;
@@ -374,16 +355,4 @@
 
 {% block javascripts %}
     {{ parent() }}
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const topbar = document.querySelector('.sp-topbar');
-            const translationWidget = document.getElementById('translationWidget');
-
-            if (!topbar || !translationWidget) {
-                return;
-            }
-
-            topbar.appendChild(translationWidget);
-        });
-    </script>
 {% endblock %}

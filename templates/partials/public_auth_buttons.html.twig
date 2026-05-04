@@ -3,11 +3,205 @@
 {% set is_admin_or_organizer = app.user and (('ROLE_ADMIN' in app.user.roles) or ('ROLE_ORGANISATEUR' in app.user.roles) or role_name in ['admin', 'administration', 'organisateur', 'role_admin', 'role_organisateur'] or app.user.roleId in [2, 4]) %}
 {% set is_participant_user = app.user and (not is_sponsor_user) and (not is_admin_or_organizer) %}
 {% set role_label = 'Participant' %}
+{% set front_unread_count = unreadNotificationCount|default(notificationUnreadCount|default(0)) %}
 {% if is_sponsor_user %}
     {% set role_label = 'Sponsor' %}
 {% elseif is_admin_or_organizer %}
     {% set role_label = 'Administration' %}
 {% endif %}
+
+<style>
+    .public-theme-toggle {
+        background: rgba(33, 150, 243, 0.1);
+        color: #2196F3;
+        border: 1px solid #2196F3;
+        border-radius: 20px;
+        padding: 8px 20px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .translation-account-panel {
+        display: none;
+        padding: 6px 0;
+    }
+
+    .notif-bell-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .notif-bell-btn {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: 1px solid #c7d7ec;
+        background: #ffffff;
+        color: #163f76;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    .notif-bell-btn:hover {
+        background: #f2f7ff;
+    }
+
+    .notif-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        min-width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        background: #dc2626;
+        color: #ffffff;
+        border: 2px solid #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 0 5px;
+    }
+
+    .notif-dropdown {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        width: min(360px, 92vw);
+        background: #ffffff;
+        border: 1px solid #d9e2ef;
+        border-radius: 14px;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
+        padding: 10px;
+        z-index: 1300;
+    }
+
+    .notif-dropdown[hidden] {
+        display: none;
+    }
+
+    .notif-dropdown-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 4px 4px 10px;
+        border-bottom: 1px solid #e5edf8;
+    }
+
+    .notif-dropdown-title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #133b70;
+    }
+
+    .notif-mark-read-btn {
+        border: 1px solid #c7d7ec;
+        background: #f2f7ff;
+        color: #174a92;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .notif-list {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+        max-height: 320px;
+        overflow-y: auto;
+    }
+
+    .notif-item {
+        border-radius: 10px;
+        border: 1px solid #dce8f6;
+        padding: 10px;
+        background: #ffffff;
+    }
+
+    .notif-item.unread {
+        background: #eaf3ff;
+        border-color: #c9defa;
+    }
+
+    .notif-item-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+        color: #5f7288;
+        font-size: 12px;
+    }
+
+    .notif-item-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .notif-delete-btn {
+        border: 1px solid #f0c9c9;
+        background: #ffffff;
+        color: #c22b23;
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+        line-height: 1;
+        transition: all 0.18s ease;
+    }
+
+    .notif-delete-btn:hover {
+        background: #fff1f1;
+        border-color: #e8aaaa;
+        transform: translateY(-1px);
+    }
+
+    .notif-item-title {
+        margin: 0 0 4px;
+        color: #0f233b;
+        font-size: 14px;
+        font-weight: 800;
+    }
+
+    .notif-item-message {
+        margin: 0;
+        color: #516277;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    .notif-empty {
+        color: #60758e;
+        font-size: 13px;
+        text-align: center;
+        padding: 12px;
+    }
+</style>
+
+<button type="button" class="public-theme-toggle" data-theme-toggle>
+    <i class="fas fa-moon" data-theme-icon></i>
+    <span data-theme-text>Mode Sombre</span>
+</button>
 
 {% if app.user %}
     {% if is_participant_user %}
@@ -22,20 +216,50 @@
             </span>
         </summary>
         <div class="participant-chip-dropdown">
-            <button type="button" class="participant-chip-action">Profil</button>
+            <a class="participant-chip-action" href="{{ path('app_profile') }}">Profil</a>
             <button type="button" class="participant-chip-action translation-account-toggle">Traduire</button>
-            <div class="translation-account-panel" style="display: none; padding: 6px 0;">
+            <div class="translation-account-panel">
                 <button type="button" class="participant-chip-action translation-option" data-lang="original">Originale</button>
-                <button type="button" class="participant-chip-action translation-option" data-lang="fr">Francais</button>
+                <button type="button" class="participant-chip-action translation-option" data-lang="fr">Français</button>
                 <button type="button" class="participant-chip-action translation-option" data-lang="en">English</button>
                 <button type="button" class="participant-chip-action translation-option" data-lang="ar">Arabic</button>
-                <button type="button" class="participant-chip-action translation-option" data-lang="es">Espanol</button>
+                <button type="button" class="participant-chip-action translation-option" data-lang="es">Español</button>
                 <button type="button" class="participant-chip-action translation-option" data-lang="de">Deutsch</button>
                 <button type="button" class="participant-chip-action translation-option" data-lang="it">Italiano</button>
             </div>
             <a class="participant-chip-action" href="{{ path('app_logout') }}">Deconnexion</a>
         </div>
     </details>
+    {% if is_participant_user %}
+        <div
+            class="notif-bell-wrap"
+            data-notif-root
+            data-notif-url="{{ path('app_front_notifications_latest') }}"
+            data-notif-mark-read-url="{{ path('app_front_notifications_mark_all_read') }}"
+            data-notif-csrf-token="{{ csrf_token('front_notifications_mark_all') }}"
+            data-notif-delete-url-template="{{ path('app_front_notifications_delete', {'id': '__id__'}) }}"
+            data-notif-delete-csrf-token="{{ csrf_token('front_notifications_delete') }}"
+        >
+            <button type="button" class="notif-bell-btn" aria-label="Notifications" data-notif-toggle>
+                <span aria-hidden="true">🔔</span>
+                {% if front_unread_count > 0 %}
+                    <span class="notif-badge" data-notif-badge>{{ front_unread_count > 99 ? '99+' : front_unread_count }}</span>
+                {% else %}
+                    <span class="notif-badge" data-notif-badge hidden>0</span>
+                {% endif %}
+            </button>
+
+            <div class="notif-dropdown" data-notif-dropdown hidden>
+                <div class="notif-dropdown-head">
+                    <span class="notif-dropdown-title">Notifications</span>
+                    <button type="button" class="notif-mark-read-btn" data-notif-mark-all>Tout marquer comme lu</button>
+                </div>
+                <div class="notif-list" data-notif-list>
+                    <div class="notif-empty">Chargement...</div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 {% else %}
     <button class="btn-login" onclick="window.location.href='{{ path('app_login') }}'">Connexion</button>
     <button class="btn-signup" onclick="window.location.href='{{ path('app_register') }}'">Inscription</button>
@@ -43,53 +267,259 @@
 
 <script>
     (function () {
-        if (window.EventFlowPublicTranslationReady) {
+        if (window.EventFlowPublicHeaderReady) {
             return;
         }
-        window.EventFlowPublicTranslationReady = true;
+        window.EventFlowPublicHeaderReady = true;
 
-        const setTranslateCookie = function (value) {
+        function setTheme(isDark) {
+            document.body.classList.toggle('dark-mode', isDark);
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+            document.querySelectorAll('[data-theme-icon]').forEach(function (icon) {
+                icon.classList.toggle('fa-sun', isDark);
+                icon.classList.toggle('fa-moon', !isDark);
+            });
+
+            document.querySelectorAll('[data-theme-text]').forEach(function (label) {
+                label.textContent = isDark ? 'Mode Clair' : 'Mode Sombre';
+            });
+        }
+
+        function setTranslateCookie(value) {
             const host = window.location.hostname;
             document.cookie = 'googtrans=' + value + ';path=/';
             if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
                 document.cookie = 'googtrans=' + value + ';path=/;domain=.' + host;
             }
-        };
+        }
 
-        const clearTranslateCookie = function () {
+        function clearTranslateCookie() {
             const host = window.location.hostname;
             document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
             if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
                 document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + host;
             }
-        };
+        }
 
-        document.addEventListener('click', function (event) {
-            const toggle = event.target.closest('.translation-account-toggle');
-            if (toggle) {
-                const dropdown = toggle.closest('.participant-chip-dropdown, .dropdown-menu');
-                const panel = dropdown ? dropdown.querySelector('.translation-account-panel') : null;
-                if (panel) {
-                    panel.style.display = panel.style.display === 'none' || panel.style.display === '' ? 'block' : 'none';
-                }
-                event.preventDefault();
-                event.stopPropagation();
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderNotifications(listNode, notifications) {
+            if (!Array.isArray(notifications) || notifications.length === 0) {
+                listNode.innerHTML = '<div class="notif-empty">Aucune notification.</div>';
                 return;
             }
 
-            const option = event.target.closest('.translation-option');
-            if (!option) {
+            listNode.innerHTML = notifications.map(function (item) {
+                var icon = item.icon ? escapeHtml(item.icon) : '🔔';
+                var type = item.type ? escapeHtml(item.type) : 'INFO';
+                var createdAt = item.createdAt ? escapeHtml(item.createdAt) : '-';
+                var title = item.title ? escapeHtml(item.title) : 'Notification';
+                var message = item.message ? escapeHtml(item.message) : '';
+                var readClass = item.isRead ? 'read' : 'unread';
+                var notificationId = Number(item.id || 0);
+
+                return '' +
+                    '<article class="notif-item ' + readClass + '">' +
+                        '<div class="notif-item-head">' +
+                            '<span class="notif-item-meta">' +
+                                '<span>' + icon + ' ' + type + '</span>' +
+                                '<span>•</span>' +
+                                '<span>' + createdAt + '</span>' +
+                            '</span>' +
+                            '<button type="button" class="notif-delete-btn" title="Supprimer" aria-label="Supprimer notification" data-notif-delete-id="' + notificationId + '"><i class="fas fa-trash-alt" aria-hidden="true"></i></button>' +
+                        '</div>' +
+                        '<p class="notif-item-title">' + title + '</p>' +
+                        '<p class="notif-item-message">' + message + '</p>' +
+                    '</article>';
+            }).join('');
+        }
+
+        function updateBadge(badgeNode, unreadCount) {
+            if (!badgeNode) {
                 return;
             }
 
-            const lang = option.getAttribute('data-lang') || 'en';
-            if (lang === 'original') {
-                clearTranslateCookie();
+            if (unreadCount > 0) {
+                badgeNode.hidden = false;
+                badgeNode.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
             } else {
-                setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+                badgeNode.hidden = true;
+                badgeNode.textContent = '0';
+            }
+        }
+
+        async function fetchLatest(root, badgeNode, listNode) {
+            try {
+                const response = await fetch(root.dataset.notifUrl, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error('notifications unavailable');
+                }
+
+                const payload = await response.json();
+                updateBadge(badgeNode, Number(payload.unreadCount || 0));
+                renderNotifications(listNode, payload.notifications || []);
+            } catch (error) {
+                listNode.innerHTML = '<div class="notif-empty">Impossible de charger les notifications.</div>';
+            }
+        }
+
+        async function markAllAsRead(root, badgeNode, listNode) {
+            try {
+                const response = await fetch(root.dataset.notifMarkReadUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': root.dataset.notifCsrfToken || ''
+                    },
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error('mark all failed');
+                }
+
+                updateBadge(badgeNode, 0);
+                await fetchLatest(root, badgeNode, listNode);
+            } catch (error) {
+            }
+        }
+
+        async function deleteNotification(root, notificationId, badgeNode, listNode) {
+            const urlTemplate = root.dataset.notifDeleteUrlTemplate || '';
+            if (!urlTemplate || !notificationId) {
+                return;
             }
 
-            window.location.reload();
+            try {
+                const response = await fetch(urlTemplate.replace('__id__', String(notificationId)), {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': root.dataset.notifDeleteCsrfToken || ''
+                    },
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error('delete failed');
+                }
+
+                const payload = await response.json();
+                updateBadge(badgeNode, Number(payload.unreadCount || 0));
+                await fetchLatest(root, badgeNode, listNode);
+            } catch (error) {
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            setTheme(localStorage.getItem('theme') === 'dark');
+
+            document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    setTheme(!document.body.classList.contains('dark-mode'));
+                });
+            });
+
+            document.addEventListener('click', function (event) {
+                const translateToggle = event.target.closest('.translation-account-toggle');
+                if (translateToggle) {
+                    const dropdown = translateToggle.closest('.participant-chip-dropdown, .dropdown-menu');
+                    const panel = dropdown ? dropdown.querySelector('.translation-account-panel') : null;
+                    if (panel) {
+                        const isVisible = panel.style.display === 'block';
+                        document.querySelectorAll('.translation-account-panel').forEach(function (otherPanel) {
+                            otherPanel.style.display = 'none';
+                        });
+                        panel.style.display = isVisible ? 'none' : 'block';
+                    }
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
+
+                const translateOption = event.target.closest('.translation-option');
+                if (translateOption) {
+                    const lang = translateOption.getAttribute('data-lang') || 'en';
+                    if (lang === 'original') {
+                        clearTranslateCookie();
+                    } else {
+                        setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+                    }
+                    window.location.reload();
+                    return;
+                }
+
+                if (!event.target.closest('.translation-account-panel')) {
+                    document.querySelectorAll('.translation-account-panel').forEach(function (panel) {
+                        panel.style.display = 'none';
+                    });
+                }
+            });
+
+            const roots = document.querySelectorAll('[data-notif-root]');
+            roots.forEach(function (root) {
+                const toggle = root.querySelector('[data-notif-toggle]');
+                const dropdown = root.querySelector('[data-notif-dropdown]');
+                const badge = root.querySelector('[data-notif-badge]');
+                const list = root.querySelector('[data-notif-list]');
+                const markAll = root.querySelector('[data-notif-mark-all]');
+
+                if (!toggle || !dropdown || !list) {
+                    return;
+                }
+
+                fetchLatest(root, badge, list);
+
+                toggle.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const isOpen = !dropdown.hidden;
+                    document.querySelectorAll('[data-notif-dropdown]').forEach(function (node) {
+                        node.hidden = true;
+                    });
+                    dropdown.hidden = isOpen;
+                    if (!isOpen) {
+                        fetchLatest(root, badge, list);
+                    }
+                });
+
+                if (markAll) {
+                    markAll.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        markAllAsRead(root, badge, list);
+                    });
+                }
+
+                list.addEventListener('click', function (event) {
+                    const deleteBtn = event.target.closest('[data-notif-delete-id]');
+                    if (!deleteBtn) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    deleteNotification(root, Number(deleteBtn.getAttribute('data-notif-delete-id')), badge, list);
+                });
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!event.target.closest('[data-notif-root]')) {
+                    document.querySelectorAll('[data-notif-dropdown]').forEach(function (node) {
+                        node.hidden = true;
+                    });
+                }
+            });
         });
     })();
 </script>

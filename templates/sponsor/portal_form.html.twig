@@ -187,60 +187,6 @@
             box-shadow: 0 6px 12px rgba(13, 71, 161, 0.4);
         }
 
-        .portal-translate {
-            position: relative;
-            top: -4px;
-            margin-right: 12px;
-        }
-
-        .portal-translate-btn {
-            border: none;
-            border-radius: 999px;
-            padding: 8px 14px;
-            background: linear-gradient(135deg, #16a34a, #22c55e);
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 8px 18px rgba(22, 163, 74, 0.3);
-        }
-
-        .portal-translate-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            width: 180px;
-            background: #fff;
-            border: 1px solid #d9e2ef;
-            border-radius: 12px;
-            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
-            padding: 8px;
-            display: none;
-            z-index: 1400;
-        }
-
-        .portal-translate-menu.open {
-            display: block;
-        }
-
-        .portal-translate-opt {
-            width: 100%;
-            border: 1px solid #e2e8f0;
-            background: #f8fafc;
-            color: #0f172a;
-            border-radius: 8px;
-            padding: 8px 10px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-bottom: 6px;
-        }
-
-        .portal-translate-opt:last-child {
-            margin-bottom: 0;
-        }
-
         .portal-form-body {
             margin: 0;
             background:
@@ -985,62 +931,6 @@
     updateContribution();
 })();
 </script>
-<div id="google_translate_element" style="display:none;"></div>
-<script>
-    (function () {
-        const toggle = document.getElementById('portalTranslateToggle');
-        const menu = document.getElementById('portalTranslateMenu');
-        const widget = document.getElementById('portalTranslateWidget');
-
-        const setTranslateCookie = function (value) {
-            const host = window.location.hostname;
-            document.cookie = 'googtrans=' + value + ';path=/';
-            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
-                document.cookie = 'googtrans=' + value + ';path=/;domain=.' + host;
-            }
-        };
-
-        const clearTranslateCookie = function () {
-            const host = window.location.hostname;
-            document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
-            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
-                document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + host;
-            }
-        };
-
-        if (toggle && menu) {
-            toggle.addEventListener('click', function () {
-                menu.classList.toggle('open');
-            });
-
-            document.addEventListener('click', function (event) {
-                if (!widget || widget.contains(event.target)) {
-                    return;
-                }
-                menu.classList.remove('open');
-            });
-
-            menu.querySelectorAll('[data-lang]').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    const lang = button.getAttribute('data-lang') || 'en';
-                    if (lang === 'original') {
-                        clearTranslateCookie();
-                    } else {
-                        setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
-                    }
-                    window.location.reload();
-                });
-            });
-    }
-
-    new window.google.translate.TranslateElement({
-        pageLanguage: 'fr',
-        includedLanguages: 'fr,en,ar,es,de,it',
-        autoDisplay: false,
-        multilanguagePage: true
-    }, 'google_translate_element');
-}
-
 // Theme toggle for sponsor portal
 function toggleTheme() {
     const body = document.body;
@@ -1089,6 +979,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 </script>
-<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
