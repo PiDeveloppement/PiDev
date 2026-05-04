@@ -1,5 +1,11 @@
 {% extends 'base.html.twig' %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
+{% endblock %}
+
 {% set current_mode = mode|default('add') %}
 {% block title %}{{ current_mode == 'add' ? 'Nouveau rôle' : 'Modifier le rôle' }} - EventFlow{% endblock %}
 

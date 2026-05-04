@@ -6,6 +6,8 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
     <style>
         * {
             margin: 0;
@@ -639,6 +641,156 @@
         
         .animate-fade-in {
             animation: fadeIn 0.8s ease forwards;
+        }
+
+        /* ==================== DARK MODE ==================== */
+        body.dark-mode {
+            background-color: #0f172a;
+        }
+
+        body.dark-mode .navbar {
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid #1e293b;
+        }
+
+        body.dark-mode .nav-link {
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .nav-link:hover {
+            color: #60a5fa;
+        }
+
+        body.dark-mode .hero-section {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        body.dark-mode .hero-title {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .hero-subtitle {
+            color: #cbd5e1;
+        }
+
+        body.dark-mode .stat-number {
+            color: #60a5fa;
+        }
+
+        body.dark-mode .stat-label {
+            color: #94a3b8;
+        }
+
+        body.dark-mode .features-section {
+            background: #0f172a;
+        }
+
+        body.dark-mode .section-title {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .section-subtitle {
+            color: #94a3b8;
+        }
+
+        body.dark-mode .feature-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+        }
+
+        body.dark-mode .feature-card:hover {
+            background: #334155;
+            border-color: #475569;
+        }
+
+        body.dark-mode .feature-title {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .feature-description {
+            color: #94a3b8;
+        }
+
+        body.dark-mode .feedback-section {
+            background: #0f172a;
+        }
+
+        body.dark-mode .feedback-title {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .feedback-card {
+            background: #1e293b;
+            border-color: #334155;
+        }
+
+        body.dark-mode .feedback-user {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .feedback-comment {
+            color: #94a3b8;
+        }
+
+        body.dark-mode .contact-section {
+            background: linear-gradient(to right, #1e3a5f, #2563eb);
+        }
+
+        body.dark-mode .footer {
+            background: #0f172a;
+        }
+
+        body.dark-mode .footer-brand-title {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .footer-column-title {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .footer-link {
+            color: #94a3b8;
+        }
+
+        body.dark-mode .footer-link:hover {
+            color: #60a5fa;
+        }
+
+        body.dark-mode .footer-copyright {
+            color: #64748b;
+        }
+
+        body.dark-mode .btn-primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        body.dark-mode .btn-primary:hover {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+
+        body.dark-mode .btn-secondary {
+            background: #334155;
+            color: #f1f5f9;
+            border-color: #475569;
+        }
+
+        body.dark-mode .btn-secondary:hover {
+            background: #475569;
+        }
+
+        body.dark-mode .btn-login {
+            color: #60a5fa;
+            border-color: #60a5fa;
+        }
+
+        body.dark-mode .btn-login:hover {
+            background: rgba(96, 165, 250, 0.1);
+        }
+
+        body.dark-mode .btn-signup {
+            background: #3b82f6;
         }
     </style>
 {% endblock %}

@@ -1,0 +1,276 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Calendrier des Réservations{% endblock %}
+
+{% block kpi %}
+    {# Vous pouvez ajouter des KPI ici si nécessaire #}
+{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        #calendar {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .calendar-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .calendar-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+        }
+        
+        .fc-event {
+            cursor: pointer;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block admin_content %}
+    <div class="calendar-header">
+        <h1 class="calendar-title">Calendrier des Réservations</h1>
+        <div class="calendar-actions">
+            <a href="{{ path('app_reservation_resource_new') }}" class="btn btn-primary">Nouvelle Réservation</a>
+            <a href="{{ path('app_reservation_resource_index') }}" class="btn btn-secondary">Liste des Réservations</a>
+        </div>
+    </div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #dc3545;"></div>
+            <span>Réservation confirmée (indisponible)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #28a745;"></div>
+            <span>Date disponible</span>
+        </div>
+    </div>
+    
+    <div id="calendar"></div>
+    
+    <!-- Modal pour créer une réservation -->
+    <div id="reservationModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 class="modal-title">Créer une Réservation</h2>
+            <div class="modal-body">
+                <p><strong>Date sélectionnée:</strong> <span id="selectedDate"></span></p>
+                <p>Cliquez sur "Continuer" pour procéder à la réservation pour cette date.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelReservation">Annuler</button>
+                <a href="#" id="continueReservation" class="btn btn-primary">Continuer</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <!-- FullCalendar CSS -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+    
+    <!-- FullCalendar JS -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/fr.js'></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var modal = document.getElementById('reservationModal');
+            var selectedDateSpan = document.getElementById('selectedDate');
+            var continueLink = document.getElementById('continueReservation');
+            
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'fr',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                height: 'auto',
+                events: '/resource/reservation/calendar/events',
+                eventClick: function(info) {
+                    // Afficher les détails de la réservation existante
+                    alert('Réservation existante:\n' + info.event.title + '\nDu: ' + info.event.start.toLocaleDateString() + '\nAu: ' + info.event.end.toLocaleDateString());
+                },
+                dateClick: function(info) {
+                    // Vérifier si la date est déjà réservée
+                    var events = calendar.getEvents();
+                    var isDateReserved = false;
+                    
+                    events.forEach(function(event) {
+                        var clickDate = new Date(info.dateStr);
+                        var eventStart = new Date(event.start);
+                        var eventEnd = new Date(event.end);
+                        
+                        // Ajuster la date de fin pour inclure le dernier jour
+                        eventEnd.setDate(eventEnd.getDate() + 1);
+                        
+                        if (clickDate >= eventStart && clickDate < eventEnd) {
+                            isDateReserved = true;
+                        }
+                    });
+                    
+                    if (isDateReserved) {
+                        alert('Cette date est déjà réservée. Veuillez choisir une autre date.');
+                        return;
+                    }
+                    
+                    // Afficher le modal de réservation
+                    selectedDateSpan.textContent = info.dateStr;
+                    continueLink.href = '/resource/reservation/new?date=' + info.dateStr;
+                    modal.style.display = 'block';
+                },
+                eventDidMount: function(info) {
+                    // Ajouter un tooltip pour plus d'informations
+                    info.el.setAttribute('title', info.event.title);
+                },
+                loading: function(bool) {
+                    if (bool) {
+                        // Afficher un indicateur de chargement si nécessaire
+                        console.log('Chargement des événements...');
+                    } else {
+                        console.log('Événements chargés');
+                    }
+                }
+            });
+            
+            calendar.render();
+            
+            // Gestion du modal
+            var closeBtn = document.getElementsByClassName('close')[0];
+            var cancelBtn = document.getElementById('cancelReservation');
+            
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            }
+            
+            cancelBtn.onclick = function() {
+                modal.style.display = 'none';
+            }
+            
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            }
+        });
+    </script>
+{% endblock %}

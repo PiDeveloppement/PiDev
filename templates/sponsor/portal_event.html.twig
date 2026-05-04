@@ -395,6 +395,55 @@
         }, 'google_translate_element');
     }
 </script>
+
+<script>
+// Theme toggle for sponsor portal
+function toggleTheme() {
+    const body = document.body;
+    const themeIconSponsor = document.getElementById('themeIconSponsor');
+    const themeTextSponsor = document.getElementById('themeTextSponsor');
+    
+    if (body.classList.contains('dark-mode')) {
+        body.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light');
+        if (themeIconSponsor) {
+            themeIconSponsor.classList.remove('fa-sun');
+            themeIconSponsor.classList.add('fa-moon');
+        }
+        if (themeTextSponsor) {
+            themeTextSponsor.textContent = 'Mode Sombre';
+        }
+    } else {
+        body.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+        if (themeIconSponsor) {
+            themeIconSponsor.classList.remove('fa-moon');
+            themeIconSponsor.classList.add('fa-sun');
+        }
+        if (themeTextSponsor) {
+            themeTextSponsor.textContent = 'Mode Clair';
+        }
+    }
+}
+
+// Load saved theme on page load for sponsor portal
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('theme');
+    const themeIconSponsor = document.getElementById('themeIconSponsor');
+    const themeTextSponsor = document.getElementById('themeTextSponsor');
+    
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        if (themeIconSponsor) {
+            themeIconSponsor.classList.remove('fa-moon');
+            themeIconSponsor.classList.add('fa-sun');
+        }
+        if (themeTextSponsor) {
+            themeTextSponsor.textContent = 'Mode Clair';
+        }
+    }
+});
+</script>
 <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>

@@ -3,9 +3,10 @@
 namespace App\Controller\Resource;
 
 use App\Entity\Resource\Equipement;
-use App\Form\EquipementType;
+use App\Form\Resource\EquipementType;
 use App\Repository\Resource\EquipementRepository;
 use App\Service\Resource\UnsplashService; // Ton service Unsplash
+use App\Service\Resource\AuditService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,7 +41,8 @@ public function index(Request $request, EquipementRepository $repository): Respo
     public function new(
         Request $request, 
         EntityManagerInterface $entityManager, 
-        UnsplashService $unsplash // Injection du service Unsplash
+        UnsplashService $unsplash, // Injection du service Unsplash
+        AuditService $auditService
     ): Response {
         $equipement = new Equipement();
         $form = $this->createForm(EquipementType::class, $equipement);
@@ -55,6 +57,9 @@ public function index(Request $request, EquipementRepository $repository): Respo
             // 2. Enregistrement
             $entityManager->persist($equipement);
             $entityManager->flush();
+            
+            // Logger la création dans l'audit
+            $auditService->logCreate($equipement);
 
             $this->addFlash('success', 'Équipement ajouté via Unsplash !');
 
@@ -68,7 +73,7 @@ public function index(Request $request, EquipementRepository $repository): Respo
     }
 
     #[Route('/{id}/edit', name: 'app_resource_equipement_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Equipement $equipement, EntityManagerInterface $entityManager, UnsplashService $unsplash): Response
+    public function edit(Request $request, Equipement $equipement, EntityManagerInterface $entityManager, UnsplashService $unsplash, AuditService $auditService): Response
     {
         // On réutilise le même formulaire que pour l'ajout !
         $form = $this->createForm(EquipementType::class, $equipement);
@@ -80,6 +85,9 @@ public function index(Request $request, EquipementRepository $repository): Respo
             $equipement->setImagePath($url);
 
             $entityManager->flush(); // Pas besoin de persist() pour une modification
+            
+            // Logger la modification dans l'audit
+            $auditService->logUpdate($equipement, [], $auditService->extractEntityValues($equipement));
 
             $this->addFlash('info', 'L\'équipement a été mis à jour.');
             return $this->redirectToRoute('app_resource_equipement_index');
@@ -92,8 +100,11 @@ public function index(Request $request, EquipementRepository $repository): Respo
     }
 
     #[Route('/{id}/delete', name: 'app_resource_equipement_delete', methods: ['POST', 'GET'])]
-    public function delete(Request $request, Equipement $equipement, EntityManagerInterface $entityManager): Response
+    public function delete(Request $request, Equipement $equipement, EntityManagerInterface $entityManager, AuditService $auditService): Response
     {
+        // Logger la suppression dans l'audit avant de supprimer l'entité
+        $auditService->logDelete($equipement);
+        
         // Pour la suppression simple, on peut faire un lien direct ou un petit formulaire
         $entityManager->remove($equipement);
         $entityManager->flush();

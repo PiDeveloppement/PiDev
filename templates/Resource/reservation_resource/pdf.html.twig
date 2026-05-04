@@ -194,9 +194,9 @@
                         </td>
                         <td>
                             <span class="resource-name">
-                                {% if reservation.salle %}
+                                {% if reservation.salle is defined and reservation.salle %}
                                     {{ reservation.salle.name }}
-                                {% elseif reservation.equipement %}
+                                {% elseif reservation.equipement is defined and reservation.equipement %}
                                     {{ reservation.equipement.name }}
                                 {% else %}
                                     N/A

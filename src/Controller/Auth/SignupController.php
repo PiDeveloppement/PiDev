@@ -85,6 +85,12 @@ class SignupController extends AbstractController
 
         $success = $this->userService->createUser($user, null);
 
+        error_log('=== SignupController - Données utilisateur avant email ===');
+        error_log('Email: ' . $user->getEmail());
+        error_log('FirstName: ' . $user->getFirstName());
+        error_log('LastName: ' . $user->getLastName());
+        error_log('Faculté: ' . ($user->getFaculte() ?: 'NULL'));
+
         if ($success) {
             // L'email de bienvenue est envoyé dans UserService
             // Envoyer la notification aux admins (désactivé temporairement)

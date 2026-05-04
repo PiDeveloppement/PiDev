@@ -23,6 +23,14 @@
                 </div>
             </div>
             
+            {# --- BOUTON VOCAL --- #}
+            <div style="text-align: center;">
+                <button id="voiceBtn" type="button" style="width: 45px; height: 45px; border-radius: 50%; border: none; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); transition: transform 0.2s;">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <div id="voiceStatus" style="font-size: 9px; color: #94a3b8; font-weight: bold; margin-top: 5px;">Micro Off</div>
+            </div>
+
             {# --- STATS --- #}
             <div style="display: flex; gap: 12px;">
                 <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 12px; padding: 15px 20px; color: white;">
@@ -32,6 +40,10 @@
                 <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; padding: 15px 20px; color: white;">
                     <p style="font-size: 11px; opacity: 0.9; margin: 0;"><i class="fas fa-check-circle" style="margin-right: 6px;"></i>Disponible</p>
                     <p style="font-size: 16px; font-weight: 700; margin: 5px 0 0 0;">Immédiat</p>
+                </div>
+                <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 12px; padding: 15px 20px; color: white;">
+                    <p style="font-size: 11px; opacity: 0.9; margin: 0;"><i class="fas fa-microphone" style="margin-right: 6px;"></i>Voice</p>
+                    <p style="font-size: 16px; font-weight: 700; margin: 5px 0 0 0;">Actif</p>
                 </div>
             </div>
         </div>
@@ -89,19 +101,19 @@
                 </div>
                 
                 {# Image (si disponible) #}
-                {% if form.imagePath is defined %}
+                {% if form.imageFile is defined %}
                 <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 12px; padding: 25px; border: 1px solid #e2e8f0;">
                     <label style="display: block; color: #374151; font-weight: 600; font-size: 14px; margin-bottom: 10px;">
-                        <i class="fas fa-camera" style="color: #667eea; margin-right: 8px;"></i>URL de l'image
+                        <i class="fas fa-camera" style="color: #667eea; margin-right: 8px;"></i>Image de l'équipement
                     </label>
-                    {{ form_widget(form.imagePath, {'attr': {
+                    {{ form_widget(form.imageFile, {'attr': {
                         'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;', 
-                        'placeholder': 'https://images.unsplash.com/...'
+                        'accept': 'image/jpeg,image/png,image/webp'
                     }}) }}
                     <div style="background: #dbeafe; padding: 12px 15px; border-radius: 8px; margin-top: 15px; font-size: 13px; color: #1e40af; border-left: 4px solid #3b82f6;">
-                        <i class="fas fa-info-circle"></i> <strong>Info :</strong> Laissez vide pour une image par défaut
+                        <i class="fas fa-info-circle"></i> <strong>Info :</strong> Formats acceptés : JPEG, PNG, WebP (max 5MB)
                     </div>
-                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.imagePath) }}</div>
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px;">{{ form_errors(form.imageFile) }}</div>
                 </div>
                 {% endif %}
             </div>
@@ -499,6 +511,62 @@
 </style>
 
 <script>
+    // Commande Vocale
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voiceStatus = document.getElementById('voiceStatus');
+    
+    if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'fr-FR';
+        
+        voiceBtn.onclick = () => {
+            recognition.start();
+            voiceBtn.style.background = "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)";
+            voiceStatus.innerText = "🎙️ Écoute...";
+        };
+
+        recognition.onresult = (event) => {
+            const cmd = event.results[0][0].transcript.toLowerCase();
+            voiceStatus.innerText = "🎙️: " + cmd;
+            
+            // Commandes vocales pour équipement
+            if (cmd.includes("nom") || cmd.includes("désignation")) {
+                document.querySelector('[name*="[name]"]').value = cmd.replace("nom", "").replace("désignation", "").trim();
+            }
+            if (cmd.includes("type") || cmd.includes("catégorie")) {
+                document.querySelector('[name*="[equipementType]"]').value = cmd.replace("type", "").replace("catégorie", "").trim();
+            }
+            if (cmd.includes("quantité")) {
+                const qty = cmd.replace(/[^0-9]/g, "");
+                if(qty) document.querySelector('[name*="[quantity]"]').value = qty;
+            }
+            if (cmd.includes("statut") || cmd.includes("état")) {
+                const status = cmd.replace("statut", "").replace("état", "").trim();
+                const statusField = document.querySelector('[name*="[status]"]');
+                if (statusField) {
+                    // Chercher l'option qui correspond
+                    Array.from(statusField.options).forEach(option => {
+                        if (option.text.toLowerCase().includes(status.toLowerCase())) {
+                            statusField.value = option.value;
+                        }
+                    });
+                }
+            }
+            
+            voiceBtn.style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+            setTimeout(() => { voiceStatus.innerText = "Micro Off"; }, 2000);
+        };
+        
+        recognition.onerror = () => {
+            voiceBtn.style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+            voiceStatus.innerText = "Erreur";
+        };
+    } else {
+        voiceStatus.innerText = "Non supporté";
+        voiceBtn.style.opacity = "0.5";
+        voiceBtn.disabled = true;
+    }
+
     // Validation du formulaire équipement
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('equipementForm');

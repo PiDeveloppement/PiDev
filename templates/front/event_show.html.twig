@@ -4,6 +4,8 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
     <style>
         .nav-links .nav-link:nth-child(3) { order: 4; }
         .nav-links .nav-link:nth-child(4) { order: 5; }

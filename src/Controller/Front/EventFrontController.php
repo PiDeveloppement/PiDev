@@ -4,12 +4,14 @@ namespace App\Controller\Front;
 
 use App\Entity\Event\Event;
 use App\Entity\Event\Category;
+use App\Entity\Event\Notification;
 use App\Entity\Event\Ticket;
 use App\Entity\User\UserModel;
 use App\Repository\Event\EventRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Snappy\Pdf;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -75,10 +77,18 @@ public function participationConfirm(
             ->getQuery()
             ->getResult();
 
+        /** @var UserModel|null $user */
+        $user = $this->getUser();
+        $unreadNotificationCount = 0;
+        if ($user instanceof UserModel) {
+            $unreadNotificationCount = $this->notificationService->getUnreadCount($user);
+        }
+
         return $this->render('front/events.html.twig', [
             'events' => $events,
             'categories' => $categories,
             'hasTickets' => $this->currentUserHasTickets($em),
+            'unreadNotificationCount' => $unreadNotificationCount,
         ]);
     }
 
@@ -233,6 +243,7 @@ public function participationConfirm(
 
             $em->persist($ticket);
             $em->flush();
+            $this->notificationService->createConfirmation($user, $event);
             $session->remove('pending_event');
 
             $this->addFlash('success', sprintf('Participation confirmee. Votre billet pour "%s" a ete cree automatiquement.', $event->getTitle()));
@@ -255,6 +266,9 @@ public function participationConfirm(
             $this->addFlash('info', 'Connectez-vous pour voir vos billets.');
             return $this->redirectToRoute('app_login');
         }
+
+        $latestNotifications = $this->notificationService->getLatest($user, 5);
+        $unreadNotificationCount = $this->notificationService->getUnreadCount($user);
 
         $tickets = $em->getRepository(Ticket::class)
             ->createQueryBuilder('t')
@@ -298,6 +312,8 @@ public function participationConfirm(
             'historyTickets' => $historyTickets,
             'now' => $now,
             'hasTickets' => count($tickets) > 0,
+            'latestNotifications' => $latestNotifications,
+            'unreadNotificationCount' => $unreadNotificationCount,
         ]);
     }
 
@@ -538,6 +554,13 @@ public function participationConfirm(
         if ($updatedRows > 0) {
             $em->refresh($ticket);
 
+            // TRIGGER 4: Notifier le participant à la validation du billet
+            $user = $ticket->getUser();
+            $event = $ticket->getEvent();
+            if ($user !== null && $event !== null) {
+                $this->notificationService->createWelcome($user, $event);
+            }
+
             return $this->render('ticket/scan_result.html.twig', [
                 'status' => 'success',
                 'title' => 'Entree validee',
@@ -591,6 +614,15 @@ public function participationConfirm(
         }
 
         return in_array((int) $user->getRoleId(), [2, 3], true);
+    }
+
+    private function isParticipantUser(UserModel $user): bool
+    {
+        $roles = $user->getRoles();
+
+        return !in_array('ROLE_ADMIN', $roles, true)
+            && !in_array('ROLE_ORGANISATEUR', $roles, true)
+            && !in_array('ROLE_SPONSOR', $roles, true);
     }
 
     private function findTicketByQrToken(EntityManagerInterface $em, string $token): ?Ticket

@@ -2,6 +2,12 @@
 
 {% block title %}Tableau de bord - EventFlow{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
+{% endblock %}
+
 {% block page_title %}
     {% if is_admin %}Tableau de bord - Administrateur{% else %}Tableau de bord{% endif %}
 {% endblock %}

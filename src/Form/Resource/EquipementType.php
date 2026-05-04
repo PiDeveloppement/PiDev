@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Form;
+namespace App\Form\Resource;
 
 use App\Entity\Resource\Equipement; // Vérifie bien que le dossier "Resource" existe dans Entity
 use Symfony\Component\Form\AbstractType;
@@ -40,20 +40,12 @@ class EquipementType extends AbstractType
                 'required' => true,
                 'attr' => ['min' => 1, 'placeholder' => 'Ex: 50']
             ])
-            ->add('imagePath', FileType::class, [ // Changé pour matcher le Twig
-                'label' => 'Image (Fichier)',
-                'mapped' => false, 
+            ->add('imageFile', FileType::class, [
+                'label' => 'Image de l\'équipement',
                 'required' => false,
-                'constraints' => [
-                    new File([
-                        'maxSize' => '2M',
-                        'mimeTypes' => [
-                            'image/jpeg',
-                            'image/png',
-                        ],
-                        'mimeTypesMessage' => 'Veuillez uploader une image JPG ou PNG valide',
-                    ])
-                ],
+                'attr' => [
+                    'accept' => 'image/jpeg,image/png,image/webp'
+                ]
             ])
         ;
     }

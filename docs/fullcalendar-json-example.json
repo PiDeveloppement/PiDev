@@ -1,0 +1,41 @@
+[
+  {
+    "id": 1,
+    "title": "Salle: Conférence A - Événement Tech Summit",
+    "start": "2024-01-15",
+    "end": "2024-01-17",
+    "color": "#dc3545",
+    "textColor": "#ffffff",
+    "extendedProps": {
+      "resourceType": "SALLE",
+      "quantity": 1,
+      "eventId": 42
+    }
+  },
+  {
+    "id": 2,
+    "title": "Équipement: Projecteur HD (x2) - Présentation Client",
+    "start": "2024-01-20",
+    "end": "2024-01-21",
+    "color": "#dc3545",
+    "textColor": "#ffffff",
+    "extendedProps": {
+      "resourceType": "EQUIPEMENT",
+      "quantity": 2,
+      "eventId": 43
+    }
+  },
+  {
+    "id": 3,
+    "title": "Salle: Réunion B - Workshop Design",
+    "start": "2024-02-05",
+    "end": "2024-02-06",
+    "color": "#dc3545",
+    "textColor": "#ffffff",
+    "extendedProps": {
+      "resourceType": "SALLE",
+      "quantity": 1,
+      "eventId": 44
+    }
+  }
+]

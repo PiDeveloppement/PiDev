@@ -4,6 +4,8 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -867,7 +869,7 @@
 </div>
 
 <script>
-
+(function() {
     /* ── Server-side search suggestions ── */
     async function showSuggestions() {
         const searchInput = document.getElementById('searchInput');
@@ -888,7 +890,7 @@
                 return;
             }
 
-            suggestionsList.innerHTML = suggestions.map(item => 
+            suggestionsList.innerHTML = suggestions.map(item =>
                 `<div style="padding: 8px 12px; font-size: 12px; color: #1e293b; cursor: pointer; transition: background .12s; border-bottom: 0.5px solid #f1f5f9;" onclick="selectSuggestion('${item}')" onmouseover="this.style.background='#eeedfe'" onmouseout="this.style.background='white'">
                     ${escapeHtml(item)}
                 </div>`
@@ -943,7 +945,7 @@
     // Try immediately and watch for late widget injection
     document.addEventListener('DOMContentLoaded', function () {
         initBudgetTopActions();
-        
+       
         // Also watch for translation widget appearing later
         const observer = new MutationObserver(function(mutations) {
             const translationWidget = document.getElementById('translationWidget');
@@ -953,7 +955,7 @@
                 observer.disconnect();
             }
         });
-        
+       
         observer.observe(document.body, { childList: true, subtree: true });
         setTimeout(() => observer.disconnect(), 3000); // Stop observing after 3 seconds
         
@@ -1105,7 +1107,8 @@
             }
         });
         barChart.render();
-    });
+    })();
+})();
 </script>
 
 {% endblock %}

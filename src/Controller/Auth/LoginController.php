@@ -5,6 +5,7 @@ namespace App\Controller\Auth;
 use App\Entity\User\UserModel;
 use App\Entity\Event\Event;
 use App\Entity\Event\Ticket;
+use App\Bundle\NotificationBundle\Service\NotificationService;
 use App\Service\User\UserService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -24,6 +25,7 @@ class LoginController extends AbstractController
 {
     private UserService $userService;
     private EntityManagerInterface $em;
+    private NotificationService $notificationService;
 
     public function __construct(
         UserService $userService,
@@ -32,6 +34,7 @@ class LoginController extends AbstractController
     ) {
         $this->userService = $userService;
         $this->em = $em;
+        $this->notificationService = $notificationService;
     }
 
     #[Route('/login', name: 'app_login')]
@@ -96,17 +99,23 @@ class LoginController extends AbstractController
             $this->em->flush();
 
             // Envoyer notification SMS via Infobip lors du login
+            error_log('=== Login normal - Vérification téléphone ===');
+            error_log('Numéro de téléphone: ' . ($user->getPhone() ?: 'NULL'));
+            
             if ($user->getPhone()) {
                 try {
-                    $sms = new SmsMessage(
+                    error_log('Envoi SMS en cours vers: ' . $user->getPhone());
+                    $this->notificationService->sendSms(
                         $user->getPhone(),
                         'Nouvelle connexion détectée sur votre compte. Si vous n\'êtes pas à l\'origine de cette action, contactez le support immédiatement.'
                     );
-                    $this->texter->send($sms);
+                    error_log('SMS envoyé avec succès');
                 } catch (\Exception $e) {
                     // Log l'erreur mais ne pas bloquer l'action
                     error_log('Erreur envoi SMS: ' . $e->getMessage());
                 }
+            } else {
+                error_log('Aucun numéro de téléphone, SMS non envoyé');
             }
 
             $token = new UsernamePasswordToken($user, 'main', $user->getRoles());
@@ -219,18 +228,27 @@ class LoginController extends AbstractController
             $this->em->flush();
         }
 
-        // Envoyer notification SMS via Infobip lors du login facial
+        // Envoyer notification SMS via NotificationService lors du login facial
+        error_log('=== Login facial - Vérification téléphone ===');
+        error_log('Numéro de téléphone: ' . ($user->getPhone() ?: 'NULL'));
+        
         if ($user->getPhone()) {
             try {
-                $sms = new SmsMessage(
+                error_log('Envoi SMS en cours vers: ' . $user->getPhone());
+                $this->notificationService->sendSms(
                     $user->getPhone(),
                     'Nouvelle connexion détectée sur votre compte (reconnaissance faciale). Si vous n\'êtes pas à l\'origine de cette action, contactez le support immédiatement.'
                 );
-                $this->texter->send($sms);
+                error_log('SMS envoyé avec succès');
+                error_log('SMS contenu: Nouvelle connexion détectée sur votre compte (reconnaissance faciale). Si vous n\'êtes pas à l\'origine de cette action, contactez le support immédiatement.');
+                error_log('SMS destinataire: ' . $user->getPhone());
             } catch (\Exception $e) {
                 // Log l'erreur mais ne pas bloquer l'action
                 error_log('Erreur envoi SMS: ' . $e->getMessage());
+                error_log('Erreur envoi SMS contenu: ' . $e->getMessage());
             }
+        } else {
+            error_log('Aucun numéro de téléphone, SMS non envoyé');
         }
 
         $redirectRoute = $this->resolveHomeRouteForUser($user);

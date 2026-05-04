@@ -114,16 +114,13 @@
                         <div style="flex-grow: 1;">
                             {# Mode Unsplash #}
                             <div id="modeUnsplash">
-                                {{ form_widget(form.imagePath, {'attr': {
-                                    'id': 'imagePathInput',
-                                    'placeholder': 'URL Unsplash ou image externe (optionnel)...',
-                                    'style': 'width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;'
-                                }}) }}
+                                <input type="text" id="imagePathInput" name="image_url" placeholder="URL Unsplash ou image externe (optionnel)..." 
+                                       style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;">
                             </div>
                             
                             {# Mode Upload #}
                             <div id="modeUpload" style="display: none;">
-                                {{ form_widget(form.imageUpload, {'attr': {
+                                {{ form_widget(form.imageFile, {'attr': {
                                     'id': 'imageFileInput',
                                     'style': 'width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; transition: border-color 0.2s;'
                                 }}) }}

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Annulation de réservation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+        .cancellation-box {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ff6b6b;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .reservation-details {
+            background: #fff5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ee5a24;
+        }
+        .detail-row {
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+            display: inline-block;
+            width: 150px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
+        }
+        .info-box {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>❌ Annulation de Réservation</h1>
+        <p>Votre réservation a été annulée</p>
+    </div>
+
+    <div class="content">
+        <p>Bonjour <strong>{{ user_name }}</strong>,</p>
+        
+        <div class="cancellation-box">
+            <p>Nous vous informons que votre réservation a été annulée avec succès.</p>
+        </div>
+
+        <div class="reservation-details">
+            <h3>📋 Détails de la Réservation Annulée</h3>
+            
+            {% if reservation.id %}
+                <div class="detail-row">
+                    <span class="detail-label">Numéro de réservation:</span>
+                    <span>#{{ reservation.id }}</span>
+                </div>
+            {% endif %}
+            
+            {% if reservation.salle is defined and reservation.salle %}
+                <div class="detail-row">
+                    <span class="detail-label">Salle:</span>
+                    <span>{{ reservation.salle.name }}</span>
+                </div>
+            {% endif %}
+            
+            {% if reservation.equipement is defined and reservation.equipement %}
+                <div class="detail-row">
+                    <span class="detail-label">Équipement:</span>
+                    <span>{{ reservation.equipement.name }}</span>
+                </div>
+            {% endif %}
+            
+            {% if reservation.dateReservation %}
+                <div class="detail-row">
+                    <span class="detail-label">Date:</span>
+                    <span>{{ reservation.dateReservation|date('d/m/Y') }}</span>
+                </div>
+            {% endif %}
+            
+            {% if reservation.heureDebut %}
+                <div class="detail-row">
+                    <span class="detail-label">Heure de début:</span>
+                    <span>{{ reservation.heureDebut|date('H:i') }}</span>
+                </div>
+            {% endif %}
+            
+            {% if reservation.heureFin %}
+                <div class="detail-row">
+                    <span class="detail-label">Heure de fin:</span>
+                    <span>{{ reservation.heureFin|date('H:i') }}</span>
+                </div>
+            {% endif %}
+            
+            {% if reservation.motif %}
+                <div class="detail-row">
+                    <span class="detail-label">Motif:</span>
+                    <span>{{ reservation.motif }}</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="info-box">
+            <p><strong>📝 Informations importantes:</strong></p>
+            <ul>
+                <li>Si cette annulation n'était pas de votre fait, veuillez nous contacter immédiatement</li>
+                <li>La salle est maintenant disponible pour une nouvelle réservation</li>
+                <li>Vous pouvez faire une nouvelle réservation à tout moment</li>
+            </ul>
+        </div>
+
+        <p>Nous espérons vous revoir prochainement sur notre plateforme.</p>
+
+        <div style="text-align: center;">
+            <a href="#" class="btn">Faire une nouvelle réservation</a>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Cordialement,<br>L'équipe PiDev Platform</p>
+        <p><small>Cet email a été envoyé automatiquement. Merci de ne pas y répondre.</small></p>
+    </div>
+</body>
+</html>

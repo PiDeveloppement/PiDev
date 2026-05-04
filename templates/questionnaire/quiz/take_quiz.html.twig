@@ -1,0 +1,808 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
+    <style>
+        .quiz-container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #ecf0f1;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            transition: width 0.3s ease;
+        }
+        
+        .question-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+        
+        .question-text {
+            font-size: 1.2em;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+        
+        .options-container {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .option-label {
+            display: block;
+            padding: 15px 20px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .option-label:hover {
+            border-color: #3498db;
+            background: #f0f8ff;
+            transform: translateY(-2px);
+        }
+        
+        .option-label input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+        
+        .option-label.selected {
+            border-color: #27ae60;
+            background: #e8f8f5;
+        }
+        
+        .option-label.selected::after {
+            content: '✓';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .quiz-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+        }
+        
+        .nav-button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .prev-button {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .prev-button:hover {
+            background: #7f8c8d;
+        }
+        
+        .next-button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .next-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .submit-button {
+            background: linear-gradient(45deg, #27ae60, #229954);
+            color: white;
+        }
+        
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+        }
+        
+        .timer {
+            text-align: center;
+            font-size: 1.1em;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .timer-normal {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 2px solid #27ae60;
+        }
+        
+        .timer-warning {
+            background: #fef5e7;
+            color: #f39c12;
+            border: 2px solid #f39c12;
+        }
+        
+        .timer-critical {
+            background: #fadbd8;
+            color: #e74c3c;
+            border: 2px solid #e74c3c;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        // Configuration Turbolinks pour le timer
+        document.addEventListener('turbolinks:load', function() {
+            console.log('Turbolinks loaded - Starting timer');
+            if (typeof startTimer === 'function') {
+                startTimer();
+            }
+        });
+        
+        document.addEventListener('turbolinks:before-visit', function() {
+            console.log('Turbolinks before visit - Stopping timer');
+            if (typeof stopTimer === 'function') {
+                stopTimer();
+            }
+        });
+        
+        document.addEventListener('turbolinks:visit', function() {
+            console.log('Turbolinks visit - Restarting timer');
+            if (typeof startTimer === 'function') {
+                startTimer();
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block title %}Quiz - Question {{ currentQuestion + 1 }}{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .quiz-container {
+        max-width: 800px;
+        margin: 30px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .quiz-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #ecf0f1;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 10px;
+        background: #ecf0f1;
+        border-radius: 5px;
+        overflow: hidden;
+        margin: 20px 0;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3498db, #2980b9);
+        transition: width 0.3s ease;
+    }
+    
+    .question-card {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 10px;
+        margin: 20px 0;
+        border-left: 4px solid #3498db;
+    }
+    
+    .question-text {
+        font-size: 1.2em;
+        color: #2c3e50;
+        margin-bottom: 25px;
+        font-weight: 500;
+    }
+    
+    .options-container {
+        display: grid;
+        gap: 15px;
+    }
+    
+    .option-label {
+        display: block;
+        padding: 15px 20px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .option-label:hover {
+        border-color: #3498db;
+        background: #f0f8ff;
+        transform: translateY(-2px);
+    }
+    
+    .option-label input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+    
+    .option-label.selected {
+        border-color: #27ae60;
+        background: #e8f8f5;
+    }
+    
+    .option-label.selected::after {
+        content: '✓';
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #27ae60;
+        font-weight: bold;
+        font-size: 1.2em;
+    }
+    
+    .quiz-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #ecf0f1;
+    }
+    
+    .nav-button {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 25px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .prev-button {
+        background: #95a5a6;
+        color: white;
+    }
+    
+    .prev-button:hover {
+        background: #7f8c8d;
+    }
+    
+    .next-button {
+        background: linear-gradient(45deg, #3498db, #2980b9);
+        color: white;
+    }
+    
+    .next-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+    }
+    
+    .submit-button {
+        background: linear-gradient(45deg, #27ae60, #229954);
+        color: white;
+    }
+    
+    .submit-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+    }
+    
+    .timer {
+        text-align: center;
+        font-size: 1.1em;
+        margin: 15px 0;
+        padding: 10px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .timer-normal {
+        background: #d5f4e6;
+        color: #27ae60;
+        border: 2px solid #27ae60;
+    }
+    
+    .timer-warning {
+        background: #fef5e7;
+        color: #f39c12;
+        border: 2px solid #f39c12;
+    }
+    
+    .timer-critical {
+        background: #fadbd8;
+        color: #e74c3c;
+        border: 2px solid #e74c3c;
+        animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .quiz-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #ecf0f1;
+        border-radius: 8px;
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    
+    .loading-content {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+    }
+    
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .error-message {
+        background: #e74c3c;
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="quiz-container">
+    <div class="quiz-header">
+        <h1>🎯 Quiz Interactif</h1>
+        <div class="quiz-info">
+            <span>Question <strong>{{ currentQuestion + 1 }}</strong> sur {{ totalQuestions }}</span>
+            <span>Points: <strong>{{ currentPoints }}</strong></span>
+        </div>
+        <div class="timer" id="timer-container">
+            <strong>⏱️ Temps restant: <span id="timer-display">10:00</span></strong>
+        </div>
+        
+        <div id="timer-warning" style="display: none; background: #f39c12; color: white; padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center;">
+            ⚠️ Attention: Plus que 5 secondes restantes !
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ ((currentQuestion + 1) / totalQuestions) * 100 }}%"></div>
+        </div>
+    </div>
+
+    <div class="error-message" id="error-message"></div>
+
+    <div class="question-card">
+        <div class="question-text">
+            {{ question.texte }}
+        </div>
+
+        <form id="quiz-form" class="options-container">
+            {% for option in shuffledOptions %}
+                <label class="option-label">
+                    <input type="radio" name="answer" value="{{ option }}" {% if answers[question.id] == option %}checked{% endif %}>
+                    <span>{{ option }}</span>
+                </label>
+            {% endfor %}
+        </form>
+    </div>
+
+    <div class="quiz-navigation">
+        <button class="nav-button prev-button" onclick="previousQuestion()" {% if currentQuestion == 0 %}disabled{% endif %}>
+            ← Précédent
+        </button>
+
+        {% if currentQuestion == totalQuestions - 1 %}
+            <button class="nav-button submit-button" onclick="submitQuiz()">
+                ✅ Terminer le Quiz
+            </button>
+        {% else %}
+            <button class="nav-button next-button" onclick="nextQuestion()">
+                Suivant →
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="loading-overlay" id="loading">
+    <div class="loading-content">
+        <div class="spinner"></div>
+        <p id="loading-text">Chargement...</p>
+    </div>
+</div>
+
+<script>
+    let sessionToken = '{{ sessionToken }}';
+    let currentQuestionIndex = {{ currentQuestion }};
+    let totalQuestionsCount = {{ totalQuestions }};
+    let answers = {{ answers|json_encode|raw }};
+    let questions = {{ questions|json_encode|raw }};
+    let currentPoints = {{ currentPoints }};
+    
+    // Timer variables avec Turbo
+    let timeRemaining = 600; // 10 minutes en secondes
+    let timerInterval;
+    let quizActive = true;
+    
+    // Initialisation Turbolinks pour le timer
+    document.addEventListener('turbolinks:load', function() {
+        console.log('Turbolinks loaded - Starting timer');
+        updateTimerDisplay();
+        hideTimerWarning();
+        startTimer();
+    });
+    
+    document.addEventListener('turbolinks:before-visit', function() {
+        console.log('Turbolinks before visit - Stopping timer');
+        stopTimer();
+    });
+
+    // Gérer la sélection des options
+    document.querySelectorAll('.option-label').forEach(label => {
+        label.addEventListener('click', function() {
+            document.querySelectorAll('.option-label').forEach(l => l.classList.remove('selected'));
+            this.classList.add('selected');
+            this.querySelector('input[type="radio"]').checked = true;
+            
+            // Sauvegarder la réponse
+            const questionId = questions[currentQuestionIndex].id;
+            const selectedAnswer = this.querySelector('input[type="radio"]').value;
+            answers[questionId] = selectedAnswer;
+        });
+    });
+
+    // Initialiser les sélections
+    document.querySelectorAll('.option-label').forEach(label => {
+        if (label.querySelector('input[type="radio"]').checked) {
+            label.classList.add('selected');
+        }
+    });
+
+    function previousQuestion() {
+        if (currentQuestionIndex > 0) {
+            saveCurrentAnswer();
+            currentQuestionIndex--;
+            loadQuestion(currentQuestionIndex);
+        }
+    }
+
+    function nextQuestion() {
+        if (currentQuestionIndex < totalQuestionsCount - 1) {
+            saveCurrentAnswer();
+            currentQuestionIndex++;
+            loadQuestion(currentQuestionIndex);
+        }
+    }
+
+    function saveCurrentAnswer() {
+        const selectedOption = document.querySelector('input[name="answer"]:checked');
+        if (selectedOption) {
+            const questionId = questions[currentQuestionIndex].id;
+            answers[questionId] = selectedOption.value;
+        }
+    }
+
+    function loadQuestion(index) {
+        showLoading('Chargement de la question...');
+        
+        const question = questions[index];
+        const form = document.getElementById('quiz-form');
+        
+        // Mettre à jour l'URL sans recharger la page
+        const newUrl = `/quiz/take/${sessionToken}?question=${index}`;
+        window.history.pushState({question: index}, '', newUrl);
+        
+        // Recharger la page avec la nouvelle question
+        window.location.reload();
+    }
+
+    async function submitQuiz() {
+        saveCurrentAnswer();
+        
+        if (!confirm('Êtes-vous sûr de vouloir terminer le quiz ? Vous ne pourrez plus modifier vos réponses.')) {
+            return;
+        }
+
+        showLoading('Calcul de vos résultats...');
+
+        try {
+            // Calculer le score
+            let score = 0;
+            let totalPossible = 0;
+
+            questions.forEach(question => {
+                totalPossible += question.points;
+                const userAnswer = answers[question.id];
+                if (userAnswer === question.reponse) {
+                    score += question.points;
+                }
+            });
+
+            const response = await fetch(`/api/quiz/finish/${sessionToken}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    answers: answers,
+                    score: score,
+                    total_points: totalPossible
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Rediriger vers la page de résultats
+                window.location.href = `/quiz/results/${sessionToken}`;
+            } else {
+                hideLoading();
+                showError(data.message || 'Erreur lors de la soumission du quiz');
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            hideLoading();
+            showError('Une erreur technique est survenue. Veuillez réessayer.');
+        }
+    }
+
+    function showLoading(text = 'Chargement...') {
+        document.getElementById('loading-text').textContent = text;
+        document.getElementById('loading').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loading').style.display = 'none';
+    }
+
+    function showError(message) {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        
+        setTimeout(() => {
+            errorDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    // Gérer le bouton retour du navigateur
+    window.addEventListener('popstate', function(event) {
+        if (event.state && event.state.question !== undefined) {
+            currentQuestionIndex = event.state.question;
+            loadQuestion(currentQuestionIndex);
+        }
+    });
+
+    // Auto-sauvegarder périodiquement
+    setInterval(function() {
+        saveCurrentAnswer();
+        // Envoyer les réponses au serveur pour sauvegarde
+        fetch(`/api/quiz/save-progress/${sessionToken}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                answers: answers,
+                current_question: currentQuestionIndex
+            })
+        }).catch(error => console.log('Auto-save failed:', error));
+    }, 30000); // Toutes les 30 secondes
+
+    // Timer functions avec Turbo et temps réel
+    function startTimer() {
+        if (!quizActive) return;
+        
+        timerInterval = setInterval(function() {
+            if (!quizActive) {
+                stopTimer();
+                return;
+            }
+            
+            timeRemaining--;
+            updateTimerDisplay();
+            
+            // Warning 5 secondes
+            if (timeRemaining === 5) {
+                showTimerWarning();
+            }
+            
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                quizActive = false;
+                submitQuiz(); // Soumettre automatiquement quand le temps est écoulé
+            }
+        }, 1000);
+    }
+    
+    function updateTimerDisplay() {
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+        const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const timerDisplay = document.getElementById('timer-display');
+        
+        if (timerDisplay) {
+            timerDisplay.textContent = display;
+            
+            // Changer la couleur quand il reste peu de temps
+            if (timeRemaining <= 60) {
+                timerDisplay.style.color = '#e74c3c';
+                timerDisplay.style.fontWeight = 'bold';
+            } else if (timeRemaining <= 300) {
+                timerDisplay.style.color = '#f39c12';
+                timerDisplay.style.fontWeight = 'bold';
+            } else {
+                timerDisplay.style.color = '#27ae60';
+            }
+        }
+        
+        // Mise à jour Turbo du timer
+        updateTimerContainer();
+    }
+    
+    function updateTimerContainer() {
+        const container = document.getElementById('timer-container');
+        if (container) {
+            // Ajouter classe CSS selon le temps restant
+            container.className = 'timer';
+            if (timeRemaining <= 60) {
+                container.classList.add('timer-critical');
+            } else if (timeRemaining <= 300) {
+                container.classList.add('timer-warning');
+            } else {
+                container.classList.add('timer-normal');
+            }
+        }
+    }
+    
+    function showTimerWarning() {
+        const warning = document.getElementById('timer-warning');
+        if (warning) {
+            warning.style.display = 'block';
+            warning.style.animation = 'pulse 1s infinite';
+        }
+    }
+    
+    function hideTimerWarning() {
+        const warning = document.getElementById('timer-warning');
+        if (warning) {
+            warning.style.display = 'none';
+        }
+    }
+    
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+    
+    function disableQuiz() {
+        quizActive = false;
+        stopTimer();
+        
+        // Désactiver tous les boutons et options
+        document.querySelectorAll('.option-label').forEach(label => {
+            label.style.pointerEvents = 'none';
+            label.style.opacity = '0.5';
+        });
+        
+        document.querySelectorAll('.nav-button').forEach(button => {
+            button.disabled = true;
+        });
+        
+        // Afficher message temps écoulé
+        const timerDisplay = document.getElementById('timer-display');
+        if (timerDisplay) {
+            timerDisplay.textContent = 'TEMPS ÉCOULÉ';
+            timerDisplay.style.color = '#e74c3c';
+        }
+    }
+    
+    // Empêcher la fermeture de la page sans avertissement
+    window.addEventListener('beforeunload', function(event) {
+        if (currentQuestionIndex < totalQuestionsCount - 1) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    });
+    
+    // Démarrer le timer au chargement de la page (compatible avec Turbolinks)
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded - Initializing timer');
+        updateTimerDisplay();
+        hideTimerWarning();
+        
+        // Si Turbolinks n'est pas encore chargé, démarrer manuellement
+        if (!window.Turbolinks) {
+            console.log('Turbolinks not found, starting timer manually');
+            startTimer();
+        }
+    });
+</script>
+{% endblock %}

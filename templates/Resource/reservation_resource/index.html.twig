@@ -18,6 +18,19 @@
                 <p style="color: #64748b; font-size: 14px;">Gérez vos réservations de salles et équipements</p>
             </div>
             <div style="display: flex; gap: 10px;">
+                <button type="button" 
+                        class="btn-notification"
+                        onclick="showAuditHistory()" 
+                        style="background: #ef4444; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); transition: transform 0.2s; border: none; cursor: pointer; position: relative;">
+                    <i class="fas fa-bell" style="margin-right: 8px;"></i>
+                    Historique
+                    <span id="notificationBadge" class="notification-badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #dc2626; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: flex; align-items: center; justify-content: center;">0</span>
+                </button>
+                <a href="{{ path('app_reservation_resource_calendar') }}" 
+                   style="background: #f59e0b; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); transition: transform 0.2s;">
+                    <i class="fas fa-calendar-alt" style="margin-right: 8px;"></i>
+                    Calendrier
+                </a>
                 <a href="{{ path('app_reservation_resource_pdf', app.request.query.all) }}" 
                    style="background: #10b981; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: transform 0.2s;">
                     <i class="fas fa-file-pdf" style="margin-right: 8px;"></i>
@@ -44,20 +57,20 @@
                     Trier par Date
                 </a>
             </div>
-            <form id="searchForm" method="get" action="{{ path('app_reservation_resource_index') }}">
+            <form id="searchForm" data-turbo="false" method="get" action="{{ path('app_reservation_resource_index') }}">
                 <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 15px; align-items: end;">
                     <div>
                         <label for="name" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
                             <i class="fas fa-tag" style="margin-right: 5px;"></i>Nom de Salle ou Équipement
                         </label>
-                        <input type="text" name="name" id="name" value="{{ filters.name }}" placeholder="Rechercher..." 
+                        <input type="text" name="name" id="name" data-turbo-permanent="false" value="{{ filters.name }}" placeholder="Rechercher..." 
                                style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;">
                     </div>
                     <div>
                         <label for="resourceType" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
                             <i class="fas fa-filter" style="margin-right: 5px;"></i>Type de Ressource
                         </label>
-                        <select name="resourceType" id="resourceType" 
+                        <select name="resourceType" id="resourceType" data-turbo-permanent="false" 
                                 style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white; transition: border-color 0.2s;">
                             <option value="">Tous les types</option>
                             <option value="SALLE" {% if filters.resourceType == 'SALLE' %}selected{% endif %}>Salle</option>
@@ -83,6 +96,14 @@
                     <div style="padding: 20px;">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                             <div>
+                                {% if reservation.event %}
+                                    <span style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); 
+                                                 color: #92400e; 
+                                                 padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; margin-bottom: 8px;">
+                                        <i class="fas fa-calendar-star" style="margin-right: 5px;"></i>
+                                        {{ reservation.event.title }}
+                                    </span>
+                                {% endif %}
                                 <span style="background: {{ reservation.resourceType == 'SALLE' ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' : 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)' }}; 
                                              color: {{ reservation.resourceType == 'SALLE' ? '#1d4ed8' : '#be185d' }}; 
                                              padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; margin-bottom: 8px;">
@@ -90,9 +111,9 @@
                                     {{ reservation.resourceType }}
                                 </span>
                                 <h4 style="font-size: 16px; font-weight: 600; color: #1f2937; margin: 0;">
-                                    {% if reservation.resourceType == 'SALLE' and reservation.salle %}
+                                    {% if reservation.resourceType == 'SALLE' and reservation.salle is defined and reservation.salle %}
                                         {{ reservation.salle.name }}
-                                    {% elseif reservation.resourceType == 'EQUIPEMENT' and reservation.equipement %}
+                                    {% elseif reservation.resourceType == 'EQUIPEMENT' and reservation.equipement is defined and reservation.equipement %}
                                         {{ reservation.equipement.name }}
                                     {% else %}
                                         Ressource inconnue
@@ -150,15 +171,304 @@
     </div>
 </div>
 
+<!-- Modal d'historique des audits -->
+<div id="auditModal" data-turbo="false" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div style="position: relative; background-color: white; margin: 5% auto; padding: 0; border-radius: 12px; width: 90%; max-width: 800px; max-height: 80vh; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px 12px 0 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 20px;">
+                    <i class="fas fa-history" style="margin-right: 10px;"></i>
+                    Historique des Audits
+                </h3>
+                <button type="button" onclick="closeAuditModal()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='none'">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+            <!-- Filtres -->
+            <div style="background: #f8fafc; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px;">Type de ressource</label>
+                        <select id="auditResourceType" onchange="filterAuditLogs()" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                            <option value="">Tous</option>
+                            <option value="RESERVATION">Réservations</option>
+                            <option value="SALLE">Salles</option>
+                            <option value="EQUIPEMENT">Équipements</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px;">Action</label>
+                        <select id="auditAction" onchange="filterAuditLogs()" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                            <option value="">Toutes</option>
+                            <option value="CREATE">Créations</option>
+                            <option value="UPDATE">Modifications</option>
+                            <option value="DELETE">Suppressions</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151; font-size: 14px;">Limite</label>
+                        <select id="auditLimit" onchange="filterAuditLogs()" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                            <option value="10">10 derniers</option>
+                            <option value="25">25 derniers</option>
+                            <option value="50">50 derniers</option>
+                            <option value="100">100 derniers</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contenu des logs -->
+            <div id="auditLogsContent" data-turbo="false">
+                <div style="text-align: center; padding: 40px;">
+                    <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f4f6; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <p style="margin-top: 15px; color: #6b7280;">Chargement de l'historique...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div style="padding: 15px 20px; border-top: 1px solid #e5e7eb; background: #f9fafb;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <small style="color: #6b7280;">
+                    <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
+                    <span id="auditLogCount">0</span> logs trouvés
+                </small>
+                <button type="button" onclick="refreshAuditLogs()" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#5a67d8'" onmouseout="this.style.background='#667eea'">
+                    <i class="fas fa-sync-alt" style="margin-right: 5px;"></i>
+                    Actualiser
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.audit-log-item {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+}
+
+.audit-log-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+
+.audit-badge-create {
+    background: #10b981;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.audit-badge-update {
+    background: #f59e0b;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.audit-badge-delete {
+    background: #ef4444;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.audit-changes {
+    background: #f8fafc;
+    border-left: 3px solid #667eea;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+}
+
+.audit-no-logs {
+    text-align: center;
+    padding: 40px;
+    color: #6b7280;
+}
+
+.audit-no-logs i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #d1d5db;
+}
+</style>
+
 <script>
-    document.getElementById('name').addEventListener('input', function() {
-        clearTimeout(this.searchTimeout);
-        this.searchTimeout = setTimeout(() => {
-            document.getElementById('searchForm').submit();
-        }, 300);
+let auditLogs = {{ auditLogsData|json_encode|raw }};
+let filteredAuditLogs = [...auditLogs];
+
+// Fonction pour afficher l'historique des audits
+function showAuditHistory() {
+    document.getElementById('auditModal').style.display = 'block';
+    loadAuditLogs();
+}
+
+// Fonction pour fermer la modal
+function closeAuditModal() {
+    document.getElementById('auditModal').style.display = 'none';
+}
+
+// Fonction pour charger les logs d'audit
+function loadAuditLogs() {
+    const limit = document.getElementById('auditLimit').value;
+    
+    // Utiliser les données déjà chargées depuis Twig
+    filteredAuditLogs = auditLogs.slice(0, limit);
+    console.log('Affichage des logs depuis les données chargées:', filteredAuditLogs.length, 'éléments');
+    displayAuditLogs();
+    updateNotificationBadge();
+}
+
+// Fonction pour afficher les logs
+function displayAuditLogs() {
+    const container = document.getElementById('auditLogsContent');
+    const count = document.getElementById('auditLogCount');
+    
+    count.textContent = filteredAuditLogs.length;
+    
+    if (filteredAuditLogs.length === 0) {
+        container.innerHTML = `
+            <div class="audit-no-logs">
+                <i class="fas fa-inbox"></i>
+                <h4>Aucun log trouvé</h4>
+                <p>Aucune activité d'audit ne correspond aux critères sélectionnés.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    filteredAuditLogs.forEach(log => {
+        const actionClass = log.action === 'CREATE' ? 'audit-badge-create' : 
+                           log.action === 'UPDATE' ? 'audit-badge-update' : 'audit-badge-delete';
+        
+        let changesHtml = '';
+        if (log.changes && Object.keys(log.changes).length > 0) {
+            changesHtml = '<div class="audit-changes"><strong>Changements:</strong><ul style="margin: 5px 0; padding-left: 20px;">';
+            for (const [key, value] of Object.entries(log.changes)) {
+                changesHtml += `<li><strong>${key}:</strong> ${value.old ? '<span style="text-decoration: line-through; color: #ef4444;">' + value.old + '</span>' : 'N/A'} → ${value.new ? '<span style="color: #10b981;">' + value.new + '</span>' : 'N/A'}</li>`;
+            }
+            changesHtml += '</ul></div>';
+        }
+        
+        html += `
+            <div class="audit-log-item">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <span class="${actionClass}">${log.actionLabel}</span>
+                            <span style="background: #e5e7eb; color: #374151; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                                ${log.resourceTypeLabel}
+                            </span>
+                        </div>
+                        <h5 style="margin: 0; font-size: 16px; color: #1f2937;">${log.resourceName || 'Ressource #' + log.resourceId}</h5>
+                        <p style="margin: 5px 0; color: #6b7280; font-size: 14px;">${log.description}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <small style="color: #6b7280; display: block; margin-bottom: 5px;">${log.createdAt}</small>
+                        <small style="color: #9ca3af; font-size: 12px;">par ${log.userName}</small>
+                    </div>
+                </div>
+                ${changesHtml}
+            </div>
+        `;
     });
-    document.getElementById('resourceType').addEventListener('change', function() {
+    
+    container.innerHTML = html;
+}
+
+// Fonction pour filtrer les logs
+function filterAuditLogs() {
+    const resourceType = document.getElementById('auditResourceType').value;
+    const action = document.getElementById('auditAction').value;
+    
+    filteredAuditLogs = auditLogs.filter(log => {
+        const matchesResourceType = !resourceType || log.resourceType === resourceType;
+        const matchesAction = !action || log.action === action;
+        return matchesResourceType && matchesAction;
+    });
+    
+    displayAuditLogs();
+}
+
+// Fonction pour rafraîchir les logs
+function refreshAuditLogs() {
+    loadAuditLogs();
+}
+
+// Fonction pour mettre à jour le badge de notification
+function updateNotificationBadge() {
+    const badge = document.getElementById('notificationBadge');
+    const recentLogs = auditLogs.filter(log => {
+        let logDate;
+        if (log.createdAt instanceof Date) {
+            logDate = log.createdAt;
+        } else if (typeof log.createdAt === 'string') {
+            logDate = new Date(log.createdAt.replace(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})/, '$3-$2-$1 $4:$5:$6'));
+        } else {
+            logDate = new Date(log.createdAt);
+        }
+        const now = new Date();
+        const diffHours = (now - logDate) / (1000 * 60 * 60);
+        return diffHours <= 24; // Logs des dernières 24 heures
+    });
+    
+    if (recentLogs.length > 0) {
+        badge.textContent = recentLogs.length > 99 ? '99+' : recentLogs.length;
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// Fermer la modal quand on clique en dehors
+window.onclick = function(event) {
+    const modal = document.getElementById('auditModal');
+    if (event.target === modal) {
+        closeAuditModal();
+    }
+}
+
+// Charger le nombre de notifications au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    // Utiliser les données déjà chargées depuis Twig
+    updateNotificationBadge();
+    
+    // Rafraîchissement automatique toutes les 30 secondes
+    setInterval(function() {
+        location.reload();
+    }, 30000);
+});
+
+// Scripts existants
+document.getElementById('name').addEventListener('input', function() {
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => {
         document.getElementById('searchForm').submit();
-    });
+    }, 300);
+});
+document.getElementById('resourceType').addEventListener('change', function() {
+    document.getElementById('searchForm').submit();
+});
 </script>
 {% endblock %}

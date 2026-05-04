@@ -5,8 +5,12 @@ namespace App\Entity\Resource;
 use App\Repository\Resource\EquipementRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: EquipementRepository::class)]
+#[Vich\Uploadable]
 class Equipement
 {
     #[ORM\Id]
@@ -45,6 +49,15 @@ class Equipement
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $image_path = null;
 
+    #[Vich\UploadableField(mapping: 'equipement_images', fileNameProperty: 'image_path')]
+    #[Assert\File(
+        maxSize: '5M',
+        mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        mimeTypesMessage: 'Veuillez uploader une image valide (JPEG, PNG ou WebP)'
+    )]
+    private ?File $imageFile = null;
+
+    
     public function getId(): ?int
     {
         return $this->id;
@@ -120,5 +133,15 @@ class Equipement
         $this->image_path = $image_path;
 
         return $this;
+    }
+
+    public function getImageFile(): ?File
+    {
+        return $this->imageFile;
+    }
+
+    public function setImageFile(?File $imageFile = null): void
+    {
+        $this->imageFile = $imageFile;
     }
 }

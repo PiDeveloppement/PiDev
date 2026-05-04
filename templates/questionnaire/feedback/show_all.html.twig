@@ -1,5 +1,11 @@
 {% extends 'base.html.twig' %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    {# FIX TURBO: force full reload sur cette page #}
+    <meta name="turbo-visit-control" content="reload">
+{% endblock %}
+
 {% block title %}Avis des Utilisateurs - EventFlow{% endblock %}
 
 {% block admin_content %}
@@ -70,7 +76,8 @@
                 </p>
 
                 <div class="row" id="feedbackGrid">
-                    {% for feedback in userFeedbacks %}
+                    {% for feedbackData in userFeedbacks %}
+                        {% set feedback = feedbackData.feedback %}
                         <div class="col-lg-6 col-xl-4 mb-4 feedback-item"
                              data-name="{{ usersInfo[feedback.getUserId()]|default('Utilisateur ' ~ feedback.getUserId())|lower }}"
                              data-comment="{{ feedback.getComments()|lower }}"
@@ -88,6 +95,17 @@
                                                 {{ feedback.getCreatedAt() ? feedback.getCreatedAt()|date('d/m/Y') : '' }}
                                             </div>
                                         </div>
+                                    </div>
+                                    <div class="sentiment-badge sentiment-{{ feedbackData.sentiment }}">
+                                        {% if feedbackData.sentiment == 'positif' %}
+                                            <i class="fas fa-smile"></i> Positif
+                                        {% elseif feedbackData.sentiment == 'négatif' %}
+                                            <i class="fas fa-frown"></i> Négatif
+                                        {% elseif feedbackData.sentiment == 'inapproprié' %}
+                                            <i class="fas fa-exclamation-triangle"></i> Inapproprié
+                                        {% else %}
+                                            <i class="fas fa-meh"></i> Neutre
+                                        {% endif %}
                                     </div>
                                 </div>
 
@@ -232,12 +250,31 @@
     margin-left: 8px; background: white; padding: 2px 8px; border-radius: 8px;
 }
 .feedback-comment { flex-grow: 1; }
+.sentiment-badge {
+    font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+.sentiment-positif {
+    background: linear-gradient(135deg, #d6f0ee, #b8e8e5);
+    color: #0d6b65;
+}
+.sentiment-négatif {
+    background: linear-gradient(135deg, #fde8e0, #f5d0c8);
+    color: #c0392b;
+}
+.sentiment-neutre {
+    background: linear-gradient(135deg, #fef3d0, #fceeb8);
+    color: #a06000;
+}
+.sentiment-inapproprié {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    color: #c62828;
+}
 .feedback-comment p { margin: 0; line-height: 1.7; color: #4a5568; font-size: 14px; }
 .feedback-item { animation: slideInUp 0.6s ease-out both; opacity: 0; }
 .feedback-item:nth-child(1)  { animation-delay: 0.1s; }
 .feedback-item:nth-child(2)  { animation-delay: 0.2s; }
 .feedback-item:nth-child(3)  { animation-delay: 0.3s; }
-.feedback-item:nth-child(4)  { animation-delay: 0.4s; }
 .feedback-item:nth-child(5)  { animation-delay: 0.5s; }
 .feedback-item:nth-child(6)  { animation-delay: 0.6s; }
 .feedback-item:nth-child(7)  { animation-delay: 0.7s; }

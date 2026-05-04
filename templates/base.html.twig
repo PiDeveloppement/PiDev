@@ -31,6 +31,118 @@
             background-color: #f8fafc;
             min-height: 100vh;
             overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .sidebar {
+            background-color: #16213e;
+        }
+
+        body.dark-mode .sidebar-logo {
+            background-color: #0f3460;
+        }
+
+        body.dark-mode .menu-button {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .menu-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .menu-button.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+        }
+
+        body.dark-mode .submenu-button {
+            color: #b0b0b0;
+        }
+
+        body.dark-mode .submenu-button:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .submenu-button.active {
+            color: #ffffff;
+        }
+
+        body.dark-mode .profile-dropdown {
+            background-color: #16213e;
+            border: 1px solid #0f3460;
+        }
+
+        body.dark-mode .dropdown-item {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .dropdown-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .stat-card,
+        body.dark-mode .chart-card,
+        body.dark-mode .quick-actions-section {
+            background-color: #16213e;
+            border-color: #0f3460;
+        }
+
+        body.dark-mode .stat-value,
+        body.dark-mode .chart-title,
+        body.dark-mode .quick-actions-title {
+            color: #ffffff;
+        }
+
+        body.dark-mode .stat-label,
+        body.dark-mode .progress-label,
+        body.dark-mode .progress-count,
+        body.dark-mode .event-meta {
+            color: #b0b0b0;
+        }
+
+        body.dark-mode .event-item {
+            background-color: #0f3460;
+            border-color: #16213e;
+        }
+
+        body.dark-mode .event-item:hover {
+            background-color: #16213e;
+        }
+
+        body.dark-mode .event-title {
+            color: #ffffff;
+        }
+
+        body.dark-mode .progress-bar-container {
+            background-color: #0f3460;
+        }
+
+        body.dark-mode .dashboard-container {
+            background-color: #1a1a2e;
+        }
+
+        body.dark-mode main {
+            background-color: #1a1a2e;
+        }
+
+        body.dark-mode .page-header {
+            background-color: #16213e;
+            border-color: #0f3460;
+        }
+
+        body.dark-mode .page-header h1 {
+            color: #ffffff;
+        }
+
+        body.dark-mode .page-header p {
+            color: #b0b0b0;
         }
         
         .app-container {
@@ -316,6 +428,10 @@
                                     <i class="fas fa-cog" style="width: 16px;"></i>
                                     Paramètres
                                 </a>
+                                <button onclick="toggleTheme()" class="dropdown-item" style="padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none; background: none; border: none; width: 100%; text-align: left;">
+                                    <i class="fas fa-moon" style="width: 16px;" id="themeIcon"></i>
+                                    <span id="themeText">Mode Sombre</span>
+                                </button>
                                 <div style="height: 1px; background: #eee; margin: 5px 0;"></div>
                                 <a href="{{ path('app_logout') }}" class="dropdown-item" style="padding: 10px 15px; color: #333; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-decoration: none;">
                                     <i class="fas fa-sign-out-alt" style="width: 16px;"></i>
@@ -361,7 +477,9 @@
                         {% endfor %}
                     {% endfor %}
 
-                    {% block admin_content %}{% endblock %}
+                    <div data-turbo="false">
+                        {% block admin_content %}{% endblock %}
+                    </div>
                 </div>
             </main>
         </div>
@@ -524,7 +642,6 @@
                             <div style="background: #E3F2FD; border-radius: 16px 16px 16px 5px; padding: 10px; max-width: 80%;">
                                 <p style="margin: 0; font-size: 13px; color: #333;">${data.response}</p>
                                 ${data.isSimulated ? '<p style="margin: 5px 0 0 0; font-size: 10px; color: #999;">Mode simulation</p>' : ''}
-                                ${data.debug ? '<p style="margin: 5px 0 0 0; font-size: 9px; color: #666;">Debug: ' + data.debug + '</p>' : ''}
                             </div>
                         `;
                         chatMessages.appendChild(responseDiv);
@@ -745,6 +862,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     {% block javascripts %}{% endblock %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
 </body>
 
 </html>

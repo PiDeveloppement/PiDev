@@ -1,3 +1,3 @@
 import { startStimulusApp } from '@symfony/stimulus-bundle';
 
-startStimulusApp();
+const app = startStimulusApp();

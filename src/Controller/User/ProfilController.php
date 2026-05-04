@@ -8,6 +8,7 @@ use App\Repository\Role\RoleRepository;
 use App\Repository\User\UserRepository;
 use App\Service\Role\RoleService;
 use App\Service\User\UserService;
+use App\Bundle\NotificationBundle\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
