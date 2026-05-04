@@ -1,0 +1,3 @@
+﻿branch=merge-user-into-sponsor-temp
+head=c7f649b4d6abb92163c958623bfaa72eeacc6785
+created_at=20260504-205402
