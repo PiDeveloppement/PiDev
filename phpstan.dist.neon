@@ -1,0 +1,9 @@
+parameters:
+    level: 6
+    paths:
+        - src/Controller/Event
+        - src/Entity/Event
+        - src/Repository/Event
+        - src/Service/Event
+        - src/Form/Event
+        - src/EventSubscriber/ParticipantUpcomingCalendarSubscriber.php
