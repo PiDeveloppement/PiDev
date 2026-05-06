@@ -86,7 +86,7 @@ class EventService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, \App\Entity\Event\Category>
      */
     public function getCategoriesForSelect(): array
     {
@@ -222,7 +222,7 @@ class EventService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, \App\Entity\Event\Event>
      */
     public function getEventsForExport(): array
     {
