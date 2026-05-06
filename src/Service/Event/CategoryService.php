@@ -17,6 +17,10 @@ class CategoryService
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<string, mixed>
+     */
     public function getBackOfficeListData(int $page, PaginatorInterface $paginator, array $filters = []): array
     {
         $categories = $paginator->paginate(
@@ -43,6 +47,9 @@ class CategoryService
         ];
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function createFromRequestData(array $data): void
     {
         $category = new Category();
@@ -52,12 +59,18 @@ class CategoryService
         $this->entityManager->flush();
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function updateFromRequestData(Category $category, array $data): void
     {
         $this->mapRequestDataToCategory($category, $data, false);
         $this->entityManager->flush();
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function hydrateCategoryFromRequestData(Category $category, array $data, bool $isNew): void
     {
         $this->mapRequestDataToCategory($category, $data, $isNew);
@@ -80,11 +93,17 @@ class CategoryService
         $this->entityManager->flush();
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getAllForExport(): array
     {
         return $this->categoryRepository->findAll();
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function mapRequestDataToCategory(Category $category, array $data, bool $isNew): void
     {
         $category->setName((string) ($data['name'] ?? ''));
