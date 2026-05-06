@@ -63,15 +63,14 @@ class UserModel implements UserInterface, PasswordAuthenticatedUserInterface
 #[ORM\ManyToOne(targetEntity: Role::class, inversedBy: "users")] // <-- Ajoute inversedBy
 #[ORM\JoinColumn(name: "Role_Id", referencedColumnName: "Id_Role", nullable: false)]
 private ?Role $role = null;
-
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: PasswordResetToken::class, cascade: ['persist', 'remove'])]
-    private Collection $resetTokens;
+#[ORM\OneToMany(mappedBy: 'user', targetEntity: PasswordResetToken::class)]
+private Collection $resetTokens;
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Feedback::class, cascade: ['remove'])]
     private Collection $feedbacks;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Question::class, cascade: ['remove'])]
-    private Collection $questions;
+   #[ORM\OneToMany(mappedBy: 'user', targetEntity: Question::class)]
+private Collection $questions;
 
     // Champ temporaire pour le formulaire (non persistant)
     private ?string $plainPassword = null;

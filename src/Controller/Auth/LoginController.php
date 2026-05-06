@@ -49,6 +49,10 @@ class LoginController extends AbstractController
         $error = $authenticationUtils->getLastAuthenticationError();
         $lastUsername = $authenticationUtils->getLastUsername();
 
+        // Log des flash messages reçus
+        error_log('=== Méthode login appelée ===');
+ 
+
         $savedEmail = $request->cookies->get('saved_email');
         $savedPassword = $request->cookies->get('saved_password');
         $rememberMe = !empty($savedEmail) && !empty($savedPassword);
@@ -74,21 +78,29 @@ class LoginController extends AbstractController
     #[Route('/login/check', name: 'app_login_check', methods: ['POST'])]
     public function loginCheck(Request $request): Response
     {
+        error_log('=== loginCheck appelé ===');
         $email = $request->request->get('email');
         $password = $request->request->get('password');
         $rememberMe = $request->request->get('_remember_me') === 'on';
 
-        if (empty($email) || empty($password)) {
-            $this->addFlash('error', 'Email et mot de passe requis');
-            return $this->redirectToRoute('app_login');
-        }
+        error_log('Email: ' . $email);
+        error_log('Password: ' . (empty($password) ? 'vide' : 'rempli'));
+
+       if (empty($email) || empty($password)) {
+    return $this->redirectToRoute('app_login', ['auth_error' => 'Email et mot de passe requis']);
+}
 
         try {
             $user = $this->userService->authenticate($email, $password);
+            error_log('Résultat auth: ' . ($user ? 'succès' : 'échec'));
 
             if (!$user) {
-                $this->addFlash('error', 'Email ou mot de passe incorrect');
-                return $this->redirectToRoute('app_login');
+                error_log('Auth échouée - redirection avec auth_error');
+                return $this->redirectToRoute('app_login', [
+                    'auth_error' => 'Email ou mot de passe incorrect',
+                    'error_field' => 'email',
+                    'email' => $email
+                ]);
             }
 
             if (method_exists($user, 'setLastLoginAt')) {
@@ -155,146 +167,146 @@ class LoginController extends AbstractController
             return $response;
 
         } catch (\Exception $e) {
-            $this->addFlash('error', 'Erreur de connexion: ' . $e->getMessage());
-            return $this->redirectToRoute('app_login');
+            return $this->redirectToRoute('app_login', [
+                'auth_error' => 'Erreur de connexion: ' . $e->getMessage(),
+                'error_field' => 'email'
+            ]);
         }
     }
-#[Route('/login/verify-face', name: 'app_verify_face', methods: ['POST'])]
-#[Route('/login/verify-face', name: 'app_verify_face', methods: ['POST'])]
-public function verifyFace(Request $request): JsonResponse
-{
-    $data = json_decode($request->getContent(), true);
-    $faceDescriptor = $data['descriptor'] ?? null;
 
-    if (!$faceDescriptor || !is_array($faceDescriptor)) {
-        return $this->json([
-            'success' => false,
-            'message' => 'Descripteur facial non fourni ou invalide'
-        ], 400);
-    }
+    #[Route('/login/verify-face', name: 'app_verify_face', methods: ['POST'])]
+    public function verifyFace(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $faceDescriptor = $data['descriptor'] ?? null;
 
-    $users = $this->em->getRepository(UserModel::class)
-        ->createQueryBuilder('u')
-        ->where('u.faceDescriptor IS NOT NULL')
-        ->getQuery()
-        ->getResult();
+        if (!$faceDescriptor || !is_array($faceDescriptor)) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Descripteur facial non fourni ou invalide'
+            ], 400);
+        }
 
-    if (empty($users)) {
-        return $this->json([
-            'success' => false,
-            'message' => 'Aucun utilisateur avec visage enregistré'
-        ], 401);
-    }
+        $users = $this->em->getRepository(UserModel::class)
+            ->createQueryBuilder('u')
+            ->where('u.faceDescriptor IS NOT NULL')
+            ->getQuery()
+            ->getResult();
 
-    $bestMatch = null;
-    $bestDistance = PHP_FLOAT_MAX; // ✅ On cherche la distance MINIMALE
-    $threshold = 0.6; // ✅ Seuil euclidien : < 0.6 = même personne
+        if (empty($users)) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Aucun utilisateur avec visage enregistré'
+            ], 401);
+        }
 
-    foreach ($users as $user) {
-        $userDescriptor = $user->getFaceDescriptor();
-        if ($userDescriptor && is_array($userDescriptor) && count($userDescriptor) > 0) {
-            $distance = $this->calculateEuclideanDistance($faceDescriptor, $userDescriptor);
-            if ($distance < $bestDistance) {
-                $bestDistance = $distance;
-                $bestMatch = $user;
+        $bestMatch = null;
+        $bestDistance = PHP_FLOAT_MAX;
+        $threshold = 0.6;
+
+        foreach ($users as $user) {
+            $userDescriptor = $user->getFaceDescriptor();
+            if ($userDescriptor && is_array($userDescriptor) && count($userDescriptor) > 0) {
+                $distance = $this->calculateEuclideanDistance($faceDescriptor, $userDescriptor);
+                if ($distance < $bestDistance) {
+                    $bestDistance = $distance;
+                    $bestMatch = $user;
+                }
             }
         }
-    }
 
-    // ✅ Refusé si distance >= seuil (trop différent)
-    if (!$bestMatch || $bestDistance >= $threshold) {
-        return $this->json([
-            'success' => false,
-            'message' => 'Visage non reconnu. Aucune correspondance trouvée.',
-            'distance' => round($bestDistance, 4),
-            'threshold' => $threshold
-        ], 401);
-    }
-
-    try {
-        $user = $bestMatch;
-
-        $session = $request->getSession();
-        $session->migrate(true);
-
-        $token = new UsernamePasswordToken($user, 'main', $user->getRoles());
-        $this->container->get('security.token_storage')->setToken($token);
-        $session->set('_security_main', serialize($token));
-        $session->save();
-
-        if (method_exists($user, 'setLastLoginAt')) {
-            $user->setLastLoginAt(new \DateTimeImmutable());
-            $this->em->flush();
+        if (!$bestMatch || $bestDistance >= $threshold) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Visage non reconnu. Aucune correspondance trouvée.',
+                'distance' => round($bestDistance, 4),
+                'threshold' => $threshold
+            ], 401);
         }
 
-        // Envoyer notification SMS via NotificationService lors du login facial
-        error_log('=== Login facial - Vérification téléphone ===');
-        error_log('Numéro de téléphone: ' . ($user->getPhone() ?: 'NULL'));
-        
-        if ($user->getPhone()) {
-            try {
-                error_log('Envoi SMS en cours vers: ' . $user->getPhone());
-                $this->notificationService->sendSms(
-                    $user->getPhone(),
-                    'Nouvelle connexion détectée sur votre compte (reconnaissance faciale). Si vous n\'êtes pas à l\'origine de cette action, contactez le support immédiatement.'
-                );
-                error_log('SMS envoyé avec succès');
-                error_log('SMS contenu: Nouvelle connexion détectée sur votre compte (reconnaissance faciale). Si vous n\'êtes pas à l\'origine de cette action, contactez le support immédiatement.');
-                error_log('SMS destinataire: ' . $user->getPhone());
-            } catch (\Exception $e) {
-                // Log l'erreur mais ne pas bloquer l'action
-                error_log('Erreur envoi SMS: ' . $e->getMessage());
-                error_log('Erreur envoi SMS contenu: ' . $e->getMessage());
+        try {
+            $user = $bestMatch;
+
+            $session = $request->getSession();
+            $session->migrate(true);
+
+            $token = new UsernamePasswordToken($user, 'main', $user->getRoles());
+            $this->container->get('security.token_storage')->setToken($token);
+            $session->set('_security_main', serialize($token));
+            $session->save();
+
+            if (method_exists($user, 'setLastLoginAt')) {
+                $user->setLastLoginAt(new \DateTimeImmutable());
+                $this->em->flush();
             }
-        } else {
-            error_log('Aucun numéro de téléphone, SMS non envoyé');
+
+            // Envoyer notification SMS via NotificationService lors du login facial
+            error_log('=== Login facial - Vérification téléphone ===');
+            error_log('Numéro de téléphone: ' . ($user->getPhone() ?: 'NULL'));
+            
+            if ($user->getPhone()) {
+                try {
+                    error_log('Envoi SMS en cours vers: ' . $user->getPhone());
+                    $this->notificationService->sendSms(
+                        $user->getPhone(),
+                        'Nouvelle connexion détectée sur votre compte (reconnaissance faciale). Si vous n\'êtes pas à l\'origine de cette action, contactez le support immédiatement.'
+                    );
+                    error_log('SMS envoyé avec succès');
+                    error_log('SMS contenu: Nouvelle connexion détectée sur votre compte (reconnaissance faciale). Si vous n\'êtes pas à l\'origine de cette action, contactez le support immédiatement.');
+                    error_log('SMS destinataire: ' . $user->getPhone());
+                } catch (\Exception $e) {
+                    // Log l'erreur mais ne pas bloquer l'action
+                    error_log('Erreur envoi SMS: ' . $e->getMessage());
+                    error_log('Erreur envoi SMS contenu: ' . $e->getMessage());
+                }
+            } else {
+                error_log('Aucun numéro de téléphone, SMS non envoyé');
+            }
+
+            $redirectRoute = $this->resolveHomeRouteForUser($user);
+            $redirectUrl = $this->generateUrl($redirectRoute);
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Connexion réussie',
+                'redirect' => $redirectUrl,
+                'user' => [
+                    'id' => $user->getId(),
+                    'firstName' => $user->getFirstName(),
+                    'lastName' => $user->getLastName(),
+                    'email' => $user->getEmail(),
+                    'roleId' => $user->getRoleId()
+                ],
+                'distance' => round($bestDistance, 4)
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Erreur lors de la connexion: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Distance euclidienne — métrique officielle de face-api.js
+     * Seuil : < 0.6 = même personne, >= 0.6 = personnes différentes
+     */
+    private function calculateEuclideanDistance(array $descriptor1, array $descriptor2): float
+    {
+        if (count($descriptor1) !== count($descriptor2)) {
+            return PHP_FLOAT_MAX;
         }
 
-        $redirectRoute = $this->resolveHomeRouteForUser($user);
-        $redirectUrl = $this->generateUrl($redirectRoute);
+        $sumSquares = 0;
+        for ($i = 0; $i < count($descriptor1); $i++) {
+            $diff = $descriptor1[$i] - $descriptor2[$i];
+            $sumSquares += $diff * $diff;
+        }
 
-        return $this->json([
-            'success' => true,
-            'message' => 'Connexion réussie',
-            'redirect' => $redirectUrl,
-            'user' => [
-                'id' => $user->getId(),
-                'firstName' => $user->getFirstName(),
-                'lastName' => $user->getLastName(),
-                'email' => $user->getEmail(),
-                'roleId' => $user->getRoleId()
-            ],
-            'distance' => round($bestDistance, 4)
-        ]);
-
-    } catch (\Exception $e) {
-        return $this->json([
-            'success' => false,
-            'message' => 'Erreur lors de la connexion: ' . $e->getMessage()
-        ], 500);
-    }
-}
-
-/**
- * ✅ Distance euclidienne — métrique officielle de face-api.js
- * Seuil : < 0.6 = même personne, >= 0.6 = personnes différentes
- */
-private function calculateEuclideanDistance(array $descriptor1, array $descriptor2): float
-{
-    if (count($descriptor1) !== count($descriptor2)) {
-        return PHP_FLOAT_MAX;
+        return sqrt($sumSquares);
     }
 
-    $sumSquares = 0;
-    for ($i = 0; $i < count($descriptor1); $i++) {
-        $diff = $descriptor1[$i] - $descriptor2[$i];
-        $sumSquares += $diff * $diff;
-    }
-
-    return sqrt($sumSquares);
-}
-
-    
     /**
      * Calcule la similarité entre deux descripteurs faciaux
      * Utilise la similarité cosinus
@@ -394,24 +406,24 @@ private function calculateEuclideanDistance(array $descriptor1, array $descripto
         }
     }
 
-private function resolveHomeRouteForUser(?UserModel $user): string
-{
-    if (!$user instanceof UserModel) {
-        return 'app_landing';
+    private function resolveHomeRouteForUser(?UserModel $user): string
+    {
+        if (!$user instanceof UserModel) {
+            return 'app_landing';
+        }
+
+        $roleId = $user->getRoleId();
+
+        if ($roleId == 4) {
+            return 'app_sponsor_portal';
+        }
+
+        if ($roleId == 3 || $roleId == 2) {
+            return 'app_dashboard';
+        }
+
+        return 'app_public_events';
     }
-
-    $roleId = $user->getRoleId();
-
-    if ($roleId == 4) {
-        return 'app_sponsor_portal';
-    }
-
-    if ($roleId == 3 || $roleId == 2) {
-        return 'app_dashboard';
-    }
-
-    return 'app_public_events';
-}
 
     #[Route('/check-auth', name: 'app_check_auth')]
     public function checkAuth(): Response

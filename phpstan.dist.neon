@@ -1,0 +1,7 @@
+parameters:
+    level: 8
+    paths:
+        - src
+    ignoreErrors:
+        - '#Parameter .* expects string, string\|null given#'
+        - '#Call to an undefined method#'

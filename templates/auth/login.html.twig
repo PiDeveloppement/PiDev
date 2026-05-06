@@ -362,6 +362,33 @@
             color: #059669;
         }
         
+        /* Email error tooltip styles */
+        .email-error-tooltip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #fff1f1;
+            border: 1px solid #f87171;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 7px 12px;
+            font-size: 12px;
+            color: #dc2626;
+            font-weight: 500;
+            animation: slideDown 0.25s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-control.input-error {
+            border-color: #f87171;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        
         .login-message {
             color: #dc2626;
             font-size: 12px;
@@ -688,30 +715,35 @@
                         <p>Accédez à votre espace de gestion</p>
                     </div>
 
-                    {% if error %}
-                        <div class="login-message">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                    {% set auth_error = app.request.query.get('auth_error') %}
+                    {% set hasLoginError = auth_error is not null %}
+                    {% set errorField = app.request.query.get('error_field') %}
+                    {% set submittedEmail = app.request.query.get('email') %}
+
+                    {% if auth_error %}
+                        <div class="login-message">
+                            ⚠️ {{ auth_error }}
+                        </div>
                     {% endif %}
-
-                    {% for message in app.flashes('error') %}
-                        <div class="flash-message error">{{ message }}</div>
-                    {% endfor %}
-
-                    {% for message in app.flashes('success') %}
-                        <div class="flash-message success">{{ message }}</div>
-                    {% endfor %}
 
                     <form method="post" action="{{ path('app_login_check') }}" style="width: 100%;" id="loginForm" onsubmit="return validateLoginForm()">
                         <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
                         <div class="form-container">
                             <div class="form-group">
-                                <input type="email" 
+                                <input type="email"
                                        id="emailField"
-                                       name="email" 
-                                       value="{{ last_username }}" 
+                                       name="email"
+                                       value="{{ submittedEmail ?: last_username }}"
                                        placeholder="Email universitaire"
-                                       class="form-control"
+                                       class="form-control {% if hasLoginError and errorField == 'email' %}input-error{% endif %}"
                                        required>
+
+                                {% if hasLoginError and errorField == 'email' %}
+                                    <div class="email-error-tooltip" id="emailErrorTooltip">
+                                        ⚠️ {{ auth_error }}
+                                    </div>
+                                {% endif %}
                             </div>
 
                             <div class="password-container">
@@ -823,6 +855,49 @@
 <script>
 let mediaStream = null;
 let isScanning = false;
+
+// Animation pour l'erreur email
+document.addEventListener('DOMContentLoaded', function() {
+    const emailErrorTooltip = document.getElementById('emailErrorTooltip');
+    const emailField = document.getElementById('emailField');
+    
+    if (emailErrorTooltip && emailField) {
+        // Mettre en surbrillance le champ
+        emailField.style.borderColor = '#f87171';
+        emailField.style.backgroundColor = '#fff1f1';
+        
+        // Supprimer la surbrillance après 5 secondes ou au focus
+        setTimeout(() => {
+            if (emailErrorTooltip && emailErrorTooltip.parentNode) {
+                emailErrorTooltip.style.opacity = '0';
+                setTimeout(() => {
+                    if (emailErrorTooltip.parentNode) {
+                        emailErrorTooltip.remove();
+                    }
+                    if (emailField) {
+                        emailField.style.borderColor = '';
+                        emailField.style.backgroundColor = '';
+                    }
+                }, 300);
+            }
+        }, 5000);
+        
+        // Au focus, retirer la surbrillance
+        emailField.addEventListener('focus', function() {
+            emailField.style.borderColor = '';
+            emailField.style.backgroundColor = '';
+            const tooltip = document.getElementById('emailErrorTooltip');
+            if (tooltip && tooltip.parentNode) {
+                tooltip.style.opacity = '0';
+                setTimeout(() => {
+                    if (tooltip.parentNode) {
+                        tooltip.remove();
+                    }
+                }, 300);
+            }
+        });
+    }
+});
 
 function openFacialLogin() {
     const modal = document.getElementById('faceModal');
@@ -964,19 +1039,19 @@ async function initializeFaceRecognition() {
                 console.log('Résultat serveur:', result);
 
                 if (result.success === true) {
-    faceStatus.innerHTML = '✅ Connexion réussie ! Redirection...';
-    faceStatus.className = 'face-status success';
-    captureBtn.innerHTML = '✅ Succès !';
+                    faceStatus.innerHTML = '✅ Connexion réussie ! Redirection...';
+                    faceStatus.className = 'face-status success';
+                    captureBtn.innerHTML = '✅ Succès !';
 
-    if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-    }
+                    if (mediaStream) {
+                        mediaStream.getTracks().forEach(track => track.stop());
+                    }
 
-    setTimeout(() => {
-        // ✅ result.redirect est maintenant une URL directe (ex: /dashboard)
-        window.location.href = result.redirect;
-    }, 1500);
-} else {
+                    setTimeout(() => {
+                        // result.redirect est maintenant une URL directe (ex: /dashboard)
+                        window.location.href = result.redirect;
+                    }, 1500);
+                } else {
                     // Afficher le message d'erreur détaillé
                     let errorMessage = result.message || 'Visage non reconnu. Veuillez réessayer.';
                     if (result.similarity && result.threshold) {

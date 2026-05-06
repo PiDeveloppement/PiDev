@@ -1,0 +1,7 @@
+{
+    "intelephense.files.maxSize": 5000000,
+    "intelephense.files.associations": [
+        "*.php"
+    ],
+    "intelephense.compatibility.unknownSymbols": false
+}

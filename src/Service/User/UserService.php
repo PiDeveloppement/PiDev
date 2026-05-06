@@ -27,6 +27,7 @@ class UserService
     /**
      * Récupère tous les utilisateurs
      */
+    /** @return array<int, UserModel> */
     public function getAllUsers(): array
     {
         return $this->userRepository->findAllWithRoles();
@@ -191,7 +192,7 @@ class UserService
             }
         }
     }
-
+/** @return array<string, int> */
        public function getUsersCountByRole(): array
     {
         try {
@@ -219,16 +220,17 @@ class UserService
     }
 
     // ==================== FILTRES ET RECHERCHE ====================
-
+/** @return array<int, mixed> */
     public function getAllFacultes(): array
     {
         return $this->userRepository->findAllFacultes();
     }
-
+/** @return array<int, UserModel> */
     public function getUsersByRole(string $roleName): array
     {
         return $this->userRepository->findByRoleName($roleName);
     }
+    /** @return array<int, string> */
 
     public function getAdminEmails(): array
     {
@@ -238,6 +240,7 @@ class UserService
     /**
      * Recherche avancée d'utilisateurs (pour le contrôleur)
      */
+    /** @return array<int, mixed> */
 public function searchUsers(
     ?string $keyword = null,
     ?string $faculte = null,
@@ -272,7 +275,7 @@ public function searchUsers(
     {
         return $this->userRepository->isPhoneExists($phone);
     }
-
+/** @return array<int, UserModel> */
     public function getUsersWithPhone(): array
     {
         return $this->userRepository->findUsersWithPhone();
@@ -291,12 +294,12 @@ public function searchUsers(
     }
 
     // ==================== PAGINATION ====================
-
+/** @return array<int, UserModel> */
     public function getUsersPage(int $page, int $limit = 5): array
     {
         return $this->userRepository->findPage($page, $limit);
     }
-
+/** @return array<int, UserModel> */
     public function getRecentUsers(int $limit = 10): array
     {
         return $this->userRepository->findRecent($limit);
@@ -309,6 +312,8 @@ public function searchUsers(
     {
         return $this->roleRepository->find($id);
     }
+
+/** @return array<string, int|float|array<string, int>> */
         public function getAllStats(): array
     {
         $total = $this->getTotalUsersCount();

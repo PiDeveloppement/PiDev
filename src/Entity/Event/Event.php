@@ -66,8 +66,8 @@ class Event
     #[ORM\Column(name: "is_free", type: Types::BOOLEAN, options: ["default" => true])]
     private ?bool $isFree = true;
 
-    #[ORM\Column(name: "ticket_price", type: Types::FLOAT, options: ["default" => 0])]
-    private ?float $ticketPrice = 0.0;
+    #[ORM\Column(name: "ticket_price", type: Types::DECIMAL, precision: 10, scale: 2, options: ["default" => 0])]
+    private ?string $ticketPrice = '0.00';
 
     #[ORM\Column(name: "created_at", type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $createdAt = null;
@@ -83,11 +83,11 @@ class Event
     #[ORM\JoinColumn(name: "created_by", referencedColumnName: "Id_User", nullable: true)]
     private ?UserModel $creator = null;
 
-    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Ticket::class, cascade: ['remove'])]
-    private Collection $tickets;
+    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Ticket::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+private Collection $tickets;
 
-    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Question::class, cascade: ['remove'])]
-    private Collection $questions;
+    #[ORM\ManyToMany(targetEntity: Question::class)]
+private Collection $questions;
 
     public function __construct()
     {
