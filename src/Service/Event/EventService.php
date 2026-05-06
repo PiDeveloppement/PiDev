@@ -24,6 +24,10 @@ class EventService
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<string, mixed>
+     */
     public function getBackOfficeListData(int $page, PaginatorInterface $paginator, array $filters = []): array
     {
         $filteredQueryBuilder = $this->eventRepository->createBackOfficeListQueryBuilder($filters);
@@ -66,6 +70,9 @@ class EventService
         ];
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getCalendarEvents(?string $googleApiKey = null, ?string $googleCalendarId = null): array
     {
         $events = $this->buildCalendarEvents($this->eventRepository->findAllOrderedByDate());
@@ -78,6 +85,9 @@ class EventService
         return $events;
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getCategoriesForSelect(): array
     {
         return $this->categoryRepository->findAllOrderedByName();
@@ -177,12 +187,12 @@ class EventService
 
             $remoteResult = $this->googleCalendarWriteService->fetchRemoteEventByLocalId($event->getId(), $event);
 
-            if (!(bool) ($remoteResult['ok'] ?? false)) {
+            if (!(bool) ($remoteResult['ok'])) {
                 $stats['failed']++;
                 continue;
             }
 
-            if (!(bool) ($remoteResult['found'] ?? false)) {
+            if (!(bool) ($remoteResult['found'])) {
                 // Keep local event if it still has dependent records (tickets/questions)
                 // to avoid FK violations during automatic Google -> EventFlow sync.
                 if ($event->getTickets()->count() > 0 || $event->getQuestions()->count() > 0) {
@@ -211,11 +221,18 @@ class EventService
         return $stats;
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getEventsForExport(): array
     {
         return $this->eventRepository->findAllOrderedByDate();
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $events
+     * @return array<int, array<string, mixed>>
+     */
     private function buildCalendarEvents(array $events): array
     {
         $now = new \DateTimeImmutable();
@@ -253,6 +270,9 @@ class EventService
         return $result;
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     private function fetchGoogleCalendarEvents(?string $googleApiKey, ?string $googleCalendarId): array
     {
         if (!$googleApiKey || !$googleCalendarId) {
@@ -307,6 +327,9 @@ class EventService
         }
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function fetchJson(string $url): array
     {
         $context = stream_context_create([
@@ -353,6 +376,9 @@ class EventService
         }
     }
 
+    /**
+     * @param array<string, mixed> $remoteEvent
+     */
     private function applyRemoteChangesToEvent(Event $event, array $remoteEvent): bool
     {
         $changed = false;
