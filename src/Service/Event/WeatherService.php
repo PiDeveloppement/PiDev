@@ -74,6 +74,9 @@ class WeatherService
     {
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getCurrentWeatherForGovernorate(string $governorate): array
     {
         $coordinates = $this->resolveCoordinates($governorate);
@@ -136,6 +139,9 @@ class WeatherService
         ];
     }
 
+    /**
+     * @return array<int, float>|null
+     */
     private function resolveCoordinates(string $governorate): ?array
     {
         $label = $this->resolveGovernorateLabel($governorate);
