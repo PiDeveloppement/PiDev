@@ -230,7 +230,7 @@ class EventService
     }
 
     /**
-     * @param array<int, array<string, mixed>> $events
+     * @param array<int, \App\Entity\Event\Event> $events
      * @return array<int, array<string, mixed>>
      */
     private function buildCalendarEvents(array $events): array

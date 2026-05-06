@@ -94,7 +94,7 @@ class CategoryService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, \App\Entity\Event\Category>
      */
     public function getAllForExport(): array
     {
