@@ -17,6 +17,11 @@ class TicketService
     ) {
     }
 
+    /**
+     * @param string|null $eventFilter
+     * @param string|null $statusFilter
+     * @return array<string, mixed>
+     */
     public function getBackOfficeListData(
         string $search,
         $eventFilter,
