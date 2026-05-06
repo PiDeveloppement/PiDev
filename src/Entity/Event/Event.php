@@ -83,7 +83,7 @@ class Event
     #[ORM\JoinColumn(name: "created_by", referencedColumnName: "Id_User", nullable: true)]
     private ?UserModel $creator = null;
 
-    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Ticket::class, cascade: ['remove'])]
+    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Ticket::class, cascade: ['remove'], orphanRemoval: true)]
     private Collection $tickets;
 
     #[ORM\OneToMany(mappedBy: 'event', targetEntity: Question::class, cascade: ['remove'])]
