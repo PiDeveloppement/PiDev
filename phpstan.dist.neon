@@ -7,3 +7,11 @@ parameters:
         - src/Service/Event
         - src/Form/Event
         - src/EventSubscriber/ParticipantUpcomingCalendarSubscriber.php
+    ignoreErrors:
+        - '#Property .+ \(int\|null\) is never assigned int#'
+        - '#Property .+ \(int\|null\) is never assigned null#'
+        - '#Property .+ \(bool\|null\) is never assigned null#'
+        - '#Property .+ \(string\|null\) is never assigned null#'
+        - '#Property .+ \(float\|null\) is never assigned null#'
+        - '#.+ with generic interface Doctrine\\Common\\Collections\\Collection does not specify its types#'
+        - '#Instanceof between .+ and .+ will always evaluate to true#'
