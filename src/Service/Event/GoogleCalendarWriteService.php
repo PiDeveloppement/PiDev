@@ -129,7 +129,7 @@ class GoogleCalendarWriteService
                 'Content-Type: application/json',
                 'Accept: application/json',
             ],
-            json_encode($this->buildGooglePayload($event))
+            json_encode($this->buildGooglePayload($event)) ?: null
         );
 
         if ($this->isSuccessStatus($response['status'] ?? 500)) {
@@ -222,7 +222,6 @@ class GoogleCalendarWriteService
                 'Accept: application/json',
             ]
         );
-
         if (!$this->isSuccessStatus($response['status'] ?? 500)) {
             $errorPayload = $response['data'] ?? [];
             $errorMessage = is_array($errorPayload)
@@ -456,7 +455,7 @@ class GoogleCalendarWriteService
                 'Content-Type: application/json',
                 'Accept: application/json',
             ],
-            json_encode($this->buildGooglePayload($event))
+            json_encode($this->buildGooglePayload($event)) ?: null
         );
     }
 
@@ -470,11 +469,11 @@ class GoogleCalendarWriteService
             'description' => (string) ($event->getDescription() ?? ''),
             'location' => (string) ($event->getLocation() ?? ''),
             'start' => [
-                'dateTime' => $event->getStartDate()->format(DATE_ATOM),
+                'dateTime' => $event->getStartDate()?->format(DATE_ATOM) ?? '',
                 'timeZone' => $this->timezone ?: 'Africa/Tunis',
             ],
             'end' => [
-                'dateTime' => $event->getEndDate()->format(DATE_ATOM),
+                'dateTime' => $event->getEndDate()?->format(DATE_ATOM) ?? '',
                 'timeZone' => $this->timezone ?: 'Africa/Tunis',
             ],
             'source' => [
