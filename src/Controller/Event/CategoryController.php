@@ -172,6 +172,10 @@ class CategoryController extends AbstractController
         return $this->redirectToRoute('app_category_index');
     }
 
+    /**
+     * @param iterable<\Symfony\Component\Validator\ConstraintViolationInterface> $violations
+     * @return array<string, array<int, string>>
+     */
     private function groupViolations(iterable $violations): array
     {
         $errors = [];
