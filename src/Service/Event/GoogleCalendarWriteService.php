@@ -11,12 +11,12 @@ class GoogleCalendarWriteService
     private ?string $lastError = null;
 
     public function __construct(
+        private readonly LoggerInterface $logger,
         #[Autowire('%env(default::GOOGLE_CALENDAR_ID)%')] private readonly ?string $calendarId = null,
         #[Autowire('%env(default::GOOGLE_CLIENT_ID)%')] private readonly ?string $clientId = null,
         #[Autowire('%env(default::GOOGLE_CLIENT_SECRET)%')] private readonly ?string $clientSecret = null,
         #[Autowire('%env(default::GOOGLE_REFRESH_TOKEN)%')] private readonly ?string $refreshToken = null,
-        #[Autowire('%env(default::GOOGLE_CALENDAR_TIMEZONE)%')] private readonly ?string $timezone = null,
-        private readonly LoggerInterface $logger
+        #[Autowire('%env(default::GOOGLE_CALENDAR_TIMEZONE)%')] private readonly ?string $timezone = null
     ) {
     }
 
@@ -256,6 +256,9 @@ class GoogleCalendarWriteService
         return ['ok' => true, 'found' => false, 'event' => null];
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     private function fetchRemoteEventByDateWindow(Event $localEvent, string $accessToken): ?array
     {
         if (!$localEvent->getStartDate() || !$localEvent->getEndDate()) {
@@ -351,6 +354,10 @@ class GoogleCalendarWriteService
         return $bestMatch;
     }
 
+    /**
+     * @param array<string, mixed> $item
+     * @return array<string, mixed>|null
+     */
     private function mapGoogleItemToRemoteEvent(array $item): ?array
     {
         $startRaw = (string) ($item['start']['dateTime'] ?? $item['start']['date'] ?? '');
@@ -400,6 +407,10 @@ class GoogleCalendarWriteService
         return is_array($data) ? (string) ($data['access_token'] ?? '') : null;
     }
 
+    /**
+     * @param array<int, string> $headers
+     * @return array<string, mixed>
+     */
     private function requestJson(string $url, string $method, array $headers, ?string $body = null): array
     {
         $context = stream_context_create([
@@ -427,6 +438,9 @@ class GoogleCalendarWriteService
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function createGoogleEvent(Event $event, string $accessToken): array
     {
         $url = sprintf(
@@ -446,6 +460,9 @@ class GoogleCalendarWriteService
         );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function buildGooglePayload(Event $event): array
     {
         return [
