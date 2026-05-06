@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
+/**
+ * @extends ServiceEntityRepository<\App\Entity\Event\Category>
+ */
 class CategoryRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class CategoryRepository extends ServiceEntityRepository
         parent::__construct($registry, Category::class);
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     */
     public function createBackOfficeListQueryBuilder(array $filters = []): QueryBuilder
     {
         $qb = $this->createQueryBuilder('c');
@@ -65,6 +71,9 @@ class CategoryRepository extends ServiceEntityRepository
         return $qb;
     }
 
+    /**
+     * @return array<int, string>
+     */
     public function findDistinctColors(): array
     {
         $rows = $this->createQueryBuilder('c')
@@ -80,6 +89,9 @@ class CategoryRepository extends ServiceEntityRepository
         return $colors;
     }
 
+    /**
+     * @return array<int, \App\Entity\Event\Category>
+     */
     public function findAllOrderedByName(): array
     {
         return $this->findBy([], ['name' => 'ASC']);

@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
+/**
+ * @extends ServiceEntityRepository<\App\Entity\Event\Event>
+ */
 class EventRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -14,6 +17,9 @@ class EventRepository extends ServiceEntityRepository
         parent::__construct($registry, Event::class);
     }
 
+    /**
+     * @return array<int, \App\Entity\Event\Event>
+     */
     public function findAllOrderedByDate(): array
     {
         return $this->createQueryBuilder('e')
@@ -22,6 +28,9 @@ class EventRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * @return array<int, \App\Entity\Event\Event>
+     */
     public function findByStatus(string $status): array
     {
         return $this->createQueryBuilder('e')
@@ -32,6 +41,9 @@ class EventRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * @param array<string, mixed> $filters
+     */
     public function createBackOfficeListQueryBuilder(array $filters = []): QueryBuilder
     {
         $qb = $this->createQueryBuilder('e')

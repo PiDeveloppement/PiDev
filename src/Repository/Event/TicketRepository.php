@@ -7,6 +7,9 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
+/**
+ * @extends ServiceEntityRepository<\App\Entity\Event\Ticket>
+ */
 class TicketRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -31,6 +34,10 @@ class TicketRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /**
+     * @param string|null $eventFilter
+     * @param string|null $statusFilter
+     */
     public function createFilteredQueryBuilder(string $search, $eventFilter, $statusFilter): QueryBuilder
     {
         $qb = $this->createQueryBuilder('t')
