@@ -14,8 +14,7 @@ use Twig\Environment;
 class EmailService
 {
     // Configuration SMTP pour Gmail
-    private const SMTP_HOST = 'smtp.gmail.com';
-    private const SMTP_PORT = 587;
+    
     private const FROM_EMAIL = 'sellamiarij7@gmail.com';
     private const FROM_NAME = 'EventFlow';
 
@@ -48,7 +47,7 @@ class EmailService
 
             $email = (new Email())
                 ->from(new Address(self::FROM_EMAIL, self::FROM_NAME))
-                ->to($user->getEmail())
+               ->to((string) $user->getEmail())
                 ->subject($subject)
                 ->html($htmlContent);
 
@@ -136,7 +135,7 @@ class EmailService
 
             $email = (new Email())
                 ->from(new Address(self::FROM_EMAIL, self::FROM_NAME))
-                ->to($user->getEmail())
+                ->to((string) $user->getEmail())
                 ->subject($subject)
                 ->html($htmlContent);
 
@@ -154,7 +153,8 @@ class EmailService
     /**
      * Envoie un email de confirmation de participation
      */
-    /**
+    
+   /**
  * @param array<string, mixed> $ticketData
  */
 public function sendParticipationConfirmation(UserModel $user, array $ticketData): bool
@@ -169,7 +169,7 @@ public function sendParticipationConfirmation(UserModel $user, array $ticketData
 
             $email = (new Email())
                 ->from(new Address(self::FROM_EMAIL, self::FROM_NAME))
-                ->to($user->getEmail())
+                ->to((string) $user->getEmail())
                 ->subject($subject)
                 ->html($htmlContent);
 

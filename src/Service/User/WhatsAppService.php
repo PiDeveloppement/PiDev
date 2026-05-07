@@ -158,8 +158,10 @@ class WhatsAppService
     /**
      * Récupère les informations de configuration
      */
-    public function getConfigInfo(): array
-    {
+  /**
+ * @return array{configured: bool, sandbox_number: string, invite_code: string, account_sid_defined: bool, auth_token_defined: bool}
+ */
+public function getConfigInfo(): array{
         return [
             'configured' => $this->isConfigured(),
             'sandbox_number' => self::WHATSAPP_SANDBOX_NUMBER,
