@@ -22,8 +22,6 @@ class MainController extends AbstractController
     public function __construct(
         private UserService $userService,
         private RoleService $roleService,
-        private UserRepository $userRepository,
-        private RoleRepository $roleRepository,
         private LoggerInterface $logger
     ) {
         $this->initializePageInfo();
@@ -117,7 +115,7 @@ class MainController extends AbstractController
     #[Route('/search', name: 'app_search', methods: ['GET'])]
     public function globalSearch(Request $request): JsonResponse
     {
-        $query = strtolower($request->query->get('q', ''));
+        $query = strtolower((string) $request->query->get('q', ''));
         
         if (empty($query)) {
             return $this->json([]);
@@ -194,7 +192,7 @@ class MainController extends AbstractController
         );
         
         return [
-            'date' => ucfirst($formatter->format($now)),
+            'date' => ucfirst((string) $formatter->format($now)),
             'time' => $now->format('H:i:s')
         ];
     }

@@ -169,7 +169,7 @@ class CurrencyConverterService
                 return (float) $emergencyRatesToTnd[$from];
             }
 
-            if ($from === 'TND' && isset($emergencyRatesToTnd[$to]) && (float) $emergencyRatesToTnd[$to] > 0) {
+            if ($from === 'TND' && isset($emergencyRatesToTnd[$to])) {
                 return 1 / (float) $emergencyRatesToTnd[$to];
             }
 

@@ -14,7 +14,8 @@ class Depense
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'IDENTITY')]
-    #[ORM\Column(type: Types::INTEGER)]
+    #[ORM\Column(type: Types::INTEGER, nullable: false)]
+    /** @phpstan-ignore-next-line property.unusedType */
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Budget::class)]

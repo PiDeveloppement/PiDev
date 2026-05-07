@@ -265,7 +265,8 @@ class SponsorService
 
         arsort($map);
         $slice = array_slice($map, 0, max(1, $limit), true);
-        $max = max(array_map(static fn ($value): float => (float) $value, $slice));
+        $values = array_map(static fn ($value): float => (float) $value, $slice);
+        $max = !empty($values) ? max($values) : 0;
         $rows = [];
 
         foreach ($slice as $label => $value) {

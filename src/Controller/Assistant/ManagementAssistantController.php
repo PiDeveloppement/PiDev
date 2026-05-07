@@ -106,7 +106,7 @@ class ManagementAssistantController extends AbstractController
             return null;
         }
 
-        return is_array($data) ? $data : null;
+        return $data;
     }
 
     private function jsonError(string $message, int $status): JsonResponse
