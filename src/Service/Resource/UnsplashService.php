@@ -6,7 +6,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class UnsplashService
 {
-    private $client;
+    private HttpClientInterface $client;
     // On définit ta clé ici (comme ton CLIENT_ID en Java)
     private const CLIENT_ID = 'dcWhGYXCIQpKznqdhSTn5ymYZi10wbm4ygCzmfUH33c';
 

@@ -10,7 +10,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class VoiceController extends AbstractController
 {
-    private $voiceService;
+    private VoiceRecognitionService $voiceService;
 
     public function __construct(VoiceRecognitionService $voiceService)
     {

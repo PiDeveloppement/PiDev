@@ -2,7 +2,7 @@
 
 namespace App\Controller\Resource;
 
-use App\Repository\HistoriqueLogRepository;
+use App\Repository\Resource\HistoriqueLogRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -37,10 +37,10 @@ class AuditController extends AbstractController
             $filters['user'] = $user;
         }
         if ($startDate) {
-            $filters['startDate'] = new \DateTime($startDate);
+            $filters['startDate'] = new \DateTime((string) $startDate);
         }
         if ($endDate) {
-            $filters['endDate'] = new \DateTime($endDate);
+            $filters['endDate'] = new \DateTime((string) $endDate);
         }
         
         // Récupérer les logs avec pagination

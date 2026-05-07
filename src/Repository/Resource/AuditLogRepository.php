@@ -88,7 +88,7 @@ class AuditLogRepository extends ServiceEntityRepository
      */
     public function countTotalLogs(): int
     {
-        return $this->createQueryBuilder('a')
+        return (int) $this->createQueryBuilder('a')
             ->select('COUNT(a.id)')
             ->getQuery()
             ->getSingleScalarResult();

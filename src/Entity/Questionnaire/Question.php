@@ -14,7 +14,7 @@ class Question
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: "id_question")] // Correspond à ta PK dans le SQL
-    private ?int $id = null;
+    private ?int $id;
 
     #[ORM\Column(name: "texte", type: "string", length: 255, nullable: true)]
     #[Assert\NotBlank(message: "L'énoncé de la question est obligatoire.")]
@@ -29,7 +29,7 @@ class Question
     #[ORM\Column(name: "points", type: "integer", options: ["default" => 0])]
     #[Assert\Positive(message: "Le nombre de points doit être un nombre positif.")]
     #[Assert\Type(type: "integer", message: "Le nombre de points doit être un entier.")]
-    private ?int $points = 0;
+    private int $points = 0;
 
     #[ORM\Column(name: "option1", type: "string", length: 255, nullable: true)]
     private ?string $option1 = null;

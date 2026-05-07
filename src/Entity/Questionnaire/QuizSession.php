@@ -14,7 +14,7 @@ class QuizSession
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: "id")]
-    private ?int $id = null;
+    private ?int $id;
 
     #[ORM\Column(name: "session_token", type: "string", length: 255, unique: true)]
     private ?string $sessionToken = null;
@@ -199,7 +199,7 @@ class QuizSession
             return false;
         }
         
-        $expiration = $this->startedAt->modify('+2 hours');
+        $expiration = (new \DateTime($this->startedAt->format('Y-m-d H:i:s')))->modify('+2 hours');
         return new \DateTime() > $expiration;
     }
 }

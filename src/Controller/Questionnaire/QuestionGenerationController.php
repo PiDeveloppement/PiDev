@@ -46,7 +46,7 @@ class QuestionGenerationController extends AbstractController
             }
 
             // Vérifier les permissions (l'utilisateur doit être le créateur ou admin)
-            if ($event->getCreator()?->getId() !== $user->getId() && !$this->isGranted('ROLE_ADMIN')) {
+            if ($event->getCreator()?->getId() !== ($user instanceof \App\Entity\User\UserModel ? $user->getId() : null) && !$this->isGranted('ROLE_ADMIN')) {
                 return new JsonResponse(['error' => 'Permission refusée'], 403);
             }
 
@@ -62,7 +62,7 @@ class QuestionGenerationController extends AbstractController
             $question->setOption2($questionData['option2']);
             $question->setOption3($questionData['option3']);
             $question->setEvent($event);
-            $question->setUser($user);
+            $question->setUser($user instanceof \App\Entity\User\UserModel ? $user : null);
 
             // Sauvegarder la question
             $this->entityManager->persist($question);
@@ -79,8 +79,8 @@ class QuestionGenerationController extends AbstractController
                     'option1' => $question->getOption1(),
                     'option2' => $question->getOption2(),
                     'option3' => $question->getOption3(),
-                    'eventId' => $question->getEvent()->getId(),
-                    'eventTitle' => $question->getEvent()->getTitle()
+                    'eventId' => $question->getEvent()?->getId(),
+                    'eventTitle' => $question->getEvent()?->getTitle()
                 ]
             ]);
 
@@ -108,7 +108,7 @@ class QuestionGenerationController extends AbstractController
             }
 
             // Vérifier les permissions
-            if ($event->getCreator()?->getId() !== $user->getId() && !$this->isGranted('ROLE_ADMIN')) {
+            if ($event->getCreator()?->getId() !== ($user instanceof \App\Entity\User\UserModel ? $user->getId() : null) && !$this->isGranted('ROLE_ADMIN')) {
                 return new JsonResponse(['error' => 'Permission refusée'], 403);
             }
 

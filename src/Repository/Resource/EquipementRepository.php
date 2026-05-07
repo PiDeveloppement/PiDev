@@ -16,16 +16,17 @@ class EquipementRepository extends ServiceEntityRepository
         parent::__construct($registry, Equipement::class);
     }
 
-    public function searchByTermAndCategory($term, $category) {
-    $qb = $this->createQueryBuilder('e');
-    if ($term) {
-        $qb->andWhere('e.name LIKE :t')->setParameter('t', '%'.$term.'%');
+    public function searchByTermAndCategory(?string $term, ?string $category): array
+    {
+        $qb = $this->createQueryBuilder('e');
+        if ($term) {
+            $qb->andWhere('e.name LIKE :t')->setParameter('t', '%'.$term.'%');
+        }
+        if ($category && $category !== 'Toutes les catégories') {
+            $qb->andWhere('e.equipement_type = :c')->setParameter('c', $category);
+        }
+        return $qb->getQuery()->getResult();
     }
-    if ($category && $category !== 'Toutes les catégories') {
-        $qb->andWhere('e.equipement_type = :c')->setParameter('c', $category);
-    }
-    return $qb->getQuery()->getResult();
-}
 
 public function findWithFilters(?string $category, ?string $term): array
 {

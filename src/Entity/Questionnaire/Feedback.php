@@ -18,7 +18,7 @@ class Feedback
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "IDENTITY")]
     #[ORM\Column(name: "id_feedback", type: "integer")]
-    private ?int $id = null;
+    private ?int $id;
 
     #[ORM\Column(name: "id_user", type: "integer", nullable: true, options: ["default" => 45])]
     private ?int $userId = 45;
@@ -165,7 +165,7 @@ class Feedback
     public function getEventName(): string
     {
         if ($this->question && $this->question->getEvent()) {
-            return $this->question->getEvent()->getTitle();
+            return $this->question->getEvent()->getTitle() ?? 'Quiz Général';
         }
         return 'Quiz Général';
     }

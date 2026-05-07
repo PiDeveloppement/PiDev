@@ -6,27 +6,31 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class VoiceRecognitionService
 {
-    private $parameterBag;
-    private $running = false;
-    private $listener;
+    private ParameterBagInterface $parameterBag;
+    private bool $running = false;
+    private mixed $listener;
 
     public function __construct(ParameterBagInterface $parameterBag)
     {
         $this->parameterBag = $parameterBag;
     }
 
-    public function setListener(callable $listener)
+    public function setListener(callable $listener): void
     {
         $this->listener = $listener;
     }
 
-    public function startRecognition()
+    public function startRecognition(): void
     {
         $this->running = true;
         
         // Chemin vers le modèle Vosk
         $projectDir = $this->parameterBag->get('kernel.project_dir');
-        $modelPath = $projectDir . '/src/Entity/resource/fr';
+        if (is_string($projectDir)) {
+            $modelPath = $projectDir . '/src/Entity/resource/fr';
+        } else {
+            $modelPath = '/src/Entity/resource/fr';
+        }
         
         if (!is_dir($modelPath)) {
             throw new \Exception("❌ Modèle Vosk introuvable au chemin : " . $modelPath);
@@ -39,7 +43,7 @@ class VoiceRecognitionService
         $this->processAudioStream($modelPath);
     }
 
-    private function processAudioStream(string $modelPath)
+    private function processAudioStream(string $modelPath): void
     {
         // Implémentation avec Vosk PHP
         // Tu devras installer l'extension Vosk pour PHP
@@ -55,7 +59,7 @@ class VoiceRecognitionService
         }
     }
 
-    public function stopRecognition()
+    public function stopRecognition(): void
     {
         $this->running = false;
     }

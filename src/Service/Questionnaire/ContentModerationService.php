@@ -65,7 +65,7 @@ class ContentModerationService
         
         $sanitizedContent = $content;
         foreach ($staticWords as $word) {
-            $sanitizedContent = preg_replace('/\b' . preg_quote($word, '/') . '\b/i', '****', $sanitizedContent);
+            $sanitizedContent = preg_replace('/\b' . preg_quote($word, '/') . '\b/i', '****', $sanitizedContent ?? '');
         }
         
         // Then use API for additional words
@@ -81,14 +81,14 @@ class ContentModerationService
             $sanitizedContent = $data['result'];
             
             // Remove excessive whitespace
-            $sanitizedContent = preg_replace('/\s+/', ' ', $sanitizedContent);
-            $sanitizedContent = trim($sanitizedContent);
+            $sanitizedContent = preg_replace('/\s+/', ' ', $sanitizedContent ?? '');
+            $sanitizedContent = trim($sanitizedContent ?? '');
             
             return $sanitizedContent;
         } catch (\Exception $e) {
             // Return static moderation if API fails
-            $sanitizedContent = preg_replace('/\s+/', ' ', $sanitizedContent);
-            $sanitizedContent = trim($sanitizedContent);
+            $sanitizedContent = preg_replace('/\s+/', ' ', $sanitizedContent ?? '');
+            $sanitizedContent = trim($sanitizedContent ?? '');
             return $sanitizedContent;
         }
     }

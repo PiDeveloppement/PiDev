@@ -8,10 +8,9 @@ use App\Entity\Resource\ReservationResource;
 
 class FormFillerVoiceService extends VoiceRecognitionService
 {
-    private $currentContext = null;
-    private $formData = [];
-    private $waitingForFieldValue = null;
-    private $directMode = true;
+    private ?string $currentContext = null;
+    private array $formData = [];
+    private ?string $waitingForFieldValue = null;
 
     // Contextes de formulaire disponibles
     const CONTEXTS = [

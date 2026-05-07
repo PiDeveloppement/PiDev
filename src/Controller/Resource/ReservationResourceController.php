@@ -35,7 +35,11 @@ class ReservationResourceController extends AbstractController
         $sortBy = $request->query->get('sortBy', 'startTime');
         $direction = $request->query->get('direction', 'desc');
 
-        $reservations = $repo->findByFilters($filters, $sortBy, $direction);
+        $reservations = $repo->findByFilters(
+            $filters,
+            is_string($sortBy) ? $sortBy : 'startTime',
+            is_string($direction) ? $direction : 'desc'
+        );
 
         // Charger les logs d'historique dynamiquement
         $auditLogs = $historiqueRepo->findRecentWithPagination(1, 10);
@@ -81,7 +85,7 @@ class ReservationResourceController extends AbstractController
         $dateParam = $request->query->get('date');
         if ($dateParam) {
             try {
-                $date = new \DateTime($dateParam);
+                $date = new \DateTime((string) $dateParam);
                 $reservation->setStartTime($date);
                 $reservation->setEndTime((clone $date)->modify('+1 day'));
             } catch (\Exception $e) {
@@ -100,8 +104,15 @@ class ReservationResourceController extends AbstractController
             $auditService->logCreate($reservation);
             
             // Préparer les données pour l'email
-            $userName = $this->getUser()->getFullName() ?? $this->getUser()->getEmail();
-            $userEmail = $this->getUser()->getEmail();
+            $user = $this->getUser();
+            $userName = 'Utilisateur';
+            $userEmail = 'user@example.com';
+            
+            if ($user) {
+                $userName = method_exists($user, 'getFullName') ? $user->getFullName() : 
+                          (method_exists($user, 'getEmail') ? $user->getEmail() : 'Utilisateur');
+                $userEmail = method_exists($user, 'getEmail') ? $user->getEmail() : 'user@example.com';
+            }
             
             $reservationData = [
                 'id' => $reservation->getId(),
@@ -123,10 +134,12 @@ class ReservationResourceController extends AbstractController
             $emailService->sendReservationConfirmation($userEmail, $userName, $reservationData);
             
             // Envoyer la notification à l'administrateur
+            $startTime = $reservation->getStartTime();
+            $dateStr = $startTime?->format('d/m/Y') ?? 'date inconnue';
             $emailService->sendNotification(
                 'admin@pidev.com', 
                 'Nouvelle réservation effectuée - ' . ($reservation->getEvent() ? $reservation->getEvent()->getTitle() : 'Réservation'),
-                'Une nouvelle réservation a été effectuée par ' . $userName . ' pour le ' . $reservation->getStartTime()->format('d/m/Y'),
+                'Une nouvelle réservation a été effectuée par ' . $userName . ' pour le ' . $dateStr,
                 ['user_name' => $userName, 'reservation' => $reservationData]
             );
             
@@ -150,8 +163,8 @@ class ReservationResourceController extends AbstractController
         $startDate = null;
         $endDate = null;
         if ($startStr && $endStr) {
-            $startDate = new \DateTime($startStr);
-            $endDate = new \DateTime($endStr);
+            $startDate = new \DateTime((string) $startStr);
+            $endDate = new \DateTime((string) $endStr);
         }
 
         $resources = [];
@@ -268,7 +281,7 @@ class ReservationResourceController extends AbstractController
             return $this->redirectToRoute('app_reservation_resource_index');
         }
         
-        if ($this->isCsrfTokenValid('delete'.$reservation->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete'.$reservation->getId(), (string) $request->request->get('_token'))) {
             // Logger la suppression dans l'audit avant de supprimer l'entité
             $auditService->logDelete($reservation);
             
@@ -276,11 +289,20 @@ class ReservationResourceController extends AbstractController
             $em->flush();
             
             // Envoyer la notification à l'administrateur
+            $user = $this->getUser();
+            $userName = 'Utilisateur';
+            if ($user) {
+                $userName = method_exists($user, 'getFullName') ? $user->getFullName() : 'Utilisateur';
+            }
+            
+            $startTime = $reservation->getStartTime();
+            $dateStr = $startTime?->format('d/m/Y') ?? 'date inconnue';
+            
             $emailService->sendNotification(
                 'admin@pidev.com', 
                 'Réservation supprimée - ' . ($reservation->getEvent() ? $reservation->getEvent()->getTitle() : 'Réservation'),
-                'La réservation a été supprimée par ' . $this->getUser()->getFullName() . ' pour le ' . $reservation->getStartTime()->format('d/m/Y'),
-                ['user_name' => $this->getUser()->getFullName(), 'reservation' => $reservation]
+                'La réservation a été supprimée par ' . $userName . ' pour le ' . $dateStr,
+                ['user_name' => $userName, 'reservation' => $reservation]
             );
             
             $this->addFlash('success', 'Réservation supprimée avec succès !');
@@ -306,8 +328,8 @@ class ReservationResourceController extends AbstractController
         $start = $request->query->get('start');
         $end = $request->query->get('end');
         
-        $startDate = new \DateTime($start);
-        $endDate = new \DateTime($end);
+        $startDate = new \DateTime((string) $start);
+        $endDate = new \DateTime((string) $end);
         
         $reservations = $repo->createQueryBuilder('r')
             ->where('r.startTime >= :start')
@@ -326,11 +348,13 @@ class ReservationResourceController extends AbstractController
                 $resourceName = 'Équipement: ' . $reservation->getEquipement()->getName() . ' (x' . $reservation->getQuantity() . ')';
             }
             
+            $startTime = $reservation->getStartTime();
+            $endTime = $reservation->getEndTime();
             $events[] = [
                 'id' => $reservation->getId(),
                 'title' => $resourceName . ' - ' . ($reservation->getEvent() ? $reservation->getEvent()->getTitle() : 'Événement'),
-                'start' => $reservation->getStartTime()->format('Y-m-d'),
-                'end' => $reservation->getEndTime()->format('Y-m-d'),
+                'start' => $startTime?->format('Y-m-d') ?? '',
+                'end' => $endTime?->format('Y-m-d') ?? '',
                 'color' => '#dc3545', // Rouge pour les dates indisponibles
                 'textColor' => '#ffffff',
                 'extendedProps' => [
@@ -356,7 +380,11 @@ class ReservationResourceController extends AbstractController
         $sortBy = $request->query->get('sortBy', 'startTime');
         $direction = $request->query->get('direction', 'desc');
 
-        $reservations = $repo->findByFilters($filters, $sortBy, $direction);
+        $reservations = $repo->findByFilters(
+            $filters,
+            is_string($sortBy) ? $sortBy : 'startTime',
+            is_string($direction) ? $direction : 'desc'
+        );
 
         // Générer le HTML
         $html = $twig->render('resource/reservation_resource/pdf.html.twig', [

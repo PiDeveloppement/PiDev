@@ -6,11 +6,12 @@ use App\Service\Resource\FormFillerVoiceService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class FormFillerVoiceController extends AbstractController
 {
-    private $voiceService;
+    private FormFillerVoiceService $voiceService;
 
     public function __construct(FormFillerVoiceService $voiceService)
     {
@@ -89,7 +90,7 @@ class FormFillerVoiceController extends AbstractController
     }
 
     #[Route('/voice/form/test', name: 'voice_form_test')]
-    public function testFormFiller()
+    public function testFormFiller(): Response
     {
         return $this->render('voice/form_test.html.twig', [
             'contexts' => ['salle', 'equipement', 'reservation']

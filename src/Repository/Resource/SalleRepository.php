@@ -41,7 +41,7 @@ class SalleRepository extends ServiceEntityRepository
             ->getSingleColumnResult();
     }
 
-    public function findOneBySomeField($value): ?Salle
+    public function findOneBySomeField(mixed $value): ?Salle
     {
         return $this->createQueryBuilder('s')
             ->andWhere('s.exampleField = :val')

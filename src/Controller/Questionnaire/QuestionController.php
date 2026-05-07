@@ -97,7 +97,7 @@ class QuestionController extends AbstractController
     #[Route('/{id}/delete', name: 'app_question_delete', methods: ['POST'])]
     public function delete(Request $request, Question $question, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete' . $question->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $question->getId(), (string) $request->request->get('_token'))) {
             $entityManager->remove($question);
             $entityManager->flush();
             $this->addFlash('success', 'Question supprimée avec succès.');

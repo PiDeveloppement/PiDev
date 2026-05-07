@@ -30,26 +30,17 @@ use Dompdf\Options;
 
 class QuizController extends AbstractController
 {
-    private UserRepository $userRepository;
     private EventRepository $eventRepository;
     private ContentModerationService $moderationService;
-    private QuizSessionRepository $sessionRepository;
-    private RecaptchaService $recaptchaService;
     private EntityManagerInterface $em;
 
     public function __construct(
         EventRepository $eventRepository, 
-        UserRepository $userRepository, 
         ContentModerationService $moderationService,
-        QuizSessionRepository $sessionRepository,
-        RecaptchaService $recaptchaService,
         EntityManagerInterface $em
     ) {
         $this->eventRepository = $eventRepository;
-        $this->userRepository = $userRepository;
         $this->moderationService = $moderationService;
-        $this->sessionRepository = $sessionRepository;
-        $this->recaptchaService = $recaptchaService;
         $this->em = $em;
         Feedback::setModerationService($moderationService);
     }
@@ -69,7 +60,8 @@ class QuizController extends AbstractController
         }
         
         $allowedRoleIds = [1, 5];
-        if (!in_array($user->getRoleId(), $allowedRoleIds)) {
+        $userRoleId = method_exists($user, 'getRoleId') ? $user->getRoleId() : null;
+        if (!in_array($userRoleId, $allowedRoleIds)) {
             $this->addFlash('error', 'Vous n\'avez pas les droits pour passer ce quiz.');
             return $this->redirectToRoute('app_public_events');
         }
@@ -119,8 +111,8 @@ class QuizController extends AbstractController
         $answer = $request->request->get('answer');
 
         $quizAnswer = new QuizAnswer();
-        $quizAnswer->setQuestionId($questionId);
-        $quizAnswer->setAnswer($answer);
+        $quizAnswer->setQuestionId($questionId !== null ? (int) $questionId : null);
+        $quizAnswer->setAnswer($answer !== null ? (string) $answer : null);
 
         $errors = $validator->validate($quizAnswer);
 
@@ -173,8 +165,8 @@ class QuizController extends AbstractController
             
             $user = $this->getUser();
             if ($user) {
-                $fb->setUserId($user->getId());
-                $fb->setUser($user);
+                $fb->setUserId($user instanceof \App\Entity\User\UserModel ? $user->getId() : null);
+                $fb->setUser($user instanceof \App\Entity\User\UserModel ? $user : null);
             } else {
                 $fb->setUserId(null);
             }
@@ -196,7 +188,7 @@ class QuizController extends AbstractController
             } elseif ($hasAnswer) {
                 // Question répondue normalement
                 $userAnswer = $data[$questionId];
-                $isCorrect = (trim(strtolower($question->getReponse())) === trim(strtolower($userAnswer)));
+                $isCorrect = (trim(strtolower($question->getReponse() ?? '')) === trim(strtolower($userAnswer ?? '')));
                 if ($isCorrect) $score++;
                 
                 $fb->setReponseDonnee($userAnswer);
@@ -242,8 +234,8 @@ class QuizController extends AbstractController
             
             $user = $this->getUser();
             if ($user) {
-                $userFeedback->setUserId($user->getId());
-                $userFeedback->setUser($user);
+                $userFeedback->setUserId($user instanceof \App\Entity\User\UserModel ? $user->getId() : null);
+                $userFeedback->setUser($user instanceof \App\Entity\User\UserModel ? $user : null);
             } else {
                 $userFeedback->setUserId(null);
             }
@@ -272,7 +264,7 @@ class QuizController extends AbstractController
         $user = $this->getUser();
         $existingFeedbacks = [];
         if ($user) {
-            $existingFeedbacks = $feedbackRepository->findBy(['userId' => $user->getId()], ['createdAt' => 'DESC']);
+            $existingFeedbacks = $feedbackRepository->findBy(['userId' => $user instanceof \App\Entity\User\UserModel ? $user->getId() : null], ['createdAt' => 'DESC']);
         }
 
         return $this->render('questionnaire/quiz/results.html.twig', [
@@ -312,7 +304,7 @@ class QuizController extends AbstractController
         }
         
         $user = $this->getUser();
-        if (!$user || $feedback->getUserId() !== $user->getId()) {
+        if (!$user || $feedback->getUserId() !== ($user instanceof \App\Entity\User\UserModel ? $user->getId() : null)) {
             $this->addFlash('error', 'Non autorisé');
             return $this->redirectToRoute('app_quiz_final_results');
         }
@@ -323,7 +315,7 @@ class QuizController extends AbstractController
         if ($etoiles !== null) {
             // Modérer le commentaire avant de le sauvegarder
             if ($comments) {
-                $moderatedComment = $this->moderationService->moderateContent($comments);
+                $moderatedComment = $this->moderationService->moderateContent((string) $comments);
                 $feedback->setComments($moderatedComment);
             }
             
@@ -377,14 +369,14 @@ class QuizController extends AbstractController
             // Modérer le commentaire avant de le sauvegarder
             $originalComment = $feedback->getComments();
             if ($originalComment) {
-                $moderatedComment = $this->moderationService->moderateContent($originalComment);
+                $moderatedComment = $this->moderationService->moderateContent((string) $originalComment);
                 $feedback->setComments($moderatedComment);
             }
             
             $user = $this->getUser();
             if ($user) {
-                $feedback->setUserId($user->getId());
-                $feedback->setUser($user);
+                $feedback->setUserId($user instanceof \App\Entity\User\UserModel ? $user->getId() : null);
+                $feedback->setUser($user instanceof \App\Entity\User\UserModel ? $user : null);
             } else {
                 $feedback->setUserId(null);
             }
@@ -410,7 +402,7 @@ class QuizController extends AbstractController
     public function deleteFeedback(Request $request, Feedback $feedback, EntityManagerInterface $em): Response
     {
         $user = $this->getUser();
-        if (!$user || $feedback->getUserId() !== $user->getId()) {
+        if (!$user || $feedback->getUserId() !== ($user instanceof \App\Entity\User\UserModel ? $user->getId() : null)) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas supprimer ce feedback.');
         }
 
@@ -515,9 +507,9 @@ class QuizController extends AbstractController
             $html .= '<div class="container">';
             $html .= '<h1>Certificat de Réussite</h1>';
             $html .= '<div class="subtitle">Ce document certifie que</div>';
-            $html .= '<div class="name">' . htmlspecialchars($user->getFullName()) . '</div>';
+            $html .= '<div class="name">' . htmlspecialchars($user instanceof \App\Entity\User\UserModel ? $user->getFullName() : 'Utilisateur') . '</div>';
             $html .= '<div style="text-align:center;margin:10px 0;">a réussi le quiz de l\'événement</div>';
-            $html .= '<div class="event">' . htmlspecialchars($event->getTitle()) . '</div>';
+            $html .= '<div class="event">' . htmlspecialchars($event->getTitle() ?? '') . '</div>';
             $html .= '<div class="score">Score : ' . $score . ' / ' . $total . '</div>';
             $html .= '<div style="text-align:center;"><span class="badge">' . $percentage . '% de réussite</span></div>';
             $html .= '<div class="date">Délivré le ' . $date . '</div>';
@@ -537,7 +529,7 @@ class QuizController extends AbstractController
             $dompdf->setPaper('A4', 'landscape');
             $dompdf->render();
 
-            $filename = 'certificat_' . $user->getId() . '_' . $eventId . '_' . date('Ymd_His') . '.pdf';
+            $filename = 'certificat_' . ($user instanceof \App\Entity\User\UserModel ? $user->getId() : 'unknown') . '_' . $eventId . '_' . date('Ymd_His') . '.pdf';
 
             return new Response(
                 $dompdf->output(),
@@ -589,7 +581,8 @@ class QuizController extends AbstractController
             $session->setUserAgent($request->headers->get('User-Agent'));
 
             if ($this->getUser()) {
-                $session->setUser($this->getUser());
+                $user = $this->getUser();
+                $session->setUser($user instanceof \App\Entity\User\UserModel ? $user : null);
             }
 
             if ($eventId) {

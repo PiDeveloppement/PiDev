@@ -9,6 +9,7 @@ use App\Service\Resource\UnsplashService;
 use App\Service\Resource\AuditService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -51,10 +52,13 @@ final class SalleController extends AbstractController
                 $newFilename = $safeFilename.'-'.uniqid().'.'.$imageFile->guessExtension();
 
                 try {
-                    $imageFile->move(
-                        $this->getParameter('kernel.project_dir') . '/public/uploads/salles',
-                        $newFilename
-                    );
+                    $projectDir = $this->getParameter('kernel.project_dir');
+                    if (is_string($projectDir)) {
+                        $imageFile->move(
+                            $projectDir . '/public/uploads/salles',
+                            $newFilename
+                        );
+                    }
                     $salle->setImagePath('/uploads/salles/' . $newFilename);
                 } catch (\Exception $e) {
                     $this->addFlash('error', "Erreur lors de l'upload");
@@ -62,12 +66,18 @@ final class SalleController extends AbstractController
             } 
             // Cas 2: Aucune image uploadée -> Génération auto via Unsplash
             else {
-                $autoImageUrl = $unsplashService->getImageUrl($salle->getName());
+                $name = $salle->getName();
+                if ($name !== null) {
+                    $autoImageUrl = $unsplashService->getImageUrl($name);
+                } else {
+                    $autoImageUrl = null;
+                }
                 if ($autoImageUrl) {
                     $salle->setImagePath($autoImageUrl);
                 } else {
                     // Fallback si Unsplash échoue
-                    $salle->setImagePath('https://via.placeholder.com/400x300?text=' . urlencode($salle->getName()));
+                    $salleName = $salle->getName() ?? 'Salle';
+                    $salle->setImagePath('https://via.placeholder.com/400x300?text=' . urlencode($salleName));
                 }
             }
 

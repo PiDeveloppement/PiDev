@@ -24,7 +24,10 @@ public function index(Request $request, EquipementRepository $repository): Respo
     $term = $request->query->get('term');
 
     // On appelle une méthode personnalisée du Repository
-    $equipements = $repository->findWithFilters($category, $term);
+    $equipements = $repository->findWithFilters(
+        is_string($category) ? $category : null,
+        is_string($term) ? $term : null
+    );
 
     // On récupère la liste unique des catégories pour remplir le <select> dynamiquement
     $categoriesList = $repository->findAllUniqueCategories();
@@ -51,8 +54,11 @@ public function index(Request $request, EquipementRepository $repository): Respo
         if ($form->isSubmitted() && $form->isValid()) {
             // 1. Logique Unsplash automatique
             // On récupère l'image basée sur le nom de l'équipement
-            $url = $unsplash->getImageUrl($equipement->getName());
-            $equipement->setImagePath($url);
+            $name = $equipement->getName();
+            if ($name !== null) {
+                $url = $unsplash->getImageUrl($name);
+                $equipement->setImagePath($url);
+            }
 
             // 2. Enregistrement
             $entityManager->persist($equipement);
@@ -81,8 +87,11 @@ public function index(Request $request, EquipementRepository $repository): Respo
 
         if ($form->isSubmitted() && $form->isValid()) {
             // Optionnel : si le nom a changé, on peut mettre à jour l'image Unsplash
-            $url = $unsplash->getImageUrl($equipement->getName());
-            $equipement->setImagePath($url);
+            $name = $equipement->getName();
+            if ($name !== null) {
+                $url = $unsplash->getImageUrl($name);
+                $equipement->setImagePath($url);
+            }
 
             $entityManager->flush(); // Pas besoin de persist() pour une modification
             
@@ -122,7 +131,10 @@ public function index(Request $request, EquipementRepository $repository): Respo
         $term = $request->query->get('term');
         $category = $request->query->get('category');
 
-        $results = $repository->searchByTermAndCategory($term, $category);
+        $results = $repository->searchByTermAndCategory(
+            is_string($term) ? $term : null,
+            is_string($category) ? $category : null
+        );
 
         return $this->render('resource/equipement/index.html.twig', [
             'equipements' => $results,

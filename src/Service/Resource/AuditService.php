@@ -23,26 +23,26 @@ class AuditService
         $this->security = $security;
     }
 
-    public function logCreate($resource, ?UserModel $user = null): void
+    public function logCreate(object $resource, ?UserModel $user = null): void
     {
         $this->createLog('CREATE', $resource, null, null, $user);
     }
 
-    public function logUpdate($resource, $oldValues = null, $newValues = null, ?UserModel $user = null): void
+    public function logUpdate(object $resource, ?array $oldValues = null, ?array $newValues = null, ?UserModel $user = null): void
     {
         $this->createLog('UPDATE', $resource, $oldValues, $newValues, $user);
     }
 
-    public function logDelete($resource, ?UserModel $user = null): void
+    public function logDelete(object $resource, ?UserModel $user = null): void
     {
         $this->createLog('DELETE', $resource, null, null, $user);
     }
 
-    private function createLog(string $action, $resource, ?array $oldValues = null, ?array $newValues = null, ?UserModel $user = null): void
+    private function createLog(string $action, object $resource, ?array $oldValues = null, ?array $newValues = null, ?UserModel $user = null): void
     {
         // Déterminer le type et les détails de la ressource
         $resourceType = $this->getResourceType($resource);
-        $resourceId = $resource->getId();
+        $resourceId = method_exists($resource, 'getId') ? $resource->getId() : null;
         $resourceName = $this->getResourceName($resource);
 
         // Définir l'utilisateur
@@ -79,7 +79,7 @@ class AuditService
         ]);
     }
 
-    private function getResourceType($resource): string
+    private function getResourceType(object $resource): string
     {
         if ($resource instanceof ReservationResource) {
             return 'RESERVATION';
@@ -92,7 +92,7 @@ class AuditService
         return 'UNKNOWN';
     }
 
-    private function getResourceName($resource): string
+    private function getResourceName(object $resource): string
     {
         if ($resource instanceof ReservationResource) {
             $eventName = $resource->getEvent()?->getTitle() ?? 'Événement inconnu';
@@ -113,7 +113,7 @@ class AuditService
         return 'Ressource inconnue';
     }
 
-    public function extractEntityValues($entity): array
+    public function extractEntityValues(object $entity): array
     {
         $values = [];
         $reflection = new \ReflectionClass($entity);

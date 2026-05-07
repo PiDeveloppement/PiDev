@@ -3,6 +3,7 @@
 namespace App\Repository\Questionnaire;
 
 use App\Entity\Questionnaire\Question;
+use App\Entity\Event\Event;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -44,7 +45,7 @@ class QuestionRepository extends ServiceEntityRepository
     /**
      * Récupère les questions pour un quiz (général ou par événement)
      */
-    public function findQuestionsForQuiz($event = null): array
+    public function findQuestionsForQuiz(?Event $event = null): array
     {
         $qb = $this->createQueryBuilder('q')
             ->orderBy('q.id', 'ASC');
@@ -62,7 +63,7 @@ class QuestionRepository extends ServiceEntityRepository
     /**
      * Récupère un nombre limité de questions aléatoires pour un quiz
      */
-    public function findRandomQuestionsForQuiz($event = null, int $limit = 10): array
+    public function findRandomQuestionsForQuiz(?Event $event = null, int $limit = 10): array
     {
         $qb = $this->createQueryBuilder('q');
 

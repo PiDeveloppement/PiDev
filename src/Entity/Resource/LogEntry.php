@@ -23,7 +23,7 @@ class LogEntry
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
-    private ?int $id = null;
+    private ?int $id;
 
     #[ORM\ManyToOne(targetEntity: UserModel::class)]
     #[ORM\JoinColumn(name: "user_id", referencedColumnName: "Id_User", onDelete: "SET NULL")]
@@ -187,7 +187,7 @@ class LogEntry
             self::ACTION_CREATE => 'Création',
             self::ACTION_UPDATE => 'Modification',
             self::ACTION_DELETE => 'Suppression',
-            default => $this->action
+            default => $this->action ?? 'Action inconnue'
         };
     }
 
@@ -197,14 +197,14 @@ class LogEntry
             self::RESOURCE_RESERVATION => 'Réservation',
             self::RESOURCE_SALLE => 'Salle',
             self::RESOURCE_EQUIPEMENT => 'Équipement',
-            default => $this->resourceType
+            default => $this->resourceType ?? 'Ressource inconnue'
         };
     }
 
     public function getDescription(): string
     {
         $userName = $this->user ? $this->user->getFullName() : 'Utilisateur inconnu';
-        $time = $this->createdAt->format('H:i');
+        $time = $this->createdAt?->format('H:i') ?? '00:00';
         
         return sprintf(
             "%s %s par %s à %s",
