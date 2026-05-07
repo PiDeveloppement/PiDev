@@ -11,12 +11,12 @@ class GoogleCalendarWriteService
     private ?string $lastError = null;
 
     public function __construct(
+        private readonly LoggerInterface $logger,
         #[Autowire('%env(default::GOOGLE_CALENDAR_ID)%')] private readonly ?string $calendarId = null,
         #[Autowire('%env(default::GOOGLE_CLIENT_ID)%')] private readonly ?string $clientId = null,
         #[Autowire('%env(default::GOOGLE_CLIENT_SECRET)%')] private readonly ?string $clientSecret = null,
         #[Autowire('%env(default::GOOGLE_REFRESH_TOKEN)%')] private readonly ?string $refreshToken = null,
-        #[Autowire('%env(default::GOOGLE_CALENDAR_TIMEZONE)%')] private readonly ?string $timezone = null,
-        private readonly LoggerInterface $logger
+        #[Autowire('%env(default::GOOGLE_CALENDAR_TIMEZONE)%')] private readonly ?string $timezone = null
     ) {
     }
 
@@ -129,7 +129,7 @@ class GoogleCalendarWriteService
                 'Content-Type: application/json',
                 'Accept: application/json',
             ],
-            json_encode($this->buildGooglePayload($event))
+            json_encode($this->buildGooglePayload($event)) ?: null
         );
 
         if ($this->isSuccessStatus($response['status'] ?? 500)) {
@@ -222,7 +222,6 @@ class GoogleCalendarWriteService
                 'Accept: application/json',
             ]
         );
-
         if (!$this->isSuccessStatus($response['status'] ?? 500)) {
             $errorPayload = $response['data'] ?? [];
             $errorMessage = is_array($errorPayload)
@@ -240,6 +239,9 @@ class GoogleCalendarWriteService
             if ($mapped !== null) {
                 return ['ok' => true, 'found' => true, 'event' => $mapped];
             }
+
+            $this->lastError = 'Google event payload is missing start or end date.';
+            return ['ok' => false, 'found' => false, 'event' => null];
         }
 
         // Fallback for legacy events that were created without private extended properties.
@@ -253,6 +255,9 @@ class GoogleCalendarWriteService
         return ['ok' => true, 'found' => false, 'event' => null];
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     private function fetchRemoteEventByDateWindow(Event $localEvent, string $accessToken): ?array
     {
         if (!$localEvent->getStartDate() || !$localEvent->getEndDate()) {
@@ -348,6 +353,10 @@ class GoogleCalendarWriteService
         return $bestMatch;
     }
 
+    /**
+     * @param array<string, mixed> $item
+     * @return array<string, mixed>|null
+     */
     private function mapGoogleItemToRemoteEvent(array $item): ?array
     {
         $startRaw = (string) ($item['start']['dateTime'] ?? $item['start']['date'] ?? '');
@@ -397,6 +406,10 @@ class GoogleCalendarWriteService
         return is_array($data) ? (string) ($data['access_token'] ?? '') : null;
     }
 
+    /**
+     * @param array<int, string> $headers
+     * @return array<string, mixed>
+     */
     private function requestJson(string $url, string $method, array $headers, ?string $body = null): array
     {
         $context = stream_context_create([
@@ -424,6 +437,9 @@ class GoogleCalendarWriteService
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function createGoogleEvent(Event $event, string $accessToken): array
     {
         $url = sprintf(
@@ -439,10 +455,13 @@ class GoogleCalendarWriteService
                 'Content-Type: application/json',
                 'Accept: application/json',
             ],
-            json_encode($this->buildGooglePayload($event))
+            json_encode($this->buildGooglePayload($event)) ?: null
         );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function buildGooglePayload(Event $event): array
     {
         return [
@@ -450,11 +469,11 @@ class GoogleCalendarWriteService
             'description' => (string) ($event->getDescription() ?? ''),
             'location' => (string) ($event->getLocation() ?? ''),
             'start' => [
-                'dateTime' => $event->getStartDate()->format(DATE_ATOM),
+                'dateTime' => $event->getStartDate()?->format(DATE_ATOM) ?? '',
                 'timeZone' => $this->timezone ?: 'Africa/Tunis',
             ],
             'end' => [
-                'dateTime' => $event->getEndDate()->format(DATE_ATOM),
+                'dateTime' => $event->getEndDate()?->format(DATE_ATOM) ?? '',
                 'timeZone' => $this->timezone ?: 'Africa/Tunis',
             ],
             'source' => [

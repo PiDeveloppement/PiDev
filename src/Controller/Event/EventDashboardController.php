@@ -123,13 +123,13 @@ class EventDashboardController extends AbstractController
             $monthKey = $month->format('Y-m');
             $monthLabel = $month->format('M Y');
             $count = count(array_filter($filteredTickets, function(Ticket $t) use ($monthKey) {
-                return $t->getCreatedAt()?->format('Y-m') === $monthKey;
+                return (bool) ($t->getCreatedAt()?->format('Y-m') === $monthKey);
             }));
             $ticketsByMonth[] = ['label' => $monthLabel, 'value' => $count];
         }
 
         // ==================== EVENTS GRATUITS VS PAYANTS ====================
-        $gratuits = count(array_filter($filteredEvents, fn(Event $e) => $e->isFree()));
+        $gratuits = count(array_filter($filteredEvents, fn(Event $e) => (bool) $e->isFree()));
         $payants = $totalEvents - $gratuits;
 
         $eventsByCategoryLabels = array_map(static fn(array $row) => $row['label'], $eventsByCategory);

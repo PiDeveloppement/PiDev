@@ -18,6 +18,9 @@ class AiPosterService
         #[Autowire('%env(default::HUGGINGFACE_TOKEN)%')] private readonly ?string $huggingFaceToken = null
     ) {}
 
+    /**
+     * @return array<string, mixed>
+     */
     public function generatePoster(string $prompt): array
     {
         $cleanPrompt = trim($prompt);
@@ -62,7 +65,7 @@ class AiPosterService
         }
 
         $statusCode = $response->getStatusCode();
-        $contentType = strtolower((string) $response->getHeaders(false)['content-type'][0] ?? '');
+        $contentType = strtolower((string) $response->getHeaders(false)['content-type'][0]);
         $rawContent = $response->getContent(false);
 
         if ($statusCode >= 400) {

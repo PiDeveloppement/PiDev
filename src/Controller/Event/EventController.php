@@ -57,6 +57,9 @@ class EventController extends AbstractController
         return $this->json($result, $status);
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     */
     private function buildPosterPrompt(array $payload): string
     {
         $styles = [
@@ -248,7 +251,8 @@ class EventController extends AbstractController
     {
         // Keep local events aligned with Google changes before rendering the calendar.
         $syncStats = $this->eventService->syncFromGoogleCalendarToEventFlow();
-        if (($syncStats['failed'] ?? 0) > 0) {
+
+        if ($syncStats['failed'] > 0) {
             $this->addFlash('warning', 'Certaines synchronisations Google entrantes ont echoue.');
         }
 
@@ -269,15 +273,15 @@ class EventController extends AbstractController
 
         $this->addFlash(
             'info',
-            sprintf(
+                sprintf(
                 'Synchronisation Google -> EventFlow: %d mise(s) a jour, %d suppression(s), %d ignoree(s).',
-                (int) ($syncStats['updated'] ?? 0),
-                (int) ($syncStats['deleted'] ?? 0),
-                (int) ($syncStats['skipped'] ?? 0)
+                (int) ($syncStats['updated']),
+                (int) ($syncStats['deleted']),
+                (int) ($syncStats['skipped'])
             )
         );
 
-        if (($syncStats['failed'] ?? 0) > 0) {
+        if ($syncStats['failed'] > 0) {
             $this->addFlash('warning', 'Certaines synchronisations Google entrantes ont echoue.');
         }
 

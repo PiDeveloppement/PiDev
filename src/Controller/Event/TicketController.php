@@ -25,8 +25,8 @@ class TicketController extends AbstractController
         PaginatorInterface $paginator
     ): Response {
         $search = trim((string) $request->query->get('search', ''));
-        $eventFilter = $request->query->get('event');
-        $statusFilter = $request->query->get('status');
+        $eventFilter = $request->query->getString('event') ?: null;
+        $statusFilter = $request->query->getString('status') ?: null;
 
         $listData = $this->ticketService->getBackOfficeListData(
             $search,
