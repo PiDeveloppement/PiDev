@@ -19,6 +19,7 @@ class ManagementAssistantController extends AbstractController
     #[Route('/admin/assistant-ia', name: 'app_ai_assistant_index', methods: ['GET'])]
     public function index(): Response
     {
+        // La page d'assistant est reservee a l'administration et aux organisateurs.
         $this->denyUnlessAdminOrOrganizer();
 
         return $this->render('assistant/index.html.twig', [
@@ -29,6 +30,7 @@ class ManagementAssistantController extends AbstractController
     #[Route('/admin/assistant-ia/ask', name: 'app_ai_assistant_ask', methods: ['POST'])]
     public function ask(Request $request): JsonResponse
     {
+        // Endpoint JSON principal: il recoit une question et renvoie une reponse structuree.
         $this->denyUnlessAdminOrOrganizer();
 
         $data = $this->parseJsonRequest($request);
@@ -43,6 +45,7 @@ class ManagementAssistantController extends AbstractController
             return $this->jsonError('La question est obligatoire.', Response::HTTP_BAD_REQUEST);
         }
 
+        // On transmet la question et l'historique de conversation au service metier IA.
         try {
             $answer = $this->assistantService->ask($question, $history);
 
@@ -58,6 +61,7 @@ class ManagementAssistantController extends AbstractController
     #[Route('/admin/assistant-ia/send', name: 'app_ai_assistant_send', methods: ['POST'])]
     public function send(Request $request): JsonResponse
     {
+        // Endpoint alternatif compatible avec une interface front qui envoie "message" au lieu de "question".
         $this->denyUnlessAdminOrOrganizer();
 
         $data = $this->parseJsonRequest($request);
@@ -72,6 +76,7 @@ class ManagementAssistantController extends AbstractController
             return $this->jsonError('Le message est obligatoire.', Response::HTTP_BAD_REQUEST);
         }
 
+        // La reponse renvoie a la fois "response" et "answer" pour simplifier l'integration front.
         try {
             $answer = $this->assistantService->ask($question, $history);
 
@@ -94,6 +99,7 @@ class ManagementAssistantController extends AbstractController
      */
     private function parseJsonRequest(Request $request): ?array
     {
+        // Normaliser le body JSON en tableau PHP, sinon retourner null pour signaler une requete invalide.
         try {
             $data = $request->toArray();
         } catch (\Throwable) {
@@ -112,6 +118,7 @@ class ManagementAssistantController extends AbstractController
 
     private function denyUnlessAdminOrOrganizer(): void
     {
+        // Controle d'acces double: d'abord via les roles Symfony, puis via le roleId historique.
         $user = $this->getUser();
         if (!$user instanceof UserModel) {
             throw $this->createAccessDeniedException('Acces reserve a l administration et aux organisateurs.');

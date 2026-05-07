@@ -4,8 +4,6 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    {# FIX TURBO: force full reload sur cette page #}
-    <meta name="turbo-visit-control" content="reload">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1400,6 +1398,9 @@
 
 {# ── Top fixed actions for Depense page ── #}
 <div id="depenseTopActions" class="depense-top-actions">
+    <a class="btn-export" href="{{ path('app_ai_assistant_index') }}" style="position: static; text-decoration: none;">
+        <i class="fa-solid fa-robot"></i> Assistant IA
+    </a>
     <button class="btn-export" onclick="window.print()" style="position: static;">
         <i class="fa-solid fa-arrow-up-from-bracket"></i> Exporter
     </button>

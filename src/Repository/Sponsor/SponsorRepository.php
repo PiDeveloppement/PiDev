@@ -21,6 +21,7 @@ class SponsorRepository extends ServiceEntityRepository
      */
     public function searchForAdmin(?string $search = null, ?string $company = null, ?int $eventId = null): array
     {
+        // Requete principale de la page admin sponsor avec filtres facultatifs.
         $qb = $this->createQueryBuilder('s')
             ->leftJoin('s.user', 'u')
             ->addSelect('u')
@@ -61,6 +62,7 @@ class SponsorRepository extends ServiceEntityRepository
 
     public function getTotalSponsors(): int
     {
+        // KPI simple utilise dans les dashboards et le contexte IA.
         return (int) $this->createQueryBuilder('s')
             ->select('COUNT(s.id)')
             ->getQuery()
@@ -69,6 +71,7 @@ class SponsorRepository extends ServiceEntityRepository
 
     public function getTotalContribution(): float
     {
+        // Somme globale des contributions sponsor pour KPI et assistant IA.
         $value = $this->createQueryBuilder('s')
             ->select('COALESCE(SUM(s.contributionName), 0)')
             ->getQuery()
@@ -79,6 +82,7 @@ class SponsorRepository extends ServiceEntityRepository
 
     public function getAverageContribution(): float
     {
+        // Moyenne des contributions sponsor pour synthese metier.
         $value = $this->createQueryBuilder('s')
             ->select('COALESCE(AVG(s.contributionName), 0)')
             ->getQuery()
@@ -92,6 +96,7 @@ class SponsorRepository extends ServiceEntityRepository
      */
     public function getTopCompaniesByContribution(int $limit = 5): array
     {
+        // Top entreprises sponsor par montant cumule.
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
             'SELECT company_name AS companyName, COALESCE(SUM(contribution_name), 0) AS total
              FROM sponsor
@@ -115,6 +120,7 @@ class SponsorRepository extends ServiceEntityRepository
      */
     public function getContributionsByEvent(): array
     {
+        // Agrégation par evenement pour construire KPI et graphiques sponsor.
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
             'SELECT e.title AS eventTitle, COALESCE(SUM(s.contribution_name), 0) AS total
              FROM sponsor s
@@ -137,6 +143,7 @@ class SponsorRepository extends ServiceEntityRepository
      */
     public function findByContactEmailWithEvent(string $email): array
     {
+        // Recuperer l'historique sponsor d'un contact email donne.
         return $this->createQueryBuilder('s')
             ->leftJoin('s.user', 'u')
             ->addSelect('u')
@@ -187,6 +194,7 @@ class SponsorRepository extends ServiceEntityRepository
      */
     public function getMyContributionsByEvent(string $email): array
     {
+        // Historique par evenement utilise dans l'algorithme de recommandation sponsor.
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
             'SELECT e.title AS eventTitle, COALESCE(SUM(s.contribution_name), 0) AS total
              FROM sponsor s
@@ -257,6 +265,7 @@ class SponsorRepository extends ServiceEntityRepository
      */
     public function getEventTitleMap(array $eventIds): array
     {
+        // Conversion utilitaire ID evenement => titre lisible.
         $ids = array_values(array_unique(array_filter(array_map('intval', $eventIds), static fn (int $id): bool => $id > 0)));
         if ($ids === []) {
             return [];
@@ -281,6 +290,7 @@ class SponsorRepository extends ServiceEntityRepository
      */
     public function getDistinctContactEmails(): array
     {
+        // Source des campagnes email de recommandation/alerte sponsor.
         $rows = $this->createQueryBuilder('s')
             ->select('DISTINCT LOWER(s.contactEmail) AS email')
             ->where('s.contactEmail IS NOT NULL')

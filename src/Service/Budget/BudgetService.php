@@ -14,6 +14,7 @@ class BudgetService
 
     public function initializeBudget(Budget $budget): void
     {
+        // Un nouveau budget commence sans depense et avec une rentabilite calculee a zero.
         $budget->setTotalExpenses(0)
             ->setTotalRevenue(0)
             ->refreshRentabilite();
@@ -22,6 +23,7 @@ class BudgetService
     /** @param Budget[] $budgets */
     public function syncBudgetTotals(array $budgets): bool
     {
+        // Rebalayer tous les budgets pour verifier si les depenses ont fait evoluer les totaux.
         $changed = false;
         foreach ($budgets as $budget) {
             $before = $budget->getTotalExpenses() . '|' . $budget->getRentabilite();
@@ -37,6 +39,7 @@ class BudgetService
 
     public function recomputeBudget(?Budget $budget): void
     {
+        // Recalcule le budget a partir de la somme reelle des depenses stockees en base.
         if (!$budget instanceof Budget) {
             return;
         }
@@ -59,6 +62,7 @@ class BudgetService
     /** @return array<int,array{id:int,title:string,capacity:int,ticket_price:float}> */
     public function fetchEventRows(): array
     {
+        // On expose seulement les champs utiles au pilotage budgetaire.
         $rows = $this->entityManager->getConnection()->fetchAllAssociative(
             'SELECT id, title, COALESCE(capacity, 0) AS capacity, COALESCE(ticket_price, 0) AS ticket_price FROM event ORDER BY start_date ASC'
         );
@@ -82,7 +86,10 @@ class BudgetService
         return $choices;
     }
 
-    /** @param int[] $eventIds @return array<int,string> */
+    /**
+     * @param int[] $eventIds
+     * @return array<int,string>
+     */
     public function getEventTitleMap(array $eventIds): array
     {
         $ids = array_values(array_unique(array_filter(array_map('intval', $eventIds), static fn (int $id): bool => $id > 0)));
@@ -145,6 +152,7 @@ class BudgetService
     /** @return array{daysLeft:?int,adjustedRemaining:?float,forecastText:string} */
     public function buildForecast(int $budgetId, float $remaining, float $totalExpenses): array
     {
+        // Le forecast estime la duree de couverture du budget au rythme actuel des depenses.
         $rows = $this->entityManager->getConnection()->fetchAllAssociative(
             'SELECT expense_date, amount FROM depense WHERE budget_id = :id ORDER BY expense_date ASC',
             ['id' => $budgetId]
@@ -188,9 +196,13 @@ class BudgetService
         return ['daysLeft' => $daysLeft, 'adjustedRemaining' => $adjustedRemaining, 'forecastText' => $forecastText];
     }
 
-    /** @param Budget[] $budgets @return array{count:int,totalInitial:float,globalRent:float,deficitCount:int} */
+    /**
+     * @param Budget[] $budgets
+     * @return array{count:int,totalInitial:float,globalRent:float,deficitCount:int}
+     */
     public function buildStats(array $budgets): array
     {
+        // KPI globaux du tableau de bord budget.
         $count = count($budgets);
         $totalInitial = 0.0;
         $globalRent = 0.0;
@@ -201,8 +213,7 @@ class BudgetService
             $rent = (float) $budget->getRentabilite();
             $globalRent += $rent;
             if ($rent < 0) {
-                $deficitCount++;
-            }
+                $deficitCount++;            }
         }
 
         return [
@@ -232,6 +243,7 @@ class BudgetService
 
     public function getHealth(Budget $budget): string
     {
+        // Classification simple pour colorer l'etat du budget dans l'interface.
         $initial = (float) $budget->getInitialBudget();
         $rent = (float) $budget->getRentabilite();
 

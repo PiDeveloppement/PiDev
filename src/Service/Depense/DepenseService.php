@@ -23,12 +23,14 @@ class DepenseService
     /** @return Budget[] */
     public function fetchBudgets(): array
     {
+        // Les budgets sont proposes du plus recent au plus ancien dans les formulaires depense.
         return $this->budgetRepository->createQueryBuilder('b')->orderBy('b.id', 'DESC')->getQuery()->getResult();
     }
 
     /** @return array<string,int> */
     public function buildBudgetChoices(): array
     {
+        // Les labels budget affichent le titre evenement + budget initial pour guider l'utilisateur.
         $budgets = $this->fetchBudgets();
         $eventTitleMap = $this->fetchEventTitleMap(array_map(static fn (Budget $budget): int => (int) $budget->getEventId(), $budgets));
 
@@ -57,6 +59,7 @@ class DepenseService
     /** @return string[] */
     public function fetchCategories(): array
     {
+        // Priorite aux categories officielles d'evenement, puis fallback sur l'historique de depense.
         $rows = $this->entityManager->getConnection()->fetchFirstColumn('SELECT name FROM event_category ORDER BY name');
         $categories = array_values(array_filter(array_map(static fn ($value): string => trim((string) $value), $rows), static fn (string $value): bool => $value !== ''));
 
@@ -68,9 +71,13 @@ class DepenseService
         return $categories;
     }
 
-    /** @param Depense[] $depenses @return array{count:int,total:float,average:float,categories:int,byCategory:array<string,float>} */
+    /**
+     * @param Depense[] $depenses
+     * @return array{count:int,total:float,average:float,categories:int,byCategory:array<string,float>}
+     */
     public function buildStats(array $depenses): array
     {
+        // KPI depense: volume, total, moyenne et repartition par categorie.
         $count = count($depenses);
         $total = 0.0;
         $byCategory = [];
@@ -96,7 +103,10 @@ class DepenseService
         ];
     }
 
-    /** @param Budget[] $budgets @return array<int,string> */
+    /**
+     * @param Budget[] $budgets
+     * @return array<int,string>
+     */
     public function buildBudgetDisplayMap(array $budgets): array
     {
         $eventTitleMap = $this->fetchEventTitleMap(array_map(static fn (Budget $budget): int => (int) $budget->getEventId(), $budgets));
@@ -111,7 +121,10 @@ class DepenseService
         return $map;
     }
 
-    /** @param int[] $eventIds @return array<int,string> */
+    /**
+     * @param int[] $eventIds
+     * @return array<int,string>
+     */
     public function fetchEventTitleMap(array $eventIds): array
     {
         $ids = array_values(array_unique(array_filter(array_map('intval', $eventIds), static fn (int $id): bool => $id > 0)));
@@ -155,12 +168,13 @@ class DepenseService
             ['q' => '%' . mb_strtolower(trim($search)) . '%']
         );
 
-        return array_values(array_map('intval', $rows));
+        return array_map('intval', $rows);
     }
 
     /** @return array{from:\DateTimeImmutable,to:\DateTimeImmutable}|null */
     public function resolvePeriodRange(string $period): ?array
     {
+        // Convertit un filtre metier ("month", "quarter", "year") en intervalle de dates.
         $today = new \DateTimeImmutable('today');
 
         return match ($period) {
@@ -173,6 +187,7 @@ class DepenseService
 
     public function normalizeDepenseCurrency(Depense $depense): void
     {
+        // Toutes les depenses sont stockees en TND, avec conservation du montant/devise d'origine si necessaire.
         $currency = strtoupper(trim((string) $depense->getOriginalCurrency()));
         $inputAmount = (float) $depense->getAmount();
 
@@ -200,6 +215,7 @@ class DepenseService
     /** @return array{from:\DateTimeImmutable,to:\DateTimeImmutable} */
     private function resolveQuarterRange(\DateTimeImmutable $today): array
     {
+        // Calcule debut/fin du trimestre courant pour le filtrage des depenses.
         $month = (int) $today->format('n');
         $year = (int) $today->format('Y');
         $startMonth = ((int) floor(($month - 1) / 3) * 3) + 1;

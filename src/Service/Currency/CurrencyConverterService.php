@@ -3,13 +3,15 @@
 namespace App\Service\Currency;
 
 use Swap\Swap;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class CurrencyConverterService
 {
     public function __construct(
-        private readonly Swap $swap,
-        private readonly HttpClientInterface $httpClient
+        private readonly HttpClientInterface $httpClient,
+        #[Autowire(service: 'florianv_swap.swap')]
+        private readonly Swap $swap
     )
     {
     }
@@ -113,15 +115,8 @@ class CurrencyConverterService
 
         try {
             return (float) $this->swap->latest(sprintf('%s/%s', $from, $to))->getValue();
-        } catch (\Throwable $exception) {
-            // Fallback: calcul croise via EUR lorsque le provider ne supporte pas directement la paire.
-            try {
-                $fromToEur = $from === 'EUR' ? 1.0 : $this->swap->latest(sprintf('%s/%s', $from, 'EUR'))->getValue();
-                $eurToTarget = $to === 'EUR' ? 1.0 : $this->swap->latest(sprintf('%s/%s', 'EUR', $to))->getValue();
-                return (float) $fromToEur * (float) $eurToTarget;
-            } catch (\Throwable $fallbackException) {
-                return $this->fetchRateFromErApi($from, $to, $fallbackException);
-            }
+        } catch (\Throwable $swapException) {
+            return $this->fetchRateFromErApi($from, $to, $swapException);
         }
     }
 

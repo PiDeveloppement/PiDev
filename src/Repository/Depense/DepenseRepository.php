@@ -13,11 +13,7 @@ class DepenseRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
+        // Repository Doctrine standard pour les operations CRUD et filtres custom sur les depenses.
         parent::__construct($registry, Depense::class);
     }
 }
-
-
-
-
-

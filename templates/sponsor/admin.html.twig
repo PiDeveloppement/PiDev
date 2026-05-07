@@ -4,8 +4,6 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    {# FIX TURBO: force full reload sur cette page #}
-    <meta name="turbo-visit-control" content="reload">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -204,35 +202,6 @@
         .sp-empty-sub{font-size:13px;color:var(--ink-3);}
         .sp-no-result{text-align:center;padding:16px;font-size:13px;color:var(--ink-3);}
 
-        /* Translation button inside sponsor admin topbar */
-        #translationWidget {
-            position: relative !important;
-            top: auto !important;
-            right: auto !important;
-            left: auto !important;
-            bottom: auto !important;
-            margin: 0 !important;
-            z-index: 20 !important;
-        }
-
-        #translationWidget #translationToggle {
-            width: auto !important;
-            height: auto !important;
-            border-radius: 40px !important;
-            padding: 10px 16px !important;
-            font-size: 14px !important;
-            background: linear-gradient(135deg, #16a34a, #22c55e) !important;
-            box-shadow: 0 8px 20px rgba(22, 163, 74, 0.35) !important;
-        }
-
-        #translationWidget #translationToggle i {
-            margin-right: 6px;
-        }
-
-        #translationWidget #translationMenu {
-            margin-top: 8px !important;
-        }
-
         @media(max-width:1100px){
             .sp-kpi{grid-template-columns:repeat(2,1fr);}
             .sp-dashboard-choice select{min-width:220px;}
@@ -253,23 +222,28 @@
 
 {% block javascripts %}
     {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script defer>
     document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-sponsor-chart]').forEach(function(canvas) {
+            if (typeof Chart === 'undefined') {
+                return;
+            }
+
+            try {
+                const config = JSON.parse(canvas.getAttribute('data-chart-config') || '{}');
+                new Chart(canvas, config);
+            } catch (error) {
+                console.error('Erreur initialisation graphique sponsor:', error);
+            }
+        });
+
         const chartViewSelect = document.getElementById('chartViewSelect');
         const chartPanels = document.querySelectorAll('[data-chart-panel]');
         const alertNotifToggle = document.getElementById('spAlertNotifToggle');
         const alertNotifPanel = document.getElementById('spAlertNotifPanel');
 
-        const translationWidget = document.getElementById('translationWidget');
-        const translationToggle = document.getElementById('translationToggle');
         const topbarRight = document.querySelector('.sp-topbar-right');
-
-        if (translationWidget && topbarRight) {
-            topbarRight.insertBefore(translationWidget, topbarRight.firstChild);
-            if (translationToggle) {
-                translationToggle.innerHTML = '<i class="fas fa-language"></i> Traduire';
-            }
-        }
 
         const animatePanelCards = function(activePanel) {
             if (!activePanel) {
@@ -370,7 +344,7 @@
                     return;
                 }
 
-                suggestionsList.innerHTML = suggestions.map(item => 
+                suggestionsList.innerHTML = suggestions.map(item =>
                     `<div style="padding: 10px 13px; font-size: 13px; color: var(--ink); cursor: pointer; transition: background .12s; border-bottom: 0.5px solid var(--border);" onclick="window.selectSponsorSuggestion('${item}')" onmouseover="this.style.background='var(--surf-2)'" onmouseout="this.style.background='white'">
                         ${escapeSponsorsHtml(item)}
                     </div>`
@@ -475,6 +449,9 @@
     {# topbar #}
     <div class="sp-topbar">
         <div class="sp-topbar-right" style="margin-left: auto;">
+            <a class="sp-btn sp-btn-ghost" href="{{ path('app_ai_assistant_index') }}">
+                <i class="fa-solid fa-robot"></i> Assistant IA
+            </a>
             <a class="sp-btn sp-btn-ghost" href="{{ path('app_sponsors_export_csv', {mode: 'all'}) }}">
                 <i class="fa-solid fa-arrow-up-from-bracket"></i> Exporter CSV
             </a>
@@ -532,14 +509,14 @@
                     <article class="sp-chart-card">
                         <h4>Top 5 événements (montant)</h4>
                         <div class="sp-chart-canvas">
-                            {{ render_chart(eventsByContributionChart) }}
+                            <canvas data-sponsor-chart data-chart-config="{{ eventsByContributionChart.createView|json_encode|e('html_attr') }}"></canvas>
                         </div>
                         <p class="sp-chart-note"><strong>Top 5 des événements qui attirent le plus de budget sponsor.</strong></p>
                     </article>
                     <article class="sp-chart-card">
                         <h4>Top 5 volume sponsors</h4>
                         <div class="sp-chart-canvas">
-                            {{ render_chart(eventsShareChart) }}
+                            <canvas data-sponsor-chart data-chart-config="{{ eventsShareChart.createView|json_encode|e('html_attr') }}"></canvas>
                         </div>
                         <p class="sp-chart-note"><strong>Top 5 des événements avec le plus grand nombre de sponsors engagés.</strong></p>
                     </article>
@@ -551,14 +528,14 @@
                     <article class="sp-chart-card">
                         <h4>Top sponsors</h4>
                         <div class="sp-chart-canvas">
-                            {{ render_chart(topSponsorsChart) }}
+                            <canvas data-sponsor-chart data-chart-config="{{ topSponsorsChart.createView|json_encode|e('html_attr') }}"></canvas>
                         </div>
                         <p class="sp-chart-note"><strong>Répartition des contributions sur les entreprises les plus engagées.</strong></p>
                     </article>
                     <article class="sp-chart-card">
                         <h4>Frequence partenariats</h4>
                         <div class="sp-chart-canvas">
-                            {{ render_chart(topSponsorsComparisonChart) }}
+                            <canvas data-sponsor-chart data-chart-config="{{ topSponsorsComparisonChart.createView|json_encode|e('html_attr') }}"></canvas>
                         </div>
                         <p class="sp-chart-note"><strong>Lecture horizontale pour comparer le nombre de partenariats par sponsor.</strong></p>
                     </article>
@@ -570,14 +547,14 @@
                     <article class="sp-chart-card">
                         <h4>Vue globale</h4>
                         <div class="sp-chart-canvas">
-                            {{ render_chart(overviewChart) }}
+                            <canvas data-sponsor-chart data-chart-config="{{ overviewChart.createView|json_encode|e('html_attr') }}"></canvas>
                         </div>
                         <p class="sp-chart-note"><strong>Vision synthétique pour lire l'état global du portefeuille sponsor.</strong></p>
                     </article>
                     <article class="sp-chart-card">
                         <h4>Distribution alertes risque</h4>
                         <div class="sp-chart-canvas">
-                            {{ render_chart(overviewKpiChart) }}
+                            <canvas data-sponsor-chart data-chart-config="{{ overviewKpiChart.createView|json_encode|e('html_attr') }}"></canvas>
                         </div>
                         <p class="sp-chart-note"><strong>Repartition des alertes inactivite par niveau de criticite.</strong></p>
                     </article>

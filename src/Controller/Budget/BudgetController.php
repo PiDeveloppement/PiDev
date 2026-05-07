@@ -29,6 +29,7 @@ class BudgetController extends AbstractController
     {
         $this->denyUnlessAdmin();
 
+        // 1) Lire tous les filtres visuels du tableau de bord budget.
         $eventId = (int) $request->query->get('event_id', 0);
         $health = (string) $request->query->get('health', 'all');
         $status = (string) $request->query->get('status', 'all');
@@ -36,6 +37,7 @@ class BudgetController extends AbstractController
         $sort = (string) $request->query->get('sort', 'default');
         $state = (string) $request->query->get('state', 'all');
 
+        // 2) Charger les budgets et resynchroniser leurs totaux a partir des depenses reelles.
         $qb = $this->budgetRepository->createQueryBuilder('b')->orderBy('b.id', 'DESC');
         if ($eventId > 0) {
             $qb->andWhere('b.eventId = :eventId')->setParameter('eventId', $eventId);
@@ -49,10 +51,10 @@ class BudgetController extends AbstractController
 
         $budgets = array_values(array_filter($budgets, fn (Budget $budget): bool => $this->budgetService->passesFilters($budget, $health, $status)));
 
-        // Get event title map for searching
+        // 3) Mapper les IDs d'evenement vers des titres lisibles pour la recherche et l'affichage.
         $eventTitleMap = $this->budgetService->getEventTitleMap(array_map(static fn (Budget $budget): int => (int) $budget->getEventId(), $budgets));
 
-        // Filter by search term
+        // 4) Filtrer cote PHP sur le titre de l'evenement.
         if (!empty($search)) {
             $searchLower = strtolower($search);
             $budgets = array_filter($budgets, function (Budget $budget) use ($searchLower, $eventTitleMap) {
@@ -62,7 +64,7 @@ class BudgetController extends AbstractController
             $budgets = array_values($budgets);
         }
 
-        // Filter by state
+        // 5) Traduire l'etat financier en classes metier pour le filtrage.
         if ($state !== 'all' && !empty($state)) {
             $budgets = array_filter($budgets, function (Budget $budget) use ($state) {
                 $ini = (float) $budget->getInitialBudget();
@@ -82,7 +84,7 @@ class BudgetController extends AbstractController
             $budgets = array_values($budgets);
         }
 
-        // Apply sorting
+        // 6) Appliquer le tri final sur la liste des budgets.
         usort($budgets, function (Budget $a, Budget $b) use ($sort) {
             switch ($sort) {
                 case 'name-asc':
@@ -102,6 +104,7 @@ class BudgetController extends AbstractController
             }
         });
 
+        // 7) Construire les KPI et les series de graphique du tableau de bord.
         $stats = $this->budgetService->buildStats($budgets);
 
         $top5 = array_slice($budgets, 0, 5);
@@ -142,6 +145,7 @@ class BudgetController extends AbstractController
     {
         $this->denyUnlessAdmin();
 
+        // API legere de suggestions pour l'autocomplete du filtre budget.
         $q = (string) $request->query->get('q', '');
         
         if (strlen($q) < 1) {
@@ -180,6 +184,7 @@ class BudgetController extends AbstractController
     {
         $this->denyUnlessAdmin();
 
+        // Initialiser un budget vide avec des valeurs coherentes avant affichage du formulaire.
         $budget = new Budget();
         $this->budgetService->initializeBudget($budget);
 
@@ -188,6 +193,7 @@ class BudgetController extends AbstractController
         ]);
         $form->handleRequest($request);
 
+        // A l'enregistrement, les montants saisis sont convertis en TND avant le recalcul metier.
         if ($form->isSubmitted() && $form->isValid()) {
             $eventId = (int) $budget->getEventId();
             if ($eventId <= 0 || $this->budgetService->getEventInfo($eventId) === null) {
@@ -226,11 +232,13 @@ class BudgetController extends AbstractController
     {
         $this->denyUnlessAdmin();
 
+        // Le formulaire d'edition reutilise les memes choix evenement/devises que la creation.
         $form = $this->createForm(BudgetType::class, $budget, [
             'event_choices' => $this->budgetService->buildEventChoices(),
         ]);
         $form->handleRequest($request);
 
+        // Avant de sauvegarder, on reconvertit les montants et on recalcule la rentabilite.
         if ($form->isSubmitted() && $form->isValid()) {
             $eventId = (int) $budget->getEventId();
             $budgetId = $budget->getId();
@@ -270,9 +278,11 @@ class BudgetController extends AbstractController
     {
         $this->denyUnlessAdmin();
 
+        // La page detail force un recalcul pour afficher des chiffres a jour.
         $this->budgetService->recomputeBudget($budget);
         $this->entityManager->flush();
 
+        // On derive ensuite des indicateurs de pilotage: reste, forecast, point mort, alerte capacite.
         $event = $this->budgetService->getEventInfo((int) $budget->getEventId());
         $remaining = (float) $budget->getInitialBudget() - (float) $budget->getTotalExpenses();
         $forecast = $this->budgetService->buildForecast((int) $budget->getId(), $remaining, (float) $budget->getTotalExpenses());
