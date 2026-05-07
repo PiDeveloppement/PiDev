@@ -532,21 +532,14 @@ class ManagementAssistantService
             return null;
         }
 
-        $best = null;
-        $bestValue = null;
+        $best = $snapshots[0];
+        $bestValue = (float) ($best['initialBudget'] ?? 0.0);
         foreach ($snapshots as $row) {
-            if (!is_array($row)) {
-                continue;
-            }
             $initial = (float) ($row['initialBudget'] ?? 0.0);
-            if ($bestValue === null || $initial > $bestValue) {
+            if ($initial > $bestValue) {
                 $bestValue = $initial;
                 $best = $row;
             }
-        }
-
-        if (!is_array($best) || $bestValue === null) {
-            return null;
         }
 
         return implode("\n", [
@@ -584,21 +577,14 @@ class ManagementAssistantService
             return null;
         }
 
-        $best = null;
-        $bestRent = null;
+        $best = $snapshots[0];
+        $bestRent = (float) ($best['rentabilite'] ?? 0.0);
         foreach ($snapshots as $row) {
-            if (!is_array($row)) {
-                continue;
-            }
             $rent = (float) ($row['rentabilite'] ?? 0.0);
-            if ($bestRent === null || $rent > $bestRent) {
+            if ($rent > $bestRent) {
                 $bestRent = $rent;
                 $best = $row;
             }
-        }
-
-        if (!is_array($best) || $bestRent === null) {
-            return null;
         }
 
         return implode("\n", [
@@ -761,7 +747,7 @@ class ManagementAssistantService
             ]);
         }
 
-        $lowestCompany = null;
+        $lowestCompany = '';
         $lowestAmount = null;
         foreach ($companyMap as $company => $amount) {
             $value = (float) $amount;
@@ -769,10 +755,6 @@ class ManagementAssistantService
                 $lowestAmount = $value;
                 $lowestCompany = (string) $company;
             }
-        }
-
-        if ($lowestCompany === null || $lowestAmount === null) {
-            return null;
         }
 
         return implode("\n", [
@@ -1039,7 +1021,7 @@ class ManagementAssistantService
             if (preg_match('/^constat\s*:\s*(.*)$/i', $line, $m) === 1) {
                 $foundStructured = true;
                 $current = 'constat';
-                $tail = trim((string) ($m[1] ?? ''));
+                $tail = trim((string) $m[1]);
                 if ($tail !== '') {
                     $sections[$current][] = $tail;
                 }
@@ -1048,7 +1030,7 @@ class ManagementAssistantService
             if (preg_match('/^chiffres?\s+exacts?\s*:\s*(.*)$/i', $line, $m) === 1) {
                 $foundStructured = true;
                 $current = 'chiffres';
-                $tail = trim((string) ($m[1] ?? ''));
+                $tail = trim((string) $m[1]);
                 if ($tail !== '') {
                     $sections[$current][] = $tail;
                 }
@@ -1057,7 +1039,7 @@ class ManagementAssistantService
             if (preg_match('/^actions?\s+recommand\w*\s*:\s*(.*)$/i', $line, $m) === 1) {
                 $foundStructured = true;
                 $current = 'actions';
-                $tail = trim((string) ($m[1] ?? ''));
+                $tail = trim((string) $m[1]);
                 if ($tail !== '') {
                     $sections[$current][] = $tail;
                 }

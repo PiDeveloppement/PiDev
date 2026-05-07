@@ -30,10 +30,10 @@ class ExternalAiRecommendationService
 
         $payloadEvents = array_map(static function (array $event): array {
             return [
-                'id' => (int) ($event['id'] ?? 0),
-                'title' => (string) ($event['title'] ?? ''),
-                'description' => (string) ($event['description'] ?? ''),
-                'location' => (string) ($event['location'] ?? ''),
+                'id' => (int) $event['id'],
+                'title' => (string) $event['title'],
+                'description' => (string) $event['description'],
+                'location' => (string) $event['location'],
                 'start_date' => ($event['startDate'] instanceof \DateTimeInterface) ? $event['startDate']->format('Y-m-d H:i:s') : null,
                 'end_date' => ($event['endDate'] instanceof \DateTimeInterface) ? $event['endDate']->format('Y-m-d H:i:s') : null,
             ];

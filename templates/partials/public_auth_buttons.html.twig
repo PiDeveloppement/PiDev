@@ -302,6 +302,23 @@
             }
         }
 
+        function applyTranslation(lang) {
+            if (lang === 'original') {
+                clearTranslateCookie();
+            } else {
+                setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+            }
+
+            const combo = document.querySelector('#google_translate_element select.goog-te-combo');
+            if (combo && lang !== 'original') {
+                combo.value = lang;
+                combo.dispatchEvent(new Event('change'));
+                return;
+            }
+
+            window.location.reload();
+        }
+
         function escapeHtml(value) {
             return String(value)
                 .replace(/&/g, '&amp;')
@@ -453,12 +470,7 @@
                 const translateOption = event.target.closest('.translation-option');
                 if (translateOption) {
                     const lang = translateOption.getAttribute('data-lang') || 'en';
-                    if (lang === 'original') {
-                        clearTranslateCookie();
-                    } else {
-                        setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
-                    }
-                    window.location.reload();
+                    applyTranslation(lang);
                     return;
                 }
 

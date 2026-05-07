@@ -203,12 +203,12 @@ class SponsorAlertEmailService
         }
 
         $upcoming = array_values(array_filter($events, static function (array $event) use ($sponsoredEventIds): bool {
-            $eventId = (int) ($event['id'] ?? 0);
+            $eventId = (int) $event['id'];
             if ($eventId <= 0 || isset($sponsoredEventIds[$eventId])) {
                 return false;
             }
 
-            $endDate = $event['endDate'] ?? null;
+            $endDate = $event['endDate'];
             if (!$endDate instanceof \DateTimeInterface) {
                 return true;
             }
@@ -240,16 +240,16 @@ class SponsorAlertEmailService
 
         $rows = [];
         foreach ($recommendedEvents as $event) {
-            $eventId = (int) ($event['id'] ?? 0);
+            $eventId = (int) $event['id'];
             if ($eventId <= 0 || in_array($eventId, $sponsoredEventIds, true)) {
                 continue;
             }
 
-            $startDate = $event['startDate'] ?? null;
+            $startDate = $event['startDate'];
             $rows[] = [
                 'id' => $eventId,
-                'title' => (string) ($event['title'] ?? '-'),
-                'location' => (string) ($event['location'] ?? '-'),
+                'title' => (string) $event['title'],
+                'location' => (string) $event['location'],
                 'date' => $startDate instanceof \DateTimeInterface ? $startDate->format('d/m/Y H:i') : '-',
             ];
         }

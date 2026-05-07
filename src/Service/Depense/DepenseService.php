@@ -71,7 +71,10 @@ class DepenseService
         return $categories;
     }
 
-    /** @param Depense[] $depenses @return array{count:int,total:float,average:float,categories:int,byCategory:array<string,float>} */
+    /**
+     * @param Depense[] $depenses
+     * @return array{count:int,total:float,average:float,categories:int,byCategory:array<string,float>}
+     */
     public function buildStats(array $depenses): array
     {
         // KPI depense: volume, total, moyenne et repartition par categorie.
@@ -100,7 +103,10 @@ class DepenseService
         ];
     }
 
-    /** @param Budget[] $budgets @return array<int,string> */
+    /**
+     * @param Budget[] $budgets
+     * @return array<int,string>
+     */
     public function buildBudgetDisplayMap(array $budgets): array
     {
         $eventTitleMap = $this->fetchEventTitleMap(array_map(static fn (Budget $budget): int => (int) $budget->getEventId(), $budgets));
@@ -115,7 +121,10 @@ class DepenseService
         return $map;
     }
 
-    /** @param int[] $eventIds @return array<int,string> */
+    /**
+     * @param int[] $eventIds
+     * @return array<int,string>
+     */
     public function fetchEventTitleMap(array $eventIds): array
     {
         $ids = array_values(array_unique(array_filter(array_map('intval', $eventIds), static fn (int $id): bool => $id > 0)));
@@ -159,7 +168,7 @@ class DepenseService
             ['q' => '%' . mb_strtolower(trim($search)) . '%']
         );
 
-        return array_values(array_map('intval', $rows));
+        return array_map('intval', $rows);
     }
 
     /** @return array{from:\DateTimeImmutable,to:\DateTimeImmutable}|null */

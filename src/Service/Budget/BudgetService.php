@@ -86,7 +86,10 @@ class BudgetService
         return $choices;
     }
 
-    /** @param int[] $eventIds @return array<int,string> */
+    /**
+     * @param int[] $eventIds
+     * @return array<int,string>
+     */
     public function getEventTitleMap(array $eventIds): array
     {
         $ids = array_values(array_unique(array_filter(array_map('intval', $eventIds), static fn (int $id): bool => $id > 0)));
@@ -193,7 +196,10 @@ class BudgetService
         return ['daysLeft' => $daysLeft, 'adjustedRemaining' => $adjustedRemaining, 'forecastText' => $forecastText];
     }
 
-    /** @param Budget[] $budgets @return array{count:int,totalInitial:float,globalRent:float,deficitCount:int} */
+    /**
+     * @param Budget[] $budgets
+     * @return array{count:int,totalInitial:float,globalRent:float,deficitCount:int}
+     */
     public function buildStats(array $budgets): array
     {
         // KPI globaux du tableau de bord budget.
@@ -207,8 +213,7 @@ class BudgetService
             $rent = (float) $budget->getRentabilite();
             $globalRent += $rent;
             if ($rent < 0) {
-                $deficitCount++;
-            }
+                $deficitCount++;            }
         }
 
         return [
