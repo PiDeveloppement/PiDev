@@ -27,10 +27,15 @@ class ReservationResourceController extends AbstractController
     #[Route('/', name: 'app_reservation_resource_index', methods: ['GET'])]
     public function index(Request $request, ReservationResourceRepository $repo, HistoriqueLogRepository $historiqueRepo): Response
     {
-        $filters = [
-            'name' => $request->query->get('name'),
-            'resourceType' => $request->query->get('resourceType'),
-        ];
+        $filters = [];
+        $name = $request->query->get('name');
+        if ($name && is_string($name)) {
+            $filters['name'] = $name;
+        }
+        $resourceType = $request->query->get('resourceType');
+        if ($resourceType && is_string($resourceType)) {
+            $filters['resourceType'] = $resourceType;
+        }
 
         $sortBy = $request->query->get('sortBy', 'startTime');
         $direction = $request->query->get('direction', 'desc');
@@ -58,12 +63,17 @@ class ReservationResourceController extends AbstractController
                 'oldValues' => $log['old_values'],
                 'newValues' => $log['new_values'],
                 'changes' => $this->getChanges($log['old_values'], $log['new_values']),
-                'createdAt' => $log['created_at'] instanceof \DateTime ? $log['created_at']->format('d/m/Y H:i:s') : $log['created_at'],
+                'createdAt' => $log['created_at'],
                 'ipAddress' => $log['ip_address'],
                 'userAgent' => $log['user_agent'],
-                'userName' => $log['user_name'] ?? null,
-                'userEmail' => $log['user_email'] ?? null,
-                'description' => $this->getDescription($log)
+                'userName' => $log['user_name'],
+                'userEmail' => $log['user_email'],
+                'description' => $this->getDescription([
+                    'user_name' => $log['user_name'],
+                    'created_at' => $log['created_at'],
+                    'resource_name' => $log['resource_name'],
+                    'action' => $log['action']
+                ])
             ];
         }
 
@@ -131,7 +141,21 @@ class ReservationResourceController extends AbstractController
             }
             
             // Envoyer l'email de confirmation à l'utilisateur
-            $emailService->sendReservationConfirmation($userEmail, $userName, $reservationData);
+            $resourceName = 'Ressource inconnue';
+            if ($reservation->getResourceType() === 'SALLE' && $reservation->getSalle()) {
+                $resourceName = $reservation->getSalle()->getName();
+            } elseif ($reservation->getEquipement()) {
+                $resourceName = $reservation->getEquipement()->getName();
+            }
+            
+            $emailReservationData = [
+                'resource_name' => $resourceName,
+                'start_time' => $reservation->getStartTime()?->format('Y-m-d H:i:s') ?? '',
+                'end_time' => $reservation->getEndTime()?->format('Y-m-d H:i:s') ?? '',
+                'quantity' => $reservation->getQuantity() ?? 1,
+                'status' => 'confirmée'
+            ];
+            $emailService->sendReservationConfirmation($userEmail, $userName, $emailReservationData);
             
             // Envoyer la notification à l'administrateur
             $startTime = $reservation->getStartTime();
@@ -372,10 +396,15 @@ class ReservationResourceController extends AbstractController
     public function exportPdf(Request $request, ReservationResourceRepository $repo, Environment $twig): Response
     {
         // Récupérer les filtres et le tri
-        $filters = [
-            'name' => $request->query->get('name'),
-            'resourceType' => $request->query->get('resourceType'),
-        ];
+        $filters = [];
+        $name = $request->query->get('name');
+        if ($name && is_string($name)) {
+            $filters['name'] = $name;
+        }
+        $resourceType = $request->query->get('resourceType');
+        if ($resourceType && is_string($resourceType)) {
+            $filters['resourceType'] = $resourceType;
+        }
 
         $sortBy = $request->query->get('sortBy', 'startTime');
         $direction = $request->query->get('direction', 'desc');
@@ -429,12 +458,17 @@ class ReservationResourceController extends AbstractController
         };
     }
 
+    /**
+     * Extract changes from old and new values
+     * @return array<string, array{old: mixed, new: mixed}>|null
+     */
     private function getChanges(?string $oldValues, ?string $newValues): ?array
     {
         if ($oldValues || $newValues) {
             $old = $oldValues ? json_decode($oldValues, true) : [];
             $new = $newValues ? json_decode($newValues, true) : [];
             
+            /** @var array<string, array{old: mixed, new: mixed}> $changes */
             $changes = [];
             foreach ($old as $key => $oldValue) {
                 if (isset($new[$key]) && $oldValue !== $new[$key]) {
@@ -451,9 +485,16 @@ class ReservationResourceController extends AbstractController
         return null;
     }
 
+    /**
+     * Generate description from log data
+     * @param array{user_name?: string, created_at: string|\DateTime, resource_name?: string, action?: string} $log
+     */
     private function getDescription(array $log): string
     {
+        /** @var array{user_name?: string, created_at: string|\DateTime, resource_name?: string, action?: string} $log */
         $userName = $log['user_name'] ?? 'Utilisateur inconnu';
+        $resourceName = $log['resource_name'] ?? 'Ressource inconnue';
+        $action = $log['action'] ?? 'UNKNOWN';
         
         // created_at peut être un objet DateTime ou une chaîne
         if ($log['created_at'] instanceof \DateTime) {
@@ -465,8 +506,8 @@ class ReservationResourceController extends AbstractController
         
         return sprintf(
             "%s %s par %s à %s",
-            $log['resource_name'],
-            $this->getActionLabel($log['action']),
+            $resourceName,
+            $this->getActionLabel($action),
             $userName,
             $time
         );

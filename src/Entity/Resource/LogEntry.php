@@ -23,6 +23,7 @@ class LogEntry
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
+    /** @phpstan-ignore property.onlyRead */
     private ?int $id;
 
     #[ORM\ManyToOne(targetEntity: UserModel::class)]
@@ -215,6 +216,10 @@ class LogEntry
         );
     }
 
+    /**
+     * Retourne les changements entre oldValues et newValues
+     * @return array<string, array{old: mixed, new: mixed}>|null
+     */
     public function getChanges(): ?array
     {
         if ($this->oldValues || $this->newValues) {

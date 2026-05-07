@@ -19,6 +19,10 @@ class EmailService
         $this->fromName = $fromName;
     }
 
+    /**
+     * Envoie un email de confirmation de réservation
+     * @param array{resource_name: string, start_time: string, end_time: string, quantity?: int, status?: string} $reservationData
+     */
     public function sendReservationConfirmation(string $toEmail, string $userName, array $reservationData): void
     {
         $email = (new TemplatedEmail())
@@ -34,6 +38,10 @@ class EmailService
         $this->mailer->send($email);
     }
 
+    /**
+     * Envoie une notification email
+     * @param array<string, mixed> $context
+     */
     public function sendNotification(string $toEmail, string $subject, string $message, array $context = []): void
     {
         $email = (new TemplatedEmail())
@@ -49,6 +57,10 @@ class EmailService
         $this->mailer->send($email);
     }
 
+    /**
+     * Envoie un email de rappel de réservation
+     * @param array{resource_name: string, start_time: string, end_time: string, quantity?: int, status?: string} $reservationData
+     */
     public function sendReservationReminder(string $toEmail, string $userName, array $reservationData): void
     {
         $email = (new TemplatedEmail())
@@ -64,6 +76,10 @@ class EmailService
         $this->mailer->send($email);
     }
 
+    /**
+     * Envoie un email d'annulation de réservation
+     * @param array{resource_name: string, start_time: string, end_time: string, quantity?: int, status?: string} $reservationData
+     */
     public function sendReservationCancellation(string $toEmail, string $userName, array $reservationData): void
     {
         $email = (new TemplatedEmail())

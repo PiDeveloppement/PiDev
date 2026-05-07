@@ -16,7 +16,8 @@ class Equipement
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id;
+    /** @phpstan-ignore property.onlyRead */
+    private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le nom de l'équipement est obligatoire")]

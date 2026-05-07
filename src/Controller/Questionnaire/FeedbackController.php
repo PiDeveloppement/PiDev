@@ -319,7 +319,7 @@ final class FeedbackController extends AbstractController
         $html .= '<h2>Distribution des notes</h2>';
         $maxDist = max(array_values($distribution)) ?: 1;
         for ($note = 5; $note >= 1; $note--) {
-            $cnt = $distribution[$note] ?? 0;
+            $cnt = $distribution[$note];
             $pct = round($cnt / $maxDist * 100);
             $html .= '<div class="bar-row"><div class="bar-label">' . $note . ' &#9733;</div>'
                    . '<div class="bar-track"><div class="bar-fill" style="width:' . $pct . '%;"></div></div>'

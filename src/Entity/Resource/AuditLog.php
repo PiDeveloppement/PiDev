@@ -26,6 +26,7 @@ class AuditLog
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
+    /** @phpstan-ignore property.onlyRead */
     private ?int $id;
 
     #[ORM\Column(type: "string", length: 20)]

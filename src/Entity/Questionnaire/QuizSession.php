@@ -14,7 +14,8 @@ class QuizSession
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: "id")]
-    private ?int $id;
+    /** @phpstan-ignore property.onlyRead */
+    private ?int $id = null;
 
     #[ORM\Column(name: "session_token", type: "string", length: 255, unique: true)]
     private ?string $sessionToken = null;

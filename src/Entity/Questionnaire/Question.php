@@ -14,7 +14,8 @@ class Question
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: "id_question")] // Correspond à ta PK dans le SQL
-    private ?int $id;
+    /** @phpstan-ignore property.onlyRead */
+    private ?int $id = null;
 
     #[ORM\Column(name: "texte", type: "string", length: 255, nullable: true)]
     #[Assert\NotBlank(message: "L'énoncé de la question est obligatoire.")]
@@ -77,4 +78,13 @@ class Question
 
     public function getUser(): ?UserModel { return $this->user; }
     public function setUser(?UserModel $user): self { $this->user = $user; return $this; }
+
+    /** @var array<int, string>|null */
+    private ?array $shuffledOptions = null;
+
+    /** @return array<int, string>|null */
+    public function getShuffledOptions(): ?array { return $this->shuffledOptions; }
+    
+    /** @param array<int, string>|null $shuffledOptions */
+    public function setShuffledOptions(?array $shuffledOptions): self { $this->shuffledOptions = $shuffledOptions; return $this; }
 }

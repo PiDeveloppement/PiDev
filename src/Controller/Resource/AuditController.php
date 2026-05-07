@@ -27,20 +27,20 @@ class AuditController extends AbstractController
         
         // Construire les filtres pour le repository
         $filters = [];
-        if ($resourceType) {
+        if ($resourceType && is_string($resourceType)) {
             $filters['resourceType'] = $resourceType;
         }
-        if ($action) {
+        if ($action && is_string($action)) {
             $filters['action'] = $action;
         }
-        if ($user) {
+        if ($user && is_string($user)) {
             $filters['user'] = $user;
         }
-        if ($startDate) {
-            $filters['startDate'] = new \DateTime((string) $startDate);
+        if ($startDate && is_string($startDate)) {
+            $filters['startDate'] = $startDate;
         }
-        if ($endDate) {
-            $filters['endDate'] = new \DateTime((string) $endDate);
+        if ($endDate && is_string($endDate)) {
+            $filters['endDate'] = $endDate;
         }
         
         // Récupérer les logs avec pagination
@@ -89,9 +89,14 @@ class AuditController extends AbstractController
                 'createdAt' => $log['created_at'],
                 'ipAddress' => $log['ip_address'],
                 'userAgent' => $log['user_agent'],
-                'userName' => $log['user_name'] ?? null,
-                'userEmail' => $log['user_email'] ?? null,
-                'description' => $this->getDescription($log)
+                'userName' => $log['user_name'],
+                'userEmail' => $log['user_email'],
+                'description' => $this->getDescription([
+                    'user_name' => $log['user_name'],
+                    'created_at' => $log['created_at'],
+                    'resource_name' => $log['resource_name'],
+                    'action' => $log['action']
+                ])
             ];
         }
         
@@ -125,9 +130,14 @@ class AuditController extends AbstractController
                 'createdAt' => $log['created_at'],
                 'ipAddress' => $log['ip_address'],
                 'userAgent' => $log['user_agent'],
-                'userName' => $log['user_name'] ?? null,
-                'userEmail' => $log['user_email'] ?? null,
-                'description' => $this->getDescription($log)
+                'userName' => $log['user_name'],
+                'userEmail' => $log['user_email'],
+                'description' => $this->getDescription([
+                    'user_name' => $log['user_name'],
+                    'created_at' => $log['created_at'],
+                    'resource_name' => $log['resource_name'],
+                    'action' => $log['action']
+                ])
             ];
         }
 
@@ -157,12 +167,17 @@ class AuditController extends AbstractController
         };
     }
 
+    /**
+     * Extract changes from old and new values
+     * @return array<string, array{old: mixed, new: mixed}>|null
+     */
     private function getChanges(?string $oldValues, ?string $newValues): ?array
     {
         if ($oldValues || $newValues) {
             $old = $oldValues ? json_decode($oldValues, true) : [];
             $new = $newValues ? json_decode($newValues, true) : [];
             
+            /** @var array<string, array{old: mixed, new: mixed}> $changes */
             $changes = [];
             foreach ($old as $key => $oldValue) {
                 if (isset($new[$key]) && $oldValue !== $new[$key]) {
@@ -179,16 +194,29 @@ class AuditController extends AbstractController
         return null;
     }
 
+    /**
+     * Generate description from log data
+     * @param array{user_name?: string, created_at: string|\DateTime, resource_name?: string, action?: string} $log
+     */
     private function getDescription(array $log): string
     {
+        /** @var array{user_name?: string, created_at: string|\DateTime, resource_name?: string, action?: string} $log */
         $userName = $log['user_name'] ?? 'Utilisateur inconnu';
-        $createdAt = new \DateTime($log['created_at']);
+        $resourceName = $log['resource_name'] ?? 'Ressource inconnue';
+        $action = $log['action'] ?? 'UNKNOWN';
+        
+        // created_at peut être un objet DateTime ou une chaîne
+        if ($log['created_at'] instanceof \DateTime) {
+            $createdAt = $log['created_at'];
+        } else {
+            $createdAt = new \DateTime($log['created_at']);
+        }
         $time = $createdAt->format('H:i');
         
         return sprintf(
             "%s %s par %s à %s",
-            $log['resource_name'],
-            $this->getActionLabel($log['action']),
+            $resourceName,
+            $this->getActionLabel($action),
             $userName,
             $time
         );

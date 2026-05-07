@@ -23,6 +23,7 @@ class RecaptchaService
 
     /**
      * Vérifie le token reCAPTCHA avec Google pour les questionnaires
+     * @return array{success: bool, score: float, action: string, challenge_ts: string, hostname: string, error_codes?: array<int, string>}
      */
     public function verify(string $token, ?string $remoteIp = null): array
     {
@@ -115,11 +116,13 @@ class RecaptchaService
 
     /**
      * Analyse le risque pour les questionnaires
+     * @param array{success: bool, score: float, action: string, error_codes?: array<int, string>} $recaptchaResult
+     * @return array{risk_level: string, allow_submission: bool, recommendations: array<int, string>, confidence: float}
      */
     public function analyzeRisk(array $recaptchaResult): array
     {
-        $score = $recaptchaResult['score'] ?? 0;
-        $action = $recaptchaResult['action'] ?? '';
+        $score = $recaptchaResult['score'];
+        $action = $recaptchaResult['action'];
         $errors = $recaptchaResult['error_codes'] ?? [];
 
         $riskLevel = 'low';
@@ -145,14 +148,15 @@ class RecaptchaService
 
         return [
             'risk_level' => $riskLevel,
-            'score' => $score,
+            'allow_submission' => $riskLevel !== 'high' && $this->isGoodForQuiz($score),
             'recommendations' => $recommendations,
-            'allow_submission' => $riskLevel !== 'high' && $this->isGoodForQuiz($score)
+            'confidence' => $this->calculateConfidence($score, $action, $errors)
         ];
     }
 
     /**
      * Validation spécifique pour les feedbacks de questionnaire
+     * @return array{valid: bool, risk_analysis: array{risk_level: string, allow_submission: bool, recommendations: array<int, string>, confidence: float}, score: float, timestamp: string}
      */
     public function validateForFeedback(string $token, ?string $remoteIp = null): array
     {
@@ -167,7 +171,8 @@ class RecaptchaService
         return [
             'valid' => $isValid,
             'risk_analysis' => $risk,
-            'recaptcha_data' => $result
+            'score' => $result['score'],
+            'timestamp' => date('Y-m-d H:i:s')
         ];
     }
 
@@ -182,6 +187,7 @@ class RecaptchaService
 
     /**
      * Obtient des statistiques sur les vérifications
+     * @return array{total_verifications: int, success_rate: float, average_score: float, blocked_attempts: int}
      */
     public function getVerificationStats(): array
     {
@@ -192,6 +198,27 @@ class RecaptchaService
             'average_score' => 0,
             'blocked_attempts' => 0
         ];
+    }
+
+    /**
+     * Calcule un score de confiance basé sur le score reCAPTCHA, l'action et les erreurs
+     * @param array<int, string> $errors
+     */
+    private function calculateConfidence(float $score, string $action, array $errors): float
+    {
+        $confidence = $score;
+        
+        // Réduire la confiance si l'action n'est pas valide
+        if (!$this->isValidAction($action)) {
+            $confidence *= 0.5;
+        }
+        
+        // Réduire la confiance s'il y a des erreurs
+        if (!empty($errors)) {
+            $confidence *= 0.3;
+        }
+        
+        return max(0.0, min(1.0, $confidence));
     }
 
     /**

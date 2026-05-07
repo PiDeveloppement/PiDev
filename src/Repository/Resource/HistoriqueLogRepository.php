@@ -10,9 +10,9 @@ use Doctrine\Persistence\ManagerRegistry;
  * @extends ServiceEntityRepository<HistoriqueLog>
  *
  * @method HistoriqueLog|null find($id, $lockMode = null, $lockVersion = null)
- * @method HistoriqueLog|null findOneBy(array $criteria, array $orderBy = null)
+ * @method HistoriqueLog|null findOneBy(array<string, mixed> $criteria, array<string, string> $orderBy = null)
  * @method HistoriqueLog[]    findAll()
- * @method HistoriqueLog[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method HistoriqueLog[]    findBy(array<string, mixed> $criteria, array<string, string> $orderBy = null, $limit = null, $offset = null)
  */
 class HistoriqueLogRepository extends ServiceEntityRepository
 {
@@ -41,6 +41,8 @@ class HistoriqueLogRepository extends ServiceEntityRepository
 
     /**
      * Récupère les logs récents avec pagination
+     * @param array{resourceType?: string, action?: string, user?: string, startDate?: string, endDate?: string} $filters
+     * @return array<int, array{id: int, action: string, resource_type: string, resource_id: int, resource_name: string, old_values: ?string, new_values: ?string, created_at: string, ip_address: ?string, user_agent: ?string, user_name: ?string, user_email: ?string}>
      */
     public function findRecentWithPagination(int $page = 1, int $limit = 20, array $filters = []): array
     {
@@ -87,6 +89,7 @@ class HistoriqueLogRepository extends ServiceEntityRepository
 
     /**
      * Compte les logs selon les filtres
+     * @param array{resourceType?: string, action?: string, user?: string, startDate?: string, endDate?: string} $filters
      */
     public function countByFilters(array $filters = []): int
     {
@@ -125,6 +128,7 @@ class HistoriqueLogRepository extends ServiceEntityRepository
 
     /**
      * Récupère les logs pour une ressource spécifique
+     * @return array<int, HistoriqueLog>
      */
     public function findByResource(string $resourceType, int $resourceId): array
     {

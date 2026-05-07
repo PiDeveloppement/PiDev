@@ -22,6 +22,7 @@ class QuestionGenerator
 
     /**
      * Génère une question de quiz basée sur une description
+     * @return array{texte: string, reponse: string, points: int, option1: string, option2: string, option3: string}
      */
     public function generate(string $description): array
     {
@@ -36,6 +37,7 @@ class QuestionGenerator
 
     /**
      * Génère une question de quiz basée sur un événement
+     * @return array{texte: string, reponse: string, points: int, option1: string, option2: string, option3: string}
      */
     public function generateFromEvent(Event $event): array
     {
@@ -66,6 +68,7 @@ class QuestionGenerator
 
     /**
      * Méthode robuste avec retry et fallback pour la génération
+     * @return array{texte: string, reponse: string, points: int, option1: string, option2: string, option3: string}
      */
     private function generateWithRetry(string $prompt): array
     {
@@ -113,6 +116,7 @@ class QuestionGenerator
 
     /**
      * Appel à l'API Gemini avec un modèle spécifique
+     * @return array{texte: string, reponse: string, points: int, option1: string, option2: string, option3: string}
      */
     private function callGeminiAPI(string $model, string $prompt): array
     {
@@ -164,6 +168,7 @@ class QuestionGenerator
 
     /** 
      * Génère une question par défaut si l'IA n'est pas disponible
+     * @return array{texte: string, reponse: string, points: int, option1: string, option2: string, option3: string}
      */
     private function generateFallbackQuestion(): array
     {

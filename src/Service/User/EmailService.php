@@ -154,8 +154,10 @@ class EmailService
     /**
      * Envoie un email de confirmation de participation
      */
-    public function sendParticipationConfirmation(UserModel
-     $user, array $ticketData): bool
+    /**
+ * @param array<string, mixed> $ticketData
+ */
+public function sendParticipationConfirmation(UserModel $user, array $ticketData): bool
     {
         try {
             $subject = '🎫 Confirmation de participation - ' . $ticketData['eventTitle'];

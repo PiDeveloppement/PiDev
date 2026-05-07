@@ -18,6 +18,10 @@ class MailerService
         $this->twig = $twig;
     }
 
+    /**
+     * Envoie un email de confirmation de réservation
+     * @param array{email: string, resource_name: string, start_time: string, end_time: string, quantity?: int, user_name?: string} $reservationData
+     */
     public function sendReservationConfirmation(array $reservationData): bool
     {
         try {
@@ -37,6 +41,10 @@ class MailerService
         }
     }
 
+    /**
+     * Envoie une notification de nouvelle réservation à l'administrateur
+     * @param array{email: string, resource_name: string, start_time: string, end_time: string, quantity?: int, user_name?: string} $reservationData
+     */
     public function sendReservationNotification(array $reservationData): bool
     {
         try {

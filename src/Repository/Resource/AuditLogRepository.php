@@ -10,9 +10,9 @@ use Doctrine\Persistence\ManagerRegistry;
  * @extends ServiceEntityRepository<AuditLog>
  *
  * @method AuditLog|null find($id, $lockMode = null, $lockVersion = null)
- * @method AuditLog|null findOneBy(array $criteria, array $orderBy = null)
+ * @method AuditLog|null findOneBy(array<string, mixed> $criteria, array<string, string> $orderBy = null)
  * @method AuditLog[]    findAll()
- * @method AuditLog[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method AuditLog[]    findBy(array<string, mixed> $criteria, array<string, string> $orderBy = null, $limit = null, $offset = null)
  */
 class AuditLogRepository extends ServiceEntityRepository
 {
@@ -41,6 +41,7 @@ class AuditLogRepository extends ServiceEntityRepository
 
     /**
      * Récupère les logs d'audit pour une ressource spécifique
+     * @return array<int, AuditLog>
      */
     public function findByResource(string $resourceType, int $resourceId): array
     {
@@ -56,6 +57,7 @@ class AuditLogRepository extends ServiceEntityRepository
 
     /**
      * Récupère les logs d'audit pour un type de ressource
+     * @return array<int, AuditLog>
      */
     public function findByResourceType(string $resourceType, int $limit = 50): array
     {
@@ -70,6 +72,7 @@ class AuditLogRepository extends ServiceEntityRepository
 
     /**
      * Récupère les logs récents avec pagination
+     * @return array<int, AuditLog>
      */
     public function findRecentLogs(int $page = 1, int $limit = 20): array
     {
@@ -96,6 +99,7 @@ class AuditLogRepository extends ServiceEntityRepository
 
     /**
      * Recherche les logs par utilisateur
+     * @return array<int, AuditLog>
      */
     public function findByUser(int $userId, int $limit = 50): array
     {
@@ -110,6 +114,7 @@ class AuditLogRepository extends ServiceEntityRepository
 
     /**
      * Recherche les logs par plage de dates
+     * @return array<int, AuditLog>
      */
     public function findByDateRange(\DateTimeInterface $startDate, \DateTimeInterface $endDate): array
     {

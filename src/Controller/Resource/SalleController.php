@@ -46,7 +46,7 @@ final class SalleController extends AbstractController
             // Pas de champ imagePath dans le formulaire, on utilise l'URL Unsplash par défaut
 
             // Cas 1: L'utilisateur a uploadé un fichier
-            if ($imageFile) {
+            if ($imageFile instanceof UploadedFile) {
                 $originalFilename = pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME);
                 $safeFilename = $slugger->slug($originalFilename);
                 $newFilename = $safeFilename.'-'.uniqid().'.'.$imageFile->guessExtension();

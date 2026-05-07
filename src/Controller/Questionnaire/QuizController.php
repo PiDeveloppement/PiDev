@@ -188,7 +188,7 @@ class QuizController extends AbstractController
             } elseif ($hasAnswer) {
                 // Question répondue normalement
                 $userAnswer = $data[$questionId];
-                $isCorrect = (trim(strtolower($question->getReponse() ?? '')) === trim(strtolower($userAnswer ?? '')));
+                $isCorrect = (trim(strtolower($question->getReponse() ?? '')) === trim(strtolower($userAnswer)));
                 if ($isCorrect) $score++;
                 
                 $fb->setReponseDonnee($userAnswer);

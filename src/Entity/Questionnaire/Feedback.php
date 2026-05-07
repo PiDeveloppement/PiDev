@@ -18,6 +18,7 @@ class Feedback
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "IDENTITY")]
     #[ORM\Column(name: "id_feedback", type: "integer")]
+    /** @phpstan-ignore property.onlyRead */
     private ?int $id;
 
     #[ORM\Column(name: "id_user", type: "integer", nullable: true, options: ["default" => 45])]

@@ -44,6 +44,7 @@ class QuestionRepository extends ServiceEntityRepository
 
     /**
      * Récupère les questions pour un quiz (général ou par événement)
+     * @return array<int, Question>
      */
     public function findQuestionsForQuiz(?Event $event = null): array
     {
@@ -62,6 +63,7 @@ class QuestionRepository extends ServiceEntityRepository
 
     /**
      * Récupère un nombre limité de questions aléatoires pour un quiz
+     * @return array<int, Question>
      */
     public function findRandomQuestionsForQuiz(?Event $event = null, int $limit = 10): array
     {

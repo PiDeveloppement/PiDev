@@ -16,6 +16,10 @@ class EquipementRepository extends ServiceEntityRepository
         parent::__construct($registry, Equipement::class);
     }
 
+    /**
+     * Recherche des équipements par terme et catégorie
+     * @return array<int, Equipement>
+     */
     public function searchByTermAndCategory(?string $term, ?string $category): array
     {
         $qb = $this->createQueryBuilder('e');
@@ -28,7 +32,11 @@ class EquipementRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-public function findWithFilters(?string $category, ?string $term): array
+    /**
+     * Trouve des équipements avec filtres
+     * @return array<int, Equipement>
+     */
+    public function findWithFilters(?string $category, ?string $term): array
 {
     $qb = $this->createQueryBuilder('e');
 
@@ -46,7 +54,11 @@ public function findWithFilters(?string $category, ?string $term): array
     return $qb->orderBy('e.id', 'DESC')->getQuery()->getResult();
 }
 
-public function findAllUniqueCategories(): array
+    /**
+     * Retourne toutes les catégories uniques
+     * @return array<int, string>
+     */
+    public function findAllUniqueCategories(): array
 {
     $results = $this->createQueryBuilder('e')
         ->select('DISTINCT e.equipement_type')

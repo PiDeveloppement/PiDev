@@ -31,6 +31,10 @@ class SalleRepository extends ServiceEntityRepository
     //        ;
     //    }
 
+    /**
+     * Retourne la liste des bâtiments uniques
+     * @return array<int, string>
+     */
     public function findAllUniqueBuildings(): array
     {
         return $this->createQueryBuilder('s')

@@ -32,6 +32,7 @@ class QuizSessionRepository extends ServiceEntityRepository
 
     /**
      * Trouve les sessions actives d'un utilisateur
+     * @return array<int, QuizSession>
      */
     public function findActiveSessionsByUser(?UserModel $user): array
     {
@@ -47,6 +48,7 @@ class QuizSessionRepository extends ServiceEntityRepository
 
     /**
      * Trouve les sessions expirées
+     * @return array<int, QuizSession>
      */
     public function findExpiredSessions(): array
     {
@@ -123,6 +125,7 @@ class QuizSessionRepository extends ServiceEntityRepository
 
     /**
      * Statistiques des sessions
+     * @return array<string, int>
      */
     public function getSessionStats(\DateTime $from = null, \DateTime $to = null): array
     {

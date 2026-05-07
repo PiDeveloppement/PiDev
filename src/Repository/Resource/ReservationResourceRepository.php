@@ -48,6 +48,11 @@ class ReservationResourceRepository extends ServiceEntityRepository
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
+    /**
+     * Trouve des réservations par filtres
+     * @param array{name?: string, resourceType?: string, status?: string, startDate?: string, endDate?: string, userId?: int, event?: int, eventName?: string} $filters
+     * @return array<int, ReservationResource>
+     */
     public function findByFilters(array $filters = [], string $sortBy = 'startTime', string $direction = 'desc'): array
     {
         $qb = $this->createQueryBuilder('r')

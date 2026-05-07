@@ -9,6 +9,7 @@ use App\Entity\Resource\ReservationResource;
 class FormFillerVoiceService extends VoiceRecognitionService
 {
     private ?string $currentContext = null;
+    /** @var array<string, mixed> */
     private array $formData = [];
     private ?string $waitingForFieldValue = null;
 
@@ -30,10 +31,14 @@ class FormFillerVoiceService extends VoiceRecognitionService
         }
     }
 
+    /**
+     * Traite une commande vocale et retourne le résultat
+     * @return array{action: string, field?: string, value?: mixed, command?: string, error?: string}
+     */
     public function processVoiceCommand(string $command): array
     {
         if (!$this->currentContext) {
-            return ['error' => 'Aucun contexte de formulaire défini'];
+            return ['action' => 'error', 'error' => 'Aucun contexte de formulaire défini'];
         }
 
         $command = strtolower(trim($command));
@@ -79,6 +84,10 @@ class FormFillerVoiceService extends VoiceRecognitionService
         return ['action' => 'not_recognized', 'command' => $command];
     }
 
+    /**
+     * Retourne le mapping des champs vocaux vers les propriétés
+     * @return array<string, string>
+     */
     private function getFieldMapping(): array
     {
         $mappings = [];
@@ -110,6 +119,10 @@ class FormFillerVoiceService extends VoiceRecognitionService
         return $mappings;
     }
 
+    /**
+     * Traite les commandes pour les salles
+     * @return array{action: string, field?: string, value?: mixed, command?: string}
+     */
     private function processSalleCommand(string $command): array
     {
         // Commandes pour la salle
@@ -144,6 +157,10 @@ class FormFillerVoiceService extends VoiceRecognitionService
         return ['action' => 'not_recognized', 'command' => $command];
     }
 
+    /**
+     * Traite les commandes pour les équipements
+     * @return array{action: string, field?: string, value?: mixed, command?: string}
+     */
     private function processEquipementCommand(string $command): array
     {
         // Commandes pour l'équipement
@@ -173,6 +190,10 @@ class FormFillerVoiceService extends VoiceRecognitionService
         return ['action' => 'not_recognized', 'command' => $command];
     }
 
+    /**
+     * Traite les commandes pour les réservations
+     * @return array{action: string, field?: string, value?: mixed, command?: string}
+     */
     private function processReservationCommand(string $command): array
     {
         // Commandes pour la réservation
@@ -223,6 +244,10 @@ class FormFillerVoiceService extends VoiceRecognitionService
         return $dateStr; // Retourne la chaîne originale si non reconnue
     }
 
+    /**
+     * Retourne les données du formulaire
+     * @return array<string, mixed>
+     */
     public function getFormData(): array
     {
         return $this->formData;
@@ -251,6 +276,10 @@ class FormFillerVoiceService extends VoiceRecognitionService
     }
 
     // Commandes vocales exemples
+    /**
+     * Retourne les commandes disponibles selon le contexte
+     * @return array<string, string>
+     */
     public function getAvailableCommands(): array
     {
         $commands = [];

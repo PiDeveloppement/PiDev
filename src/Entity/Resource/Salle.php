@@ -16,6 +16,7 @@ class Salle
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    /** @phpstan-ignore property.onlyRead */
     private ?int $id;
 
     #[ORM\Column(length: 255)]

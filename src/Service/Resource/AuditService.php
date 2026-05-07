@@ -28,6 +28,11 @@ class AuditService
         $this->createLog('CREATE', $resource, null, null, $user);
     }
 
+    /**
+     * Log une mise à jour de ressource
+     * @param array<string, mixed>|null $oldValues
+     * @param array<string, mixed>|null $newValues
+     */
     public function logUpdate(object $resource, ?array $oldValues = null, ?array $newValues = null, ?UserModel $user = null): void
     {
         $this->createLog('UPDATE', $resource, $oldValues, $newValues, $user);
@@ -38,6 +43,11 @@ class AuditService
         $this->createLog('DELETE', $resource, null, null, $user);
     }
 
+    /**
+     * Crée une entrée de log d'audit
+     * @param array<string, mixed>|null $oldValues
+     * @param array<string, mixed>|null $newValues
+     */
     private function createLog(string $action, object $resource, ?array $oldValues = null, ?array $newValues = null, ?UserModel $user = null): void
     {
         // Déterminer le type et les détails de la ressource
@@ -113,6 +123,10 @@ class AuditService
         return 'Ressource inconnue';
     }
 
+    /**
+     * Extrait les valeurs d'une entité sous forme de tableau
+     * @return array<string, mixed>
+     */
     public function extractEntityValues(object $entity): array
     {
         $values = [];
@@ -148,6 +162,12 @@ class AuditService
         return $values;
     }
 
+    /**
+     * Compare deux tableaux et retourne les différences
+     * @param array<string, mixed> $oldValues
+     * @param array<string, mixed> $newValues
+     * @return array<string, array{old: mixed, new: mixed}>
+     */
     public function getChangedValues(array $oldValues, array $newValues): array
     {
         $changes = [];
