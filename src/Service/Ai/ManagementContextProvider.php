@@ -22,6 +22,7 @@ class ManagementContextProvider
      */
     public function getContext(): array
     {
+        // Cette methode fabrique le "contexte temps reel" injecte dans le prompt de l'assistant.
         $budgetTotals = $this->connection->fetchAssociative(
             'SELECT
                 COUNT(*) AS budgetCount,
@@ -32,6 +33,7 @@ class ManagementContextProvider
              FROM budget'
         ) ?: [];
 
+        // Aggregats depense globaux pour repondre aux questions de volume et de montant total.
         $depenseTotals = $this->connection->fetchAssociative(
             'SELECT
                 COUNT(*) AS depenseCount,
@@ -39,6 +41,7 @@ class ManagementContextProvider
              FROM depense'
         ) ?: [];
 
+        // Top categories depense pour les questions de repartition et de poids financier.
         $topCategories = $this->connection->fetchAllAssociative(
             'SELECT category, COALESCE(SUM(amount), 0) AS total
              FROM depense
@@ -48,6 +51,7 @@ class ManagementContextProvider
              LIMIT 5'
         );
 
+        // Budgets critiques: seulement ceux en rentabilite negative.
         $criticalBudgets = $this->connection->fetchAllAssociative(
             'SELECT b.id, b.event_id AS eventId, b.initial_budget AS initialBudget, b.total_expenses AS totalExpenses,
                     b.total_revenue AS totalRevenue, b.rentabilite AS rentabilite, e.title AS eventTitle
@@ -58,6 +62,7 @@ class ManagementContextProvider
              LIMIT 5'
         );
 
+        // Snapshots budget pour pouvoir repondre sur un evenement ou un budget en particulier.
         $budgetSnapshots = $this->connection->fetchAllAssociative(
             'SELECT b.id AS budgetId, b.event_id AS eventId, e.title AS eventTitle,
                     b.initial_budget AS initialBudget, b.total_expenses AS totalExpenses,
@@ -68,6 +73,7 @@ class ManagementContextProvider
              LIMIT 100'
         );
 
+        // Contributions agregees par entreprise sponsor.
         $companyContributionRows = $this->connection->fetchAllAssociative(
             'SELECT company_name AS companyName, COALESCE(SUM(contribution_name), 0) AS total
              FROM sponsor
@@ -76,6 +82,7 @@ class ManagementContextProvider
              ORDER BY company_name ASC'
         );
 
+        // Evenements associes a chaque entreprise sponsor.
         $companyEventRows = $this->connection->fetchAllAssociative(
             'SELECT s.company_name AS companyName, e.title AS eventTitle
              FROM sponsor s
@@ -84,6 +91,7 @@ class ManagementContextProvider
              ORDER BY s.company_name ASC, e.title ASC'
         );
 
+        // Normaliser les montants sponsor en map simple: entreprise => total.
         $companyContributions = [];
         foreach ($companyContributionRows as $row) {
             $companyName = trim((string) ($row['companyName'] ?? ''));
@@ -94,6 +102,7 @@ class ManagementContextProvider
             $companyContributions[$companyName] = (float) ($row['total'] ?? 0);
         }
 
+        // Normaliser les evenements sponsorises en map simple: entreprise => [events].
         $companyEvents = [];
         foreach ($companyEventRows as $row) {
             $companyName = trim((string) ($row['companyName'] ?? ''));
@@ -113,6 +122,7 @@ class ManagementContextProvider
             $companyEvents[$companyName] = array_values(array_unique($events));
         }
 
+        // Le retour final regroupe les indicateurs par domaine metier + metadonnees de collecte.
         return [
             'budgets' => [
                 'count' => (int) ($budgetTotals['budgetCount'] ?? 0),

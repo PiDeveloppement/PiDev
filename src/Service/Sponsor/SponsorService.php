@@ -6,7 +6,6 @@ use App\Entity\Sponsor\Sponsor;
 use App\Entity\User\UserModel;
 use App\Repository\Sponsor\SponsorRepository;
 use App\Repository\User\UserRepository;
-use App\Service\Sponsor\ExternalAiRecommendationService;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -16,16 +15,16 @@ class SponsorService
         private EntityManagerInterface $entityManager,
         private SponsorRepository $sponsorRepository,
         private UserRepository $userRepository,
-        private ExternalAiRecommendationService $externalAiRecommendationService,
     ) {
     }
 
     /**
-     * @return array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
+     * @return array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
      */
     public function fetchEventsCatalog(bool $activeOnly = false): array
     {
-        $sql = 'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity,
+        // Lecture directe SQL pour recuperer un catalogue evenementiel enrichi du volume de participants.
+        $sql = 'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity, e.image_url,
                       COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
                 FROM event e';
         $params = [];
@@ -42,7 +41,7 @@ class SponsorService
     }
 
     /**
-     * @return array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
+     * @return array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
      */
     public function fetchActiveEvents(): array
     {
@@ -50,11 +49,12 @@ class SponsorService
     }
 
     /**
-     * @param array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>|null $events
+     * @param array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>|null $events
      * @return array<string,int>
      */
     public function buildEventChoices(?array $events = null): array
     {
+        // Les choix affiches au sponsor sont construits a partir des evenements exploitables.
         $source = $events ?? $this->fetchEventsCatalog();
         $choices = [];
 
@@ -71,7 +71,7 @@ class SponsorService
             if ($shouldExclude) {
                 continue;
             }
-            
+           
             $label = sprintf(
                 '%s (%s)',
                 $event['title'],
@@ -84,7 +84,7 @@ class SponsorService
     }
 
     /**
-     * @return array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}|null
+     * @return array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}|null
      */
     public function findEventById(int $eventId): ?array
     {
@@ -93,7 +93,7 @@ class SponsorService
         }
 
         $rows = $this->entityManager->getConnection()->fetchAllAssociative(
-            'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity,
+            'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity, e.image_url,
                           COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
              FROM event e
              WHERE e.id = :id
@@ -133,11 +133,12 @@ class SponsorService
     }
 
     /**
-     * @param array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
-     * @return array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
+     * @param array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
+     * @return array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
      */
     public function buildRecommendedEvents(array $events, UserModel $user, string $email): array
     {
+        // La recommandation se base sur l'historique de contribution du sponsor.
         $contributionsByEvent = $this->sponsorRepository->getMyContributionsByEvent($email);
         $ranked = $this->rankEventsForSponsor($events, $contributionsByEvent);
 
@@ -145,26 +146,27 @@ class SponsorService
     }
 
     /**
-     * @param array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
+     * @param array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
      * @param array<string,float> $contributionsByEvent
-     * @return array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
+     * @return array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
      */
     private function rankEventsForSponsor(array $events, array $contributionsByEvent): array
     {
+        // Chaque evenement recoit un score afin de prioriser ceux ayant le plus de valeur sponsor.
         $scored = [];
         foreach ($events as $event) {
             $score = 0.0;
 
-            // New business rule: prioritize visibility by participant volume.
-            $participantsCount = max(0, (int) ($event['participantsCount'] ?? 0));
-            $capacity = max(0, (int) ($event['capacity'] ?? 0));
+            // 1) Plus il y a de participants, plus la visibilite sponsor est forte.
+            $participantsCount = max(0, (int) $event['participantsCount']);
+            $capacity = max(0, (int) $event['capacity']);
             $fillRate = $capacity > 0 ? min(1, $participantsCount / $capacity) : 0;
 
             $score += $participantsCount * 100;
             $score += $fillRate * 20;
 
-            // Small continuity bonus if event title overlaps with previously sponsored titles.
-            $title = mb_strtolower((string) ($event['title'] ?? ''));
+            // 2) Bonus de continuite si le sponsor a deja soutenu un evenement similaire.
+            $title = mb_strtolower((string) $event['title']);
             foreach ($contributionsByEvent as $eventTitle => $amount) {
                 if ((float) $amount <= 0) {
                     continue;
@@ -177,7 +179,7 @@ class SponsorService
                 }
             }
 
-            // Prefer upcoming events that are not too far in time.
+            // 3) Bonus temporel pour les evenements suffisamment proches pour une action commerciale.
             $startDate = $event['startDate'] ?? null;
             if ($startDate instanceof \DateTimeInterface) {
                 $days = (int) ((int) $startDate->format('U') - time()) / 86400;
@@ -200,39 +202,12 @@ class SponsorService
             return ((float) $b['score']) <=> ((float) $a['score']);
         });
 
-        return array_values(array_map(static fn (array $row): array => $row['event'], $scored));
+        return array_map(static fn (array $row): array => $row['event'], $scored);
     }
 
     /**
-     * @return string[]
-     */
-    private function tokenizeText(string $value): array
-    {
-        $normalized = $this->normalizeForMatch($value);
-        if ($normalized === '') {
-            return [];
-        }
-
-        $tokens = preg_split('/[^a-z0-9]+/', $normalized) ?: [];
-        $tokens = array_values(array_filter($tokens, static fn (string $token): bool => strlen($token) >= 3));
-
-        return array_values(array_unique($tokens));
-    }
-
-    private function normalizeForMatch(string $value): string
-    {
-        $lower = mb_strtolower(trim($value));
-        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $lower);
-        if ($ascii === false) {
-            return $lower;
-        }
-
-        return $ascii;
-    }
-
-    /**
-     * @param array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
-     * @return array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
+     * @param array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
+     * @return array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
      */
     public function sortEvents(array $events, string $sort): array
     {
@@ -241,10 +216,10 @@ class SponsorService
         usort($sorted, static function (array $a, array $b) use ($sort): int {
             $aDate = $a['startDate'] instanceof \DateTimeInterface ? $a['startDate']->getTimestamp() : 0;
             $bDate = $b['startDate'] instanceof \DateTimeInterface ? $b['startDate']->getTimestamp() : 0;
-            $aTitle = mb_strtolower((string) ($a['title'] ?? ''));
-            $bTitle = mb_strtolower((string) ($b['title'] ?? ''));
-            $aLocation = mb_strtolower((string) ($a['location'] ?? ''));
-            $bLocation = mb_strtolower((string) ($b['location'] ?? ''));
+            $aTitle = mb_strtolower((string) $a['title']);
+            $bTitle = mb_strtolower((string) $b['title']);
+            $aLocation = mb_strtolower((string) $a['location']);
+            $bLocation = mb_strtolower((string) $b['location']);
 
             return match ($sort) {
                 'date_desc' => $bDate <=> $aDate,
@@ -306,11 +281,12 @@ class SponsorService
     }
 
     /**
-     * @param array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
+     * @param array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
      * @return array<string,int>
      */
     public function buildEventTypeStats(array $events): array
     {
+        // Regrouper les evenements en grandes familles pour un affichage plus parlant.
         $stats = [
             'Conference' => 0,
             'Atelier' => 0,
@@ -320,7 +296,7 @@ class SponsorService
         ];
 
         foreach ($events as $event) {
-            $title = mb_strtolower((string) ($event['title'] ?? ''));
+            $title = mb_strtolower((string) $event['title']);
             if (str_contains($title, 'atelier')) {
                 ++$stats['Atelier'];
                 continue;
@@ -344,11 +320,12 @@ class SponsorService
     }
 
     /**
-     * @param array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
+     * @param array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
      * @return array<string,int>
      */
     public function buildEventMonthStats(array $events, int $maxMonths = 6): array
     {
+        // Construire une projection par mois pour les prochains evenements sponsorisables.
         $now = new \DateTimeImmutable('first day of this month 00:00:00');
         $stats = [];
 
@@ -381,11 +358,12 @@ class SponsorService
     }
 
     /**
-     * @param array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
-     * @return array{sponsorable: array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>, archived: array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>, ongoingCount:int}
+     * @param array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
+     * @return array{sponsorable: array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>, archived: array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>, ongoingCount:int}
      */
     public function splitEventsByStatus(array $events): array
     {
+        // On separe les evenements archives des evenements encore sponsorisables.
         $sponsorable = [];
         $archived = [];
         $ongoingCount = 0;
@@ -417,6 +395,7 @@ class SponsorService
      */
     public function buildSponsorHistory(array $sponsors): array
     {
+        // L'historique sponsor assemble les donnees sponsor + evenement pour le portail.
         if ($sponsors === []) {
             return [];
         }
@@ -460,7 +439,7 @@ class SponsorService
 
     /**
      * @param int[] $eventIds
-     * @return array<int,array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
+     * @return array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
      */
     public function getEventDetailsMap(array $eventIds): array
     {
@@ -470,7 +449,7 @@ class SponsorService
         }
 
         $rows = $this->entityManager->getConnection()->fetchAllAssociative(
-            'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity,
+            'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity, e.image_url,
                           COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
              FROM event e
              WHERE e.id IN (?)',
@@ -574,7 +553,7 @@ class SponsorService
 
     /**
      * @param array<string,mixed> $row
-     * @return array{id:int,title:string,description:string,location:string,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}
+     * @return array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}
      */
     private static function mapEventRow(array $row): array
     {
@@ -583,6 +562,7 @@ class SponsorService
             'title' => (string) ($row['title'] ?? ''),
             'description' => (string) ($row['description'] ?? ''),
             'location' => (string) ($row['location'] ?? ''),
+            'imageUrl' => !empty($row['image_url']) ? (string) $row['image_url'] : null,
             'capacity' => isset($row['capacity']) ? (int) $row['capacity'] : 0,
             'participantsCount' => isset($row['participants_count']) ? (int) $row['participants_count'] : 0,
             'startDate' => !empty($row['start_date']) ? new \DateTimeImmutable((string) $row['start_date']) : null,

@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historique des partenariats - EventFlow</title>
-    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}?v=20260416-ia-focus">
-    <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}">
     <style>
+        {{ include('partials/public_header_styles.html.twig') }}
         .portal-navbar {
             height: 80px;
             padding: 0 60px;
@@ -187,119 +187,13 @@
             box-shadow: 0 6px 12px rgba(13, 71, 161, 0.4);
         }
 
-        .portal-translate {
-            position: relative;
-            top: -4px;
-            margin-right: 12px;
-        }
-
-        .portal-translate-btn {
-            border: none;
-            border-radius: 999px;
-            padding: 8px 14px;
-            background: linear-gradient(135deg, #16a34a, #22c55e);
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 8px 18px rgba(22, 163, 74, 0.3);
-        }
-
-        .portal-translate-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            width: 180px;
-            background: #fff;
-            border: 1px solid #d9e2ef;
-            border-radius: 12px;
-            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
-            padding: 8px;
-            display: none;
-            z-index: 1400;
-        }
-
-        .portal-translate-menu.open {
-            display: block;
-        }
-
-        .portal-translate-opt {
-            width: 100%;
-            border: 1px solid #e2e8f0;
-            background: #f8fafc;
-            color: #0f172a;
-            border-radius: 8px;
-            padding: 8px 10px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-bottom: 6px;
-        }
-
-        .portal-translate-opt:last-child {
-            margin-bottom: 0;
-        }
-
         .portal-page {
             margin-top: 80px;
         }
     </style>
 </head>
 <body class="portal-body">
-<nav class="portal-navbar">
-    <div class="portal-logo-wrap">
-        <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
-    </div>
-
-    <div class="portal-nav-links">
-        <a class="portal-nav-link" href="{{ path('app_landing') }}">Accueil</a>
-        <a class="portal-nav-link" href="{{ path('app_public_events') }}">Evenements</a>
-        <a class="portal-nav-link active" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
-        <a class="portal-nav-link" href="{{ path('app_landing') }}#features">Fonctionnalites</a>
-        <a class="portal-nav-link" href="{{ path('app_feedback_view') }}">Feedback</a>
-        <a class="portal-nav-link" href="{{ path('app_landing') }}#contact">Contact</a>
-    </div>
-
-    <div style="display:flex; align-items:center;">
-        <button onclick="toggleTheme()" style="background: rgba(33, 150, 243, 0.1); color: #2196F3; border: 1px solid #2196F3; border-radius: 20px; padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: bold; margin-right: 12px;">
-            <i class="fas fa-moon" id="themeIconSponsor"></i>
-            <span id="themeTextSponsor">Mode Sombre</span>
-        </button>
-        <div class="portal-translate" id="portalTranslateWidget">
-            <button type="button" class="portal-translate-btn" id="portalTranslateToggle"><i class="fas fa-language"></i> Traduire</button>
-            <div class="portal-translate-menu" id="portalTranslateMenu">
-                <button type="button" class="portal-translate-opt" data-lang="original">Originale (sans traduction)</button>
-                <button type="button" class="portal-translate-opt" data-lang="fr">Francais</button>
-                <button type="button" class="portal-translate-opt" data-lang="en">English</button>
-                <button type="button" class="portal-translate-opt" data-lang="ar">Arabic</button>
-                <button type="button" class="portal-translate-opt" data-lang="es">Espanol</button>
-                <button type="button" class="portal-translate-opt" data-lang="de">Deutsch</button>
-                <button type="button" class="portal-translate-opt" data-lang="it">Italiano</button>
-            </div>
-        </div>
-        {% if app.user %}
-            <details class="portal-account-menu">
-                <summary class="portal-account-chip">
-                    <span class="portal-account-avatar">{{ app.user.initials ?: (app.user.fullName ? app.user.fullName|slice(0, 1)|upper : 'C') }}</span>
-                    <span class="portal-account-meta">
-                        <span class="portal-account-name">{{ app.user.fullName ?: 'Compte' }}</span>
-                        <span class="portal-account-role">Sponsor</span>
-                    </span>
-                </summary>
-                <div class="portal-account-dropdown">
-                    <button type="button" class="portal-account-action">Profile</button>
-                    <a class="portal-account-action" href="{{ path('app_logout') }}">Deconnexion</a>
-                </div>
-            </details>
-        {% else %}
-            <div class="nav-buttons">
-                <a class="btn-login" href="{{ path('app_login') }}">Connexion</a>
-                <a class="btn-signup" href="{{ path('app_register') }}">Inscription</a>
-            </div>
-        {% endif %}
-    </div>
-</nav>
+{{ include('partials/public_header.html.twig', { active_page: 'sponsor' }) }}
 
 <main class="portal-page">
     {% if not isSponsorSession %}
@@ -310,28 +204,28 @@
         </section>
     {% else %}
     <section class="portal-history-page-head">
-        <a class="btn-sponsor outline" href="{{ path('app_sponsor_portal') }}">⬅ Retour</a>
+        <a class="btn-sponsor outline" href="{{ path('app_sponsor_portal') }}">&lt; Retour</a>
         <div>
-            <h1>🎟️ Mes evenements sponsorises</h1>
+            <h1>Mes evenements sponsorises</h1>
             <p>Retrouvez ici tous les evenements deja sponsorises, a venir ou termines, avec acces rapide aux details.</p>
         </div>
     </section>
 
     <section class="portal-history-stats">
         <div class="portal-history-stat-card">
-            <span>📊 Total partenariats</span>
+            <span>Total partenariats</span>
             <strong>{{ stats.count }}</strong>
         </div>
         <div class="portal-history-stat-card">
-            <span>💰 Contribution totale</span>
+            <span>Contribution totale</span>
             <strong>{{ stats.total|number_format(2, ',', ' ') }} DT</strong>
         </div>
         <div class="portal-history-stat-card">
-            <span>🟢 Evenements a venir</span>
+            <span>Evenements a venir</span>
             <strong>{{ stats.ongoing }}</strong>
         </div>
         <div class="portal-history-stat-card">
-            <span>✅ Evenements passes</span>
+            <span>Evenements passes</span>
             <strong>{{ stats.ended }}</strong>
         </div>
     </section>
@@ -362,7 +256,7 @@
     {% endfor %}
 
     <section class="portal-history-list">
-        <h2 class="portal-section-title">🗓️ Evenements a venir</h2>
+        <h2 class="portal-section-title">Evenements a venir</h2>
         {% if historyItems is empty or not hasUpcoming %}
             <div class="portal-box-empty">Aucun evenement a venir.</div>
         {% else %}
@@ -407,7 +301,7 @@
     </section>
 
     <section class="portal-history-list">
-        <h2 class="portal-section-title">⏳ Evenements passes</h2>
+        <h2 class="portal-section-title">Evenements passes</h2>
         {% if historyItems is empty or not hasPast %}
             <div class="portal-box-empty">Aucun evenement passe.</div>
         {% else %}
@@ -451,69 +345,6 @@
     </section>
     {% endif %}
 </main>
-<div id="google_translate_element" style="display:none;"></div>
-<script>
-    (function () {
-        const toggle = document.getElementById('portalTranslateToggle');
-        const menu = document.getElementById('portalTranslateMenu');
-        const widget = document.getElementById('portalTranslateWidget');
-
-        const setTranslateCookie = function (value) {
-            const host = window.location.hostname;
-            document.cookie = 'googtrans=' + value + ';path=/';
-            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
-                document.cookie = 'googtrans=' + value + ';path=/;domain=.' + host;
-            }
-        };
-
-        const clearTranslateCookie = function () {
-            const host = window.location.hostname;
-            document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
-            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
-                document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + host;
-            }
-        };
-
-        if (toggle && menu) {
-            toggle.addEventListener('click', function () {
-                menu.classList.toggle('open');
-            });
-
-            document.addEventListener('click', function (event) {
-                if (!widget || widget.contains(event.target)) {
-                    return;
-                }
-                menu.classList.remove('open');
-            });
-
-            menu.querySelectorAll('[data-lang]').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    const lang = button.getAttribute('data-lang') || 'en';
-                    if (lang === 'original') {
-                        clearTranslateCookie();
-                    } else {
-                        setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
-                    }
-                    window.location.reload();
-                });
-            });
-        }
-    })();
-
-    function googleTranslateElementInit() {
-        if (!window.google || !window.google.translate || !window.google.translate.TranslateElement) {
-            return;
-        }
-
-        new window.google.translate.TranslateElement({
-            pageLanguage: 'fr',
-            includedLanguages: 'fr,en,ar,es,de,it',
-            autoDisplay: false,
-            multilanguagePage: true
-        }, 'google_translate_element');
-    }
-</script>
-
 <script>
 // Theme toggle for sponsor portal
 function toggleTheme() {
@@ -562,6 +393,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>

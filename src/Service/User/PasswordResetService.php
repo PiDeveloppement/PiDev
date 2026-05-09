@@ -54,7 +54,7 @@ class PasswordResetService
 
             $this->logger->info('✅ Token créé pour l\'utilisateur ID: ' . $user->getId());
             $this->logger->debug('   Token: ' . $token->getToken());
-            $this->logger->debug('   Expire le: ' . $token->getExpiryDate()->format('Y-m-d H:i:s'));
+            $this->logger->debug('   Expire le: ' . ($token->getExpiryDate()?->format('Y-m-d H:i:s') ?? 'N/A'));
 
             return $token;
 
@@ -97,7 +97,7 @@ class PasswordResetService
 
             if ($resetToken) {
                 $this->currentToken = $token;
-                $this->currentUserId = $resetToken->getUser()->getId();
+               $this->currentUserId = $resetToken->getUser()?->getId();
                 
                 $this->logger->info('✅ Token valide pour l\'utilisateur ID: ' . $this->currentUserId);
                 return true;
@@ -274,7 +274,7 @@ class PasswordResetService
     {
         try {
             $resetToken = $this->tokenRepository->findOneBy(['token' => $token]);
-            return $resetToken?->getUser()->getId();
+           return $resetToken?->getUser()?->getId();
         } catch (\Exception $e) {
             $this->logger->error('❌ Erreur getUserIdFromToken: ' . $e->getMessage());
             return null;

@@ -16,7 +16,7 @@ class SponsorAlertEmailService
         private SponsorRepository $sponsorRepository,
         private UserRepository $userRepository,
         private SponsorService $sponsorService,
-        private string $fromEmail = 'no-reply@eventflow.local'
+        private string $fromEmail = 'manaimaryem4@gmail.com'
     ) {
     }
 
@@ -25,11 +25,13 @@ class SponsorAlertEmailService
      */
     public function sendRecommendationEmailForContact(string $email): array
     {
+        // Point d'entree pour envoyer un mail de recommandations a un contact sponsor unique.
         $normalizedEmail = mb_strtolower(trim($email));
         if ($normalizedEmail === '') {
             return ['sent' => false, 'reason' => 'missing_email'];
         }
 
+        // Recuperer a la fois l'historique du sponsor et le catalogue des evenements.
         $mySponsors = $this->sponsorRepository->findByContactEmailWithEvent($normalizedEmail);
         $events = $this->sponsorService->fetchEventsCatalog();
 
@@ -40,6 +42,7 @@ class SponsorAlertEmailService
             $recommended = $this->buildFallbackRecommendations($events, $mySponsors);
         }
 
+        // On filtre les evenements deja sponsorises pour eviter des suggestions redondantes.
         $recommendations = $this->buildUnsponsoredRecommendationRows($recommended, $mySponsors);
         if ($recommendations === []) {
             return ['sent' => false, 'reason' => 'no_recommendations'];
@@ -65,6 +68,7 @@ class SponsorAlertEmailService
      */
     public function sendRecommendedEventsDigestForAllSponsors(): array
     {
+        // Traitement batch pour envoyer une campagne de recommandations a tous les contacts sponsor.
         $stats = [
             'checked' => 0,
             'sent' => 0,
@@ -138,6 +142,7 @@ class SponsorAlertEmailService
      */
     private function buildRecommendationsEmail(string $to, ?UserModel $user, array $recommendations): Email
     {
+        // Construction manuelle du contenu pour garder un message simple et robuste.
         $name = '';
         if ($user instanceof UserModel) {
             $name = trim((string) (($user->getFirstName() ?? '') . ' ' . ($user->getLastName() ?? '')));
@@ -191,18 +196,19 @@ class SponsorAlertEmailService
      */
     private function buildFallbackRecommendations(array $events, array $mySponsors): array
     {
+        // Fallback metier: proposer simplement les prochains evenements non encore sponsorises.
         $sponsoredEventIds = [];
         foreach ($mySponsors as $sponsor) {
             $sponsoredEventIds[(int) $sponsor->getEventId()] = true;
         }
 
         $upcoming = array_values(array_filter($events, static function (array $event) use ($sponsoredEventIds): bool {
-            $eventId = (int) ($event['id'] ?? 0);
+            $eventId = (int) $event['id'];
             if ($eventId <= 0 || isset($sponsoredEventIds[$eventId])) {
                 return false;
             }
 
-            $endDate = $event['endDate'] ?? null;
+            $endDate = $event['endDate'];
             if (!$endDate instanceof \DateTimeInterface) {
                 return true;
             }
@@ -226,6 +232,7 @@ class SponsorAlertEmailService
      */
     private function buildUnsponsoredRecommendationRows(array $recommendedEvents, array $mySponsors): array
     {
+        // Le mail final ne garde que les champs utiles au sponsor: titre, lieu et date.
         $sponsoredEventIds = [];
         foreach ($mySponsors as $sponsor) {
             $sponsoredEventIds[] = (int) $sponsor->getEventId();
@@ -233,16 +240,16 @@ class SponsorAlertEmailService
 
         $rows = [];
         foreach ($recommendedEvents as $event) {
-            $eventId = (int) ($event['id'] ?? 0);
+            $eventId = (int) $event['id'];
             if ($eventId <= 0 || in_array($eventId, $sponsoredEventIds, true)) {
                 continue;
             }
 
-            $startDate = $event['startDate'] ?? null;
+            $startDate = $event['startDate'];
             $rows[] = [
                 'id' => $eventId,
-                'title' => (string) ($event['title'] ?? '-'),
-                'location' => (string) ($event['location'] ?? '-'),
+                'title' => (string) $event['title'],
+                'location' => (string) $event['location'],
                 'date' => $startDate instanceof \DateTimeInterface ? $startDate->format('d/m/Y H:i') : '-',
             ];
         }

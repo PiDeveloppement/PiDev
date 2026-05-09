@@ -1,4 +1,4 @@
-﻿{% extends 'base.html.twig' %}
+﻿﻿{% extends 'base.html.twig' %}
 
 {% block title %}Budgets - EventFlow{% endblock %}
 
@@ -958,7 +958,7 @@
        
         observer.observe(document.body, { childList: true, subtree: true });
         setTimeout(() => observer.disconnect(), 3000); // Stop observing after 3 seconds
-       
+        
         const colors = ['#1d9e75', '#7f77dd', '#ba7517', '#e24b4a'];
         const labels = ['Excellent', 'Bon', 'Fragile', 'Critique'];
         const donutData = [{{ cntExcellent }}, {{ cntGood }}, {{ cntFragile }}, {{ cntCritical }}];

@@ -7,10 +7,9 @@
     <link rel="stylesheet" href="{{ asset('css/sponsor.css') }}?v=20260416-ia-focus">
     <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}">
     <style>
+        {{ include('partials/public_header_styles.html.twig') }}
         /* Navbar aligned with landing dimensions */
         .portal-navbar {
-            height: 80px;
-            padding: 0 60px;
             border-bottom: 1px solid #e2e8f0;
             background: #ffffff;
             position: fixed;
@@ -18,6 +17,14 @@
             left: 0;
             right: 0;
             z-index: 1000;
+            height: 80px;
+            display: flex;
+            align-items: center;
+        }
+
+        .portal-nav-container {
+            width: 100%;
+            padding: 0 60px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -25,7 +32,7 @@
 
         .portal-logo-wrap img {
             width: auto;
-            height: 56px;
+            height: 44px;
             max-width: 180px;
             object-fit: contain;
             display: block;
@@ -36,11 +43,26 @@
             gap: 40px;
             position: relative;
             top: -4px;
+            align-items: center;
         }
 
         .portal-nav-link {
             font-size: 16px;
             font-weight: 500;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+        .portal-nav-link:hover {
+            color: #0D47A1;
+        }
+
+        .portal-nav-link.active {
+            color: #0D47A1;
+            font-weight: 700;
+            text-decoration: none;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 2px;
         }
 
         .portal-account-menu {
@@ -71,6 +93,8 @@
             padding: 4px 10px 4px 6px;
             color: #ffffff;
             min-height: 42px;
+            min-width: 164px;
+            max-width: 220px;
         }
 
         .portal-account-avatar {
@@ -91,12 +115,16 @@
             display: flex;
             flex-direction: column;
             line-height: 1.1;
+            min-width: 0;
         }
 
         .portal-account-name {
             font-size: 14px;
             font-weight: 700;
             color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .portal-account-role {
@@ -141,8 +169,10 @@
         .nav-buttons {
             display: flex;
             gap: 15px;
+            align-items: center;
             position: relative;
             top: -4px;
+            min-height: 42px;
         }
 
         .btn-login {
@@ -186,60 +216,6 @@
             background: #0A3A80;
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(13, 71, 161, 0.4);
-        }
-
-        .portal-translate {
-            position: relative;
-            top: -4px;
-            margin-right: 12px;
-        }
-
-        .portal-translate-btn {
-            border: none;
-            border-radius: 999px;
-            padding: 8px 14px;
-            background: linear-gradient(135deg, #16a34a, #22c55e);
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 8px 18px rgba(22, 163, 74, 0.3);
-        }
-
-        .portal-translate-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            width: 180px;
-            background: #fff;
-            border: 1px solid #d9e2ef;
-            border-radius: 12px;
-            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
-            padding: 8px;
-            display: none;
-            z-index: 1400;
-        }
-
-        .portal-translate-menu.open {
-            display: block;
-        }
-
-        .portal-translate-opt {
-            width: 100%;
-            border: 1px solid #e2e8f0;
-            background: #f8fafc;
-            color: #0f172a;
-            border-radius: 8px;
-            padding: 8px 10px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-bottom: 6px;
-        }
-
-        .portal-translate-opt:last-child {
-            margin-bottom: 0;
         }
 
         .portal-page {
@@ -485,59 +461,7 @@
     </style>
 </head>
 <body class="portal-body">
-<nav class="portal-navbar">
-    <div class="portal-logo-wrap">
-        <img src="{{ asset('images/logo.png') }}" alt="EventFlow">
-    </div>
-
-    <div class="portal-nav-links">
-        <a class="portal-nav-link" href="{{ path('app_landing') }}">Accueil</a>
-        <a class="portal-nav-link" href="{{ path('app_public_events') }}">Evenements</a>
-        <a class="portal-nav-link active" href="{{ path('app_sponsor_portal') }}">Recommandations sponsor</a>
-        <a class="portal-nav-link" href="{{ path('app_landing') }}#features">Fonctionnalites</a>
-        <a class="portal-nav-link" href="{{ path('app_feedback_view') }}">Feedback</a>
-        <a class="portal-nav-link" href="{{ path('app_landing') }}#contact">Contact</a>
-    </div>
-
-    <div style="display:flex; align-items:center;">
-        <button onclick="toggleTheme()" style="background: rgba(33, 150, 243, 0.1); color: #2196F3; border: 1px solid #2196F3; border-radius: 20px; padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: bold; margin-right: 12px;">
-            <i class="fas fa-moon" id="themeIconSponsor"></i>
-            <span id="themeTextSponsor">Mode Sombre</span>
-        </button>
-        <div class="portal-translate" id="portalTranslateWidget">
-            <button type="button" class="portal-translate-btn" id="portalTranslateToggle"><i class="fas fa-language"></i> Traduire</button>
-            <div class="portal-translate-menu" id="portalTranslateMenu">
-                <button type="button" class="portal-translate-opt" data-lang="original">Originale (sans traduction)</button>
-                <button type="button" class="portal-translate-opt" data-lang="fr">Francais</button>
-                <button type="button" class="portal-translate-opt" data-lang="en">English</button>
-                <button type="button" class="portal-translate-opt" data-lang="ar">Arabic</button>
-                <button type="button" class="portal-translate-opt" data-lang="es">Espanol</button>
-                <button type="button" class="portal-translate-opt" data-lang="de">Deutsch</button>
-                <button type="button" class="portal-translate-opt" data-lang="it">Italiano</button>
-            </div>
-        </div>
-        {% if app.user %}
-            <details class="portal-account-menu">
-                <summary class="portal-account-chip">
-                    <span class="portal-account-avatar">{{ app.user.initials ?: (app.user.fullName ? app.user.fullName|slice(0, 1)|upper : 'C') }}</span>
-                    <span class="portal-account-meta">
-                        <span class="portal-account-name">{{ app.user.fullName ?: 'Compte' }}</span>
-                        <span class="portal-account-role">Sponsor</span>
-                    </span>
-                </summary>
-                <div class="portal-account-dropdown">
-                    <button type="button" class="portal-account-action">Profile</button>
-                    <a class="portal-account-action" href="{{ path('app_logout') }}">Deconnexion</a>
-                </div>
-            </details>
-        {% else %}
-            <div class="nav-buttons">
-                <a class="btn-login" href="{{ path('app_login') }}">Connexion</a>
-                <a class="btn-signup" href="{{ path('app_register') }}">Inscription</a>
-            </div>
-        {% endif %}
-    </div>
-</nav>
+{{ include('partials/public_header.html.twig', { active_page: 'sponsor' }) }}
 
 <main class="portal-page">
     <div class="flash-wrap" style="margin-bottom: 10px;">
@@ -547,7 +471,7 @@
 
     {% if isSponsorSession and upcomingActionAlerts is not empty %}
         <section class="portal-alert-strip" aria-label="Alertes opportunites 72h">
-            <div class="portal-alert-strip-head">?? Alertes opportunite (72h)</div>
+            <div class="portal-alert-strip-head">Alertes opportunite (72h)</div>
             <div class="portal-alert-strip-grid">
                 {% for alert in upcomingActionAlerts %}
                     <article class="portal-alert-card">
@@ -571,7 +495,7 @@
                 <p>Decouvrez les evenements recommandes, trouvez de nouvelles opportunites de partenariat et suivez vos collaborations en un seul endroit.</p>
             </div>
             <div class="portal-hero-actions">
-                <a class="portal-hero-btn" href="{{ path('app_sponsor_portal_history') }}">?? Historique contributions</a>
+                <a class="portal-hero-btn" href="{{ path('app_sponsor_portal_history') }}">📋 Historique contributions</a>
                 {% if isSponsorSession %}
                     <a class="portal-hero-btn soft" href="{{ path('app_sponsor_portal_export_csv') }}">Exporter CSV</a>
                 {% endif %}
@@ -580,25 +504,25 @@
 
         <div class="portal-hero-stats">
             <div class="portal-stat-card">
-                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">??</div>
+                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">📦</div>
                 <div class="portal-stat-info">
-                    <div class="portal-stat-label">TOTAL �V�NEMENTS</div>
+                    <div class="portal-stat-label">TOTAL ÉVÉNEMENTS</div>
                     <div class="portal-stat-value">{{ eventCounts.total }}</div>
                     <div class="portal-stat-note">Catalogue visible pour votre prospection</div>
                     <div class="portal-stat-meter"><span style="width: 88%;"></span></div>
                 </div>
             </div>
             <div class="portal-stat-card">
-                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">??</div>
+                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">🎯</div>
                 <div class="portal-stat-info">
-                    <div class="portal-stat-label">� SPONSORISER</div>
+                    <div class="portal-stat-label">À SPONSORISER</div>
                     <div class="portal-stat-value">{{ eventCounts.sponsorable }}</div>
                     <div class="portal-stat-note">Opportunites actuellement ouvertes</div>
                     <div class="portal-stat-meter"><span style="width: 72%;"></span></div>
                 </div>
             </div>
             <div class="portal-stat-card">
-                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">?</div>
+                <div class="portal-stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">✓</div>
                 <div class="portal-stat-info">
                     <div class="portal-stat-label">MES CONTRIBUTIONS</div>
                     <div class="portal-stat-value">{{ isSponsorSession ? mySponsors|length : 0 }}</div>
@@ -613,7 +537,7 @@
     <section class="portal-fx-premium" aria-label="Suivi dynamique des devises">
         <div class="portal-fx-head">
             <div>
-                <h2>?? Taux de change en direct</h2>
+                <h2>Taux de change en direct</h2>
                 <p>Historique sur 7 jours et mise a jour multi-devises pour mieux planifier vos budgets sponsor.</p>
             </div>
             <div class="portal-fx-controls">
@@ -625,13 +549,13 @@
                     <option value="CHF">Franc suisse (CHF)</option>
                     <option value="CAD">Dollar canadien (CAD)</option>
                 </select>
-                <button type="button" id="portalFxRefresh">?? Actualiser</button>
+                <button type="button" id="portalFxRefresh">Actualiser</button>
             </div>
         </div>
 
         <div class="portal-fx-grid">
             <article class="portal-fx-chart-card">
-                <div class="portal-fx-pair" id="portalFxPairLabel">1 EUR = ? TND</div>
+                <div class="portal-fx-pair" id="portalFxPairLabel">1 EUR = TND</div>
                 <div class="portal-fx-chart-wrap">
                     <canvas id="portalFxChart" role="img" aria-label="Historique du taux de change contre le TND"></canvas>
                 </div>
@@ -639,39 +563,39 @@
             </article>
 
             <article class="portal-fx-rates-card">
-                <h3>?? Panorama devises</h3>
+                <h3>Panorama devises</h3>
                 <div class="portal-fx-rates-grid" id="portalFxRates">
                     <div class="portal-fx-rate-item active" data-fx-currency="EUR">
                         <div class="portal-fx-rate-left">
-                            <span class="portal-fx-code">EUR ? TND</span>
+                            <span class="portal-fx-code">EUR / TND</span>
                             <span class="portal-fx-caption">Euro</span>
                         </div>
                         <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
                     </div>
                     <div class="portal-fx-rate-item" data-fx-currency="USD">
                         <div class="portal-fx-rate-left">
-                            <span class="portal-fx-code">USD ? TND</span>
+                            <span class="portal-fx-code">USD / TND</span>
                             <span class="portal-fx-caption">Dollar</span>
                         </div>
                         <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
                     </div>
                     <div class="portal-fx-rate-item" data-fx-currency="GBP">
                         <div class="portal-fx-rate-left">
-                            <span class="portal-fx-code">GBP ? TND</span>
+                            <span class="portal-fx-code">GBP / TND</span>
                             <span class="portal-fx-caption">Livre sterling</span>
                         </div>
                         <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
                     </div>
                     <div class="portal-fx-rate-item" data-fx-currency="CHF">
                         <div class="portal-fx-rate-left">
-                            <span class="portal-fx-code">CHF ? TND</span>
+                            <span class="portal-fx-code">CHF / TND</span>
                             <span class="portal-fx-caption">Franc suisse</span>
                         </div>
                         <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
                     </div>
                     <div class="portal-fx-rate-item" data-fx-currency="CAD">
                         <div class="portal-fx-rate-left">
-                            <span class="portal-fx-code">CAD ? TND</span>
+                            <span class="portal-fx-code">CAD / TND</span>
                             <span class="portal-fx-caption">Dollar canadien</span>
                         </div>
                         <span class="portal-fx-value loading" data-fx-value>Chargement...</span>
@@ -839,20 +763,20 @@
         })();
     </script>
 
-    {# Section �v�nements recommand�s - version moderne et prioritaire #}
+    {# Section Événements recommandés - version moderne et prioritaire #}
     <section class="portal-box portal-box-recommendations ai-reco-spotlight">
         <div class="reco-header">
             <div class="reco-header-text">
-                <span class="reco-header-icon">?</span>
+                <span class="reco-header-icon">🤖</span>
                 <div>
-                    <h2 class="reco-header-title">�v�nements recommand�s</h2>
-                    <p class="reco-header-subtitle">Priorit� IA bas�e sur votre secteur et vos habitudes de sponsoring</p>
+                    <h2 class="reco-header-title">Événements recommandés</h2>
+                    <p class="reco-header-subtitle">Priorité IA basée sur votre secteur et vos habitudes de sponsoring</p>
                 </div>
             </div>
             <div class="reco-priority-badge">Section prioritaire</div>
         </div>
 
-        <div class="reco-focus-bar">
+        <div class="reco-focus-bar" style="border: none; background: none; box-shadow: none; padding-top: 0; margin-top: 0;">
             <span class="reco-focus-chip">Moteur IA actif</span>
             <span class="reco-focus-chip light">{{ recommendedEvents|length }} recommandations triees</span>
         </div>
@@ -862,7 +786,7 @@
         {% else %}
             <div class="reco-grid">
                 {% for event in recommendedEvents %}
-                    {# D�termination du type et de l'image par d�faut (inchang�) #}
+                    {# Détermination du type et de l'image par défaut (inchangé) #}
                     {% set t = event.title|lower %}
                     {% set contextText = (event.title ~ ' ' ~ (event.description ?: ''))|lower %}
                     {% set type = 'Conference' %}
@@ -874,7 +798,7 @@
                         {% set cls = 'atelier' %}
                         {% set mood = 'Atelier pratique' %}
                         {% set defaultImage = 'atelier.jfif' %}
-                    {% elseif 'seminaire' in t or 's�minaire' in t %}
+                    {% elseif 'seminaire' in t or 'séminaire' in t %}
                         {% set type = 'Seminaire' %}
                         {% set cls = 'seminaire' %}
                         {% set mood = 'Prise de parole' %}
@@ -912,28 +836,30 @@
                         {% set mood = 'Contexte innovation terrain' %}
                     {% endif %}
 
+                    {% set eventImage = event.imageUrl ?? null %}
+
                     <article class="reco-card {{ cls }}">
                         <div class="reco-rank-badge">Top {{ loop.index }}</div>
-                        <img class="reco-card-image" src="{{ asset('images/' ~ event.title ~ '.jpg') }}" alt="{{ event.title }}" onerror="this.src=&quot;{{ asset('images/sponsor-cards/' ~ defaultImage) }}&quot;">
+                        <img class="reco-card-image" src="{{ eventImage ? asset(eventImage) : asset('images/sponsor-cards/' ~ defaultImage) }}" alt="{{ event.title }}" onerror="this.src=&quot;{{ asset('images/sponsor-cards/' ~ defaultImage) }}&quot;">
                         <div class="reco-card-content">
                             <div class="reco-card-top">
                                 <span class="reco-type-badge {{ cls }}">{{ type }}</span>
                                 <span class="reco-mood">{{ mood }}</span>
                             </div>
                             <h3 class="reco-card-title">{{ event.title }}</h3>
-                            <p class="reco-card-description">{{ event.description ?: "Cet �v�nement fait partie des rendez-vous les plus suivis et attractifs du moment."|slice(0, 100) ~ '�' }}</p>
+                            <p class="reco-card-description">{{ event.description ?: "Cet événement fait partie des rendez-vous les plus suivis et attractifs du moment."|slice(0, 100) ~ '…' }}</p>
                             <div class="reco-card-meta">
                                 <div class="reco-meta-item">
-                                    <span class="reco-meta-icon">??</span>
+                                    <span class="reco-meta-icon">📅</span>
                                     <span>{{ event.startDate ? event.startDate|date("d-m-Y") : "-" }}</span>
                                 </div>
                                 <div class="reco-meta-item">
-                                    <span class="reco-meta-icon">??</span>
+                                    <span class="reco-meta-icon">📍</span>
                                     <span>{{ event.location ?: "-" }}</span>
                                 </div>
                             </div>
                             <div class="reco-card-actions">
-                                <a class="reco-btn-outline" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir d�tails</a>
+                                <a class="reco-btn-outline" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir détails</a>
                                 <a class="reco-btn-primary" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser</a>
                             </div>
                         </div>
@@ -944,7 +870,7 @@
     </section>
 
     <section class="portal-box">
-        <div class="portal-box-head portal-box-head-catalog">?? Catalogue des evenements a soutenir</div>
+        <div class="portal-box-head portal-box-head-catalog">Catalogue des evenements a soutenir</div>
         {% if sponsorableEvents is empty %}
             <div class="portal-box-empty">Aucun evenement disponible pour le moment.</div>
         {% else %}
@@ -961,7 +887,7 @@
                         {% set cls = 'atelier' %}
                         {% set mood = 'Atelier pratique' %}
                         {% set defaultImage = 'atelier.jfif' %}
-                    {% elseif 'seminaire' in t or 's�minaire' in t %}
+                    {% elseif 'seminaire' in t or 'séminaire' in t %}
                         {% set type = 'Seminaire' %}
                         {% set cls = 'seminaire' %}
                         {% set mood = 'Prise de parole' %}
@@ -999,8 +925,10 @@
                         {% set mood = 'Contexte innovation terrain' %}
                     {% endif %}
 
+                    {% set eventImage = event.imageUrl ?? null %}
+
                     <article class="portal-event-card {{ cls }} {{ loop.index == 3 ? 'highlight' : '' }}" data-live-search-item data-search="{{ event.title }}" data-live-suggest="{{ event.title }}">
-                        <img class="portal-event-visual" src="{{ asset('images/' ~ event.title ~ '.jpg') }}" alt="{{ event.title }}" onerror="this.src=&quot;{{ asset('images/sponsor-cards/' ~ defaultImage) }}&quot;">
+                        <img class="portal-event-visual" src="{{ eventImage ? asset(eventImage) : asset('images/sponsor-cards/' ~ defaultImage) }}" alt="{{ event.title }}" onerror="this.src=&quot;{{ asset('images/sponsor-cards/' ~ defaultImage) }}&quot;">
                         <div class="portal-event-content">
                             <div class="portal-event-topline">
                                 <span class="portal-badge {{ cls }}">{{ type }}</span>
@@ -1010,12 +938,12 @@
                             <p class="portal-event-description">{{ event.description ?: "Une occasion pour soutenir la vie universitaire, valoriser les talents et renforcer votre presence." }}</p>
 
                             <div class="portal-event-meta-row">
-                                <div class="portal-event-meta"><span class="portal-event-label">?? Date:</span> {{ event.startDate ? event.startDate|date("d-m-Y") : "-" }}</div>
-                                <div class="portal-event-meta"><span class="portal-event-label">?? Lieu:</span> {{ event.location ?: "-" }}</div>
+                                <div class="portal-event-meta"><span class="portal-event-label">Date:</span> {{ event.startDate ? event.startDate|date("d-m-Y") : "-" }}</div>
+                                <div class="portal-event-meta"><span class="portal-event-label">Lieu:</span> {{ event.location ?: "-" }}</div>
                             </div>
                             <div class="portal-card-actions">
                                 <a class="portal-btn-secondary" href="{{ path('app_sponsor_portal_event', {id: event.id}) }}">Voir details</a>
-                                <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">?? Sponsoriser cet �v�nement</a>
+                                <a class="portal-btn-sponso" href="{{ path('app_sponsor_portal_sponsorize', {id: event.id}) }}">Sponsoriser cet evenement</a>
                             </div>
                         </div>
                     </article>
@@ -1029,25 +957,25 @@
         <h2 class="portal-section-title">Pourquoi EventFlow?</h2>
         <div class="stats-showcase-grid">
             <div class="stat-showcase-card">
-                <div class="stat-showcase-icon">??</div>
-                <h3>Port�e nationale</h3>
+                <div class="stat-showcase-icon">🌍</div>
+                <h3>Portée nationale</h3>
                 <p>Acces a plus de 100+ evenements dans toute la Tunisie</p>
                 <div class="stat-showcase-number">{{ eventCounts.total }}+</div>
             </div>
             <div class="stat-showcase-card">
-                <div class="stat-showcase-icon">??</div>
+                <div class="stat-showcase-icon">🤝</div>
                 <h3>Partenariats solides</h3>
                 <p>Connectez-vous avec des organisateurs fiables et verifies</p>
                 <div class="stat-showcase-number">500+</div>
             </div>
             <div class="stat-showcase-card">
-                <div class="stat-showcase-icon">??</div>
+                <div class="stat-showcase-icon">💼</div>
                 <h3>Opportunites B2B</h3>
                 <p>Construisez votre reseau professionnel et commercial</p>
                 <div class="stat-showcase-number">1000+</div>
             </div>
             <div class="stat-showcase-card">
-                <div class="stat-showcase-icon">??</div>
+                <div class="stat-showcase-icon">📈</div>
                 <h3>Suivi en temps reel</h3>
                 <p>Tableau de bord complet pour gerer vos partenariats</p>
                 <div class="stat-showcase-number">100%</div>
@@ -1175,7 +1103,7 @@
             const currency = currencySelect.value || 'EUR';
 
             if (pairLabel) {
-                pairLabel.textContent = `1 ${currency} = ? TND`;
+                pairLabel.textContent = `1 ${currency} = TND`;
             }
 
             if (emptyState) {
@@ -1267,7 +1195,7 @@
         const refreshFxPanel = async function () {
             if (refreshButton) {
                 refreshButton.disabled = true;
-                refreshButton.textContent = '? Chargement...';
+                refreshButton.textContent = 'Chargement...';
             }
 
             await Promise.all([
@@ -1277,7 +1205,7 @@
 
             if (refreshButton) {
                 refreshButton.disabled = false;
-                refreshButton.textContent = '?? Actualiser';
+                refreshButton.textContent = 'Actualiser';
             }
         };
 
@@ -1300,69 +1228,6 @@
         refreshFxPanel();
     })();
 </script>
-<div id="google_translate_element" style="display:none;"></div>
-<script>
-    (function () {
-        const toggle = document.getElementById('portalTranslateToggle');
-        const menu = document.getElementById('portalTranslateMenu');
-        const widget = document.getElementById('portalTranslateWidget');
-
-        const setTranslateCookie = function (value) {
-            const host = window.location.hostname;
-            document.cookie = 'googtrans=' + value + ';path=/';
-            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
-                document.cookie = 'googtrans=' + value + ';path=/;domain=.' + host;
-            }
-        };
-
-        const clearTranslateCookie = function () {
-            const host = window.location.hostname;
-            document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
-            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
-                document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + host;
-            }
-        };
-
-        if (toggle && menu) {
-            toggle.addEventListener('click', function () {
-                menu.classList.toggle('open');
-            });
-
-            document.addEventListener('click', function (event) {
-                if (!widget || widget.contains(event.target)) {
-                    return;
-                }
-                menu.classList.remove('open');
-            });
-
-            menu.querySelectorAll('[data-lang]').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    const lang = button.getAttribute('data-lang') || 'en';
-                    if (lang === 'original') {
-                        clearTranslateCookie();
-                    } else {
-                        setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
-                    }
-                    window.location.reload();
-                });
-            });
-        }
-    })();
-
-    function googleTranslateElementInit() {
-        if (!window.google || !window.google.translate || !window.google.translate.TranslateElement) {
-            return;
-        }
-
-        new window.google.translate.TranslateElement({
-            pageLanguage: 'fr',
-            includedLanguages: 'fr,en,ar,es,de,it',
-            autoDisplay: false,
-            multilanguagePage: true
-        }, 'google_translate_element');
-    }
-</script>
-
 <script>
 // Theme toggle for sponsor portal
 function toggleTheme() {
@@ -1411,6 +1276,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
