@@ -436,13 +436,14 @@
                                         <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 10px;"></i>
                                     </button>
                                     <div id="languageDropdown" class="language-dropdown" style="position: absolute; left: 0; top: 100%; background: white; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); min-width: 200px; display: none; z-index: 1002; margin-top: 5px; border: 1px solid #e2e8f0;">
-                                        <a href="{{ path(app.request.get('_route'), app.request.query.all|merge({_locale: 'fr'})) }}" class="dropdown-item" style="padding: 8px 12px; color: #333; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 4px;">
+                                        {% set routeParams = app.request.attributes.get('_route_params', {}) %}
+                                        <a href="{{ path(app.request.get('_route'), routeParams|merge(app.request.query.all)|merge({_locale: 'fr'})) }}" class="dropdown-item" style="padding: 8px 12px; color: #333; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 4px;">
                                             <span style="margin-right: 5px;">🇫🇷</span> Français
                                         </a>
-                                        <a href="{{ path(app.request.get('_route'), app.request.query.all|merge({_locale: 'en'})) }}" class="dropdown-item" style="padding: 8px 12px; color: #333; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 4px;">
+                                        <a href="{{ path(app.request.get('_route'), routeParams|merge(app.request.query.all)|merge({_locale: 'en'})) }}" class="dropdown-item" style="padding: 8px 12px; color: #333; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 4px;">
                                             <span style="margin-right: 5px;">🇬🇧</span> English
                                         </a>
-                                        <a href="{{ path(app.request.get('_route'), app.request.query.all|merge({_locale: 'es'})) }}" class="dropdown-item" style="padding: 8px 12px; color: #333; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 4px;">
+                                        <a href="{{ path(app.request.get('_route'), routeParams|merge(app.request.query.all)|merge({_locale: 'es'})) }}" class="dropdown-item" style="padding: 8px 12px; color: #333; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 4px;">
                                             <span style="margin-right: 5px;">🇪🇸</span> Español
                                         </a>
                                     </div>

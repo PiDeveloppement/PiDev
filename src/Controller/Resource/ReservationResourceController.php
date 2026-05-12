@@ -149,11 +149,16 @@ class ReservationResourceController extends AbstractController
             }
             
             $emailReservationData = [
+                'id' => $reservation->getId(),
                 'resource_name' => $resourceName,
                 'start_time' => $reservation->getStartTime()?->format('Y-m-d H:i:s') ?? '',
                 'end_time' => $reservation->getEndTime()?->format('Y-m-d H:i:s') ?? '',
                 'quantity' => $reservation->getQuantity() ?? 1,
-                'status' => 'confirmée'
+                'status' => 'confirmée',
+                'heureDebut' => $reservation->getStartTime(),
+                'heureFin' => $reservation->getEndTime(),
+                'dateReservation' => $reservation->getStartTime(),
+                'motif' => $reservation->getEvent() ? $reservation->getEvent()->getTitle() : 'Réservation de ressource'
             ];
             $emailService->sendReservationConfirmation($userEmail, $userName, $emailReservationData);
             

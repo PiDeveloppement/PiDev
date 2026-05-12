@@ -63,7 +63,7 @@
                         <label for="name" style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151; font-size: 14px;">
                             <i class="fas fa-tag" style="margin-right: 5px;"></i>Nom de Salle ou Équipement
                         </label>
-                        <input type="text" name="name" id="name" data-turbo-permanent="false" value="{{ filters.name }}" placeholder="Rechercher..." 
+                        <input type="text" name="name" id="name" data-turbo-permanent="false" value="{{ filters.name|default('') }}" placeholder="Rechercher..." 
                                style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;">
                     </div>
                     <div>
@@ -73,8 +73,8 @@
                         <select name="resourceType" id="resourceType" data-turbo-permanent="false" 
                                 style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: white; transition: border-color 0.2s;">
                             <option value="">Tous les types</option>
-                            <option value="SALLE" {% if filters.resourceType == 'SALLE' %}selected{% endif %}>Salle</option>
-                            <option value="EQUIPEMENT" {% if filters.resourceType == 'EQUIPEMENT' %}selected{% endif %}>Équipement</option>
+                            <option value="SALLE" {% if filters.resourceType|default('') == 'SALLE' %}selected{% endif %}>Salle</option>
+                            <option value="EQUIPEMENT" {% if filters.resourceType|default('') == 'EQUIPEMENT' %}selected{% endif %}>Équipement</option>
                         </select>
                     </div>
                     <div>
