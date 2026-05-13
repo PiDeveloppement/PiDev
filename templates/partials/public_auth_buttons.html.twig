@@ -319,6 +319,56 @@
             window.location.reload();
         }
 
+        function ensureGoogleTranslateMounted() {
+            if (!document.getElementById('google_translate_element')) {
+                const container = document.createElement('div');
+                container.id = 'google_translate_element';
+                container.style.display = 'none';
+                document.body.appendChild(container);
+            }
+        }
+
+        function bootGoogleTranslate() {
+            ensureGoogleTranslateMounted();
+
+            if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+                if (!window.EventFlowGoogleTranslateInitialized) {
+                    new window.google.translate.TranslateElement({
+                        pageLanguage: 'fr',
+                        includedLanguages: 'fr,en,ar,es,de,it',
+                        autoDisplay: false,
+                        multilanguagePage: true
+                    }, 'google_translate_element');
+                    window.EventFlowGoogleTranslateInitialized = true;
+                }
+                return;
+            }
+
+            if (window.EventFlowGoogleTranslateBootstrapped) {
+                return;
+            }
+
+            window.EventFlowGoogleTranslateBootstrapped = true;
+            window.googleTranslateElementInit = function () {
+                ensureGoogleTranslateMounted();
+
+                if (!window.EventFlowGoogleTranslateInitialized && window.google && window.google.translate && window.google.translate.TranslateElement) {
+                    new window.google.translate.TranslateElement({
+                        pageLanguage: 'fr',
+                        includedLanguages: 'fr,en,ar,es,de,it',
+                        autoDisplay: false,
+                        multilanguagePage: true
+                    }, 'google_translate_element');
+                    window.EventFlowGoogleTranslateInitialized = true;
+                }
+            };
+
+            const script = document.createElement('script');
+            script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+            script.async = true;
+            document.body.appendChild(script);
+        }
+
         function escapeHtml(value) {
             return String(value)
                 .replace(/&/g, '&amp;')
@@ -443,6 +493,7 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             setTheme(localStorage.getItem('theme') === 'dark');
+            bootGoogleTranslate();
 
             document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {
                 button.addEventListener('click', function () {

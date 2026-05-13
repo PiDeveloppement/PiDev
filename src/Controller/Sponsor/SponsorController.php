@@ -805,15 +805,8 @@ class SponsorController extends AbstractController
 
         $allEvents = $this->sponsorService->fetchEventsCatalog();
         $recommendedEvents = $isSponsorSession
-            ? $this->sponsorService->buildRecommendedEvents($allEvents, $user, $email)
+            ? $this->sponsorService->buildRecommendedEvents($allEvents, $user, $email, $sponsoredEventIds)
             : array_slice($allEvents, 0, 6);
-
-        if ($isSponsorSession && $sponsoredEventIds !== []) {
-            $recommendedEvents = array_values(array_filter(
-                $recommendedEvents,
-                static fn (array $event): bool => !in_array((int) ($event['id'] ?? 0), $sponsoredEventIds, true)
-            ));
-        }
 
         if ($query !== '') {
             $needle = mb_strtolower($query);
@@ -848,6 +841,10 @@ class SponsorController extends AbstractController
             $recommendedEvents,
             fn (array $event): bool => $this->sponsorService->resolveEventStatus($event['startDate'] ?? null, $event['endDate'] ?? null)['key'] !== 'termine'
         )), $sort);
+
+        if ($recommendedEvents === []) {
+            $recommendedEvents = array_slice($sponsorableEvents, 0, 6);
+        }
 
         if ($isSponsorSession && $request->hasSession()) {
             $today = (new \DateTimeImmutable())->format('Y-m-d');

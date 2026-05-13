@@ -79,6 +79,22 @@
             top: -4px;
         }
 
+        .landing-language-select {
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #1e293b;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .landing-language-select:hover {
+            border-color: #94a3b8;
+        }
+
         .participant-chip {
             display: inline-flex;
             align-items: center;
@@ -816,6 +832,15 @@
             </div>
 
             <div class="nav-buttons">
+                <select id="landingLanguageSelect" class="landing-language-select" aria-label="Choisir la langue">
+                    <option value="original">Original</option>
+                    <option value="fr">Français</option>
+                    <option value="en">English</option>
+                    <option value="ar">العربية</option>
+                    <option value="es">Español</option>
+                    <option value="de">Deutsch</option>
+                    <option value="it">Italiano</option>
+                </select>
                 {% include 'partials/public_auth_buttons.html.twig' %}
                 <div style="display:none;">
                 {% if isParticipantUser %}
@@ -1063,6 +1088,39 @@
             card.addEventListener('mouseleave', function() {
                 this.style.transform = 'translateY(0)';
                 this.style.boxShadow = 'none';
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const languageSelect = document.getElementById('landingLanguageSelect');
+            if (!languageSelect) {
+                return;
+            }
+
+            const translateCookie = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('googtrans='));
+
+            if (translateCookie) {
+                const cookieValue = decodeURIComponent(translateCookie.split('=')[1] ?? '');
+                const languageCode = cookieValue.split('/').filter(Boolean).pop() ?? 'original';
+                languageSelect.value = languageCode;
+            } else {
+                languageSelect.value = 'original';
+            }
+
+            languageSelect.addEventListener('change', function () {
+                const lang = languageSelect.value;
+
+                if (lang === 'original') {
+                    if (typeof clearTranslateCookie === 'function') {
+                        clearTranslateCookie();
+                    }
+                } else if (typeof setTranslateCookie === 'function') {
+                    setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+                }
+
+                window.location.reload();
             });
         });
     </script>

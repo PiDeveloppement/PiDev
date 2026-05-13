@@ -136,13 +136,17 @@ class SponsorService
      * @param array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}> $events
      * @return array<int,array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable}>
      */
-    public function buildRecommendedEvents(array $events, UserModel $user, string $email): array
+    public function buildRecommendedEvents(array $events, UserModel $user, string $email, array $excludedEventIds = [], int $limit = 6): array
     {
         // La recommandation se base sur l'historique de contribution du sponsor.
         $contributionsByEvent = $this->sponsorRepository->getMyContributionsByEvent($email);
-        $ranked = $this->rankEventsForSponsor($events, $contributionsByEvent);
+        $eligibleEvents = array_values(array_filter(
+            $events,
+            fn (array $event): bool => $this->isEventEligibleForRecommendation($event, $excludedEventIds)
+        ));
+        $ranked = $this->rankEventsForSponsor($eligibleEvents, $contributionsByEvent);
 
-        return array_slice($ranked, 0, 6);
+        return array_slice($ranked, 0, max(1, $limit));
     }
 
     /**
@@ -203,6 +207,22 @@ class SponsorService
         });
 
         return array_map(static fn (array $row): array => $row['event'], $scored);
+    }
+
+    /**
+     * @param array{id:int,title:string,description:string,location:string,imageUrl:?string,capacity:int,participantsCount:int,startDate:?\DateTimeImmutable,endDate:?\DateTimeImmutable} $event
+     * @param int[] $excludedEventIds
+     */
+    private function isEventEligibleForRecommendation(array $event, array $excludedEventIds = []): bool
+    {
+        $eventId = (int) ($event['id'] ?? 0);
+        if ($eventId <= 0 || in_array($eventId, $excludedEventIds, true)) {
+            return false;
+        }
+
+        $status = $this->resolveEventStatus($event['startDate'] ?? null, $event['endDate'] ?? null);
+
+        return $status['key'] !== 'termine';
     }
 
     /**
