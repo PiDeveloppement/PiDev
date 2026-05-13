@@ -88,9 +88,9 @@ class BudgetController extends AbstractController
         usort($budgets, function (Budget $a, Budget $b) use ($sort) {
             switch ($sort) {
                 case 'name-asc':
-                    return strcasecmp((string) ($a->getEventId() ?? ''), (string) ($b->getEventId() ?? ''));
+                    return strcasecmp($a->getEventId(), $b->getEventId());
                 case 'name-desc':
-                    return strcasecmp((string) ($b->getEventId() ?? ''), (string) ($a->getEventId() ?? ''));
+                    return strcasecmp($b->getEventId(), $a->getEventId());
                 case 'budget-asc':
                     return ((float) $a->getInitialBudget()) <=> ((float) $b->getInitialBudget());
                 case 'budget-desc':

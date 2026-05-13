@@ -17,3 +17,8 @@ class DepenseRepository extends ServiceEntityRepository
         parent::__construct($registry, Depense::class);
     }
 }
+
+
+
+
+

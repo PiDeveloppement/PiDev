@@ -63,13 +63,13 @@ class SponsorController extends AbstractController
         usort($sponsors, function (Sponsor $a, Sponsor $b) use ($sort): int {
             switch ($sort) {
                 case 'name-asc':
-                    return strcasecmp((string) $a->getCompanyName(), (string) $b->getCompanyName());
+                    return strcasecmp($a->getCompanyName() ?? '', $b->getCompanyName() ?? '');
                 case 'name-desc':
-                    return strcasecmp((string) $b->getCompanyName(), (string) $a->getCompanyName());
+                    return strcasecmp($b->getCompanyName() ?? '', $a->getCompanyName() ?? '');
                 case 'contribution-asc':
-                    return ((float) $a->getContributionAmount()) <=> ((float) $b->getContributionAmount());
+                    return ((float) ($a->getContributionAmount() ?? 0)) <=> ((float) ($b->getContributionAmount() ?? 0));
                 case 'contribution-desc':
-                    return ((float) $b->getContributionAmount()) <=> ((float) $a->getContributionAmount());
+                    return ((float) ($b->getContributionAmount() ?? 0)) <=> ((float) ($a->getContributionAmount() ?? 0));
                 case 'date-asc':
                     return ((int) ($a->getId() ?? 0)) <=> ((int) ($b->getId() ?? 0));
                 case 'date-desc':
@@ -100,10 +100,10 @@ class SponsorController extends AbstractController
                 ];
             }
 
-            $companyCardsMap[$companyKey]['contributionTotal'] += (float) $sponsor->getContributionAmount();
+            $companyCardsMap[$companyKey]['contributionTotal'] += (float) ($sponsor->getContributionAmount() ?? 0.0);
             $companyCardsMap[$companyKey]['contributionsCount']++;
 
-            $eventId = (int) $sponsor->getEventId();
+            $eventId = (int) ($sponsor->getEventId() ?? 0);
             if ($eventId > 0) {
                 $companyCardsMap[$companyKey]['eventIds'][$eventId] = true;
             }
@@ -112,7 +112,7 @@ class SponsorController extends AbstractController
                 $companyCardsMap[$companyKey]['logoUrl'] = (string) $sponsor->getLogoUrl();
             }
 
-            if ((int) ($sponsor->getId() ?? 0) > $companyCardsMap[$companyKey]['representativeSponsorId']) {
+            if ((int) ($sponsor->getId() ?? 0) > (int) ($companyCardsMap[$companyKey]['representativeSponsorId'] ?? 0)) {
                 $companyCardsMap[$companyKey]['representativeSponsorId'] = (int) $sponsor->getId();
                 if ((string) ($sponsor->getContactEmail() ?? '') !== '') {
                     $companyCardsMap[$companyKey]['contactEmail'] = (string) $sponsor->getContactEmail();
@@ -121,7 +121,7 @@ class SponsorController extends AbstractController
         }
 
         $companyCards = array_values(array_map(static function (array $row): array {
-            $row['eventsCount'] = count((array) $row['eventIds']);
+            $row['eventsCount'] = count((array) ($row['eventIds'] ?? []));
             unset($row['eventIds']);
 
             return $row;
@@ -129,13 +129,13 @@ class SponsorController extends AbstractController
 
         usort($companyCards, static function (array $a, array $b) use ($sort): int {
             return match ($sort) {
-                'name-asc' => strcasecmp((string) $a['companyName'], (string) $b['companyName']),
-                'name-desc' => strcasecmp((string) $b['companyName'], (string) $a['companyName']),
-                'contribution-asc' => ((float) $a['contributionTotal']) <=> ((float) $b['contributionTotal']),
-                'contribution-desc' => ((float) $b['contributionTotal']) <=> ((float) $a['contributionTotal']),
-                'date-asc' => ((int) $a['representativeSponsorId']) <=> ((int) $b['representativeSponsorId']),
-                'date-desc' => ((int) $b['representativeSponsorId']) <=> ((int) $a['representativeSponsorId']),
-                default => ((float) $b['contributionTotal']) <=> ((float) $a['contributionTotal']),
+                'name-asc' => strcasecmp((string) ($a['companyName'] ?? ''), (string) ($b['companyName'] ?? '')),
+                'name-desc' => strcasecmp((string) ($b['companyName'] ?? ''), (string) ($a['companyName'] ?? '')),
+                'contribution-asc' => ((float) ($a['contributionTotal'] ?? 0)) <=> ((float) ($b['contributionTotal'] ?? 0)),
+                'contribution-desc' => ((float) ($b['contributionTotal'] ?? 0)) <=> ((float) ($a['contributionTotal'] ?? 0)),
+                'date-asc' => ((int) ($a['representativeSponsorId'] ?? 0)) <=> ((int) ($b['representativeSponsorId'] ?? 0)),
+                'date-desc' => ((int) ($b['representativeSponsorId'] ?? 0)) <=> ((int) ($a['representativeSponsorId'] ?? 0)),
+                default => ((float) ($b['contributionTotal'] ?? 0)) <=> ((float) ($a['contributionTotal'] ?? 0)),
             };
         });
 
@@ -152,41 +152,41 @@ class SponsorController extends AbstractController
                 $latestByContact[$contactKey] = [
                     'companyName' => (string) ($item->getCompanyName() ?: '-'),
                     'contactEmail' => (string) ($item->getContactEmail() ?: '-'),
-                    'representativeSponsorId' => (int) $item->getId(),
+                    'representativeSponsorId' => (int) ($item->getId() ?? 0),
                     'lastContributionId' => $contributionId,
-                    'lastContributionAmount' => (float) $item->getContributionAmount(),
+                    'lastContributionAmount' => (float) ($item->getContributionAmount() ?? 0.0),
                     'contributionTotal' => 0.0,
                     'sponsorshipCount' => 0,
                 ];
             }
 
-            $latestByContact[$contactKey]['contributionTotal'] += (float) $item->getContributionAmount();
+            $latestByContact[$contactKey]['contributionTotal'] += (float) ($item->getContributionAmount() ?? 0.0);
             $latestByContact[$contactKey]['sponsorshipCount']++;
 
-            if ($contributionId > $latestByContact[$contactKey]['lastContributionId']) {
+            if (!isset($latestByContact[$contactKey]) || $contributionId > (int) ($latestByContact[$contactKey]['lastContributionId'] ?? 0)) {
                 $latestByContact[$contactKey] = [
                     'companyName' => (string) ($item->getCompanyName() ?: '-'),
                     'contactEmail' => (string) ($item->getContactEmail() ?: '-'),
-                    'representativeSponsorId' => (int) $item->getId(),
+                    'representativeSponsorId' => (int) ($item->getId() ?? 0),
                     'lastContributionId' => $contributionId,
-                    'lastContributionAmount' => (float) $item->getContributionAmount(),
-                    'contributionTotal' => (float) $latestByContact[$contactKey]['contributionTotal'],
-                    'sponsorshipCount' => (int) $latestByContact[$contactKey]['sponsorshipCount'],
+                    'lastContributionAmount' => (float) ($item->getContributionAmount() ?? 0.0),
+                    'contributionTotal' => (float) ($latestByContact[$contactKey]['contributionTotal'] ?? 0.0),
+                    'sponsorshipCount' => (int) ($latestByContact[$contactKey]['sponsorshipCount'] ?? 0),
                 ];
             }
         }
 
         // 6) Detecter les sponsors "froids" en comparant leur derniere activite au rythme global.
         $inactiveSponsorAlerts = array_values(array_filter($latestByContact, static function (array $row) use ($latestContributionId): bool {
-            $contributionsSinceLast = max(0, $latestContributionId - $row['lastContributionId']);
+            $contributionsSinceLast = max(0, $latestContributionId - (int) ($row['lastContributionId'] ?? 0));
 
             return $contributionsSinceLast >= 3;
         }));
 
         $inactiveSponsorAlerts = array_map(static function (array $row) use ($latestContributionId): array {
-            $contributionsSinceLast = max(0, $latestContributionId - $row['lastContributionId']);
-            $contributionTotal = (float) $row['contributionTotal'];
-            $sponsorshipCount = (int) $row['sponsorshipCount'];
+            $contributionsSinceLast = max(0, $latestContributionId - (int) ($row['lastContributionId'] ?? 0));
+            $contributionTotal = (float) ($row['contributionTotal'] ?? 0.0);
+            $sponsorshipCount = (int) ($row['sponsorshipCount'] ?? 0);
 
             // 7) Produire un score de risque metier pour prioriser les relances.
             $riskScore = (int) round(
@@ -222,12 +222,12 @@ class SponsorController extends AbstractController
         }, $inactiveSponsorAlerts);
 
         usort($inactiveSponsorAlerts, static function (array $a, array $b): int {
-            $scoreOrder = ((int) $b['riskScore']) <=> ((int) $a['riskScore']);
+            $scoreOrder = ((int) ($b['riskScore'] ?? 0)) <=> ((int) ($a['riskScore'] ?? 0));
             if ($scoreOrder !== 0) {
                 return $scoreOrder;
             }
 
-            return ((int) $b['contributionsSinceLast']) <=> ((int) $a['contributionsSinceLast']);
+            return ((int) ($b['contributionsSinceLast'] ?? 0)) <=> ((int) ($a['contributionsSinceLast'] ?? 0));
         });
         $inactiveSponsorAlerts = array_slice($inactiveSponsorAlerts, 0, 8);
 
@@ -245,8 +245,8 @@ class SponsorController extends AbstractController
 
         // 10) Graphe barre: comparaison des montants de contribution par evenement.
         $topEventContributionMap = array_slice($stats['byEvent'], 0, 5, true);
-        $eventLabels = array_map(static fn (mixed $value): string => (string) $value, array_keys($topEventContributionMap));
-        $eventValues = array_map(static fn (mixed $value): float => (float) $value, array_values($topEventContributionMap));
+        $eventLabels = array_values(array_map(static fn (mixed $value): string => (string) $value, array_keys($topEventContributionMap)));
+        $eventValues = array_values(array_map(static fn (mixed $value): float => (float) $value, array_values($topEventContributionMap)));
 
         $eventsByContributionChart = $this->chartBuilder->createChart(Chart::TYPE_BAR);
         $eventsByContributionChart->setData([
@@ -286,8 +286,8 @@ class SponsorController extends AbstractController
 
         $eventSponsorCountMap = array_slice($eventSponsorCountMap, 0, 5, true);
 
-        $eventVolumeLabels = array_map(static fn (mixed $value): string => (string) $value, array_keys($eventSponsorCountMap));
-        $eventVolumeValues = array_map(static fn (mixed $value): int => (int) $value, array_values($eventSponsorCountMap));
+        $eventVolumeLabels = array_values(array_map(static fn (mixed $value): string => (string) $value, array_keys($eventSponsorCountMap)));
+        $eventVolumeValues = array_values(array_map(static fn (mixed $value): int => (int) $value, array_values($eventSponsorCountMap)));
 
         $eventsShareChart = $this->chartBuilder->createChart(Chart::TYPE_BAR);
         $eventsShareChart->setData([
@@ -323,8 +323,8 @@ class SponsorController extends AbstractController
         ]);
 
         // 12) Graphe donut: repartition des top sponsors par contribution totale.
-        $topCompanyLabels = array_map(static fn (mixed $value): string => (string) $value, array_keys($stats['topCompanies']));
-        $topCompanyValues = array_map(static fn (mixed $value): float => (float) $value, array_values($stats['topCompanies']));
+        $topCompanyLabels = array_values(array_map(static fn (mixed $value): string => (string) $value, array_keys($stats['topCompanies'])));
+        $topCompanyValues = array_values(array_map(static fn (mixed $value): float => (float) $value, array_values($stats['topCompanies'])));
 
         $topSponsorsChart = $this->chartBuilder->createChart(Chart::TYPE_DOUGHNUT);
         $topSponsorsChart->setData([
@@ -437,7 +437,7 @@ class SponsorController extends AbstractController
             'Critique' => 0,
         ];
         foreach ($inactiveSponsorAlerts as $alertRow) {
-            $severityLabel = (string) $alertRow['severityLabel'];
+            $severityLabel = (string) ($alertRow['severityLabel'] ?? 'Modere');
             if (!array_key_exists($severityLabel, $alertDistributionMap)) {
                 $alertDistributionMap[$severityLabel] = 0;
             }
@@ -520,12 +520,12 @@ class SponsorController extends AbstractController
 
         $contributionTotal = array_reduce(
             $sponsors,
-            static fn (float $sum, Sponsor $item): float => $sum + (float) $item->getContributionAmount(),
+            static fn (float $sum, Sponsor $item): float => $sum + (float) ($item->getContributionAmount() ?? 0.0),
             0.0
         );
 
         $eventsCount = count(array_unique(array_filter(
-            array_map(static fn (Sponsor $item): int => (int) $item->getEventId(), $sponsors),
+            array_map(static fn (Sponsor $item): int => (int) ($item->getEventId() ?? 0), $sponsors),
             static fn (int $eventId): bool => $eventId > 0
         )));
 
@@ -555,7 +555,7 @@ class SponsorController extends AbstractController
 
         if ($form->isSubmitted()) {
             // Server-side validation: check contribution field and display red error
-            $contributionValue = trim((string) $sponsor->getContributionName());
+            $contributionValue = trim((string) ($sponsor->getContributionName() ?? ''));
             if ($contributionValue === '' || $contributionValue === '0' || $contributionValue === '0.00') {
                 $form->get('contributionName')->addError(new \Symfony\Component\Form\FormError('La contribution est obligatoire.'));
             }
@@ -605,7 +605,7 @@ class SponsorController extends AbstractController
 
         if ($form->isSubmitted()) {
             // Server-side validation: check contribution field and display red error
-            $contributionValue = trim((string) $sponsor->getContributionName());
+            $contributionValue = trim((string) ($sponsor->getContributionName() ?? ''));
             if ($contributionValue === '' || $contributionValue === '0' || $contributionValue === '0.00') {
                 $form->get('contributionName')->addError(new \Symfony\Component\Form\FormError('La contribution est obligatoire.'));
             }
@@ -716,12 +716,12 @@ class SponsorController extends AbstractController
         }
 
         $result = $this->sponsorAlertEmailService->sendRecommendationEmailForContact($email);
-        if ($result['sent'] === true) {
+        if (($result['sent'] ?? false) === true) {
             $this->addFlash('success', 'Email de recommandations envoye a ' . $email . '.');
             return $this->redirect($redirectTo);
         }
 
-        $reason = (string) $result['reason'];
+        $reason = (string) ($result['reason'] ?? '');
         if ($reason === 'no_recommendations') {
             $this->addFlash('error', 'Aucune recommandation disponible pour ' . $email . '.');
         } elseif ($reason === 'missing_email') {
@@ -805,15 +805,8 @@ class SponsorController extends AbstractController
 
         $allEvents = $this->sponsorService->fetchEventsCatalog();
         $recommendedEvents = $isSponsorSession
-            ? $this->sponsorService->buildRecommendedEvents($allEvents, $user, $email)
+            ? $this->sponsorService->buildRecommendedEvents($allEvents, $user, $email, $sponsoredEventIds)
             : array_slice($allEvents, 0, 6);
-
-        if ($isSponsorSession && $sponsoredEventIds !== []) {
-            $recommendedEvents = array_values(array_filter(
-                $recommendedEvents,
-                static fn (array $event): bool => !in_array((int) $event['id'], $sponsoredEventIds, true)
-            ));
-        }
 
         if ($query !== '') {
             $needle = mb_strtolower($query);
@@ -823,11 +816,11 @@ class SponsorController extends AbstractController
             }));
 
             $allEvents = array_values(array_filter($allEvents, static function (array $event) use ($needle): bool {
-                return str_contains(mb_strtolower((string) $event['title']), $needle);
+                return str_contains(mb_strtolower((string) ($event['title'] ?? '')), $needle);
             }));
 
             $recommendedEvents = array_values(array_filter($recommendedEvents, static function (array $event) use ($needle): bool {
-                return str_contains(mb_strtolower((string) $event['title']), $needle);
+                return str_contains(mb_strtolower((string) ($event['title'] ?? '')), $needle);
             }));
         }
 
@@ -840,7 +833,7 @@ class SponsorController extends AbstractController
         if ($isSponsorSession && $sponsoredEventIds !== []) {
             $sponsorableEvents = array_values(array_filter(
                 $sponsorableEvents,
-                static fn (array $event): bool => !in_array((int) $event['id'], $sponsoredEventIds, true)
+                static fn (array $event): bool => !in_array((int) ($event['id'] ?? 0), $sponsoredEventIds, true)
             ));
         }
         $archivedEvents = $this->sponsorService->sortEvents($eventBuckets['archived'], $sort);
@@ -848,6 +841,10 @@ class SponsorController extends AbstractController
             $recommendedEvents,
             fn (array $event): bool => $this->sponsorService->resolveEventStatus($event['startDate'] ?? null, $event['endDate'] ?? null)['key'] !== 'termine'
         )), $sort);
+
+        if ($recommendedEvents === []) {
+            $recommendedEvents = array_slice($sponsorableEvents, 0, 6);
+        }
 
         if ($isSponsorSession && $request->hasSession()) {
             $today = (new \DateTimeImmutable())->format('Y-m-d');
@@ -917,12 +914,12 @@ class SponsorController extends AbstractController
         $seen = [];
 
         foreach ($allEvents as $event) {
-            $title = (string) $event['title'];
+            $title = (string) ($event['title'] ?? '');
             $titleLower = mb_strtolower($title);
             if ($title !== '' && str_contains($titleLower, $needle) && !in_array($title, $seen, true)) {
                 $suggestions[] = [
                     'title' => $title,
-                    'location' => (string) $event['location'],
+                    'location' => (string) ($event['location'] ?? ''),
                 ];
                 $seen[] = $title;
             }
@@ -960,7 +957,7 @@ class SponsorController extends AbstractController
             if ($query !== '') {
                 $needle = mb_strtolower($query);
                 $historyItems = array_values(array_filter($historyItems, static function (array $item) use ($needle): bool {
-                    return str_contains(mb_strtolower((string) $item['eventTitle']), $needle);
+                    return str_contains(mb_strtolower((string) ($item['eventTitle'] ?? '')), $needle);
                 }));
             }
 
@@ -979,8 +976,8 @@ class SponsorController extends AbstractController
             $stats = [
                 'count' => count($historyItems),
                 'total' => array_reduce($historyItems, static fn (float $sum, array $item): float => $sum + (float) $item['contribution'], 0.0),
-                'ongoing' => count(array_filter($historyItems, static fn (array $item): bool => $item['statusKey'] === 'en_cours')),
-                'ended' => count(array_filter($historyItems, static fn (array $item): bool => $item['statusKey'] === 'termine')),
+                'ongoing' => count(array_filter($historyItems, static fn (array $item): bool => ($item['statusKey'] ?? '') === 'en_cours')),
+                'ended' => count(array_filter($historyItems, static fn (array $item): bool => ($item['statusKey'] ?? '') === 'termine')),
             ];
         }
 
@@ -1056,7 +1053,7 @@ class SponsorController extends AbstractController
             $hasErrors = false;
             
             // Validate contribution
-            $contributionValue = trim((string) $sponsor->getContributionName());
+            $contributionValue = trim((string) ($sponsor->getContributionName() ?? ''));
             if ($contributionValue === '' || $contributionValue === '0' || $contributionValue === '0.00') {
                 $form->get('contributionName')->addError(new \Symfony\Component\Form\FormError('La contribution est obligatoire.'));
                 $hasErrors = true;
@@ -1113,7 +1110,7 @@ class SponsorController extends AbstractController
         }
 
         return $this->render('sponsor/portal_form.html.twig', [
-            'pageInfo' => ['title' => 'Sponsoriser un evenement', 'subtitle' => (string) $event['title']],
+            'pageInfo' => ['title' => 'Sponsoriser un evenement', 'subtitle' => (string) ($event['title'] ?? '')],
             'event' => $event,
             'form' => $form->createView(),
             'isEdit' => false,
@@ -1142,7 +1139,7 @@ class SponsorController extends AbstractController
         if ($form->isSubmitted()) {
             // Server-side validation: check required fields and display red errors
             // Validate contribution
-            $contributionValue = trim((string) $sponsor->getContributionName());
+            $contributionValue = trim((string) ($sponsor->getContributionName() ?? ''));
             if ($contributionValue === '' || $contributionValue === '0' || $contributionValue === '0.00') {
                 $form->get('contributionName')->addError(new \Symfony\Component\Form\FormError('La contribution est obligatoire.'));
             }
@@ -1305,10 +1302,7 @@ class SponsorController extends AbstractController
     private function storeUploadedFile(Request $request, UploadedFile $file, string $bucket): string
     {
         // Les documents sponsor sont stockes dans public/uploads pour etre accessibles depuis l'interface.
-        $projectDir = $this->getParameter('kernel.project_dir');
-        if (!is_string($projectDir)) {
-            throw new \RuntimeException('kernel.project_dir must be a string');
-        }
+        $projectDir = (string) $this->getParameter('kernel.project_dir');
         $targetDir = $projectDir . '/public/uploads/sponsor/' . $bucket;
 
         if (!is_dir($targetDir) && !mkdir($targetDir, 0775, true) && !is_dir($targetDir)) {
@@ -1318,7 +1312,7 @@ class SponsorController extends AbstractController
         $base = pathinfo((string) $file->getClientOriginalName(), PATHINFO_FILENAME);
         $safeBase = (string) $this->slugger->slug($base !== '' ? $base : 'fichier');
         $extension = $file->guessExtension() ?: $file->getClientOriginalExtension() ?: 'bin';
-        $filename = $safeBase . '-' . bin2hex(random_bytes(4)) . '.' . (string) $extension;
+        $filename = $safeBase . '-' . bin2hex(random_bytes(4)) . '.' . $extension;
 
         try {
             $file->move($targetDir, $filename);
@@ -1330,9 +1324,6 @@ class SponsorController extends AbstractController
         return rtrim($request->getSchemeAndHttpHost(), '/') . $publicPath;
     }
 
-    /**
-     * @param array<string, int|string|null> $backRouteParams
-     */
     private function createSponsorContractResponse(Sponsor $sponsor, bool $inline, string $backRoute, array $backRouteParams = []): Response
     {
         // Le contrat est toujours regenere a la demande pour refleter les donnees les plus recentes.
@@ -1464,7 +1455,7 @@ class SponsorController extends AbstractController
                         $this->sanitizeCsvText($eventTitleMap[$eventId] ?? '-'),
                         $this->sanitizeCsvText($sponsor->getCompanyName()),
                         $this->sanitizeCsvText($sponsor->getContactEmail()),
-                        number_format((float) $sponsor->getContributionAmount(), 2, ',', ''),
+                        number_format((float) ($sponsor->getContributionAmount() ?? 0), 2, ',', ''),
                         $this->sanitizeCsvText($sponsor->getIndustry()),
                         $this->asExcelTextLiteral($sponsor->getPhone()),
                         $this->asExcelTextLiteral($sponsor->getTaxId()),

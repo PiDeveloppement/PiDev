@@ -14,8 +14,7 @@ class Sponsor
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'IDENTITY')]
-    #[ORM\Column(type: Types::INTEGER, nullable: false)]
-    /** @phpstan-ignore-next-line property.unusedType */
+    #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
     #[ORM\Column(name: 'event_id', type: Types::INTEGER)]

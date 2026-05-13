@@ -301,11 +301,9 @@ class DepenseController extends AbstractController
         $messages = [];
 
         foreach ($form->getErrors(true, true) as $error) {
-            if ($error instanceof FormError) {
-                $origin = $error->getOrigin();
-                $fieldName = $origin instanceof FormInterface ? $origin->getName() : 'form';
-                $messages[] = sprintf('Champ "%s": %s', $fieldName, $error->getMessage());
-            }
+            $origin = $error->getOrigin();
+            $fieldName = $origin instanceof FormInterface ? $origin->getName() : 'form';
+            $messages[] = sprintf('Champ "%s": %s', $fieldName, $error->getMessage());
         }
 
         if ($messages === []) {

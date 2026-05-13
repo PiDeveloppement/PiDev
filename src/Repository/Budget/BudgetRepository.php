@@ -32,3 +32,7 @@ class BudgetRepository extends ServiceEntityRepository
         return (int) $qb->getQuery()->getSingleScalarResult() > 0;
     }
 }
+
+
+
+

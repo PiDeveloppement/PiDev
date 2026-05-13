@@ -446,6 +446,21 @@
                                         <a href="{{ path(app.request.get('_route'), routeParams|merge(app.request.query.all)|merge({_locale: 'es'})) }}" class="dropdown-item" style="padding: 8px 12px; color: #333; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 4px;">
                                             <span style="margin-right: 5px;">🇪🇸</span> Español
                                         </a>
+                                        <a href="#" class="dropdown-item" style="padding: 8px 12px; color: #333; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 4px;">
+                                            <span style="margin-right: 5px;">🇸🇦</span> Arabic
+                                        </a>
+                                        <a href="#" class="dropdown-item" style="padding: 8px 12px; color: #333; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 4px;">
+                                            <span style="margin-right: 5px;">🇩🇪</span> Deutsch
+                                        </a>
+                                        <a href="#" class="dropdown-item" style="padding: 8px 12px; color: #333; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 4px;">
+                                            <span style="margin-right: 5px;">🇮🇹</span> Italiano
+                                        </a>
+                                        <a href="#" class="dropdown-item" style="padding: 8px 12px; color: #333; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 4px;">
+                                            <span style="margin-right: 5px;">🇵🇹</span> Português
+                                        </a>
+                                        <a href="#" class="dropdown-item" style="padding: 8px 12px; color: #333; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; border-radius: 4px;">
+                                            <span style="margin-right: 5px;">↺</span> Originale
+                                        </a>
                                     </div>
                                 </div>
                                 <div style="height: 1px; background: #eee; margin: 5px 0;"></div>
@@ -823,6 +838,110 @@
             }
         }
 
+        function setAdminTranslateCookie(value) {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=' + value + ';path=/';
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=' + value + ';path=/;domain=.' + host;
+            }
+        }
+
+        function clearAdminTranslateCookie() {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + host;
+            }
+        }
+
+        function getAdminTranslateLanguage() {
+            const cookie = document.cookie.split('; ').find(function(row) {
+                return row.startsWith('googtrans=');
+            });
+
+            if (!cookie) {
+                return 'original';
+            }
+
+            const value = decodeURIComponent(cookie.split('=')[1] || '');
+            const parts = value.split('/').filter(Boolean);
+
+            return parts.length > 0 ? parts[parts.length - 1] : 'original';
+        }
+
+        function applyAdminLanguageToCombo(lang) {
+            const combo = document.querySelector('#google_translate_element select.goog-te-combo');
+            if (!combo || !lang || lang === 'original') {
+                return false;
+            }
+
+            if (combo.value !== lang) {
+                combo.value = lang;
+                combo.dispatchEvent(new Event('change'));
+            }
+
+            return true;
+        }
+
+        function ensureAdminGoogleTranslate() {
+            let container = document.getElementById('google_translate_element');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'google_translate_element';
+                container.style.display = 'none';
+                document.body.appendChild(container);
+            }
+
+            if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+                if (!window.EventFlowAdminTranslateInitialized) {
+                    new window.google.translate.TranslateElement({
+                        pageLanguage: 'fr',
+                        includedLanguages: 'fr,en,es,ar,de,it,pt',
+                        autoDisplay: false,
+                        multilanguagePage: true
+                    }, 'google_translate_element');
+                    window.EventFlowAdminTranslateInitialized = true;
+                }
+
+                const currentLang = getAdminTranslateLanguage();
+                if (currentLang !== 'original') {
+                    setTimeout(function() {
+                        applyAdminLanguageToCombo(currentLang);
+                    }, 250);
+                }
+                return;
+            }
+
+            if (window.EventFlowAdminTranslateLoading) {
+                return;
+            }
+
+            window.EventFlowAdminTranslateLoading = true;
+            window.googleTranslateElementInit = function() {
+                if (!window.EventFlowAdminTranslateInitialized && window.google && window.google.translate && window.google.translate.TranslateElement) {
+                    new window.google.translate.TranslateElement({
+                        pageLanguage: 'fr',
+                        includedLanguages: 'fr,en,es,ar,de,it,pt',
+                        autoDisplay: false,
+                        multilanguagePage: true
+                    }, 'google_translate_element');
+                    window.EventFlowAdminTranslateInitialized = true;
+                }
+
+                const currentLang = getAdminTranslateLanguage();
+                if (currentLang !== 'original') {
+                    setTimeout(function() {
+                        applyAdminLanguageToCombo(currentLang);
+                    }, 250);
+                }
+            };
+
+            const script = document.createElement('script');
+            script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+            script.async = true;
+            document.body.appendChild(script);
+        }
+
         // Close language dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const languageSubmenu = document.querySelector('.language-submenu');
@@ -849,6 +968,50 @@
                     themeText.textContent = 'Mode Clair';
                 }
             }
+
+            ensureAdminGoogleTranslate();
+
+            document.querySelectorAll('#languageDropdown a').forEach(function(link) {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+
+                    const label = (link.textContent || '').toLowerCase();
+                    let lang = 'original';
+
+                    if (label.includes('english')) {
+                        lang = 'en';
+                    } else if (label.includes('espa')) {
+                        lang = 'es';
+                    } else if (label.includes('fran')) {
+                        lang = 'fr';
+                    } else if (label.includes('arabic')) {
+                        lang = 'ar';
+                    } else if (label.includes('deutsch')) {
+                        lang = 'de';
+                    } else if (label.includes('italiano')) {
+                        lang = 'it';
+                    } else if (label.includes('portugu')) {
+                        lang = 'pt';
+                    } else if (label.includes('originale')) {
+                        lang = 'original';
+                    }
+
+                    if (lang === 'original') {
+                        clearAdminTranslateCookie();
+                        window.location.reload();
+                        return;
+                    }
+
+                    setAdminTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+                    ensureAdminGoogleTranslate();
+
+                    setTimeout(function() {
+                        if (!applyAdminLanguageToCombo(lang)) {
+                            window.location.reload();
+                        }
+                    }, 350);
+                });
+            });
         });
     </script>
     

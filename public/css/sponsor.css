@@ -2280,21 +2280,32 @@
 
 .portal-nav-links {
     display: flex;
-    gap: 26px;
+    gap: 18px;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    justify-content: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
 }
 
 .portal-nav-link {
     color: #1f2937;
     text-decoration: none;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
 }
 
 .portal-nav-link:hover,
 .portal-nav-link.active {
     color: #0d47a1;
+}
+
+.portal-nav-actions {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 
 .portal-user-btn {

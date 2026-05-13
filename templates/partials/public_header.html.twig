@@ -13,23 +13,11 @@
             <a class="portal-nav-link" href="{{ path('app_landing') }}#contact">Contact</a>
         </div>
 
-        <div style="display:flex; align-items:center;">
+        <div class="portal-nav-actions">
             <button onclick="toggleTheme()" style="background: rgba(33, 150, 243, 0.1); color: #2196F3; border: 1px solid #2196F3; border-radius: 20px; padding: 8px 20px; cursor: pointer; font-size: 14px; font-weight: bold; margin-right: 12px;">
                 <i class="fas fa-moon" id="themeIconSponsor"></i>
                 <span id="themeTextSponsor">Mode Sombre</span>
             </button>
-            <div class="portal-translate" id="portalTranslateWidget">
-                <button type="button" class="portal-translate-btn" id="portalTranslateToggle"><i class="fas fa-language"></i> Traduire</button>
-                <div class="portal-translate-menu" id="portalTranslateMenu">
-                    <button type="button" class="portal-translate-opt" data-lang="original">Originale (sans traduction)</button>
-                    <button type="button" class="portal-translate-opt" data-lang="fr">Francais</button>
-                    <button type="button" class="portal-translate-opt" data-lang="en">English</button>
-                    <button type="button" class="portal-translate-opt" data-lang="ar">Arabic</button>
-                    <button type="button" class="portal-translate-opt" data-lang="es">Espanol</button>
-                    <button type="button" class="portal-translate-opt" data-lang="de">Deutsch</button>
-                    <button type="button" class="portal-translate-opt" data-lang="it">Italiano</button>
-                </div>
-            </div>
             {% if app.user %}
                 <details class="portal-account-menu">
                     <summary class="portal-account-chip">
@@ -41,6 +29,16 @@
                     </summary>
                     <div class="portal-account-dropdown">
                         <button type="button" class="portal-account-action">Profile</button>
+                        <button type="button" class="portal-account-action portal-translate-inline-toggle" id="portalTranslateToggle">Traduire</button>
+                        <div class="portal-translate-menu portal-translate-menu-inline" id="portalTranslateMenu">
+                            <button type="button" class="portal-translate-opt" data-lang="original">Originale</button>
+                            <button type="button" class="portal-translate-opt" data-lang="fr">Francais</button>
+                            <button type="button" class="portal-translate-opt" data-lang="en">English</button>
+                            <button type="button" class="portal-translate-opt" data-lang="ar">Arabic</button>
+                            <button type="button" class="portal-translate-opt" data-lang="es">Espanol</button>
+                            <button type="button" class="portal-translate-opt" data-lang="de">Deutsch</button>
+                            <button type="button" class="portal-translate-opt" data-lang="it">Italiano</button>
+                        </div>
                         <a class="portal-account-action" href="{{ path('app_logout') }}">Deconnexion</a>
                     </div>
                 </details>
@@ -53,3 +51,152 @@
         </div>
     </div>
 </nav>
+<div id="google_translate_element" style="display:none;"></div>
+<script>
+    (function () {
+        if (window.EventFlowPortalTranslateReady) {
+            return;
+        }
+        window.EventFlowPortalTranslateReady = true;
+
+        function setTranslateCookie(value) {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=' + value + ';path=/';
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=' + value + ';path=/;domain=.' + host;
+            }
+        }
+
+        function clearTranslateCookie() {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+            if (host && host !== 'localhost' && host.indexOf('.') !== -1) {
+                document.cookie = 'googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.' + host;
+            }
+        }
+
+        function getCurrentLanguage() {
+            const cookie = document.cookie
+                .split('; ')
+                .find(function (row) { return row.startsWith('googtrans='); });
+
+            if (!cookie) {
+                return 'original';
+            }
+
+            const value = decodeURIComponent(cookie.split('=')[1] || '');
+            const parts = value.split('/').filter(Boolean);
+
+            return parts.length > 0 ? parts[parts.length - 1] : 'original';
+        }
+
+        function applyLanguageToCombo(lang) {
+            const combo = document.querySelector('#google_translate_element select.goog-te-combo');
+            if (!combo || !lang || lang === 'original') {
+                return false;
+            }
+
+            if (combo.value !== lang) {
+                combo.value = lang;
+                combo.dispatchEvent(new Event('change'));
+            }
+
+            return true;
+        }
+
+        function ensureGoogleTranslate() {
+            if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+                if (!window.EventFlowPortalTranslateInitialized) {
+                    new window.google.translate.TranslateElement({
+                        pageLanguage: 'fr',
+                        includedLanguages: 'fr,en,ar,es,de,it',
+                        autoDisplay: false,
+                        multilanguagePage: true
+                    }, 'google_translate_element');
+                    window.EventFlowPortalTranslateInitialized = true;
+                }
+
+                const currentLang = getCurrentLanguage();
+                if (currentLang !== 'original') {
+                    window.setTimeout(function () {
+                        applyLanguageToCombo(currentLang);
+                    }, 250);
+                }
+                return;
+            }
+
+            if (window.EventFlowPortalTranslateLoading) {
+                return;
+            }
+
+            window.EventFlowPortalTranslateLoading = true;
+            window.googleTranslateElementInit = function () {
+                if (!window.EventFlowPortalTranslateInitialized && window.google && window.google.translate && window.google.translate.TranslateElement) {
+                    new window.google.translate.TranslateElement({
+                        pageLanguage: 'fr',
+                        includedLanguages: 'fr,en,ar,es,de,it',
+                        autoDisplay: false,
+                        multilanguagePage: true
+                    }, 'google_translate_element');
+                    window.EventFlowPortalTranslateInitialized = true;
+                }
+
+                const currentLang = getCurrentLanguage();
+                if (currentLang !== 'original') {
+                    window.setTimeout(function () {
+                        applyLanguageToCombo(currentLang);
+                    }, 250);
+                }
+            };
+
+            const script = document.createElement('script');
+            script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+            script.async = true;
+            document.body.appendChild(script);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            ensureGoogleTranslate();
+
+            const toggle = document.getElementById('portalTranslateToggle');
+            const menu = document.getElementById('portalTranslateMenu');
+
+            if (!toggle || !menu) {
+                return;
+            }
+
+            toggle.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                menu.classList.toggle('open');
+            });
+
+            menu.querySelectorAll('.portal-translate-opt').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const lang = button.getAttribute('data-lang') || 'original';
+
+                    if (lang === 'original') {
+                        clearTranslateCookie();
+                        window.location.reload();
+                        return;
+                    }
+
+                    setTranslateCookie(lang === 'fr' ? '/fr/fr' : '/fr/' + lang);
+                    ensureGoogleTranslate();
+
+                    window.setTimeout(function () {
+                        if (!applyLanguageToCombo(lang)) {
+                            window.location.reload();
+                        }
+                    }, 350);
+                });
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!menu.contains(event.target) && !toggle.contains(event.target)) {
+                    menu.classList.remove('open');
+                }
+            });
+        });
+    })();
+</script>

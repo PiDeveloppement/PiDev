@@ -1,7 +1,7 @@
 /* Navbar aligned with landing dimensions */
 .portal-navbar {
     height: 80px;
-    padding: 0 60px;
+    padding: 0 28px;
     border-bottom: 1px solid #e2e8f0;
     background: #ffffff;
     position: fixed;
@@ -15,10 +15,11 @@
 
 .portal-nav-container {
     width: 100%;
-    padding: 0 60px;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 16px;
 }
 
 .portal-logo-wrap img {
@@ -31,14 +32,17 @@
 
 .portal-nav-links {
     display: flex;
-    gap: 40px;
-    position: relative;
-    top: -4px;
     align-items: center;
+    justify-content: center;
+    flex: 1 1 auto;
+    gap: 18px;
+    min-width: 0;
+    white-space: nowrap;
 }
 
 .portal-nav-link {
-    font-size: 15px;
+    position: relative;
+    font-size: 14px;
     font-weight: 500;
     color: #1e293b;
     text-decoration: none;
@@ -52,8 +56,29 @@
     color: #0D47A1;
     font-weight: 700;
     text-decoration: none;
-    border-bottom: 2px solid #2563eb;
-    padding-bottom: 2px;
+}
+
+.portal-nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    width: 0;
+    height: 2px;
+    background: #2563eb;
+    transition: width 0.2s ease;
+}
+
+.portal-nav-link:hover::after,
+.portal-nav-link.active::after {
+    width: 100%;
+}
+
+.portal-nav-actions {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 
 .portal-account-menu {
@@ -146,68 +171,50 @@
 
 .nav-buttons {
     display: flex;
-    gap: 15px;
+    gap: 10px;
     align-items: center;
-    position: relative;
-    top: -4px;
     min-height: 42px;
 }
 
 .btn-login {
-    padding: 10px 24px;
+    padding: 8px 18px;
     background: transparent;
     border: 2px solid #2563eb;
     color: #2563eb;
     border-radius: 24px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
 }
 
 .btn-signup {
-    padding: 10px 24px;
+    padding: 8px 18px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
     color: #ffffff;
     border-radius: 24px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
 }
 
-.portal-translate {
-    position: relative;
-    margin-right: 12px;
-}
-
-.portal-translate-btn {
-    background: rgba(33, 150, 243, 0.1);
-    color: #2196F3;
-    border: 1px solid #2196F3;
-    border-radius: 20px;
-    padding: 8px 20px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-}
-
 .portal-translate-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    padding: 8px 0;
-    min-width: 180px;
     display: none;
-    z-index: 1001;
 }
 
 .portal-translate-menu.open {
     display: block;
+}
+
+.portal-translate-menu-inline {
+    background: #ffffff;
+    padding: 8px 0;
+}
+
+.portal-translate-inline-toggle {
+    position: relative;
 }
 
 .portal-translate-opt {
