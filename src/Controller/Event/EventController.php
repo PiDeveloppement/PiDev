@@ -8,6 +8,7 @@ use App\Form\Event\EventType;
 use App\Service\Event\AiPosterService;
 use App\Service\Event\EventService;
 use App\Service\Event\WeatherService;
+use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use Knp\Snappy\Pdf;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -27,6 +28,7 @@ class EventController extends AbstractController
         private EventService $eventService,
         private AiPosterService $aiPosterService,
         private WeatherService $weatherService,
+        private EntityManagerInterface $entityManager,
         #[Autowire('%env(default::GOOGLE_API_KEY)%')] private readonly ?string $googleApiKey = null,
         #[Autowire('%env(default::GOOGLE_CALENDAR_ID)%')] private readonly ?string $googleCalendarId = null
     ) {}
@@ -34,7 +36,7 @@ class EventController extends AbstractController
     #[Route('/generate-poster', name: 'app_event_generate_poster', methods: ['POST'])]
     public function generatePoster(Request $request): JsonResponse
     {
-        if (!$this->isGranted('ROLE_ORGANISATEUR') && !$this->isGranted('ROLE_ADMIN')) {
+        if (!$this->currentUserCanManageEvents()) {
             return $this->json([
                 'ok' => false,
                 'message' => 'Acces refuse.',
@@ -159,7 +161,7 @@ class EventController extends AbstractController
     #[Route('/new', name: 'app_event_new', methods: ['GET', 'POST'])]
     public function new(Request $request): Response
     {
-        if (!$this->isGranted('ROLE_ORGANISATEUR') && !$this->isGranted('ROLE_ADMIN')) {
+        if (!$this->currentUserCanManageEvents()) {
             throw $this->createAccessDeniedException('Seuls les organisateurs peuvent creer des evenements.');
         }
 
@@ -186,7 +188,7 @@ class EventController extends AbstractController
                     $event->setCreator($currentUser);
                     $event->setCreatedBy($currentUser->getId());
 
-                    if ($this->isGranted('ROLE_ORGANISATEUR')) {
+                    if ($this->currentUserIsOrganizer($currentUser)) {
                         $event->setStatus(Event::STATUS_PUBLISHED);
                     }
                 }
@@ -404,5 +406,43 @@ class EventController extends AbstractController
         }
 
         return $this->redirectToRoute('app_event_index');
+    }
+    private function currentUserIsOrganizer(UserModel $user): bool
+    {
+        $freshUser = $this->entityManager->getRepository(UserModel::class)->find($user->getId());
+
+        if ($freshUser instanceof UserModel) {
+            $user = $freshUser;
+        }
+
+        $roleName = strtolower((string) ($user->getRole()?->getRoleName() ?? ''));
+
+        return $roleName === 'organisateur' || $user->getRoleId() === 3 || in_array('ROLE_ORGANISATEUR', $user->getRoles(), true);
+    }
+
+    private function currentUserCanManageEvents(): bool
+    {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof UserModel) {
+            return false;
+        }
+
+        $freshUser = $this->entityManager->getRepository(UserModel::class)->find($currentUser->getId());
+
+        if (!$freshUser instanceof UserModel) {
+            return false;
+        }
+
+        $roleName = strtolower((string) ($freshUser->getRole()?->getRoleName() ?? ''));
+        $roleId = $freshUser->getRoleId();
+        $roles = $freshUser->getRoles();
+
+        return $roleName === 'admin'
+            || $roleName === 'organisateur'
+            || $roleId === 2
+            || $roleId === 3
+            || in_array('ROLE_ADMIN', $roles, true)
+            || in_array('ROLE_ORGANISATEUR', $roles, true);
     }
 }

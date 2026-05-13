@@ -522,7 +522,7 @@ class EventFrontController extends AbstractController
             throw new AccessDeniedException('Acces reserve a l administration et aux organisateurs.');
         }
 
-        $token = trim($token);
+        $token = trim(urldecode($token));
         if ($token === '') {
             return $this->render('ticket/scan_result.html.twig', [
                 'status' => 'invalid',
@@ -714,13 +714,15 @@ class EventFrontController extends AbstractController
 
     private function findTicketByQrToken(EntityManagerInterface $em, string $token): ?Ticket
     {
+        $token = trim(urldecode($token));
+
         $ticket = $em->getRepository(Ticket::class)
             ->createQueryBuilder('t')
             ->leftJoin('t.event', 'e')
             ->addSelect('e')
             ->leftJoin('t.user', 'u')
             ->addSelect('u')
-            ->andWhere('t.qrCode = :token')
+            ->andWhere('(t.qrCode = :token OR t.ticketCode = :token)')
             ->setParameter('token', $token)
             ->setMaxResults(1)
             ->getQuery()

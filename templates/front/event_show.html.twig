@@ -440,7 +440,11 @@
 
                     <div class="show-poster-wrap">
                         {% if event.imageUrl %}
-                            <img src="{{ asset(event.imageUrl) }}" alt="Affiche de {{ event.title }}">
+                            {% set posterPath = event.imageUrl %}
+                            {% if posterPath starts with 'assets/posters/' %}
+                                {% set posterPath = 'uploads/posters/' ~ posterPath|split('/')|last %}
+                            {% endif %}
+                            <img src="{{ asset(posterPath) }}" alt="Affiche de {{ event.title }}">
                         {% else %}
                             <div class="show-poster-empty">Aucune affiche disponible pour cet événement.</div>
                         {% endif %}

@@ -571,7 +571,11 @@
                              data-start="{{ event.startDate ? event.startDate|date('U') : 0 }}">
                         <div class="event-cover {{ event.imageUrl ? 'has-image' : 'no-image' }}">
                             {% if event.imageUrl %}
-                                <img class="event-cover-image" src="{{ asset(event.imageUrl) }}" alt="Affiche de {{ event.title }}">
+                                {% set posterPath = event.imageUrl %}
+                                {% if posterPath starts with 'assets/posters/' %}
+                                    {% set posterPath = 'uploads/posters/' ~ posterPath|split('/')|last %}
+                                {% endif %}
+                                <img class="event-cover-image" src="{{ asset(posterPath) }}" alt="Affiche de {{ event.title }}">
                             {% endif %}
                             <span class="event-status {{ statusType }}">{{ statusType == 'upcoming' ? 'À venir' : 'En cours' }}</span>
                             <span

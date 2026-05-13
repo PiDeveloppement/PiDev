@@ -239,7 +239,8 @@
             <h3 class="verify-label">Code de Vérification</h3>
             {% if ticket.qrCode %}
                 <div class="qr-preview">
-                    {% set scanUrl = url('app_ticket_scan_auto', { token: ticket.qrCode }) %}
+                    {% set scanToken = ticket.qrCode matches '/^tkt_[A-Za-z0-9]+$/' ? ticket.qrCode : ticket.ticketCode %}
+                    {% set scanUrl = url('app_ticket_scan_auto', { token: scanToken }) %}
                     <img src="{{ qr_code_data_uri(scanUrl, 'pdf') }}" alt="QR code du billet">
                 </div>
             {% else %}

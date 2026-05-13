@@ -170,7 +170,8 @@
 
         <div class="content-right">
             <div class="qr-box">
-                {% set scanPath = path('app_ticket_scan_auto', { token: ticket.qrCode }) %}
+                {% set scanToken = ticket.qrCode matches '/^tkt_[A-Za-z0-9]+$/' ? ticket.qrCode : ticket.ticketCode %}
+                {% set scanPath = path('app_ticket_scan_auto', { token: scanToken }) %}
                 {% set scanUrl = appPublicUrl ~ scanPath %}
                 <img src="{{ qr_code_data_uri(scanUrl, 'pdf') }}" alt="QR code billet">
                 <div class="qr-caption">Scan organisateur: ouverture + validation automatique</div>

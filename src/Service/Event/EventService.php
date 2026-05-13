@@ -10,6 +10,7 @@ use App\Repository\Event\TicketRepository;
 use App\Service\Event\GoogleCalendarWriteService;
 use App\Service\Event\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Security\Core\Security;
 use Knp\Component\Pager\PaginatorInterface;
 
 class EventService
@@ -20,7 +21,8 @@ class EventService
         private TicketRepository $ticketRepository,
         private EntityManagerInterface $entityManager,
         private GoogleCalendarWriteService $googleCalendarWriteService,
-        private NotificationService $notificationService
+        private NotificationService $notificationService,
+        private Security $security
     ) {
     }
 
@@ -362,7 +364,7 @@ class EventService
 
         if ($isNew) {
             if ($event->getStatus() === null) {
-                $event->setStatus(Event::STATUS_DRAFT);
+                $event->setStatus(Event::STATUS_PUBLISHED);
             }
             if ($event->getCreatedAt() === null) {
                 $event->setCreatedAt(new \DateTime());
