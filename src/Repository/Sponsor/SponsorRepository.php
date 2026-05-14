@@ -155,6 +155,43 @@ class SponsorRepository extends ServiceEntityRepository
     }
 
     /**
+     * Récupère les sponsors avec les titres d'événement en une requête optimisée (évite N+1)
+     * @return array<int, array{sponsor: Sponsor, eventTitle: string}>
+     */
+    public function findByContactEmailWithEventTitles(string $email): array
+    {
+        $sponsors = $this->findByContactEmailWithEvent($email);
+        
+        // Construire une map des titres d'événements pour les sponsors
+        $eventIds = array_unique(array_filter(
+            array_map(static fn (Sponsor $s): ?int => $s->getEventId() ? (int) $s->getEventId() : null, $sponsors)
+        ));
+
+        $titleMap = [];
+        if (!empty($eventIds)) {
+            $placeholders = implode(',', array_fill(0, count($eventIds), '?'));
+            $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+                'SELECT e.id, e.title FROM event e WHERE e.id IN (' . $placeholders . ')',
+                array_values($eventIds)
+            );
+            foreach ($rows as $row) {
+                $titleMap[(int) ($row['id'] ?? 0)] = (string) ($row['title'] ?? '-');
+            }
+        }
+
+        $result = [];
+        foreach ($sponsors as $sponsor) {
+            $eventId = (int) ($sponsor->getEventId() ?? 0);
+            $result[] = [
+                'sponsor' => $sponsor,
+                'eventTitle' => $eventId > 0 ? ($titleMap[$eventId] ?? '-') : '-',
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
      * @return array{count:int,total:float,events:int}
      */
     public function getMyStats(string $email): array

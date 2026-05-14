@@ -24,9 +24,11 @@ class SponsorService
     public function fetchEventsCatalog(bool $activeOnly = false): array
     {
         // Lecture directe SQL pour recuperer un catalogue evenementiel enrichi du volume de participants.
+        // Optimisation: utiliser LEFT JOIN + GROUP BY au lieu de sous-requête corrélée (N+1)
         $sql = 'SELECT e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity, e.image_url,
-                      COALESCE((SELECT COUNT(t.id) FROM event_ticket t WHERE t.event_id = e.id), 0) AS participants_count
-                FROM event e';
+                      COALESCE(COUNT(t.id), 0) AS participants_count
+                FROM event e
+                LEFT JOIN event_ticket t ON t.event_id = e.id';
         $params = [];
 
         if ($activeOnly) {
@@ -34,7 +36,8 @@ class SponsorService
             $params['now'] = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
         }
 
-        $sql .= ' ORDER BY e.start_date ASC';
+        $sql .= ' GROUP BY e.id, e.title, e.description, e.location, e.start_date, e.end_date, e.capacity, e.image_url
+                  ORDER BY e.start_date ASC';
         $rows = $this->entityManager->getConnection()->fetchAllAssociative($sql, $params);
 
         return array_map(static fn (array $row): array => self::mapEventRow($row), $rows);

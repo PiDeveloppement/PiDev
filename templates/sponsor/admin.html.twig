@@ -372,6 +372,12 @@
         }
     });
     </script>
+    <script>
+        // Auto-refresh chaque 10 secondes (en dehors du DOMContentLoaded)
+        setInterval(function() {
+            location.reload();
+        }, 10000);
+    </script>
 {% endblock %}
 
 {% block admin_content %}

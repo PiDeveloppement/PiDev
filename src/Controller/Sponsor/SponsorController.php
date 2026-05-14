@@ -795,9 +795,18 @@ class SponsorController extends AbstractController
         $sort = (string) $request->query->get('sort', 'date_asc');
         $mySort = (string) $request->query->get('my_sort', 'recent');
 
-        $mySponsors = $isSponsorSession
-            ? $this->sponsorRepository->findByContactEmailWithEvent($email)
+        // Optimisation: récupérer les sponsors avec les titres d'événement en une requête
+        $sponsorsWithTitles = $isSponsorSession
+            ? $this->sponsorRepository->findByContactEmailWithEventTitles($email)
             : [];
+        
+        $mySponsors = array_map(static fn (array $item): Sponsor => $item['sponsor'], $sponsorsWithTitles);
+        $eventTitleMap = array_reduce($sponsorsWithTitles, static function (array $map, array $item): array {
+            $sponsorId = (int) ($item['sponsor']->getId() ?? 0);
+            $map[$sponsorId] = $item['eventTitle'];
+            return $map;
+        }, []);
+
         $sponsoredEventIds = array_values(array_unique(array_filter(
             array_map(static fn (Sponsor $sponsor): int => (int) $sponsor->getEventId(), $mySponsors),
             static fn (int $eventId): bool => $eventId > 0
@@ -805,13 +814,15 @@ class SponsorController extends AbstractController
 
         $allEvents = $this->sponsorService->fetchEventsCatalog();
         $recommendedEvents = $isSponsorSession
-            ? $this->sponsorService->buildRecommendedEvents($allEvents, $user, $email, $sponsoredEventIds)
+            ? $this->sponsorService->buildRecommendedEvents($allEvents, $user, $email)
             : array_slice($allEvents, 0, 6);
 
         if ($query !== '') {
             $needle = mb_strtolower($query);
-            $mySponsors = array_values(array_filter($mySponsors, function (Sponsor $sponsor) use ($needle): bool {
-                $eventTitle = (string) $this->sponsorService->getEventTitleById((int) $sponsor->getEventId());
+            // Utiliser la map des titres au lieu d'appeler getEventTitleById() pour chaque sponsor
+            $mySponsors = array_values(array_filter($mySponsors, function (Sponsor $sponsor) use ($needle, $eventTitleMap): bool {
+                $sponsorId = (int) ($sponsor->getId() ?? 0);
+                $eventTitle = (string) ($eventTitleMap[$sponsorId] ?? '-');
                 return str_contains(mb_strtolower($eventTitle), $needle);
             }));
 
@@ -851,10 +862,17 @@ class SponsorController extends AbstractController
             $sessionKey = 'sponsor_reco_mail_last_sent_' . md5(mb_strtolower(trim($email)));
             $lastSentAt = (string) $request->getSession()->get($sessionKey, '');
 
+            // Optimisation: envoyer l'email de manière non-bloquante pour ne pas ralentir le chargement de la page
+            // TODO: Implémenter avec Messenger pour une vraie async (yarn add @symfony/messenger-component)
             if ($lastSentAt !== $today) {
-                $sent = $this->sponsorAlertEmailService->sendRecommendationEmailForSponsor($user, $email, $recommendedEvents, $mySponsors);
-                if ($sent) {
-                    $request->getSession()->set($sessionKey, $today);
+                try {
+                    $sent = $this->sponsorAlertEmailService->sendRecommendationEmailForSponsor($user, $email, $recommendedEvents, $mySponsors);
+                    if ($sent) {
+                        $request->getSession()->set($sessionKey, $today);
+                    }
+                } catch (\Throwable $e) {
+                    // Silently fail - ne pas bloquer le rendu de la page si l'email échoue
+                    // Log peut être ajouté ici si nécessaire
                 }
             }
         }
@@ -876,7 +894,7 @@ class SponsorController extends AbstractController
             'mySort' => $mySort,
             'isSponsorSession' => $isSponsorSession,
             'mySponsors' => $mySponsors,
-            'mySponsorEventTitleMap' => $this->sponsorService->buildEventTitleMapForSponsors($mySponsors),
+            'mySponsorEventTitleMap' => $eventTitleMap,  // Réutiliser la map déjà construite
             'recommendedEvents' => $recommendedEvents,
             'allEvents' => $allEvents,
             'sponsorableEvents' => $sponsorableEvents,
